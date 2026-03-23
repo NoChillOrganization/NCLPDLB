@@ -2315,15 +2315,15 @@ Careful Nature
 - Stealth Rock
 - Ruination
 
-Yveltal @ Black Glasses
-Ability: Dark Aura
-Tera Type: Dark
+Eternatus @ Choice Specs
+Ability: Pressure
+Tera Type: Poison
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-- Oblivion Wing
-- Dark Pulse
-- Sucker Punch
-- Taunt
+- Dynamax Cannon
+- Shadow Ball
+- Flamethrower
+- Sludge Wave
 """,
 
     # Team 2 — Calyrex-Shadow Balance
@@ -2506,8 +2506,8 @@ EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 - Surf
 - Future Sight
-- Sludge Bomb
 - Flamethrower
+- Ice Beam
 
 Tinkaton @ Rocky Helmet
 Ability: Mold Breaker
@@ -2875,7 +2875,7 @@ Bold Nature
 - Surf
 - Wish
 - Protect
-- Heal Bell
+- Wish
 
 Jolteon @ Choice Specs
 Ability: Volt Absorb
@@ -2885,7 +2885,7 @@ Timid Nature
 - Thunderbolt
 - Volt Switch
 - Shadow Ball
-- Signal Beam
+- Shadow Ball
 
 Sylveon @ Choice Specs
 Ability: Pixilate
@@ -2905,7 +2905,7 @@ Calm Nature
 - Foul Play
 - Wish
 - Protect
-- Heal Bell
+- Wish
 
 Espeon @ Life Orb
 Ability: Magic Bounce
@@ -2925,7 +2925,7 @@ Calm Nature
 - Moonblast
 - Synthesis
 - Wish
-- Aromatherapy
+- Moonblast
 """,
 
     # Team 2 — Trick Room Slow Offense
@@ -3110,15 +3110,15 @@ Careful Nature
 - Roost
 - Stealth Rock
 
-Drampa @ Choice Specs
-Ability: Cloud Nine
-Tera Type: Normal
-EVs: 252 HP / 252 SpA / 4 SpD
-Modest Nature
-- Hyper Voice
+Appletun @ Leftovers
+Ability: Thick Fat
+Tera Type: Grass
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
 - Dragon Pulse
-- Fire Blast
-- Focus Blast
+- Leech Seed
+- Recover
+- Apple Acid
 
 Granbull @ Assault Vest
 Ability: Intimidate
@@ -3321,7 +3321,7 @@ Careful Nature
 - Foul Play
 - Wish
 - Protect
-- Heal Bell
+- Wish
 
 Granbull @ Assault Vest
 Ability: Intimidate
@@ -3514,7 +3514,7 @@ Adamant Nature
 - Stone Edge
 - Earthquake
 - Dragon Dance
-- Ice Punch
+- Crunch
 
 Elekid @ Life Orb
 Ability: Static
@@ -3533,7 +3533,7 @@ Level: 5
 Tera Type: Water
 EVs: 36 HP / 236 SpA / 236 SpD
 Quiet Nature
-- Scald
+- Surf
 - Psychic
 - Fire Blast
 - Slack Off
@@ -3764,14 +3764,14 @@ Timid Nature
 - Ice Beam
 - Thunder
 
-Yveltal @ Life Orb
-Ability: Dark Aura
-Tera Type: Dark
+Eternatus @ Choice Specs
+Ability: Pressure
+Tera Type: Poison
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-- Oblivion Wing
-- Dark Pulse
-- Heat Wave
+- Dynamax Cannon
+- Shadow Ball
+- Flamethrower
 - Protect
 
 Tornadus-Therian @ Focus Sash
@@ -3804,7 +3804,7 @@ Impish Nature
 - U-turn
 - Protect
 
-Indeedee-Female @ Psychic Seed
+Indeedee-F @ Psychic Seed
 Ability: Psychic Surge
 Tera Type: Psychic
 EVs: 252 HP / 4 SpA / 252 SpD
@@ -3934,9 +3934,9 @@ EVs: 252 HP / 4 SpA / 252 SpD
 Sassy Nature
 IVs: 0 Spe
 - Surf
-- Sludge Bomb
-- Future Sight
 - Flamethrower
+- Future Sight
+- Ice Beam
 
 Mimikyu @ Life Orb
 Ability: Disguise
@@ -4150,15 +4150,15 @@ Careful Nature
 - Stealth Rock
 - Ruination
 
-Yveltal @ Black Glasses
-Ability: Dark Aura
-Tera Type: Dark
+Eternatus @ Choice Specs
+Ability: Pressure
+Tera Type: Poison
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-- Oblivion Wing
-- Dark Pulse
-- Sucker Punch
-- Taunt""",
+- Dynamax Cannon
+- Shadow Ball
+- Flamethrower
+- Sludge Wave""",
 
     # Team 2 — Calyrex-Shadow Balance
     """\
@@ -4335,10 +4335,10 @@ Ability: Regenerator
 Tera Type: Water
 EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
-- Scald
-- Future Sight
-- Sludge Bomb
+- Surf
 - Flamethrower
+- Future Sight
+- Ice Beam
 
 Tinkaton @ Rocky Helmet
 Ability: Mold Breaker
@@ -4387,7 +4387,7 @@ Ability: Regenerator
 Tera Type: Water
 EVs: 252 HP / 252 Def / 4 SpA
 Bold Nature
-- Scald
+- Surf
 - Future sight
 - Slack Off
 - Thunder Wave
@@ -4501,7 +4501,7 @@ Tera Type: Steel
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 - Spin Out
-- Gear Up
+- Shift Gear
 - Iron Head
 - High Horsepower
 
@@ -4697,10 +4697,10 @@ Ability: Water Absorb
 Tera Type: Water
 EVs: 252 HP / 252 Def / 4 SpA
 Bold Nature
-- Scald
+- Surf
 - Wish
 - Protect
-- Heal Bell
+- Wish
 
 Jolteon @ Choice Specs
 Ability: Volt Absorb
@@ -4710,7 +4710,7 @@ Timid Nature
 - Thunderbolt
 - Volt Switch
 - Shadow Ball
-- Signal Beam
+- Shadow Ball
 
 Sylveon @ Choice Specs
 Ability: Pixilate
@@ -4719,7 +4719,7 @@ EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Hyper Voice
 - Shadow Ball
-- Mystical Fire
+- Psyshock
 - Psyshock
 
 Umbreon @ Leftovers
@@ -4730,7 +4730,7 @@ Calm Nature
 - Foul Play
 - Wish
 - Protect
-- Heal Bell
+- Wish
 
 Espeon @ Life Orb
 Ability: Magic Bounce
@@ -4750,7 +4750,7 @@ Calm Nature
 - Moonblast
 - Synthesis
 - Wish
-- Aromatherapy""",
+- Moonblast""",
 
     # Team 2 — Trick Room Slow Offense
     """\
@@ -4793,7 +4793,7 @@ Tera Type: Water
 EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 IVs: 0 Spe
-- Scald
+- Surf
 - Shadow Ball
 - Will-O-Wisp
 - Recover
@@ -4932,15 +4932,15 @@ Careful Nature
 - Roost
 - Stealth Rock
 
-Drampa @ Choice Specs
-Ability: Cloud Nine
-Tera Type: Normal
-EVs: 252 HP / 252 SpA / 4 SpD
-Modest Nature
-- Hyper Voice
+Appletun @ Leftovers
+Ability: Thick Fat
+Tera Type: Grass
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
 - Dragon Pulse
-- Fire Blast
-- Focus Blast
+- Leech Seed
+- Recover
+- Apple Acid
 
 Granbull @ Assault Vest
 Ability: Intimidate
@@ -4965,27 +4965,26 @@ IVs: 0 Spe
 - Instruct
 - Encore
 
-Lickitung @ Eviolite
-Ability: Cloud Nine
+Dunsparce @ Leftovers
+Ability: Serene Grace
 Tera Type: Normal
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Body Slam
+- Glare
+- Roost
+- Stealth Rock
+
+Appletun @ Leftovers
+Ability: Thick Fat
+Tera Type: Grass
 EVs: 252 HP / 4 Def / 252 SpD
 Sassy Nature
 IVs: 0 Spe
-- Body Slam
-- Wish
-- Protect
-- Heal Bell
-
-Drampa @ Choice Specs
-Ability: Cloud Nine
-Tera Type: Dragon
-EVs: 252 HP / 252 SpA / 4 SpD
-Quiet Nature
-IVs: 0 Spe
-- Hyper Voice
 - Dragon Pulse
-- Flamethrower
-- Shadow Ball
+- Leech Seed
+- Recover
+- Apple Acid
 
 Furret @ Choice Band
 Ability: Frisk
@@ -5052,15 +5051,15 @@ Jolly Nature
 - Double Hit
 - Low Sweep
 
-Kecleon @ Leftovers
-Ability: Color Change
-Tera Type: Normal
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Sucker Punch
-- Recover
-- Stealth Rock
-- Shadow Sneak
+Grafaiai @ Life Orb
+Ability: Poison Touch
+Tera Type: Poison
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Gunk Shot
+- Knock Off
+- U-turn
+- Acrobatics
 
 Wigglytuff @ Leftovers
 Ability: Competitive
@@ -5122,35 +5121,35 @@ Timid Nature
 - Nasty Plot
 - Thunderbolt
 
-Corsola @ Eviolite
-Ability: Regenerator
-Tera Type: Rock
+Dachsbun @ Leftovers
+Ability: Well-Baked Body
+Tera Type: Fairy
 EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-- Scald
-- Stealth Rock
-- Recover
-- Ancient Power
+Careful Nature
+- Play Rough
+- Body Press
+- Wish
+- Protect
 
-Lickitung @ Eviolite
-Ability: Own Tempo
+Dunsparce @ Leftovers
+Ability: Serene Grace
 Tera Type: Normal
 EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
 - Body Slam
-- Wish
-- Protect
-- Heal Bell
+- Glare
+- Roost
+- Stealth Rock
 
-Kecleon @ Leftovers
-Ability: Color Change
-Tera Type: Normal
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Sucker Punch
-- Recover
-- Shadow Sneak
-- Toxic""",
+Grafaiai @ Life Orb
+Ability: Poison Touch
+Tera Type: Poison
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Gunk Shot
+- Knock Off
+- U-turn
+- Acrobatics""",
 
     # Team 2 — Castform Weather
     """\
@@ -5236,15 +5235,15 @@ Timid Nature
 - Thunderbolt
 - Nasty Plot
 
-Corsola @ Leftovers
-Ability: Natural Cure
-Tera Type: Rock
+Dachsbun @ Leftovers
+Ability: Well-Baked Body
+Tera Type: Fairy
 EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-- Ancient Power
-- Recover
-- Stealth Rock
-- Scald
+Careful Nature
+- Play Rough
+- Body Press
+- Wish
+- Protect
 
 Delibird @ Life Orb
 Ability: Hustle
@@ -5328,7 +5327,7 @@ Adamant Nature
 - Stone Edge
 - Earthquake
 - Dragon Dance
-- Ice Punch
+- Crunch
 
 Elekid @ Life Orb
 Ability: Static
@@ -5341,16 +5340,16 @@ Timid Nature
 - Cross Chop
 - Psychic
 
-Staryu @ Eviolite
-Ability: Natural Cure
+Arrokuda @ Choice Band
+Ability: Swift Swim
 Level: 5
 Tera Type: Water
-EVs: 36 HP / 236 SpA / 236 Spe
-Timid Nature
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Rapid Spin""",
+EVs: 236 Atk / 4 SpD / 236 Spe
+Adamant Nature
+- Liquidation
+- Flip Turn
+- Ice Fang
+- Crunch""",
 
     # Team 2 — Trick Room Timburr
     """\
@@ -5572,14 +5571,14 @@ Timid Nature
 - Ice Beam
 - Thunder
 
-Yveltal @ Life Orb
-Ability: Dark Aura
-Tera Type: Dark
+Eternatus @ Choice Specs
+Ability: Pressure
+Tera Type: Poison
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-- Oblivion Wing
-- Dark Pulse
-- Heat Wave
+- Dynamax Cannon
+- Shadow Ball
+- Flamethrower
 - Protect
 
 Tornadus-Therian @ Focus Sash
@@ -5612,7 +5611,7 @@ Impish Nature
 - U-turn
 - Protect
 
-Indeedee-Female @ Psychic Seed
+Indeedee-F @ Psychic Seed
 Ability: Psychic Surge
 Tera Type: Psychic
 EVs: 252 HP / 4 SpA / 252 SpD
@@ -5739,10 +5738,10 @@ Tera Type: Water
 EVs: 252 HP / 4 SpA / 252 SpD
 Sassy Nature
 IVs: 0 Spe
-- Scald
-- Sludge Bomb
-- Future Sight
+- Surf
 - Flamethrower
+- Future Sight
+- Ice Beam
 
 Mimikyu @ Life Orb
 Ability: Disguise
@@ -5760,7 +5759,7 @@ Tera Type: Fairy
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Hyper Voice
-- Mystical Fire
+- Psyshock
 - Shadow Ball
 - Protect""",
 
@@ -5845,7 +5844,7 @@ Tera Type: Fairy
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Hyper Voice
-- Mystical Fire
+- Psyshock
 - Shadow Ball
 - Protect
 
