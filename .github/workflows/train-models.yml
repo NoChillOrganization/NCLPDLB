@@ -97,6 +97,7 @@ jobs:
           pip install poke-env==0.12.1
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install stable-baselines3>=2.2.0 tensorboard>=2.16.0
+          pip install websockets
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -109,35 +110,32 @@ jobs:
           cd /tmp/showdown
           echo "--- Installing Showdown dependencies ---"
           npm install
-          echo "--- Patching Showdown config (open OTS for VGC; remove banlist/clauses for tier formats) ---"
-          cat > /tmp/showdown/config/config.js << 'SHOWDOWN_CFG'
-          'use strict';
-          exports.customFormats = {
-            'gen9vgc2026regi':    { openTeamSheets: true },
-            'gen9vgc2026regf':    { openTeamSheets: true },
-            'gen9vgc2026regibo3': { openTeamSheets: true },
-            'gen9vgc2026regfbo3': { openTeamSheets: true },
-            'gen9ubers':          { banlist: [], ruleset: ['Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod'] },
-            'gen9uu':             { banlist: [], ruleset: ['Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod'] },
-            'gen9ru':             { banlist: [], ruleset: ['Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod'] },
-            'gen9nu':             { banlist: [], ruleset: ['Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod'] },
-            'gen9pu':             { banlist: [], ruleset: ['Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod'] },
-            'gen9zu':             { banlist: [], ruleset: ['Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod'] },
-            'gen9lc':             { banlist: [], ruleset: ['Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod'] },
-            'gen9doublesubers':   { banlist: [], ruleset: ['Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod'] },
-            'gen9doublesuu':      { banlist: [], ruleset: ['Obtainable', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod'] },
-          };
-          SHOWDOWN_CFG
-          echo "--- Starting Showdown server ---"
+
+          echo "--- Patching config/formats.ts: emptying banlists for tier/doubles-tier formats ---"
+          python3 "$GITHUB_WORKSPACE/scripts/patch_showdown_formats.py" config/formats.ts
+
+          echo "--- Starting Showdown server (auto-builds patched TypeScript on start) ---"
           node pokemon-showdown start --no-security --max-old-space-size=3000 > /tmp/showdown.log 2>&1 &
           SHOWDOWN_PID=$!
-          until curl --output /dev/null --silent --head --fail http://localhost:8000; do
+
+          echo "--- Waiting for Showdown HTTP endpoint (max 60s) ---"
+          WAIT_SECS=0
+          until curl --output /dev/null --silent --head --fail --max-time 5 http://localhost:8000; do
             if ! kill -0 $SHOWDOWN_PID 2>/dev/null; then
-              echo "Showdown process died! Log:" && cat /tmp/showdown.log && exit 1
+              echo "Showdown process died. Log:" && cat /tmp/showdown.log && exit 1
             fi
-            sleep 0.01
+            WAIT_SECS=$((WAIT_SECS + 1))
+            if [ "$WAIT_SECS" -ge 60 ]; then
+              echo "Showdown not ready after 60s. Log:" && cat /tmp/showdown.log && exit 1
+            fi
+            sleep 1
           done
-          sleep 1
+
+          echo "--- Verifying WebSocket connectivity (poke-env requires WS, not just HTTP) ---"
+          python3 "$GITHUB_WORKSPACE/scripts/check_showdown_ws.py" \
+            || (echo "WS check failed. Showdown log:" && cat /tmp/showdown.log && exit 1)
+
+          echo "--- Showdown server is ready ---"
 
       - name: Train ${{ matrix.format }}
         timeout-minutes: 80
