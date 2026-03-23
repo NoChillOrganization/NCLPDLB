@@ -323,8 +323,8 @@ def train(
         server_configuration=srv_cfg,
         is_doubles=is_doubles,
     )
-    if acc2 is not None:
-        opp_kwargs["account_configuration"] = acc2
+    # SelfPlayOpponent is a move-picker only inside SingleAgentWrapper;
+    # Showdown auth for player 2 is handled via account_configuration2 on the env.
     if team_builder is not None:
         opp_kwargs["team"] = team_builder
 
@@ -333,6 +333,8 @@ def train(
     # ── Build Gymnasium-compatible env via SingleAgentWrapper ───────
     # strict=False: invalid actions (e.g. tera when unavailable) fall back
     # to a random legal order instead of raising ValueError
+    # poke-env 0.12.x: SinglesEnv/DoublesEnv use account_configuration1 / 2
+    # (not the bare account_configuration kwarg accepted by Player subclasses).
     def make_env():
         env_kwargs: dict[str, Any] = dict(
             battle_format=fmt,
@@ -340,7 +342,9 @@ def train(
             strict=False,
         )
         if acc1 is not None:
-            env_kwargs["account_configuration"] = acc1
+            env_kwargs["account_configuration1"] = acc1
+        if acc2 is not None:
+            env_kwargs["account_configuration2"] = acc2
         if team_builder is not None:
             env_kwargs["team"] = team_builder
         if is_doubles:
