@@ -199,17 +199,6 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     idx += 1
 
     fields = getattr(battle, "fields", {}) or {}
-    # Wait for active (4 slots)
-    moves_list = list(active.moves.values()) if active else []
-    for i in range(4):
-        wait = 0.0
-        if i < len(moves_list):
-            move = moves_list[i]
-            if hasattr(move, "wait"):
-                wait = float(getattr(move, "wait", 0)) / 4.0
-        obs[idx] = wait
-        idx += 1
-
     terrain = 0
     for fld, val in TERRAIN_IDS.items():
         if fld and fld in fields:
