@@ -94,10 +94,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install poke-env==0.12.1
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install stable-baselines3>=2.2.0 tensorboard>=2.16.0
-          pip install websockets
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
