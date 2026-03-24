@@ -28,11 +28,13 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List, Dict, Union
 
 import numpy as np
+from src.ml.type_chart import get_type_effectiveness_float
 
 if TYPE_CHECKING:
+    from poke_env.battle import AbstractBattle
     from src.ml.replay_parser import BattleRecord
 
 log = logging.getLogger(__name__)
@@ -49,13 +51,36 @@ TEAM_SIZE   = 6     # Pokemon per team in team preview
 #   + type coverage flags, BST bins, tier bins (added when Smogon data available)
 TEAM_FEATURE_DIM = TEAM_SIZE * 2   # minimum — extended below when data is available
 
-# State feature vector layout (per turn):
-#   p1_active_id, p2_active_id,
-#   p1_hp_pct (×6), p2_hp_pct (×6),
-#   p1_fainted_count, p2_fainted_count,
-#   turn_number_normalized,
-#   last_move_p1_id, last_move_p2_id
-STATE_FEATURE_DIM = 2 + 12 + 2 + 1 + 2   # = 2 active IDs + 12 HP slots + 2 faint counts + 1 turn norm + 2 last moves = 19
+# State feature vector layout (per turn): MATCHES BattleEnv.py build_observation()
+#   Active mon:    [species_id, hp, 4×(5-feats), status, 6×boosts] = 2 + 20 + 1 + 6 = 29
+#   Opp active:    [species_id, hp, status]     = 3
+#   My team HP:    6
+#   Opp team HP:   6
+#   Field:         4
+#   TOTAL:         48
+STATE_FEATURE_DIM = 48
+
+
+# ── Battle Observation Constants ──────────────────────────────────────────────
+
+TYPE_IDS = {
+    "normal": 1, "fire": 2, "water": 3, "electric": 4, "grass": 5, "ice": 6,
+    "fighting": 7, "poison": 8, "ground": 9, "flying": 10, "psychic": 11,
+    "bug": 12, "rock": 13, "ghost": 14, "dragon": 15, "dark": 16, "steel": 17, "fairy": 18
+}
+
+STATUS_IDS = {
+    "brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6
+}
+
+WEATHER_IDS = {
+    "sunnyday": 1, "desolateland": 1, "raindance": 2, "primordialsea": 2,
+    "sandstorm": 3, "hail": 4, "snow": 4
+}
+
+TERRAIN_IDS = {
+    "electricterrain": 1, "grassyterrain": 2, "mistyterrain": 3, "psychicterrain": 4
+}
 
 
 # ── Vocabulary ────────────────────────────────────────────────────────────────
@@ -226,7 +251,99 @@ class FeatureExtractor:
         y = np.array(labels, dtype=np.int8)
         return X, y
 
-    # ── State feature extraction ───────────────────────────────────
+    # ── State feature extraction (Online/RL) ──────────────────────
+
+    def extract_features(self, battle: "AbstractBattle") -> np.ndarray:
+        """
+        Extracts 48 features from a live battle state.
+        This must EXACTLY match BattleEnv.build_observation() logic.
+        """
+        active = battle.active_pokemon
+        opp_active = battle.opponent_active_pokemon
+
+        # 1. Active mon features (2 + 20 + 1 + 6 = 29)
+        # Species (1)
+        active_id = self._species_to_id_normalized(active.species if active else None)
+        # HP (1)
+        active_hp = active.current_hp_fraction if active else 0.0
+        
+        # Moves (4 slots × 5 features = 20)
+        move_feats = []
+        moves = list(active.moves.values()) if active else []
+        for i in range(4):
+            if i < len(moves):
+                m = moves[i]
+                eff = get_type_effectiveness_float(m, opp_active) if opp_active else 0.5
+                move_feats.extend([
+                    (m.base_power / 250.0),
+                    (m.accuracy if m.accuracy is not True else 1.0),
+                    (TYPE_IDS.get(m.type.name.lower(), 0) / 18.0),
+                    ((m.priority + 1) / 5.0),
+                    eff
+                ])
+            else:
+                move_feats.extend([0.0] * 5)
+        
+        # Status (1)
+        status_id = 0.0
+        if active and active.status:
+            status_id = STATUS_IDS.get(active.status.name.lower(), 0) / 6.0
+            
+        # Boosts (6)
+        boost_list = ["atk", "def", "spa", "spd", "spe", "accuracy"]
+        boosts = [((active.boosts.get(b, 0) + 6) / 12.0) if active else 0.5 for b in boost_list]
+
+        # 2. Opponent active (3)
+        opp_id = self._species_to_id_normalized(opp_active.species if opp_active else None)
+        opp_hp = opp_active.current_hp_fraction if opp_active else 0.0
+        opp_status = 0.0
+        if opp_active and opp_active.status:
+            opp_status = STATUS_IDS.get(opp_active.status.name.lower(), 0) / 6.0
+
+        # 3. Team HP (6 + 6 = 12)
+        my_team_hp = [p.current_hp_fraction for p in battle.team.values()]
+        while len(my_team_hp) < 6: my_team_hp.append(0.0)
+        
+        opp_team_hp = [p.current_hp_fraction for p in battle.opponent_team.values()]
+        while len(opp_team_hp) < 6: opp_team_hp.append(0.0)
+
+        # 4. Field (4)
+        weather_id = 0.0
+        if battle.weather:
+            weather_id = WEATHER_IDS.get(list(battle.weather.keys())[0].name.lower(), 0) / 4.0
+        
+        terrain_id = 0.0
+        if battle.fields:
+            # Check for terrain in fields
+            for f in battle.fields:
+                if f.name.lower() in TERRAIN_IDS:
+                    terrain_id = TERRAIN_IDS[f.name.lower()] / 4.0
+                    break
+        
+        trick_room = 1.0 if "trickroom" in [f.name.lower() for f in (battle.fields.keys() if hasattr(battle.fields, "keys") else [])] else 0.0
+        turn_norm = min(battle.turn / 100.0, 1.0)
+
+        # Assemble
+        feature = np.array(
+            [active_id, active_hp] + move_feats + [status_id] + boosts +
+            [opp_id, opp_hp, opp_status] +
+            my_team_hp[:6] + opp_team_hp[:6] +
+            [weather_id, terrain_id, trick_room, turn_norm],
+            dtype=np.float32
+        )
+        return feature
+
+    def _species_to_id_normalized(self, species_name: Optional[str]) -> float:
+        """Normalized species ID for the feature vector."""
+        if not species_name:
+            return 0.0
+        # Use simple hash like in BattleEnv.py for stability without vocab if needed
+        # But we have a vocab, so let's use it!
+        # Wait, BattleEnv.py used: hash(species) % 10000 / 10000.0
+        # If I want to be 100% compatible with the RL training in BattleEnv, I should use the SAME hash.
+        return (hash(species_name) % 10000) / 10000.0
+
+    # ── State feature extraction (Replays/Offline) ─────────────────
 
     def state_features(
         self,

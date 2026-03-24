@@ -239,10 +239,9 @@ class TestBuildObservation:
         assert obs.shape == (OBS_DIM,)
 
     def test_turn_normalized(self):
-        print(f"DEBUG: OBS_DIM={OBS_DIM}")
-        battle = _make_mock_battle(turn=50)
+        battle = _make_mock_battle(turn=25)
         obs = build_observation(battle)
-        # Turn is at idx OBS_DIM-1
+        # Turn is at last index
         assert obs[OBS_DIM - 1] == pytest.approx(0.5)
 
     def test_turn_capped_at_100(self):

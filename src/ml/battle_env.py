@@ -248,11 +248,8 @@ if POKE_ENV_AVAILABLE:
             # random_teampreview() always picks 4 unique slots correctly.
             kwargs.setdefault("choose_on_teampreview", False)
             super().__init__(**kwargs)
-            # Required: set observation_spaces for all agents (action_spaces set by parent)
-            self.observation_spaces = {
-                agent: Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
-                for agent in self.possible_agents
-            }
+            # Required: set observation_space (action_space set by parent)
+            self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
             # Track previous faint counts for shaped reward (keyed by id(battle))
             self._prev_state: dict[int, dict[str, int]] = {}
 
@@ -445,10 +442,7 @@ if POKE_ENV_AVAILABLE:
             # random_teampreview() always picks 4 unique slots correctly.
             kwargs.setdefault("choose_on_teampreview", False)
             super().__init__(**kwargs)
-            self.observation_spaces = {
-                agent: Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
-                for agent in self.possible_agents
-            }
+            self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
             self._prev_state: dict[int, dict[str, int]] = {}
 
         def embed_battle(self, battle: Any) -> np.ndarray:
