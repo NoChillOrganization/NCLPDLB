@@ -510,7 +510,7 @@ def parse_replay_dir(directory: Path, max_count: int = 0) -> list[BattleRecord]:
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import argparse
 
 

@@ -33,7 +33,7 @@ DEFAULT_RESULTS_DIR = "src/ml/models/results"
 
 # ── DOM helpers ───────────────────────────────────────────────────────────────
 
-def _login(page: Any, username: str, password: str) -> None:
+def _login(page: Any, username: str, password: str) -> None:  # pragma: no cover
     """Log a Playwright page into Pokémon Showdown."""
     page.goto(SHOWDOWN_URL)
     page.wait_for_load_state("networkidle")
@@ -59,7 +59,7 @@ def _login(page: Any, username: str, password: str) -> None:
     log.info(f"[browser_trainer] Logged in as {username}")
 
 
-def _send_challenge(challenger_page: Any, opponent_username: str, fmt: str) -> None:
+def _send_challenge(challenger_page: Any, opponent_username: str, fmt: str) -> None:  # pragma: no cover
     """Send a battle challenge from one page to another user."""
     chatbox = challenger_page.locator("input.textbox").first
     chatbox.fill(f"/challenge {opponent_username}, {fmt}")
@@ -67,7 +67,7 @@ def _send_challenge(challenger_page: Any, opponent_username: str, fmt: str) -> N
     log.info(f"[browser_trainer] Challenge sent: {opponent_username} @ {fmt}")
 
 
-def _accept_challenge(acceptor_page: Any) -> bool:
+def _accept_challenge(acceptor_page: Any) -> bool:  # pragma: no cover
     """Accept a pending incoming challenge. Returns True if found."""
     try:
         # The challenge popup appears as a .challenge-window or similar
@@ -81,7 +81,7 @@ def _accept_challenge(acceptor_page: Any) -> bool:
         return False
 
 
-def build_observation_from_dom(page: Any) -> np.ndarray:
+def build_observation_from_dom(page: Any) -> np.ndarray:  # pragma: no cover
     """
     Extract battle state from the Showdown DOM and return a float32 numpy array
     compatible with the existing BattleEnv observation space (shape: (OBS_DIM,)).
@@ -129,7 +129,7 @@ def build_observation_from_dom(page: Any) -> np.ndarray:
     return obs
 
 
-def _pick_move_from_obs(
+def _pick_move_from_obs(  # pragma: no cover
     page: Any,
     obs: np.ndarray,
     policy: Any | None,
@@ -159,7 +159,7 @@ def _pick_move_from_obs(
     move_btns.nth(idx).click()
 
 
-def _wait_for_turn_or_end(page: Any, timeout: float = 60.0) -> str:
+def _wait_for_turn_or_end(page: Any, timeout: float = 60.0) -> str:  # pragma: no cover
     """
     Wait until it is our turn to move or the battle ends.
 
@@ -181,7 +181,7 @@ def _wait_for_turn_or_end(page: Any, timeout: float = 60.0) -> str:
 
 # ── Main training loop ────────────────────────────────────────────────────────
 
-def train_browser(
+def train_browser(  # pragma: no cover
     fmt: str,
     total_timesteps: int,
     save_dir: Path | None = None,

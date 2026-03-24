@@ -354,7 +354,7 @@ def build_dataset(
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import argparse
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 

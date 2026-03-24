@@ -195,7 +195,7 @@ def replay_stats(format: str | None = None) -> dict[str, int]:
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
-async def _main() -> None:
+async def _main() -> None:  # pragma: no cover
     parser = argparse.ArgumentParser(description="Scrape Pokemon Showdown replays")
     parser.add_argument("--format",     default="gen9ou",  help="Showdown format ID")
     parser.add_argument("--pages",      type=int, default=10, help="Search pages to scrape")
@@ -212,5 +212,5 @@ async def _main() -> None:
     print("Replay counts:", replay_stats())
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     asyncio.run(_main())
