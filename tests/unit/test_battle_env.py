@@ -2,7 +2,7 @@
 battle_env.py — coverage tests for pure observation/reward logic.
 
 Tests _move_features, _pokemon_hp, build_observation, build_doubles_observation,
-BattleEnv.calc_reward, BattleDoubleEnv.calc_reward, BattleDoubleEnv.teampreview,
+BattleEnv.calc_reward, BattleDoubleEnv.calc_reward,
 and the fallback stubs when poke-env is unavailable.
 
 __init__ methods are excluded (require live Showdown server).
@@ -518,22 +518,6 @@ class TestBattleDoubleEnvMethods:
         battle = self._make_battle()
         assert env.calc_reward(battle) == pytest.approx(0.0)
 
-    def test_teampreview_uses_max_team_size(self):
-        env = self._make_env()
-        battle = self._make_battle(team_size=6, max_team_size=4)
-        result = env.teampreview(battle)
-        assert result == "/choose order 1 2 3 4"
-
-    def test_teampreview_falls_back_to_team_len(self):
-        env = self._make_env()
-        battle = self._make_battle(team_size=6)
-        del battle.max_team_size  # remove attribute to trigger fallback
-        battle.max_team_size = MagicMock(side_effect=AttributeError)
-        # When max_team_size isn't an int, getattr falls back to len(battle.team)
-        battle.max_team_size = 6
-        result = env.teampreview(battle)
-        assert "/choose order" in result
-
 
 # ── embed_battle delegates ─────────────────────────────────────────────────────
 
@@ -566,3 +550,13 @@ class TestFallbackStubs:
     def test_battle_double_env_stub_raises_import_error(self):
         with pytest.raises(ImportError):
             BattleDoubleEnv()
+
+    def test_no_custom_teampreview_override(self):
+        # BattleDoubleEnv no longer overrides teampreview() - it relies on
+        # choose_on_teampreview=False (set in __init__) so the embedded
+        # _EnvPlayer instances always use random_teampreview(), which
+        # correctly picks 4 unique slots for VGC 6-mon team preview.
+        assert "teampreview" not in BattleDoubleEnv.__dict__, (
+            "BattleDoubleEnv should NOT define its own teampreview(); "
+            "use choose_on_teampreview=False instead"
+        )
