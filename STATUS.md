@@ -1,6 +1,6 @@
 # Pokemon Draft League Bot - Setup Status
 
-**Last Updated:** 2026-03-16
+**Last Updated:** 2026-03-23
 
 ---
 
@@ -15,6 +15,12 @@
   - Transactions, Playoffs, Pokédex (populated with all 1,025 Pokemon), Team Template, Data
 - ✅ **Configuration Files**: `.env` and `credentials.json` in place
 - ✅ **Spreadsheet ID**: `16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs`
+
+### Tests
+
+- ✅ **Unit Tests**: All 41 tests in `test_analytics.py` and `test_battle_sim.py` pass
+  - `analytics_service.py`: type chart, coverage, weakness, archetype, threat score, role detection
+  - `battle_sim.py`: replay parsing, team comparison, matchup scoring
 
 ### Code & Documentation
 
