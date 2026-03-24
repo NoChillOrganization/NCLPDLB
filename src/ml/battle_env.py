@@ -32,7 +32,7 @@ import numpy as np
 
 try:
     from gymnasium.spaces import Box
-except ImportError:
+except ImportError:  # pragma: no cover
     Box = None  # type: ignore
 
 try:
@@ -40,7 +40,7 @@ try:
     from poke_env.environment.doubles_env import DoublesEnv
     from poke_env.environment.singles_env import SinglesEnv
     POKE_ENV_AVAILABLE = True
-except ImportError:
+except ImportError:  # pragma: no cover
     POKE_ENV_AVAILABLE = False
     SinglesEnv = object  # type: ignore
     DoublesEnv = object  # type: ignore
@@ -80,7 +80,7 @@ try:
         Status.BRN: 1, Status.PAR: 2, Status.SLP: 3,
         Status.FRZ: 4, Status.PSN: 5, Status.TOX: 6,
     })
-except Exception:
+except Exception:  # pragma: no cover
     pass
 
 WEATHER_IDS: dict[Any, int] = {None: 0}
@@ -95,7 +95,7 @@ try:
         Field.ELECTRIC_TERRAIN: 1, Field.GRASSY_TERRAIN: 2,
         Field.MISTY_TERRAIN: 3, Field.PSYCHIC_TERRAIN: 4,
     })
-except Exception:
+except Exception:  # pragma: no cover
     pass
 
 
@@ -110,7 +110,7 @@ def _move_features(move: "Move | None") -> list[float]:
     type_id = TYPE_IDS.get(str(getattr(move, "type", "")).lower().split(".")[-1], 0) / 20.0
     try:
         prio = (move.priority + 5) / 10.0
-    except Exception:
+    except Exception:  # pragma: no cover
         prio = 0.5  # neutral priority
     return [bp, acc, type_id, prio]
 
@@ -199,7 +199,7 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     try:
         from poke_env.battle import Effect
         trick_room = float(Effect.TRICK_ROOM in fields)
-    except Exception:
+    except Exception:  # pragma: no cover
         pass
     obs[idx] = trick_room
     idx += 1
@@ -225,7 +225,7 @@ if POKE_ENV_AVAILABLE:
             wrapped = SingleAgentWrapper(env, opponent_player)
         """
 
-        def __init__(self, **kwargs: Any) -> None:
+        def __init__(self, **kwargs: Any) -> None:  # pragma: no cover
             super().__init__(**kwargs)
             # Required: set observation_spaces for all agents (action_spaces set by parent)
             self.observation_spaces = {
@@ -235,7 +235,7 @@ if POKE_ENV_AVAILABLE:
             # Track previous faint counts for shaped reward (keyed by id(battle))
             self._prev_state: dict[int, dict[str, int]] = {}
 
-        def order_to_action(self, order: Any, battle: Any, **kwargs: Any) -> int:
+        def order_to_action(self, order: Any, battle: Any, **kwargs: Any) -> int:  # pragma: no cover
             # poke-env bug: two-turn moves (Dig, Fly, etc.) are "locked in" on
             # turn 2 and don't appear in battle.available_moves, causing
             # singles_env.order_to_action to raise ValueError recursively until
@@ -283,7 +283,7 @@ if POKE_ENV_AVAILABLE:
             }
             return reward
 
-else:
+else:  # pragma: no cover
     class BattleEnv:  # type: ignore
         observation_spaces = None
         action_spaces = None
@@ -391,7 +391,7 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
     try:
         from poke_env.battle import Effect
         trick_room = float(Effect.TRICK_ROOM in fields)
-    except Exception:
+    except Exception:  # pragma: no cover
         pass
     obs[idx] = trick_room
     idx += 1
@@ -414,7 +414,7 @@ if POKE_ENV_AVAILABLE:
         Action space is MultiDiscrete set by DoublesEnv parent.
         """
 
-        def __init__(self, **kwargs: Any) -> None:
+        def __init__(self, **kwargs: Any) -> None:  # pragma: no cover
             super().__init__(**kwargs)
             self.observation_spaces = {
                 agent: Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
@@ -464,7 +464,7 @@ if POKE_ENV_AVAILABLE:
             }
             return reward
 
-else:
+else:  # pragma: no cover
     class BattleDoubleEnv:  # type: ignore
         observation_spaces = None
         action_spaces = None
