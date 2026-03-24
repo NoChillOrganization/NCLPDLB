@@ -144,10 +144,9 @@ def test_current_player_id_linear():
     d = Draft(
         draft_id="d1", guild_id="g1", commissioner_id="p1",
         player_order=["p1", "p2"], total_rounds=2,
-        format=DraftFormat.LINEAR, picks=["pick1"]
+        format=DraftFormat.LINEAR, current_pick_index=1,
     )
-    # Pick 1 is round 1, pick 2. Pick 2 in linear starts round 1 over?
-    # No, pick 2 is index 1. pick_in_round = 1 % 2 = 1. pos = 1.
+    # current_pick_index=1 -> idx=1 -> player_order[1] = "p2"
     assert d.current_player_id == "p2"
 
 
@@ -155,8 +154,7 @@ def test_current_player_id_overflow():
     d = Draft(
         draft_id="d1", guild_id="g1", commissioner_id="p1",
         player_order=["p1", "p2"], total_rounds=1,
-        format=DraftFormat.LINEAR, picks=["p1", "p2"]
+        format=DraftFormat.LINEAR, current_round=2,
     )
-    # Round 1 finished (2 picks). Round 2 requested.
-    # total_rounds = 1. current_round = (2 // 2) + 1 = 2.
+    # current_round=2 > total_rounds=1 -> draft finished -> None
     assert d.current_player_id is None

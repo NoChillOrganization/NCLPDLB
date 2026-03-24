@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import random
 import numpy as np
 from poke_env.player import Player
 
@@ -28,7 +29,7 @@ class MaxBasePowerPlayer(Player):
             best_moves = [m for m in battle.available_moves if m.base_power == max_power]
             
             # Select one at random from the best
-            chosen_move = np.random.choice(best_moves)
+            chosen_move = random.choice(best_moves)
             return self.create_order(chosen_move)
 
         # 2. Fallback to random (switches, etc.)

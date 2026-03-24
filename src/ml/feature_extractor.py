@@ -58,7 +58,7 @@ TEAM_FEATURE_DIM = TEAM_SIZE * 2   # minimum — extended below when data is ava
 #   Opp team HP:   6
 #   Field:         4
 #   TOTAL:         48
-STATE_FEATURE_DIM = 48
+STATE_FEATURE_DIM = 19
 
 
 # ── Battle Observation Constants ──────────────────────────────────────────────

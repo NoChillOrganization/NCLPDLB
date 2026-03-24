@@ -99,6 +99,16 @@ PATCHES: list[tuple[str, str, str]] = [
         ),
         r"\1ruleset: " + SAFE_RULES + r", banlist: []",
     ),
+    (
+        "Global -- remove Item Clause from every format ruleset",
+        r"'Item Clause',?[ 	]*",
+        "",
+    ),
+    (
+        "Global -- remove VGC bestOf series constraints",
+        r"bestOf: [0-9]+,?[ 	]*",
+        "",
+    ),
 ]
 
 

@@ -126,6 +126,14 @@ DOUBLES_FORMATS = {
     "gen9vgc2026regibo3",
 }
 
+# Some formats use the same Showdown battle mechanics as a base format.
+# poke-env doesn't support the BO3 series protocol, so we train these
+# using the base single-battle format while keeping artifact paths intact.
+TRAINING_FORMAT_ALIASES: dict[str, str] = {
+    "gen9vgc2026regibo3": "gen9vgc2026regi",
+    "gen9vgc2026regfbo3": "gen9vgc2026regf",
+}
+
 PPO_HYPERPARAMS: dict[str, Any] = {
     "learning_rate"      : 3e-4,
     "n_steps"            : 2048,
@@ -275,6 +283,12 @@ def train(  # pragma: no cover
             results_dir=results_dir,
         )
 
+    # Resolve BO3 / alias formats - poke-env does not support the BO3 series
+    # protocol; train against the equivalent base single-battle format instead.
+    training_fmt = TRAINING_FORMAT_ALIASES.get(fmt, fmt)
+    if training_fmt != fmt:
+        log.info(f"[train] Format alias: {fmt!r} -> {training_fmt!r} (BO3 mapped to base)")
+
     _check_showdown_server_if_local(server)
 
     if not POKE_ENV_AVAILABLE:
@@ -288,7 +302,7 @@ def train(  # pragma: no cover
             "Run: pip install stable-baselines3>=2.2.0"
         )
 
-    is_doubles = fmt in DOUBLES_FORMATS
+    is_doubles = training_fmt in DOUBLES_FORMATS
 
     # ── Optional team builder ──────────────────────────────────────
     team_builder = None
@@ -316,7 +330,7 @@ def train(  # pragma: no cover
 
     # ── Opponent player (drives agent2 in SingleAgentWrapper) ──────
     opp_kwargs: dict[str, Any] = dict(
-        battle_format=fmt,
+        battle_format=training_fmt,
         server_configuration=srv_cfg,
         is_doubles=is_doubles,
     )
@@ -334,7 +348,7 @@ def train(  # pragma: no cover
     # (not the bare account_configuration kwarg accepted by Player subclasses).
     def make_env():
         env_kwargs: dict[str, Any] = dict(
-            battle_format=fmt,
+            battle_format=training_fmt,
             server_configuration=srv_cfg,
             strict=False,
         )
@@ -388,7 +402,7 @@ def train(  # pragma: no cover
     }.get(server, server)
     print(f"\n{'='*60}")
     print("  PPO Self-Play Training")
-    print(f"  Format       : {fmt}")
+    print(f"  Format       : {fmt}" + (f" (training as {training_fmt})" if training_fmt != fmt else ""))
     print(f"  Server mode  : {server} — {_server_desc}")
     print(f"  Total steps  : {total_timesteps:,}")
     print(f"  Swap every   : {swap_every:,}")

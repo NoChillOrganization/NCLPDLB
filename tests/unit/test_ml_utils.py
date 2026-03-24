@@ -356,7 +356,7 @@ class TestFetchSearchPage:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_search_page(session, page=1)
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert len(result) == 2
         assert result[0].id == "gen9ou-1"
         assert result[1].id == "gen9ou-2"
@@ -375,7 +375,7 @@ class TestFetchSearchPage:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_search_page(session, page=1)
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result == []
 
     def test_returns_empty_list_on_exception(self, tmp_path):
@@ -392,7 +392,7 @@ class TestFetchSearchPage:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_search_page(session, page=1)
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result == []
 
     def test_returns_empty_list_when_response_is_not_list(self, tmp_path):
@@ -410,7 +410,7 @@ class TestFetchSearchPage:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_search_page(session, page=1)
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result == []
 
     def test_filters_by_min_rating(self, tmp_path):
@@ -431,7 +431,7 @@ class TestFetchSearchPage:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_search_page(session, page=1)
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert len(result) == 1
         assert result[0].id == "gen9ou-hi"
 
@@ -453,7 +453,7 @@ class TestFetchReplay:
             async with aiohttp.ClientSession() as session:
                 return await scraper._fetch_replay(session, meta, semaphore)
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result is False
 
     def test_returns_false_on_non_200_status(self, tmp_path):
@@ -473,7 +473,7 @@ class TestFetchReplay:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_replay(session, meta, semaphore)
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result is False
 
     def test_returns_false_on_exception(self, tmp_path):
@@ -493,7 +493,7 @@ class TestFetchReplay:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_replay(session, meta, semaphore)
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result is False
 
     def test_success_writes_json_file_and_returns_true(self, tmp_path):
@@ -514,7 +514,7 @@ class TestFetchReplay:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_replay(session, meta, semaphore)
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result is True
 
         # File should exist on disk
@@ -542,7 +542,7 @@ class TestFetchReplay:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_replay(session, meta, semaphore)
 
-        asyncio.get_event_loop().run_until_complete(run())
+        asyncio.run(run())
         assert "gen9ou-track" in scraper._seen
 
     def test_success_sets_default_format_and_rating(self, tmp_path):
@@ -565,7 +565,7 @@ class TestFetchReplay:
                 async with aiohttp.ClientSession() as session:
                     return await scraper._fetch_replay(session, meta, semaphore)
 
-        asyncio.get_event_loop().run_until_complete(run())
+        asyncio.run(run())
         saved = json.loads(
             (tmp_path / "gen9ou" / "gen9ou-noformat.json").read_text(encoding="utf-8")
         )
@@ -595,7 +595,7 @@ class TestScrape:
                 mock.get(replay_url, payload=replay_data)
                 return await scraper.scrape(pages=5)
 
-        count = asyncio.get_event_loop().run_until_complete(run())
+        count = asyncio.run(run())
         assert count == 1
 
     def test_scrape_skips_page_of_already_seen_metas(self, tmp_path):
@@ -615,7 +615,7 @@ class TestScrape:
                 mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=[])  # second page — stops early
                 return await scraper.scrape(pages=5)
 
-        count = asyncio.get_event_loop().run_until_complete(run())
+        count = asyncio.run(run())
         assert count == 0
 
     def test_scrape_stops_early_on_empty_page(self, tmp_path):
@@ -632,7 +632,7 @@ class TestScrape:
                 mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=[])
                 return await scraper.scrape(pages=10)
 
-        count = asyncio.get_event_loop().run_until_complete(run())
+        count = asyncio.run(run())
         assert count == 0
 
 

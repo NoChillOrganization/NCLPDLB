@@ -18,7 +18,7 @@ def _make_pokemon(name: str, types: list, tier: str = "OU") -> Pokemon:
 
 # ── build_embed() ─────────────────────────────────────────────────────────────
 
-def test_build_embed_empty_team():
+async def test_build_embed_empty_team():
     """Empty roster shows 'No Pokemon drafted yet.' description."""
     owner = MagicMock()
     owner.display_name = "Alice"
@@ -28,7 +28,7 @@ def test_build_embed_empty_team():
     assert "No Pokemon drafted yet." in embed.description
 
 
-def test_build_embed_empty_team_no_fields():
+async def test_build_embed_empty_team_no_fields():
     owner = MagicMock()
     owner.display_name = "Alice"
     roster = TeamRoster(player_id="p1", guild_id="g1", pokemon=[])
@@ -37,7 +37,7 @@ def test_build_embed_empty_team_no_fields():
     assert len(embed.fields) == 0
 
 
-def test_build_embed_single_pokemon():
+async def test_build_embed_single_pokemon():
     owner = MagicMock()
     owner.display_name = "Bob"
     roster = TeamRoster(
@@ -50,7 +50,7 @@ def test_build_embed_single_pokemon():
     assert "Garchomp" in embed.description
 
 
-def test_build_embed_multiple_pokemon():
+async def test_build_embed_multiple_pokemon():
     owner = MagicMock()
     owner.display_name = "Charlie"
     roster = TeamRoster(
@@ -69,7 +69,7 @@ def test_build_embed_multiple_pokemon():
     assert "Heatran" in embed.description
 
 
-def test_build_embed_footer_shows_count():
+async def test_build_embed_footer_shows_count():
     owner = MagicMock()
     owner.display_name = "Dave"
     roster = TeamRoster(
@@ -85,7 +85,7 @@ def test_build_embed_footer_shows_count():
     assert embed.footer.text.startswith("2 Pokemon")
 
 
-def test_build_embed_type_coverage_field():
+async def test_build_embed_type_coverage_field():
     owner = MagicMock()
     owner.display_name = "Eve"
     roster = TeamRoster(
@@ -102,7 +102,7 @@ def test_build_embed_type_coverage_field():
     assert "fire" in coverage_fields[0].value.lower() or "Fire" in coverage_fields[0].value
 
 
-def test_build_embed_shows_tier_badge():
+async def test_build_embed_shows_tier_badge():
     owner = MagicMock()
     owner.display_name = "Frank"
     roster = TeamRoster(
@@ -115,7 +115,7 @@ def test_build_embed_shows_tier_badge():
     assert "[OU]" in embed.description
 
 
-def test_build_embed_title_has_owner_name():
+async def test_build_embed_title_has_owner_name():
     owner = MagicMock()
     owner.display_name = "GracePlayer"
     roster = TeamRoster(player_id="p1", guild_id="g1", pokemon=[])

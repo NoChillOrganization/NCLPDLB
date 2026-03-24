@@ -107,7 +107,7 @@ except Exception:  # pragma: no cover
 def _move_features(move: "Move | None", target: "Pokemon | None" = None) -> list[float]:
     """Extract 5-float feature vector for one move slot."""
     if move is None:
-        return [0.0, 0.0, 0.0, 0.5, 0.0]
+        return [0.0, 0.0, 0.0, 0.0, 0.5]
     
     bp = min(getattr(move, "base_power", 0) or 0, 250) / 250.0
     acc = (getattr(move, "accuracy", 100) or 100) / 100.0

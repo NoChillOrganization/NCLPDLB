@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 class DraftFormat(str, Enum):
     SNAKE = "snake"
+    LINEAR = "linear"
     AUCTION = "auction"
     TIERED = "tiered"
     CUSTOM = "custom"
@@ -212,6 +213,8 @@ class Draft(BaseModel):
     @property
     def current_player_id(self) -> str | None:
         if not self.player_order:
+            return None
+        if self.current_round > self.total_rounds:
             return None
         # Snake draft: reverse direction each round
         if self.format == DraftFormat.SNAKE and self.current_round % 2 == 0:
