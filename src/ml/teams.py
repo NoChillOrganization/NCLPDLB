@@ -539,7 +539,7 @@ Timid Nature
 - Hypnosis
 - Nasty Plot
 
-Venusaur @ Life Orb
+Venusaur @ Focus Sash
 Ability: Chlorophyll
 Tera Type: Grass
 EVs: 252 SpA / 4 SpD / 252 Spe
@@ -1564,7 +1564,7 @@ Calm Nature
 - Stealth Rock
 - Protect
 
-Venusaur @ Life Orb
+Venusaur @ Focus Sash
 Ability: Chlorophyll
 Tera Type: Grass
 EVs: 252 SpA / 4 SpD / 252 Spe
@@ -1823,7 +1823,7 @@ Adamant Nature
 - Rock Slide
 - Protect
 
-Venusaur @ Life Orb
+Venusaur @ Focus Sash
 Ability: Chlorophyll
 Tera Type: Grass
 EVs: 252 SpA / 4 SpD / 252 Spe
@@ -1925,7 +1925,7 @@ Adamant Nature
 - Wood Hammer
 - Fake Out
 
-Flutter Mane @ Life Orb
+Flutter Mane @ Choice Specs
 Ability: Protosynthesis
 Tera Type: Fairy
 EVs: 252 SpA / 4 SpD / 252 Spe
@@ -2143,7 +2143,7 @@ Calm Nature
 - Stealth Rock
 - Protect
 
-Venusaur @ Life Orb
+Venusaur @ Focus Sash
 Ability: Chlorophyll
 Tera Type: Grass
 EVs: 252 SpA / 4 SpD / 252 Spe
