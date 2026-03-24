@@ -3,7 +3,9 @@ Inspect the actual cell layout of tabs the bot reads/writes.
 Check whether they have flat header rows or visual templates.
 Run: py -3 scripts/inspect_writable_tabs.py
 """
-import sys, io
+# ruff: noqa: E401, E402, F841
+import sys
+import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from pathlib import Path

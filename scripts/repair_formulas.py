@@ -10,7 +10,9 @@ Fixes applied:
 
 Run: py -3 scripts/repair_formulas.py
 """
-import sys, io
+# ruff: noqa: E401, E402, F841
+import sys
+import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from pathlib import Path
@@ -69,7 +71,7 @@ def main() -> None:
         bt2_fixed = bt2_formula.replace("$BH$2:$BH$353", "$BH$2:$BH")
         set_formula(data, "BT2", bt2_fixed)
     else:
-        print(f"  WARNING: Expected pattern not found in BT2. Skipping.")
+        print("  WARNING: Expected pattern not found in BT2. Skipping.")
         print(f"  Full formula: {bt2_formula}")
 
     # ── Fix 2: BU2 (deaths) ──────────────────────────────────
@@ -81,7 +83,7 @@ def main() -> None:
         bu2_fixed = bu2_formula.replace("$BI$2:$BI$353", "$BI$2:$BI")
         set_formula(data, "BU2", bu2_fixed)
     else:
-        print(f"  WARNING: Expected pattern not found in BU2. Skipping.")
+        print("  WARNING: Expected pattern not found in BU2. Skipping.")
         print(f"  Full formula: {bu2_formula}")
 
     # ── Check Pool B equivalent (CG2/CH2 or similar) ─────────

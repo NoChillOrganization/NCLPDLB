@@ -216,8 +216,7 @@ def train_browser(
         )
 
     try:
-        from stable_baselines3 import PPO
-        from stable_baselines3.common.buffers import ReplayBuffer
+        from stable_baselines3 import PPO  # noqa: F401
         SB3_OK = True
     except ImportError:
         SB3_OK = False

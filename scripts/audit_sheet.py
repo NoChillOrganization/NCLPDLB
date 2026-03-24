@@ -33,7 +33,7 @@ def main() -> None:
 
     creds = Credentials.from_service_account_file(str(CREDS_FILE), scopes=SCOPES)
     gc = gspread.authorize(creds)
-    print(f"Connected to Google Sheets API")
+    print("Connected to Google Sheets API")
 
     spreadsheet = gc.open_by_key(SPREADSHEET_ID)
     print(f"\nSpreadsheet: '{spreadsheet.title}'")

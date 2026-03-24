@@ -11,7 +11,10 @@ Fix:
 
 Run: py -3 scripts/fix_p5_na.py
 """
-import sys, io, time
+# ruff: noqa: E401, E402, F841
+import sys
+import io
+import time
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from pathlib import Path
@@ -91,7 +94,7 @@ def main() -> None:
         elif current_val == "#N/A":
             # Formula is different but still producing #N/A — inspect and fix
             print(f"  '{tab_name}'!P5 = #N/A with unexpected formula: {current[:120]}")
-            print(f"    → Wrapping with IFERROR anyway")
+            print("    → Wrapping with IFERROR anyway")
             wrapped = f"=IFERROR({current.lstrip('=')},\"\")" if current.startswith("=") else current
             set_formula(ws, "P5", wrapped)
             fixed.append(tab_name)

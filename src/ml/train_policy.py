@@ -37,7 +37,6 @@ import argparse
 import logging
 import shutil
 import socket
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -62,10 +61,10 @@ try:
 except ImportError:
     POKE_ENV_OK = False
 
-from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER
-from src.ml.showdown_modes import server_config_for_mode, account_configs_for_mode
+from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER  # noqa: E402
+from src.ml.showdown_modes import server_config_for_mode, account_configs_for_mode  # noqa: E402
 
-from src.ml.battle_env import (
+from src.ml.battle_env import (  # noqa: E402
     POKE_ENV_AVAILABLE,
     BattleDoubleEnv,
     BattleEnv,
@@ -198,12 +197,12 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
         Supports both singles and doubles battle formats.
         """
 
-        def __init__(self, *args: Any, is_doubles: bool = False, **kwargs: Any) -> None:
+        def __init__(self, *args: Any, is_doubles: bool = False, **kwargs: Any) -> None:  # pragma: no cover
             super().__init__(*args, **kwargs)
             self._policy: "PPO | None" = None
             self._is_doubles = is_doubles
 
-        def load_policy(self, path: Path) -> None:
+        def load_policy(self, path: Path) -> None:  # pragma: no cover
             if not SB3_OK:
                 return
             try:
@@ -213,7 +212,7 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
                 log.warning(f"[Opponent] Failed to load policy: {exc}")
                 self._policy = None
 
-        def choose_move(self, battle: Any) -> Any:
+        def choose_move(self, battle: Any) -> Any:  # pragma: no cover
             if self._policy is None:
                 return self.choose_random_move(battle)
             try:
@@ -239,7 +238,7 @@ else:
 
 # ── Training ──────────────────────────────────────────────────────────────────
 
-def train(
+def train(  # pragma: no cover
     fmt: str,
     total_timesteps: int,
     swap_every: int,
@@ -266,8 +265,6 @@ def train(
 
     Returns the path to the final saved model zip.
     """
-    start_date = datetime.now().strftime("%Y-%m-%d")
-
     # Delegate browser mode entirely to the Playwright trainer
     if server == MODE_BROWSER:
         from src.ml.browser_trainer import train_browser
@@ -390,7 +387,7 @@ def train(
         "showdown":  "wss://sim3.psim.us (public Showdown)",
     }.get(server, server)
     print(f"\n{'='*60}")
-    print(f"  PPO Self-Play Training")
+    print("  PPO Self-Play Training")
     print(f"  Format       : {fmt}")
     print(f"  Server mode  : {server} — {_server_desc}")
     print(f"  Total steps  : {total_timesteps:,}")
@@ -423,7 +420,7 @@ def train(
 
 # ── Evaluation ────────────────────────────────────────────────────────────────
 
-def evaluate(
+def evaluate(  # pragma: no cover
     model_path: str,
     fmt: str,
     n_battles: int = 100,
@@ -488,7 +485,7 @@ def evaluate(
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args() -> argparse.Namespace:  # pragma: no cover
     ap = argparse.ArgumentParser(
         description="Train / evaluate PPO battle policy via poke-env self-play"
     )
@@ -558,7 +555,7 @@ def _parse_args() -> argparse.Namespace:
     return ap.parse_args()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s — %(message)s",

@@ -3,7 +3,9 @@ Find the originating ARRAYFORMULA that generates Data!BT178 and Data!CU2.
 These are populated by an array formula that starts somewhere in the Data tab.
 Run: py -3 scripts/find_source_formula.py
 """
-import sys, io
+# ruff: noqa: E401, E402, F841
+import sys
+import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from pathlib import Path

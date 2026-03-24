@@ -132,11 +132,16 @@ class Pokemon(BaseModel):
     @property
     def speed_tier(self) -> str:
         spe = self.base_stats.spe
-        if spe >= 130: return "Hyper Fast (130+)"
-        if spe >= 110: return "Very Fast (110-129)"
-        if spe >= 90:  return "Fast (90-109)"
-        if spe >= 70:  return "Average (70-89)"
-        if spe >= 50:  return "Slow (50-69)"
+        if spe >= 130:
+            return "Hyper Fast (130+)"
+        if spe >= 110:
+            return "Very Fast (110-129)"
+        if spe >= 90:
+            return "Fast (90-109)"
+        if spe >= 70:
+            return "Average (70-89)"
+        if spe >= 50:
+            return "Slow (50-69)"
         return "Very Slow (<50)"
 
 

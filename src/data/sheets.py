@@ -41,7 +41,8 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-UTC_NOW = lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+def UTC_NOW() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
 # ── Tab names (exact Unicode match to spreadsheet) ─────────────────────────────

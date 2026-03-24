@@ -2,7 +2,9 @@
 Inspect the #REF! cells in the Data tab to understand the broken formulas.
 Run: py -3 scripts/inspect_data_errors.py
 """
-import sys, io
+# ruff: noqa: E401, E402, F841
+import sys
+import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from pathlib import Path

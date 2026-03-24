@@ -3,7 +3,9 @@ Check columns BE-BH in the Data tab (the SUMIF source columns).
 Also check for any #REF! values in those helper columns.
 Run: py -3 scripts/check_be_bh.py
 """
-import sys, io
+# ruff: noqa: E401, E402, F841
+import sys
+import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from pathlib import Path

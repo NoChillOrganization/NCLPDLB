@@ -3,7 +3,9 @@ Investigate and fix the #REF! error in the MVP Race tab.
 Also scan all tabs for any formula errors.
 Run: py -3 scripts/fix_ref_error.py
 """
-import sys, io
+# ruff: noqa: E401, E402, F841
+import sys
+import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from pathlib import Path
@@ -67,7 +69,7 @@ def main() -> None:
     try:
         # Get raw formulas by specifying value_render_option
         result = mvp.spreadsheet.values_get(
-            f"'MVP Race'!A6:Z6",
+            "'MVP Race'!A6:Z6",
             params={"valueRenderOption": "FORMULA"}
         )
         print(f"  Row 6 formulas: {result.get('values', [])}")

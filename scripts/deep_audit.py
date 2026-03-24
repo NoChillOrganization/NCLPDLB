@@ -57,7 +57,7 @@ def main() -> None:
                 "sample": vals[:10],
             }
         except gspread.WorksheetNotFound:
-            print(f"  NOT FOUND")
+            print("  NOT FOUND")
             results[tab] = {"error": "not found"}
 
     out = Path(__file__).parent / "deep_audit.json"

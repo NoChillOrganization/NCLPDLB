@@ -141,14 +141,11 @@ class AdminCog(commands.Cog, name="Admin"):
             git_out = (stdout or b"").decode(errors="replace").strip()
             ok = proc.returncode == 0
             lines.append(f"{'✅' if ok else '❌'} **git pull**\n```\n{git_out}\n```")
-            already_up_to_date = "Already up to date" in git_out
         except asyncio.TimeoutError:
             lines.append("❌ **git pull** timed out after 30 s")
-            already_up_to_date = False
             ok = False
         except Exception as exc:
             lines.append(f"❌ **git pull** failed: `{exc}`")
-            already_up_to_date = False
             ok = False
 
         # ── 2. Reload cogs ──────────────────────────────────────

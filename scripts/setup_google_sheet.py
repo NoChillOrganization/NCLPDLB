@@ -38,7 +38,6 @@ except Exception:
     pass  # Best-effort; let auth fail naturally if unreachable
 
 import gspread
-from gspread.utils import rowcol_to_a1
 from google.oauth2.service_account import Credentials
 from src.config import settings
 from src.data.sheets import Tab

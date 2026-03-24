@@ -3,7 +3,9 @@ Find the root cause of the #REF! errors in the Data tab.
 Gets a wider context around broken cells to find the originating formula.
 Run: py -3 scripts/find_root_errors.py
 """
-import sys, io
+# ruff: noqa: E401, E402, F841
+import sys
+import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from pathlib import Path

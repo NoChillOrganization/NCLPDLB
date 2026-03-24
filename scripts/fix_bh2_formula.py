@@ -13,6 +13,7 @@ Fix:
 
 Run: py -3 scripts/fix_bh2_formula.py
 """
+# ruff: noqa: E401, E402, F841
 import sys
 import io
 import time
