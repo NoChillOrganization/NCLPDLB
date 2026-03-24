@@ -4,6 +4,11 @@ No external storage required; Discord CDN is used directly.
 
 Note: Discord CDN URLs may expire after some time. For permanent storage,
 users should share YouTube/Twitch links instead.
+
+Exports:
+    VideoService       — async service for recording match video metadata.
+    VideoUploadResult  — dataclass returned by upload_match_video.
+    MAX_FILE_SIZE_MB   — enforcement ceiling (100 MB by default).
 """
 from __future__ import annotations
 

@@ -1,5 +1,8 @@
 """
 Notification Service — DM players for draft turns, match reminders, trade offers.
+
+All public methods return True on successful delivery and False on any failure
+(Forbidden, NotFound, or network error) so callers never need to catch exceptions.
 """
 from __future__ import annotations
 
