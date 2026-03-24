@@ -413,9 +413,8 @@ def train(
         log.info("Training interrupted by user.")
 
     # ── Save final model to results dir with date-stamped name ─────
-    _results_dir = results_dir if results_dir is not None else Path(DEFAULT_RESULTS_DIR)
-    _results_dir.mkdir(parents=True, exist_ok=True)
-    final_path = _results_dir / f"{fmt}_{start_date}.zip"
+    # CI expects save_dir/fmt/final_model.zip
+    final_path = fmt_save_dir / "final_model.zip"
     model.save(str(final_path))
     print(f"\nFinal model saved to {final_path}")
 

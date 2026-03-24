@@ -3009,15 +3009,15 @@ Jolly Nature
 - Swords Dance
 - Rapid Spin
 
-Sandslash @ Life Orb
-Ability: Sand Rush
-Tera Type: Ground
+Beartic @ Choice Band
+Ability: Swift Swim
+Tera Type: Ice
 EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Earthquake
-- Iron Head
-- Rapid Spin
-- Swords Dance
+Adamant Nature
+- Icicle Crash
+- Superpower
+- Liquidation
+- Aqua Jet
 
 Qwilfish-Hisui @ Black Sludge
 Ability: Poison Point
@@ -4700,7 +4700,7 @@ Bold Nature
 - Surf
 - Wish
 - Protect
-- Scald
+- Ice Beam
 
 Jolteon @ Choice Specs
 Ability: Volt Absorb
@@ -4750,7 +4750,7 @@ Calm Nature
 - Moonblast
 - Synthesis
 - Wish
-- Aromatherapy""",
+- Protect""",
 
     # Team 2 — Trick Room Slow Offense
     """\
@@ -4832,15 +4832,15 @@ Jolly Nature
 - Swords Dance
 - Rapid Spin
 
-Sandslash @ Life Orb
-Ability: Sand Rush
-Tera Type: Ground
+Beartic @ Choice Band
+Ability: Swift Swim
+Tera Type: Ice
 EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Earthquake
-- Iron Head
-- Rapid Spin
-- Swords Dance
+Adamant Nature
+- Icicle Crash
+- Superpower
+- Liquidation
+- Aqua Jet
 
 Qwilfish-Hisui @ Black Sludge
 Ability: Poison Point
@@ -5153,7 +5153,7 @@ Jolly Nature
 
     # Team 2 — Castform Weather
     """\
-Castform-Rainy @ Never-Melt Ice
+Castform @ Never-Melt Ice
 Ability: Forecast
 Tera Type: Water
 EVs: 252 SpA / 4 SpD / 252 Spe
@@ -5171,7 +5171,7 @@ Calm Nature
 - Sludge Bomb
 - Yawn
 - Recover
-- Toxic
+- Encore
 
 Chimecho @ Leftovers
 Ability: Levitate
@@ -5179,16 +5179,16 @@ Tera Type: Psychic
 EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 - Psychic
-- Heal Bell
-- Wish
 - Protect
+- Wish
+- Disarming Voice
 
 Delcatty @ Choice Scarf
 Ability: Normalize
 Tera Type: Normal
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
-- Return
+- Body Slam
 - Fake Out
 - Knock Off
 - Thunder Wave
@@ -5200,8 +5200,8 @@ EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Thunderbolt
 - Nasty Plot
-- Signal Beam
-- Hidden Power Ice
+- Grass Knot
+- Shadow Ball
 
 Minun @ Life Orb
 Ability: Minus
@@ -5210,8 +5210,8 @@ EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Thunderbolt
 - Nasty Plot
-- Signal Beam
-- Hidden Power Ice""",
+- Grass Knot
+- Shadow Ball""",
 
     # Team 3 — Spinda Confusion Spam
     """\

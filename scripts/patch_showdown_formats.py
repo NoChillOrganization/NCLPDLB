@@ -10,9 +10,8 @@ Formats patched:
   Singles tiers : Ubers, UU, RU, NU, PU, ZU, LC
   Doubles tiers : Doubles Ubers, Doubles UU
 
-Strategy: replace each problem format's banlist with [] and replace
-cascaded ruleset references (e.g. "[Gen 9] UU") with a flat minimal ruleset
-so no bans are inherited from parent tiers.
+Strategy: replace each problem format's ruleset AND banlist with safe
+minimal values so no bans or Obtainable checks are inherited.
 
 Usage:
     python3 scripts/patch_showdown_formats.py /tmp/showdown/config/formats.ts
@@ -28,9 +27,12 @@ SAFE_RULES = (
 
 PATCHES: list[tuple[str, str, str]] = [
     (
-        "Ubers banlist",
-        r'(\{\s*name:\s*"\[Gen 9\] Ubers"[\s\S]*?)banlist:\s*\[[^\]]*\]',
-        r'\1banlist: []',
+        "Ubers ruleset+banlist",
+        (
+            r'(\{\s*name:\s*"\[Gen 9\] Ubers"\s*,\s*mod:\s*\'gen9\'\s*,\s*)'
+            r'ruleset:\s*\[[\s\S]*?\]\s*,\s*banlist:\s*\[[\s\S]*?\]'
+        ),
+        r'\1ruleset: ' + SAFE_RULES + r', banlist: []',
     ),
     (
         "UU ruleset+banlist",
