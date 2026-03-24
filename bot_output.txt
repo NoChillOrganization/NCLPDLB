@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "F:\Claude Code\projects\pokemon-draft-bot\NCLPDLB\src\bot\main.py", line 20, in <module>
+    from src.config import settings
+  File "F:\Claude Code\projects\pokemon-draft-bot\NCLPDLB\src\config.py", line 82, in <module>
+    settings = Settings()
+               ^^^^^^^^^^
+  File "F:\Claude Code\projects\pokemon-draft-bot\.venv\Lib\site-packages\pydantic_settings\main.py", line 242, in __init__
+    super().__init__(**__pydantic_self__.__class__._settings_build_values(sources, init_kwargs))
+  File "F:\Claude Code\projects\pokemon-draft-bot\.venv\Lib\site-packages\pydantic\main.py", line 250, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 3 validation errors for Settings
+discord_token
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+discord_client_id
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+google_sheets_spreadsheet_id
+  Field required [type=missing, input_value={}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
