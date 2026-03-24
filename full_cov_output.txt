@@ -645,4 +645,411 @@ tests/unit/test_team_view.py::test_export_button_sends_showdown_text PASSED [ 83
 tests/unit/test_train_all.py::TestModelDone::test_returns_false_when_no_files PASSED [ 83%]
 tests/unit/test_train_all.py::TestModelDone::test_returns_true_when_dated_zip_exists PASSED [ 83%]
 tests/unit/test_train_all.py::TestModelDone::test_returns_false_for_different_format PASSED [ 83%]
-tests/unit/test_train_all.py::TestModelDone::test_r
+tests/unit/test_train_all.py::TestModelDone::test_returns_false_for_non_zip PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_returns_true_for_multiple_dated_zips PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_nonexistent_dir_returns_false PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_partial_format_name_no_match PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_returns_none_when_no_latest PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_returns_path_when_latest_exists PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_returns_path_object PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_returns_none_when_dir_missing PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_correct_path_structure PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_checkpoint_zip_not_latest_not_returned PASSED [ 84%]
+tests/unit/test_train_all.py::TestTrainingMap::test_is_dict PASSED       [ 84%]
+tests/unit/test_train_all.py::TestTrainingMap::test_all_values_are_tuples PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_random_battle_has_no_teams PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_smogon_singles_have_team_format PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_vgc_format_present PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_all_train_fmts_are_str_or_none PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_all_team_fmts_are_str_or_none PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_contains_gen7_and_gen6 PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_doubles_formats_present PASSED [ 85%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_output_shape PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_all_zeros_input PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_same_team_full_overlap PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_different_teams_no_overlap PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_dtype_float32 PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_large_vocab PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_single_row PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_partial_overlap PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_missing_data_returns_empty PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_too_few_samples_returns_empty PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_trains_and_returns_metrics PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_saves_model_and_metrics_files PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_saved_model_is_loadable PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_no_vocab_file_uses_default_512 PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_metrics_json_has_no_model_key PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_no_model_raises_file_not_found PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_returns_probability_dict PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_probabilities_sum_to_one PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_probabilities_in_range PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_short_team_padded_with_zeros PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_no_vocab_file PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_unknown_species_maps_to_zero PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_no_data_returns_empty PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_trains_combined_model PASSED [ 89%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_saves_combined_files PASSED [ 89%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_combined_metrics_has_no_model PASSED [ 89%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_skips_formats_with_insufficient_data PASSED [ 89%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_global_vocab_written_correctly PASSED [ 89%]
+tests/unit/test_train_policy.py::TestCheckShowdownServer::test_reachable_does_not_raise PASSED [ 89%]
+tests/unit/test_train_policy.py::TestCheckShowdownServer::test_unreachable_raises_runtime_error PASSED [ 89%]
+tests/unit/test_train_policy.py::TestCheckShowdownServer::test_error_message_contains_port PASSED [ 90%]
+tests/unit/test_train_policy.py::TestCheckShowdownServerIfLocal::test_localhost_mode_calls_check PASSED [ 90%]
+tests/unit/test_train_policy.py::TestCheckShowdownServerIfLocal::test_non_localhost_skips_check PASSED [ 90%]
+tests/unit/test_train_policy.py::TestCheckShowdownServerIfLocal::test_browser_mode_skips_check PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_doubles_formats_is_set PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_doubles_formats_contains_vgc PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_doubles_formats_contains_smogon_doubles PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_ppo_hyperparams_has_required_keys PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_ppo_hyperparams_types PASSED [ 91%]
+tests/unit/test_train_policy.py::TestConstants::test_ppo_net_arch PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_init_sets_attributes PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_on_step_returns_true PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_on_step_triggers_swap_when_threshold_reached PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_on_step_no_swap_when_below_threshold PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_increments_count PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_calls_model_save PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_calls_opponent_load PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_copies_to_latest PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_verbose_logging PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_last_swap_updated_after_swap PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_multiple_swaps_on_step PASSED [ 92%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_showdown_offline_explicit PASSED [ 92%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_showdown_offline_connection_refused PASSED [ 92%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_corrupt_checkpoint_badzipfile PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_corrupt_checkpoint_bad_magic PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_missing_dep_numpy PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_missing_dep_stable_baselines3 PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_wrong_python PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_no_teams_warning PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_oom_error PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_shape_mismatch PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_clean_output_returns_empty PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_deduplicates_same_type PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_multi_match_returns_multiple_types PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestParseTimestepProgress::test_extracts_timestep_from_sb3_log_line PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestParseTimestepProgress::test_returns_none_for_non_matching_line PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestParseTimestepProgress::test_returns_none_for_empty_string PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestParseTimestepProgress::test_handles_large_timestep PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_zero_percent PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_full_percent PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_fifty_percent PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_total_zero_returns_zero_bar PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_over_total_clamps_to_100 PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestIsCorruptZip::test_valid_zip_returns_false PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestIsCorruptZip::test_empty_file_returns_true PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestIsCorruptZip::test_not_a_zip_returns_true PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_showdown_unreachable_adds_offline_issue PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_showdown_reachable_no_offline_issue PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_non_localhost_mode_skips_showdown_check PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_corrupt_checkpoint_detected PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_missing_dep_detected PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_clean_environment_returns_empty PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_corrupt_checkpoint_calls_fix PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_shape_mismatch_calls_corrupt_fix PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_missing_dep_calls_install PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_missing_dep_no_package_returns_false PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_unknown_type_returns_false PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyAllFixes::test_skips_non_fixable PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyAllFixes::test_applies_fixable_error PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyAllFixes::test_mixed_errors PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestCanImport::test_success_returns_true PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestCanImport::test_failure_returns_false PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestCanImport::test_exception_returns_false PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixCorruptCheckpoints::test_deletes_zips_and_reports PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixCorruptCheckpoints::test_no_zips_returns_scratch_message PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixCorruptCheckpoints::test_unlink_exception_logs_warning PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixInstallDep::test_successful_install PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixInstallDep::test_failed_install PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixInstallDep::test_timeout_returns_false PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixInstallDep::test_generic_exception_returns_false PASSED [ 99%]
+tests/unit/test_training_doctor.py::TestPreflightWriteError::test_write_error_adds_issue PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_rejects_oversized_file PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_accepts_max_size_file PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_records_discord_cdn_url PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_saves_metadata_to_sheets PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_returns_video_id PASSED    [ 99%]
+tests/unit/test_video_service.py::test_upload_result_dataclass_defaults PASSED [100%]
+
+================================== FAILURES ===================================
+______ TestFetchSearchPage.test_returns_list_of_replay_metas_on_success _______
+tests\unit\test_ml_utils.py:359: in test_returns_list_of_replay_metas_on_success
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+________ TestFetchSearchPage.test_returns_empty_list_on_non_200_status ________
+tests\unit\test_ml_utils.py:378: in test_returns_empty_list_on_non_200_status
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+__________ TestFetchSearchPage.test_returns_empty_list_on_exception ___________
+tests\unit\test_ml_utils.py:395: in test_returns_empty_list_on_exception
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+____ TestFetchSearchPage.test_returns_empty_list_when_response_is_not_list ____
+tests\unit\test_ml_utils.py:413: in test_returns_empty_list_when_response_is_not_list
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______________ TestFetchSearchPage.test_filters_by_min_rating ________________
+tests\unit\test_ml_utils.py:434: in test_filters_by_min_rating
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______________ TestFetchReplay.test_skips_already_seen_replay ________________
+tests\unit\test_ml_utils.py:456: in test_skips_already_seen_replay
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+____________ TestFetchReplay.test_returns_false_on_non_200_status _____________
+tests\unit\test_ml_utils.py:476: in test_returns_false_on_non_200_status
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______________ TestFetchReplay.test_returns_false_on_exception _______________
+tests\unit\test_ml_utils.py:496: in test_returns_false_on_exception
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______ TestFetchReplay.test_success_writes_json_file_and_returns_true ________
+tests\unit\test_ml_utils.py:517: in test_success_writes_json_file_and_returns_true
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+______________ TestFetchReplay.test_success_adds_id_to_seen_set _______________
+tests\unit\test_ml_utils.py:545: in test_success_adds_id_to_seen_set
+    asyncio.get_event_loop().run_until_complete(run())
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_________ TestFetchReplay.test_success_sets_default_format_and_rating _________
+tests\unit\test_ml_utils.py:568: in test_success_sets_default_format_and_rating
+    asyncio.get_event_loop().run_until_complete(run())
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______ TestScrape.test_scrape_downloads_new_replays_and_returns_count ________
+tests\unit\test_ml_utils.py:598: in test_scrape_downloads_new_replays_and_returns_count
+    count = asyncio.get_event_loop().run_until_complete(run())
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+___________ TestScrape.test_scrape_skips_page_of_already_seen_metas ___________
+tests\unit\test_ml_utils.py:618: in test_scrape_skips_page_of_already_seen_metas
+    count = asyncio.get_event_loop().run_until_complete(run())
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+______________ TestScrape.test_scrape_stops_early_on_empty_page _______________
+tests\unit\test_ml_utils.py:635: in test_scrape_stops_early_on_empty_page
+    count = asyncio.get_event_loop().run_until_complete(run())
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+________________________ test_current_player_id_linear ________________________
+tests\unit\test_models.py:147: in test_current_player_id_linear
+    format=DraftFormat.LINEAR, picks=["pick1"]
+           ^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'DraftFormat' has no attribute 'LINEAR'
+_______________________ test_current_player_id_overflow _______________________
+tests\unit\test_models.py:158: in test_current_player_id_overflow
+    format=DraftFormat.LINEAR, picks=["p1", "p2"]
+           ^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'DraftFormat' has no attribute 'LINEAR'
+_________________________ test_build_embed_empty_team _________________________
+tests\unit\test_team_view.py:26: in test_build_embed_empty_team
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+____________________ test_build_embed_empty_team_no_fields ____________________
+tests\unit\test_team_view.py:35: in test_build_embed_empty_team_no_fields
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+_______________________ test_build_embed_single_pokemon _______________________
+tests\unit\test_team_view.py:48: in test_build_embed_single_pokemon
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+______________________ test_build_embed_multiple_pokemon ______________________
+tests\unit\test_team_view.py:65: in test_build_embed_multiple_pokemon
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+_____________________ test_build_embed_footer_shows_count _____________________
+tests\unit\test_team_view.py:83: in test_build_embed_footer_shows_count
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+____________________ test_build_embed_type_coverage_field _____________________
+tests\unit\test_team_view.py:98: in test_build_embed_type_coverage_field
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+______________________ test_build_embed_shows_tier_badge ______________________
+tests\unit\test_team_view.py:113: in test_build_embed_shows_tier_badge
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+____________________ test_build_embed_title_has_owner_name ____________________
+tests\unit\test_team_view.py:122: in test_build_embed_title_has_owner_name
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+============================== warnings summary ===============================
+tests/unit/test_draft_service.py::test_timer_fires_and_starts_next_player_timer
+  C:\Program Files\Python314\Lib\asyncio\base_events.py:649: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    sys.set_asyncgen_hooks(
+  
+  Object allocated at:
+    File "C:\Program Files\Python314\Lib\unittest\mock.py", line 1179
+      return self._execute_mock_call(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.3-final-0 _______________
+
+Name                                   Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------
+src\bot\cogs\admin.py                    408    222    46%   24-26, 127-178, 391-553, 568-722
+src\bot\cogs\misc.py                      33      0   100%
+src\bot\cogs\team.py                     135      0   100%
+src\bot\constants.py                       1      0   100%
+src\bot\main.py                           81      4    95%   85, 109, 140, 165
+src\bot\views\team_import_view.py         30      0   100%
+src\bot\views\team_view.py                39     12    69%   18-38
+src\config.py                             36      0   100%
+src\data\models.py                       215      0   100%
+src\data\pokeapi.py                       49      0   100%
+src\data\sheets.py                       312      1    99%   250
+src\ml\__init__.py                         0      0   100%
+src\ml\battle_env.py                     204      0   100%
+src\ml\browser_trainer.py                 11      0   100%
+src\ml\feature_extractor.py              163      0   100%
+src\ml\models\__init__.py                  0      0   100%
+src\ml\replay_parser.py                  252      0   100%
+src\ml\replay_scraper.py                 108     58    46%   90-107, 118-141, 150-179
+src\ml\showdown_modes.py                  22      0   100%
+src\ml\showdown_player.py                 48      0   100%
+src\ml\teambuilder.py                     14      0   100%
+src\ml\teams.py                           30      0   100%
+src\ml\train_all.py                       18      0   100%
+src\ml\train_matchup.py                  139      0   100%
+src\ml\train_policy.py                    64      0   100%
+src\ml\training_doctor.py                129      0   100%
+src\services\analytics_service.py         86      0   100%
+src\services\battle_sim.py               132      0   100%
+src\services\draft_service.py            196      0   100%
+src\services\elo_service.py               60      0   100%
+src\services\notification_service.py      39      0   100%
+src\services\team_service.py             164      0   100%
+src\services\video_service.py             26      0   100%
+--------------------------------------------------------------------
+TOTAL                                   3244    297    91%
+=========================== short test summary info ===========================
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_list_of_replay_metas_on_success
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_empty_list_on_non_200_status
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_empty_list_on_exception
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_empty_list_when_response_is_not_list
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_filters_by_min_rating
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_skips_already_seen_replay
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_returns_false_on_non_200_status
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_returns_false_on_exception
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_success_writes_json_file_and_returns_true
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_success_adds_id_to_seen_set
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_success_sets_default_format_and_rating
+FAILED tests/unit/test_ml_utils.py::TestScrape::test_scrape_downloads_new_replays_and_returns_count
+FAILED tests/unit/test_ml_utils.py::TestScrape::test_scrape_skips_page_of_already_seen_metas
+FAILED tests/unit/test_ml_utils.py::TestScrape::test_scrape_stops_early_on_empty_page
+FAILED tests/unit/test_models.py::test_current_player_id_linear - AttributeEr...
+FAILED tests/unit/test_models.py::test_current_player_id_overflow - Attribute...
+FAILED tests/unit/test_team_view.py::test_build_embed_empty_team - RuntimeErr...
+FAILED tests/unit/test_team_view.py::test_build_embed_empty_team_no_fields - ...
+FAILED tests/unit/test_team_view.py::test_build_embed_single_pokemon - Runtim...
+FAILED tests/unit/test_team_view.py::test_build_embed_multiple_pokemon - Runt...
+FAILED tests/unit/test_team_view.py::test_build_embed_footer_shows_count - Ru...
+FAILED tests/unit/test_team_view.py::test_build_embed_type_coverage_field - R...
+FAILED tests/unit/test_team_view.py::test_build_embed_shows_tier_badge - Runt...
+FAILED tests/unit/test_team_view.py::test_build_embed_title_has_owner_name - ...
+============ 24 failed, 736 passed, 3 skipped, 1 warning in 55.21s ============

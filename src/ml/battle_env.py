@@ -51,15 +51,17 @@ log = logging.getLogger(__name__)
 
 TEAM_SIZE   = 6
 N_MOVES     = 4
-MOVE_FEATS  = 4    # base_power, accuracy, type_id, priority
-BOOST_STATS = 6    # atk, def, spa, spd, spe, accuracy
+MOVE_FEATS  = 5    # base_power, accuracy, type_id, priority, effectiveness
+STATUS_DIM  = 1
+BOOST_DIM   = 6
+FIELD_DIM   = 4
 
-# Active mon: [species_id, hp, move×(4×4), status, 6×boosts] = 2 + 16 + 1 + 6 = 25
-# Opponent:   [species_id, hp, status]                         = 3
-# My team HP: [6×hp_pct]                                       = 6
-# Opp team HP:[6×hp_pct]                                       = 6
-# Field:      [weather, terrain, trick_room, turn]             = 4
-OBS_DIM = 25 + 3 + 6 + 6 + 4   # = 44
+# Active mon:    [species_id, hp, 4×(5-feats), status, 6×boosts] = 2 + 20 + 1 + 6 = 29
+# Opp active:    [species_id, hp, status]     = 3
+# My team HP:    6
+# Opp team HP:   6
+# Field:         4
+OBS_DIM = 29 + 3 + 6 + 6 + 4   # = 48
 
 # gen9 action space: 6 switches + 4 moves × (4 gimmicks + 1 none) = 26
 N_ACTIONS_GEN9 = 26
@@ -101,18 +103,26 @@ except Exception:  # pragma: no cover
 
 # ── Observation builder ───────────────────────────────────────────────────────
 
-def _move_features(move: "Move | None") -> list[float]:
-    """Extract 4-float feature vector for one move slot."""
+def _move_features(move: "Move | None", target: "Pokemon | None" = None) -> list[float]:
+    """Extract 5-float feature vector for one move slot."""
     if move is None:
-        return [0.0, 0.0, 0.0, 0.0]
+        return [0.0, 0.0, 0.0, 0.0, 0.5]
+    
     bp = min(getattr(move, "base_power", 0) or 0, 250) / 250.0
     acc = (getattr(move, "accuracy", 100) or 100) / 100.0
     type_id = TYPE_IDS.get(str(getattr(move, "type", "")).lower().split(".")[-1], 0) / 20.0
+    
     try:
         prio = (move.priority + 5) / 10.0
     except Exception:  # pragma: no cover
         prio = 0.5  # neutral priority
-    return [bp, acc, type_id, prio]
+    
+    eff = 0.5  # Neutral default
+    if target and move:
+        from src.ml.type_chart import get_type_effectiveness_float
+        eff = get_type_effectiveness_float(move, target)
+        
+    return [bp, acc, type_id, prio, eff]
 
 
 def _pokemon_hp(mon: "Pokemon | None") -> float:
@@ -138,9 +148,10 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
         idx += 1
 
         moves = list(battle.available_moves)
+        opp_active = battle.opponent_active_pokemon
         for i in range(N_MOVES):
             move = moves[i] if i < len(moves) else None
-            feats = _move_features(move)
+            feats = _move_features(move, opp_active)
             obs[idx:idx + MOVE_FEATS] = feats
             idx += MOVE_FEATS
 
@@ -152,7 +163,8 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
             obs[idx] = (boosts.get(stat, 0) + 6) / 12.0
             idx += 1
     else:
-        idx += 25
+        # Default empty active state
+        idx += 29
 
     # ── Opponent active ────────────────────────────────────────────
     opp = battle.opponent_active_pokemon
