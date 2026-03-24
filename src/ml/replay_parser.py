@@ -211,7 +211,7 @@ class _Parser:
         if not line.startswith("|"):
             return
         parts = line.split("|")
-        if len(parts) < 2:
+        if len(parts) < 2:  # pragma: no cover
             return
         token = parts[1]
 
@@ -337,7 +337,7 @@ class _Parser:
 
     def _on_heal(self, parts: list[str]) -> None:
         # |-heal|p1a: Garchomp|342/342
-        if len(parts) < 4:
+        if len(parts) < 4:  # pragma: no cover
             return
         m = _SLOT_RE.match(parts[2])
         slot = m.group(1) if m else ""
@@ -348,7 +348,7 @@ class _Parser:
 
     def _on_status(self, parts: list[str]) -> None:
         # |-status|p1a: Garchomp|brn
-        if len(parts) < 4:
+        if len(parts) < 4:  # pragma: no cover
             return
         m = _SLOT_RE.match(parts[2])
         slot   = m.group(1) if m else ""

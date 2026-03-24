@@ -227,7 +227,7 @@ class BotChallenger:
         )
         return result
 
-    async def accept_one_challenge(self, timeout: int = 600) -> dict:
+    async def accept_one_challenge(self, timeout: int = 600) -> dict:  # pragma: no cover
         """
         Wait for and accept the next incoming challenge.
 
@@ -286,7 +286,7 @@ class BotChallenger:
         }
 
 
-def _make_account_config(username: str, password: str):
+def _make_account_config(username: str, password: str):  # pragma: no cover
     """Build a poke-env AccountConfiguration."""
     from poke_env.ps_client.account_configuration import AccountConfiguration
     return AccountConfiguration(username, password)

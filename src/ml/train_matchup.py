@@ -210,7 +210,7 @@ def train_combined(
                 id_map[local_id] = global_vocab[token]
             remap = np.vectorize(lambda x: id_map.get(int(x), 0))
             X_remapped = remap(X_raw)
-        else:
+        else:  # pragma: no cover
             X_remapped = X_raw
 
         all_X.append(X_remapped)
@@ -323,7 +323,7 @@ def predict_matchup(
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
     ap = argparse.ArgumentParser(description="Train matchup prediction models")

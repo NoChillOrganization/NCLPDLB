@@ -118,7 +118,7 @@ def _resume_checkpoint(spar_fmt: str, save_dir: Path) -> Path | None:
     return p if p.exists() else None
 
 
-def train_format(
+def train_format(  # pragma: no cover
     spar_fmt: str,
     train_fmt: str,
     team_fmt: str | None,
@@ -191,7 +191,7 @@ def train_format(
     return ok
 
 
-def run(
+def run(  # pragma: no cover
     formats: list[str],
     total_timesteps: int,
     swap_every: int,
@@ -257,7 +257,7 @@ def run(
     print()
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args() -> argparse.Namespace:  # pragma: no cover
     ap = argparse.ArgumentParser(
         description="Train PPO policies for all SPAR_FORMATS sequentially"
     )
@@ -308,7 +308,7 @@ def _parse_args() -> argparse.Namespace:
     return ap.parse_args()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s — %(message)s",

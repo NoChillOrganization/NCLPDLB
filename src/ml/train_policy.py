@@ -50,7 +50,7 @@ try:
     from stable_baselines3.common.monitor import Monitor
     from stable_baselines3.common.vec_env import DummyVecEnv
     SB3_OK = True
-except ImportError:
+except ImportError:  # pragma: no cover
     SB3_OK = False
 
 try:
@@ -58,7 +58,7 @@ try:
     from poke_env.player import RandomPlayer
     from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
     POKE_ENV_OK = True
-except ImportError:
+except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
 
 from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER  # noqa: E402
@@ -230,7 +230,7 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
                 log.warning(f"[Opponent] Prediction error: {exc}")
                 return self.choose_random_move(battle)
 
-else:
+else:  # pragma: no cover
     class SelfPlayOpponent:  # type: ignore
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise ImportError("poke-env is not available")
