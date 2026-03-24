@@ -29,9 +29,9 @@ progress:
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| 01 — Obs Expansion | ⬜ pending | No blockers. Run /gsd:plan-phase 1 |
-| 02 — Curriculum | ⬜ pending | Blocked on Phase 01 |
-| 03 — BC Pretrain | ⬜ pending | Blocked on Phase 01; needs research-phase before planning |
+| 01 — Obs Expansion | ✅ complete | Verified 100% test passing |
+| 02 — Curriculum | ⬜ pending | Ready for implementation |
+| 03 — BC Pretrain | ⬜ pending | Blocked on Phase 02; needs research-phase before planning |
 
 ---
 

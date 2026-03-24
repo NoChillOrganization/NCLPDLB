@@ -1,110 +1,42 @@
-Implement Phase 02 from GEMINI.md: Curriculum Opponent (MaxBasePowerPlayer).
+# Phase 02 — Curriculum Opponent Implementation
 
-Context:
-- Project: f:\Claude Code\projects\pokemon-draft-bot\NCLPDLB
-- Read GEMINI.md first — it has the full phase plan.
-- Phase 01 is already complete (OBS_DIM=48, 43 tests green, battle_env.py 100% coverage).
+Please implement Phase 02 based on our plan in `GEMINI.md`.
 
-Task: Modify src/ml/train_policy.py and tests/unit/test_train_policy.py.
+**Goal:** Use `MaxBasePowerPlayer` as the epoch-0 curriculum opponent instead of pure random.
+Graduate to self-play when agent achieves >=70% win-rate over a rolling 500-episode window.
 
-== Changes to src/ml/train_policy.py ==
+**Changes needed in `src/ml/train_policy.py`:**
 
-1. In the poke_env guard block (around line 58), add MaxBasePowerPlayer to the import:
-   FROM:  from poke_env.player import RandomPlayer
-   TO:    from poke_env.player import MaxBasePowerPlayer, RandomPlayer
+1. Add `MaxBasePowerPlayer` import in the `poke_env` guard block (line 58):
+   ```python
+   from poke_env.player import MaxBasePowerPlayer, RandomPlayer
+   ```
 
-2. Add a new CurriculumCallback(BaseCallback) class BELOW the existing SelfPlayCallback.
-   It must have:
-   - __init__(self, opponent_player, save_dir, swap_every, win_threshold=0.70, min_episodes=500, verbose=0)
-   - Fields: _phase = "warmup", _win_window = deque(maxlen=min_episodes), _last_swap = 0, _swap_count = 0
-   - _on_step(self) -> bool:
-       * For each info dict in self.locals["infos"] where "episode" key exists:
-           push (1 if info["episode"]["r"] > 0 else 0) into _win_window
-       * if _phase == "warmup" and len(_win_window) >= min_episodes:
-           win_rate = sum(_win_window) / len(_win_window)
-           if win_rate >= win_threshold: call self._graduate()
-       * if _phase == "selfplay" and num_timesteps - _last_swap >= swap_every:
-           call self._save_and_swap(); _last_swap = num_timesteps
-       * return True
-   - _graduate(self):
-       _swap_count += 1
-       Save model to save_dir/swap_{_swap_count:04d}.zip, copy to save_dir/latest.zip
-       Call opponent_player.load_policy(save_dir/"latest.zip")
-       _phase = "selfplay"; _last_swap = num_timesteps
-       Log graduation message
-   - _save_and_swap(self):
-       _swap_count += 1
-       Save model to save_dir/swap_{_swap_count:04d}.zip, copy to save_dir/latest.zip
-       Call opponent_player.load_policy(save_dir/"latest.zip")
-       Log swap message
+2. Add a `CurriculumCallback(BaseCallback)` class (new, below `SelfPlayCallback`):
+   - Fields: `opponent_player`, `save_dir`, `swap_every`, `win_threshold` (0.70), `min_episodes` (500)
+   - Rolling window: deque of last `min_episodes` episode outcomes (from `ep_info_buffer`)
+   - State machine: `_phase` in `{"warmup", "selfplay"}`
+   - `_on_step()`:
+     - Extract episode outcomes from `self.locals["infos"]` (reward > 0 = win)
+     - When `_phase == "warmup"` and window full and win_rate >= threshold -> call `_graduate()`
+     - When `_phase == "selfplay"` and `num_timesteps - _last_swap >= swap_every` -> call `_save_and_swap()`
+   - `_graduate()`: saves first checkpoint, loads it into `opponent_player`, logs graduation
+   - `_save_and_swap()`: same as current `SelfPlayCallback._save_and_swap()`
 
-3. Add a CurriculumOpponent(MaxBasePowerPlayer) class inside the POKE_ENV_OK guard block
-   (alongside SelfPlayOpponent). It must have:
-   - __init__(self, *args, is_doubles=False, **kwargs)  # pragma: no cover
-   - _policy: PPO | None = None
-   - _is_doubles: bool
-   - load_policy(self, path: Path) -> None  # pragma: no cover
-       Load PPO from path into self._policy (same try/except as SelfPlayOpponent)
-   - choose_move(self, battle) -> Any  # pragma: no cover
-       if self._policy is None: return super().choose_move(battle)   # MaxBasePower behaviour
-       else: use PPO obs/predict (same logic as SelfPlayOpponent.choose_move)
+3. Add `CurriculumOpponent(MaxBasePowerPlayer)` class (when `POKE_ENV_OK`):
+   - Has `load_policy(path)` method (loads PPO, graduates from max-base-power play to PPO play)
+   - Has `_policy: PPO | None = None`, `_is_doubles: bool`
+   - `choose_move()`: if `_policy` is None -> delegate to `MaxBasePowerPlayer.choose_move(battle)`;
+     else -> use PPO obs/predict same as current `SelfPlayOpponent.choose_move()`
 
-4. In train() (the pragma: no cover function):
-   - Replace:  opponent = SelfPlayOpponent(**opp_kwargs)
-     With:     opponent = CurriculumOpponent(**opp_kwargs)
-   - Replace the selfplay_cb block:
-       FROM:
-           selfplay_cb = SelfPlayCallback(
-               opponent_player=opponent,
-               save_dir=fmt_save_dir,
-               swap_every=swap_every,
-               verbose=1,
-           )
-       TO:
-           curriculum_cb = CurriculumCallback(
-               opponent_player=opponent,
-               save_dir=fmt_save_dir,
-               swap_every=swap_every,
-               verbose=1,
-           )
-   - Replace [checkpoint_cb, selfplay_cb] with [checkpoint_cb, curriculum_cb] in model.learn()
+4. In `train()`: replace `SelfPlayOpponent(...)` with `CurriculumOpponent(...)` and replace
+   `[checkpoint_cb, selfplay_cb]` callbacks with `[checkpoint_cb, curriculum_cb]`.
 
-   KEEP SelfPlayCallback as-is (it's exported and tested).
-   DO NOT change the train() function signature.
+**Tests to add/update in `tests/unit/test_train_policy.py`:**
+- `TestCurriculumCallback`: init, warmup->selfplay graduation, win-rate threshold, swap in selfplay phase
+- `TestCurriculumOpponent` (mock-based): `load_policy`, `choose_move` with/without policy
 
-== Changes to tests/unit/test_train_policy.py ==
-
-Add two new test classes at the bottom of the file:
-
-class TestCurriculumCallback:
-   - test_init_sets_defaults: check _phase=="warmup", _swap_count==0, _last_swap==0
-   - test_no_graduation_below_threshold: fill window with 60% wins → no graduation
-   - test_graduates_at_threshold: fill window with 70% wins → _phase becomes "selfplay", model.save called
-   - test_graduate_is_idempotent: once in selfplay phase, more wins don't re-graduate
-   - test_selfplay_swap_triggers: in selfplay phase, advance num_timesteps past swap_every → _save_and_swap called
-   - test_selfplay_no_swap_below_interval: in selfplay phase, num_timesteps below threshold → no swap
-   - test_on_step_returns_true: always returns True
-   - test_win_window_counts_positive_reward_as_win: reward > 0 = win, reward <= 0 = loss
-   - test_verbose_graduation_does_not_raise
-
-class TestCurriculumOpponent:
-   All tests use MagicMock — do NOT instantiate the real class (requires live Showdown).
-   - test_chooses_max_base_power_when_no_policy:
-       Mock an instance with _policy=None; patch super().choose_move and confirm it's called
-   - test_chooses_ppo_when_policy_loaded:
-       Mock an instance with _policy set to a MagicMock PPO; confirm predict() is called
-   - test_load_policy_sets_policy (mock PPO.load):
-       Patch PPO.load; confirm _policy is set after load_policy() call
-   - test_load_policy_handles_exception:
-       Patch PPO.load to raise; confirm _policy = None and no exception propagates
-
-== Verification ==
-
-Run after implementing:
-   python -m pytest tests/unit/test_train_policy.py -v > tmp/phase02_test_out.txt 2>&1
-
-All existing tests must still pass. New tests must all pass.
-Then run:
-   python -m pytest tests/unit/test_battle_env.py -q > tmp/phase02_battle_env_out.txt 2>&1
-
-That must still show 43 passed, 2 skipped.
+**Key invariants:**
+- `train()` public signature unchanged (`fmt`, `total_timesteps`, `swap_every`, `save_dir`, `results_dir`, `resume`, `team_format`, `server`)
+- `SelfPlayCallback` class stays (it's tested and exported)
+- `CurriculumCallback` is the new default used by `train()`
