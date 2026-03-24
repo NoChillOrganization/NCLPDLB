@@ -5,105 +5,22 @@ rootdir: F:\Claude Code\projects\pokemon-draft-bot\NCLPDLB
 configfile: pytest.ini
 plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, mock-3.15.1
 asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 81 items
+collecting ... collected 4 items
 
-tests/unit/test_team_cog.py::test_team_cmd_no_roster_sends_no_team_message PASSED [  1%]
-tests/unit/test_team_cog.py::test_team_cmd_with_roster_sends_embed PASSED [  2%]
-tests/unit/test_team_cog.py::test_team_cmd_defaults_to_self_when_user_is_none PASSED [  3%]
-tests/unit/test_team_cog.py::test_team_register_no_logo_sends_embed PASSED [  4%]
-tests/unit/test_team_cog.py::test_team_register_with_valid_logo_uses_logo_url PASSED [  6%]
-tests/unit/test_team_cog.py::test_team_register_invalid_logo_type_sends_error PASSED [  7%]
-tests/unit/test_team_cog.py::test_team_register_oversized_logo_sends_error PASSED [  8%]
-tests/unit/test_team_cog.py::test_team_register_sends_public_announcement_when_channel_exists PASSED [  9%]
-tests/unit/test_team_cog.py::test_trade_success_sends_embed_and_dms_target PASSED [ 11%]
-tests/unit/test_team_cog.py::test_trade_failure_sends_error_message PASSED [ 12%]
-tests/unit/test_team_cog.py::test_trade_dm_forbidden_is_silently_ignored PASSED [ 13%]
-tests/unit/test_team_cog.py::test_trade_accept_success_sends_confirmation PASSED [ 14%]
-tests/unit/test_team_cog.py::test_trade_accept_failure_sends_error PASSED [ 16%]
-tests/unit/test_team_cog.py::test_trade_decline_success_sends_declined PASSED [ 17%]
-tests/unit/test_team_cog.py::test_trade_decline_failure_sends_error PASSED [ 18%]
-tests/unit/test_team_cog.py::test_teamimport_non_txt_sends_error PASSED  [ 19%]
-tests/unit/test_team_cog.py::test_teamimport_empty_file_sends_error PASSED [ 20%]
-tests/unit/test_team_cog.py::test_teamimport_valid_file_sends_confirm_view PASSED [ 22%]
-tests/unit/test_team_cog.py::test_teamimport_parses_pokemon_names PASSED [ 23%]
-tests/unit/test_team_cog.py::test_teamimport_autocomplete_filters_by_current PASSED [ 24%]
-tests/unit/test_team_cog.py::test_teamimport_autocomplete_empty_returns_up_to_25 PASSED [ 25%]
-tests/unit/test_team_cog.py::test_teamimport_autocomplete_no_match_returns_empty PASSED [ 27%]
-tests/unit/test_team_cog.py::test_teamexport_sends_showdown_text PASSED  [ 28%]
-tests/unit/test_team_cog.py::test_legality_legal_pokemon_sends_green_embed PASSED [ 29%]
-tests/unit/test_team_cog.py::test_legality_illegal_pokemon_sends_red_embed PASSED [ 30%]
-tests/unit/test_team_cog.py::test_showdown_import_modal_success_sends_count PASSED [ 32%]
-tests/unit/test_team_cog.py::test_showdown_import_modal_failure_sends_error PASSED [ 33%]
-tests/unit/test_team_cog.py::test_team_cog_setup_adds_cog PASSED         [ 34%]
-tests/unit/test_bot_cogs.py::test_decode_utf8_text PASSED                [ 35%]
-tests/unit/test_bot_cogs.py::test_decode_ascii PASSED                    [ 37%]
-tests/unit/test_bot_cogs.py::test_decode_invalid_bytes_uses_replacement PASSED [ 38%]
-tests/unit/test_bot_cogs.py::test_decode_empty_bytes PASSED              [ 39%]
-tests/unit/test_bot_cogs.py::test_build_confirm_embed_unknown_format_key PASSED [ 40%]
-tests/unit/test_bot_cogs.py::test_build_confirm_embed_empty_pokemon_list PASSED [ 41%]
-tests/unit/test_bot_cogs.py::test_model_exists_per_format_subdir PASSED  [ 43%]
-tests/unit/test_bot_cogs.py::test_model_exists_flat_root PASSED          [ 44%]
-tests/unit/test_bot_cogs.py::test_model_exists_false PASSED              [ 45%]
-tests/unit/test_bot_cogs.py::test_model_exists_different_format_no_match PASSED [ 46%]
-tests/unit/test_bot_cogs.py::test_build_progress_embed_initial PASSED    [ 48%]
-tests/unit/test_bot_cogs.py::test_build_progress_embed_done PASSED       [ 49%]
-tests/unit/test_bot_cogs.py::test_build_progress_embed_failed PASSED     [ 50%]
-tests/unit/test_bot_cogs.py::test_build_progress_embed_retry PASSED      [ 51%]
-tests/unit/test_bot_cogs.py::test_build_progress_embed_description_has_steps PASSED [ 53%]
-tests/unit/test_bot_cogs.py::test_build_progress_embed_zero_total_no_crash PASSED [ 54%]
-tests/unit/test_bot_cogs.py::test_build_queue_embed_initial_queued PASSED [ 55%]
-tests/unit/test_bot_cogs.py::test_build_queue_embed_currently_training PASSED [ 56%]
-tests/unit/test_bot_cogs.py::test_build_queue_embed_done_all_success PASSED [ 58%]
-tests/unit/test_bot_cogs.py::test_build_queue_embed_done_with_failures PASSED [ 59%]
-tests/unit/test_bot_cogs.py::test_build_queue_embed_with_skipped PASSED  [ 60%]
-tests/unit/test_bot_cogs.py::test_build_queue_embed_description_has_queue_summary PASSED [ 61%]
-tests/unit/test_bot_cogs.py::test_build_help_embed_missing_csv PASSED    [ 62%]
-tests/unit/test_bot_cogs.py::test_build_help_embed_with_real_csv PASSED  [ 64%]
-tests/unit/test_bot_cogs.py::test_build_help_embed_skips_rows_with_no_command PASSED [ 65%]
-tests/unit/test_bot_cogs.py::test_build_help_embed_groups_commands_in_field PASSED [ 66%]
-tests/unit/test_bot_cogs.py::test_misc_cog_help_cmd_defers_and_sends PASSED [ 67%]
-tests/unit/test_bot_cogs.py::test_misc_cog_setup_adds_cog PASSED         [ 69%]
-tests/unit/test_bot_cogs.py::test_admin_cog_setup_adds_cog PASSED        [ 70%]
-tests/unit/test_bot_cogs.py::test_admin_skip_sends_followup PASSED       [ 71%]
-tests/unit/test_bot_cogs.py::test_admin_pause_sends_paused_message PASSED [ 72%]
-tests/unit/test_bot_cogs.py::test_admin_resume_sends_resumed_message PASSED [ 74%]
-tests/unit/test_bot_cogs.py::test_admin_override_pick_sends_confirmation PASSED [ 75%]
-tests/unit/test_bot_cogs.py::test_admin_sync_guild_scope_syncs_to_guild PASSED [ 76%]
-tests/unit/test_bot_cogs.py::test_admin_sync_global_scope_syncs_globally PASSED [ 77%]
-tests/unit/test_bot_cogs.py::test_admin_sync_none_scope_defaults_to_guild PASSED [ 79%]
-tests/unit/test_bot_cogs.py::test_admin_sync_http_exception_reports_failure PASSED [ 80%]
-tests/unit/test_bot_cogs.py::test_admin_reset_sends_confirm_view PASSED  [ 81%]
-tests/unit/test_bot_cogs.py::test_admin_train_unknown_format_sends_error PASSED [ 82%]
-tests/unit/test_bot_cogs.py::test_admin_train_model_exists_no_force_sends_error PASSED [ 83%]
-tests/unit/test_bot_cogs.py::test_admin_train_valid_format_creates_task PASSED [ 85%]
-tests/unit/test_bot_cogs.py::test_admin_train_autocomplete_returns_matching_formats PASSED [ 86%]
-tests/unit/test_bot_cogs.py::test_admin_train_autocomplete_empty_current_returns_all_or_25 PASSED [ 87%]
-tests/unit/test_bot_cogs.py::test_admin_train_autocomplete_no_match_returns_empty PASSED [ 88%]
-tests/unit/test_bot_cogs.py::test_admin_train_all_defers_and_creates_task PASSED [ 90%]
-tests/unit/test_bot_cogs.py::test_admin_train_all_skips_existing_when_flag_set PASSED [ 91%]
-tests/unit/test_bot_cogs.py::test_admin_showdown_check_server_reachable PASSED [ 92%]
-tests/unit/test_bot_cogs.py::test_admin_showdown_check_server_unreachable PASSED [ 93%]
-tests/unit/test_bot_cogs.py::test_confirm_reset_view_confirm_resets_draft PASSED [ 95%]
-tests/unit/test_bot_cogs.py::test_confirm_reset_view_cancel_sends_cancelled PASSED [ 96%]
-tests/unit/test_bot_cogs.py::test_try_edit_none_msg_is_noop PASSED       [ 97%]
-tests/unit/test_bot_cogs.py::test_try_edit_with_msg_calls_edit PASSED    [ 98%]
-tests/unit/test_bot_cogs.py::test_try_edit_suppresses_edit_exception PASSED [100%]
+tests/unit/test_team_import_view.py::test_build_confirm_embed PASSED     [ 25%]
+tests/unit/test_team_import_view.py::test_team_import_confirm_view_confirm_success PASSED [ 50%]
+tests/unit/test_team_import_view.py::test_team_import_confirm_view_confirm_fail PASSED [ 75%]
+tests/unit/test_team_import_view.py::test_team_import_confirm_view_cancel PASSED [100%]
 
 =============================== tests coverage ================================
 _______________ coverage: platform win32, python 3.14.3-final-0 _______________
 
 Name                                Stmts   Miss  Cover   Missing
 -----------------------------------------------------------------
-src\bot\cogs\admin.py                 408    222    46%   24-26, 127-178, 391-553, 568-722
-src\bot\cogs\misc.py                   33      0   100%
-src\bot\cogs\team.py                  135      0   100%
 src\bot\constants.py                    1      0   100%
-src\bot\views\team_import_view.py      30     15    50%   43-48, 55-72, 79-82
-src\bot\views\team_view.py             39     29    26%   13-15, 18-38, 42-51, 55-61
-src\config.py                          36      0   100%
+src\bot\views\team_import_view.py      30      0   100%
+src\config.py                          36     36     0%   5-82
 src\data\models.py                    215     30    86%   89, 125-126, 130, 134-145, 206, 210, 214-221, 240-243, 271-272
-src\data\pokeapi.py                    49     28    43%   27-54, 58-66, 69, 72, 75, 78, 82, 86-88, 91
-src\data\sheets.py                    312    215    31%   45, 73-77, 81-84, 102-111, 115-117, 120-126, 130-135, 139-143, 147-148, 152, 158-159, 163-164, 168-178, 182, 186-189, 193, 199-202, 206-211, 217-220, 224-229, 239-268, 272-277, 283-316, 320-324, 328-333, 337-342, 353-368, 372-380, 386-391, 395, 401-406, 416-436, 444-445, 449-454, 460-471, 475-478, 487-492, 498-503, 509-515, 519-526, 532, 536-537, 541, 572, 575-581, 585-587, 590-596, 604-621
 src\ml\__init__.py                      0      0   100%
 src\ml\battle_env.py                  204    204     0%   26-471
 src\ml\browser_trainer.py              11     11     0%   17-31
@@ -111,17 +28,14 @@ src\ml\feature_extractor.py           163    163     0%   26-352
 src\ml\models\__init__.py               0      0   100%
 src\ml\replay_parser.py               252    252     0%   22-508
 src\ml\replay_scraper.py              108    108     0%   15-193
-src\ml\showdown_modes.py               22     15    32%   25-30, 39-53
+src\ml\showdown_modes.py               22     22     0%   15-53
 src\ml\showdown_player.py              48     48     0%   38-336
 src\ml\teambuilder.py                  14     14     0%   15-42
 src\ml\teams.py                        30     30     0%   19-5901
-src\ml\train_all.py                    18      3    83%   112, 117-118
+src\ml\train_all.py                    18     18     0%   48-118
 src\ml\train_matchup.py               139    139     0%   24-321
 src\ml\train_policy.py                 64     64     0%   34-193
-src\ml\training_doctor.py             129    103    20%   142-198, 210-234, 250-267, 281-288, 301-304, 323-331, 336-344, 349-360, 365-380
-src\services\analytics_service.py      86     57    34%   69-73, 81-95, 98, 101-152, 166-185
-src\services\draft_service.py         196    132    33%   87-113, 117, 138-154, 172-190, 202-248, 257-263, 273-302, 306-308, 312-328, 332-339, 343-347, 350-352, 355-356, 359-361, 364-369, 372
-src\services\team_service.py          164    127    23%   37-38, 61-63, 66-85, 97-120, 130-168, 171-200, 203-212, 232-264, 268-278, 281-303
+src\ml\training_doctor.py             129    129     0%   29-380
 -----------------------------------------------------------------
-TOTAL                                2906   2009    31%
-============================= 81 passed in 1.64s ==============================
+TOTAL                                1484   1268    15%
+============================== 4 passed in 0.57s ==============================

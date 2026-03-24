@@ -24,7 +24,7 @@ async def test_team_import_confirm_view_confirm_success():
     interaction = AsyncMock()
     button = MagicMock()
 
-    await TeamImportConfirmView.confirm.callback(view, interaction, button)
+    await TeamImportConfirmView.confirm(view, interaction, button)
 
     team_service.import_showdown.assert_called_once_with(
         guild_id="123", player_id="456", showdown_text="text", format_key="gen9ou"
@@ -46,7 +46,7 @@ async def test_team_import_confirm_view_confirm_fail():
     interaction = AsyncMock()
     button = MagicMock()
 
-    await TeamImportConfirmView.confirm.callback(view, interaction, button)
+    await TeamImportConfirmView.confirm(view, interaction, button)
 
     interaction.followup.send.assert_called_once_with("Import failed: Parse error", ephemeral=True)
 
@@ -56,6 +56,6 @@ async def test_team_import_confirm_view_cancel():
     interaction = AsyncMock()
     button = MagicMock()
 
-    await TeamImportConfirmView.cancel.callback(view, interaction, button)
+    await TeamImportConfirmView.cancel(view, interaction, button)
 
     interaction.response.send_message.assert_called_once_with("Team import cancelled.", ephemeral=True)
