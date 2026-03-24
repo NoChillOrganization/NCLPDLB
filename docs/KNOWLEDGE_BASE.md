@@ -190,6 +190,63 @@ It runs server-side or in-browser and covers all generations including Gen 9 Ter
 | **VGCBAD** | https://www.youtube.com/@VGCBAD | Competitive Pokémon content; SPL S3 + BUBL participant |
 | **NumbNexus** | https://www.youtube.com/@NumbNexus | Draft league participant (SPL S3, BBR Little Cup, BUBL, PPL); broad draft league coverage |
 
+### Top VGC Players & Educators
+| Channel | URL | Notes |
+|---------|-----|-------|
+| **Ray Rizzo** | https://www.youtube.com/@RayRizzo | 3× World Champion (2010–2012); "GOAT" of VGC; history + analysis |
+| **Paul Ruiz** | https://www.youtube.com/@PaulRuizVGC | Former World Champion; English VGC content |
+| **James Baek** | https://www.youtube.com/@jameswbaekpkmn | Top competitive player; detailed gameplay breakdowns |
+| **moxieboosted** (Marcos Perez) | https://www.youtube.com/@moxieboosted | Competitive VGC; rental codes + meta analysis; SPL S3 participant |
+| **THATSAplusONE** | https://www.youtube.com/@THATSAplusONE | Non-meta teams; SPL S3 participant |
+| **False Swipe Gaming** | https://www.youtube.com/@FalseSwipeGaming | Deep historical + format analysis across singles + VGC |
+| **SableyeVGC** | https://www.youtube.com/@SableyeVGC | Regular VGC uploads + Twitch streams |
+| **TheDelybird** | https://www.youtube.com/@TheDelybird | Battle analyses; "Zero to Hero" VGC beginner series |
+| **Nekkra** | https://www.youtube.com/@Nekkra | VGC player + caster; Wolfey DL + SPL S3 participant |
+| **mountaih** | https://www.youtube.com/@mountaih | VGC + draft leagues; Wolfey DL + SPL S3 participant |
+| **shadypenguinn** | https://www.youtube.com/@shadypenguinn | VGC + draft leagues; Wolfey DL + Shuckle Premier League |
+| **TheUziGunner** | https://www.youtube.com/@TheUziGunner | VGC content; Wolfey DL + BUBL participant |
+| **Shuckleking87** | https://www.youtube.com/@Shuckleking87 | VGC + draft leagues; SPL S3 + BBR participant |
+| **KyleAye** | https://www.youtube.com/@KyleAye | VGC player; SPL S3 participant |
+| **ElectriKeely** | https://www.youtube.com/@ElectriKeely | VGC content; SPL S3 participant |
+| **JoeUX9** | https://www.youtube.com/@JoeUX9 | VGC player; SPL S3 participant |
+| **Tone114** | https://www.youtube.com/@Tone114 | VGC content; SPL S3 participant |
+| **SierraDawn** | https://www.youtube.com/@SierraDawn | VGC player; SPL S3 participant |
+| **OGalbina** | https://www.youtube.com/@OGalbina | VGC content; SPL S3 + BBR participant |
+| **Haydunn** | https://www.youtube.com/@Haydunn | VGC content creator; draft league appearances |
+| **PlayMoreEsports** | https://www.youtube.com/@PlayMoreEsports | BUBL + MD Draft League coverage |
+| **Emvee** | https://www.youtube.com/@Emvee | Showcases niche/underused Pokémon; earlier SPL seasons |
+| **JayJingles** | https://www.youtube.com/@JayJingles | Ditto Draft League; new-player draft guides |
+| **Freezai** | https://www.youtube.com/@Freezai | VGC + Smogon cross-content; meta analysis |
+
+### Smogon Singles Players & Educators
+| Channel | URL | Notes |
+|---------|-----|-------|
+| **Smogon University** (official) | https://www.youtube.com/@SmogonUniversity | SPL XVI recaps, tournament interviews, tier deep-dives |
+| **pinkacross** | https://www.youtube.com/@pinkacross | OU-specific; top ladder play + teambuilding deep dives |
+| **BKC** | https://www.youtube.com/@BKCPokemon | "Smogon loremaster"; older gen OU GOAT; guides + history |
+| **Jimothy Cool** | https://www.youtube.com/@JimothyCool | High-quality Gen 9 + older gen Smogon content |
+| **Blunder** | https://www.youtube.com/@Blunder | Popular competitive entertainer; OU + lower tiers |
+| **Jamvad** | https://www.youtube.com/@Jamvad | Beginner coaching + foundational competitive guides |
+| **Big Yellow** | https://www.youtube.com/@BigYellow | Competitive Pokémon; Smogon OU content |
+| **ABR** | https://www.youtube.com/@ABR_Pokemon | 4× individual tournament trophy; "GOAT of modern gens (6–9)" |
+| **Storm Zone** | https://www.youtube.com/@StormZone | OST20 winner (2024); strong SPL record |
+
+### Additional Draft League Coaches
+| Channel | URL | League(s) |
+|---------|-----|-----------|
+| **aimel8846** | https://www.youtube.com/@aimel8846 | SPL S3 + BBR |
+| **viz** | https://www.youtube.com/@vizpkmn | SPL S3 + BBR |
+| **0liviaSama** | https://www.youtube.com/@0liviaSama | SPL S3 |
+| **JohnJunior** | https://www.youtube.com/@JohnJunior | BUBL |
+| **IronBoffin** | https://www.youtube.com/@IronBoffin | BUBL |
+| **DyeItTight** | https://www.youtube.com/@DyeItTight | BBR |
+| **GrandMasterDRey** | https://www.youtube.com/@GrandMasterDReyYT | BBR |
+| **BonusWolfe** | https://www.youtube.com/@BonusWolfe | Wolfey Draft League (secondary channel) |
+| **ciscomooo** | https://www.youtube.com/@ciscomooo | Ditto Draft League |
+| **ScooteezyVGC** | https://www.youtube.com/@ScooteezyVGC | Ditto Draft League |
+| **Jon-LukeVGC** | https://www.youtube.com/@JonLukeVGC | Ditto Draft League |
+| **MichaelDerBeste** | https://www.youtube.com/@MichaelDerBeste | MDBL host; detailed set + team breakdowns |
+
 ### Recommended Videos
 | Title / Topic | URL |
 |---------------|-----|
