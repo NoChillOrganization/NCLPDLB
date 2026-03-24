@@ -107,7 +107,7 @@ except Exception:  # pragma: no cover
 def _move_features(move: "Move | None", target: "Pokemon | None" = None) -> list[float]:
     """Extract 5-float feature vector for one move slot."""
     if move is None:
-        return [0.0, 0.0, 0.0, 0.0, 0.5]
+        return [0.0, 0.0, 0.0, 0.5, 0.0]
     
     bp = min(getattr(move, "base_power", 0) or 0, 250) / 250.0
     acc = (getattr(move, "accuracy", 100) or 100) / 100.0
@@ -199,6 +199,17 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     idx += 1
 
     fields = getattr(battle, "fields", {}) or {}
+    # Wait for active (4 slots)
+    moves_list = list(active.moves.values()) if active else []
+    for i in range(4):
+        wait = 0.0
+        if i < len(moves_list):
+            move = moves_list[i]
+            if hasattr(move, "wait"):
+                wait = float(getattr(move, "wait", 0)) / 4.0
+        obs[idx] = wait
+        idx += 1
+
     terrain = 0
     for fld, val in TERRAIN_IDS.items():
         if fld and fld in fields:
@@ -220,6 +231,9 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     obs[idx] = min(getattr(battle, "turn", 0), 50) / 50.0
     idx += 1
 
+    # ── Final Dimension Verification ──────────────────────────────────
+    assert idx == OBS_DIM, f"Observation dimension mismatch: {idx} != {OBS_DIM}"
+    
     return obs
 
 
@@ -417,6 +431,9 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
     obs[idx] = min(getattr(battle, "turn", 0), 50) / 50.0
     idx += 1
 
+    # ── Final Dimension Verification ──────────────────────────────────
+    assert idx == OBS_DIM_DOUBLES, f"Doubles observation dimension mismatch: {idx} != {OBS_DIM_DOUBLES}"
+    
     return obs
 
 

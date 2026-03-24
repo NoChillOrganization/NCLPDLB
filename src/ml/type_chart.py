@@ -8,26 +8,26 @@ if TYPE_CHECKING:
 
 def get_type_effectiveness_float(move: "Move", target: "Pokemon") -> float:
     """
-    Returns normalized type effectiveness:
-    - 0.0: Immune (0x)
-    - 0.25: 0.25x
-    - 0.5: 0.5x
-    - 0.75: 1x (Neutral)
-    - 0.875: 2x
-    - 1.0: 4x
+    Returns normalized type effectiveness centered at 0.0 (Decision 43).
+    Range: [-1.0, 1.0]
     
-    Actually, the ROADMAP.md suggested a specific formula:
-    `0.0 if mult==0 else (log2(mult)+2)/4`
-    - mult=0.25 -> ( -2 + 2 ) / 4 = 0.0  -- WAIT. 
-    If mult=1 -> ( 0 + 2 ) / 4 = 0.5
-    If mult=2 -> ( 1 + 2 ) / 4 = 0.75
-    If mult=4 -> ( 2 + 2 ) / 4 = 1.0
-    If mult=0.5 -> ( -1 + 2 ) / 4 = 0.25
-    If mult=0 -> 0.0
-    
-    This is very clean.
+    Mapping:
+    - 4x weak:   1.0
+    - 2x weak:   0.5
+    - Neutral:   0.0
+    - 0.5x resist: -0.5
+    - 0.25x resist: -1.0
+    - Immune:    -1.0
     """
-    mult = target.damage_multiplier(move)
+    try:
+        mult = target.damage_multiplier(move)
+    except Exception: # pragma: no cover
+        return 0.0 # Unknown/Neutral default
+        
     if mult == 0:
-        return 0.0
-    return (math.log2(mult) + 2) / 4.0
+        return -1.0
+        
+    # Clamp to [-2, 2] in log2 space (0.25x to 4x)
+    log_mult = math.log2(mult)
+    return max(-1.0, min(1.0, log_mult / 2.0))
+
