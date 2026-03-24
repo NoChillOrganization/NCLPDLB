@@ -49,7 +49,7 @@ log = logging.getLogger(__name__)
 try:
     from stable_baselines3 import PPO
     SB3_OK = True
-except ImportError:
+except ImportError:  # pragma: no cover
     SB3_OK = False
     PPO = None  # type: ignore
 
@@ -61,14 +61,14 @@ try:
         ShowdownServerConfiguration,
     )
     POKE_ENV_OK = True
-except ImportError:
+except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
     Player = object  # type: ignore
 
 try:
     from src.data.sheets import learning_sheets
     SHEETS_AVAILABLE = True
-except ImportError:
+except ImportError:  # pragma: no cover
     learning_sheets = None  # type: ignore
     SHEETS_AVAILABLE = False
 
