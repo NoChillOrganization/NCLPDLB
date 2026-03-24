@@ -55,7 +55,6 @@ ALL_FORMATS = [
     "gen9vgc2023regulationc", "gen9vgc2023regulationd",
     "gen9vgc2024regg", "gen9vgc2024regh",
     "gen9vgc2024reggregf", "gen9vgc2025regg",
-    "gen9vgc2026regf", "gen9vgc2026regi",
     # Draft League (1 format — yields 0 replays; private battles not on public ladder)
     "draftleague",
 ]
@@ -66,7 +65,6 @@ PRIORITY_FORMATS = [
     "gen9vgc2023regulationc", "gen9vgc2023regulationd",
     "gen9vgc2024regg", "gen9vgc2024regh",
     "gen9vgc2024reggregf", "gen9vgc2025regg",
-    "gen9vgc2026regf", "gen9vgc2026regi",
 ]
 
 SPARSE_WARN_THRESHOLD = 200  # Named constant — not a magic number
