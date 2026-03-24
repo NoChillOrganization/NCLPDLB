@@ -56,20 +56,20 @@ from src.ml.feature_extractor import (  # noqa: E402
 
 
 def test_all_formats_constant():
-    """ALL_FORMATS must have exactly 18 entries covering Smogon, VGC, and Draft League."""
-    assert len(ALL_FORMATS) == 18, f"Expected 18 formats, got {len(ALL_FORMATS)}"
+    """ALL_FORMATS must have exactly 20 entries covering Smogon, VGC, and Draft League."""
+    assert len(ALL_FORMATS) == 20, f"Expected 20 formats, got {len(ALL_FORMATS)}"
     assert "gen9ou" in ALL_FORMATS, "gen9ou missing from ALL_FORMATS"
     assert "gen9vgc2024regh" in ALL_FORMATS, "gen9vgc2024regh missing from ALL_FORMATS"
     assert "draftleague" in ALL_FORMATS, "draftleague missing from ALL_FORMATS"
-    # Verify all 8 VGC regulations are present
+    # Verify all 10 VGC regulations are present
     vgc_formats = [f for f in ALL_FORMATS if "vgc" in f]
-    assert len(vgc_formats) == 8, f"Expected 8 VGC formats, got {len(vgc_formats)}: {vgc_formats}"
+    assert len(vgc_formats) == 10, f"Expected 10 VGC formats, got {len(vgc_formats)}: {vgc_formats}"
 
 
 def test_pipeline_cli_mocked():
     """
     CLI arg parsing: --formats gen9ou --pages 1 selects only gen9ou;
-    --formats all expands to all 18 formats.
+    --formats all expands to all 20 formats.
     """
     import argparse
 
@@ -89,7 +89,7 @@ def test_pipeline_cli_mocked():
     args_all = parser.parse_args(["--formats", "all"])
     formats_all = args_all.formats if "all" not in args_all.formats else ALL_FORMATS
     assert formats_all == ALL_FORMATS
-    assert len(formats_all) == 18
+    assert len(formats_all) == 20
 
 
 def test_sparse_format_warning(caplog):
