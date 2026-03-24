@@ -5131,15 +5131,15 @@ Careful Nature
 - Wish
 - Protect
 
-Dunsparce @ Leftovers
-Ability: Serene Grace
+Greedent @ Sitrus Berry
+Ability: Gluttony
 Tera Type: Normal
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
 - Body Slam
-- Glare
-- Roost
-- Stealth Rock
+- Crunch
+- Stockpile
+- Swallow
 
 Grafaiai @ Life Orb
 Ability: Poison Touch
