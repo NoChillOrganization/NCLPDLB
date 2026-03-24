@@ -16,6 +16,10 @@ SUPPORTED_FORMATS: dict[str, str] = {
     "gen9lc": "Gen 9 Little Cup",
     "gen9monotype": "Gen 9 Monotype",
     "gen9doublesou": "Gen 9 Doubles OU",
+    # VGC Gen 9 Regulations — 2024 season
+    "gen9vgc2024rega": "VGC 2024 Reg A",
+    "gen9vgc2024regb": "VGC 2024 Reg B",
+    "gen9vgc2024regc": "VGC 2024 Reg C",
     # VGC Gen 9 Regulations — 2025 season
     "gen9vgc2025regg": "VGC 2025 Reg G",
     "gen9vgc2025regh": "VGC 2025 Reg H",
