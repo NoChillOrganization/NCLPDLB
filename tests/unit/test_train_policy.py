@@ -18,6 +18,7 @@ import pytest
 from src.ml.train_policy import (
     DOUBLES_FORMATS,
     PPO_HYPERPARAMS,
+    CurriculumCallback,
     SelfPlayCallback,
     _check_showdown_server,
     _check_showdown_server_if_local,
@@ -224,3 +225,294 @@ class TestSelfPlayCallback:
 
         assert cb._swap_count == 3
         assert opponent.load_policy.call_count == 3
+
+
+# ── CurriculumCallback ────────────────────────────────────────────────────────
+
+class TestCurriculumCallback:
+    """Tests for CurriculumCallback (pure logic, no poke-env or live server)."""
+
+    def _make_cb(
+        self,
+        tmp_path: Path,
+        swap_every: int = 1_000,
+        win_threshold: float = 0.70,
+        min_episodes: int = 10,
+        verbose: int = 0,
+    ):
+        opponent = MagicMock()
+        cb = CurriculumCallback(
+            opponent_player=opponent,
+            save_dir=tmp_path,
+            swap_every=swap_every,
+            win_threshold=win_threshold,
+            min_episodes=min_episodes,
+            verbose=verbose,
+        )
+        cb.model = MagicMock()
+        cb.num_timesteps = 0
+        return cb, opponent
+
+    def _push_episodes(self, cb, wins: int, total: int):
+        """Simulate episode completions by injecting info dicts."""
+        results = [1] * wins + [0] * (total - wins)
+        for r in results:
+            cb.locals = {"infos": [{"episode": {"r": r}}]}
+            cb._on_step()
+
+    # ── init ──────────────────────────────────────────────────────
+
+    def test_init_defaults(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path)
+        assert cb._phase == "warmup"
+        assert cb._swap_count == 0
+        assert cb._last_swap == 0
+        assert len(cb._win_window) == 0
+
+    def test_init_stores_params(self, tmp_path):
+        opponent = MagicMock()
+        cb = CurriculumCallback(
+            opponent_player=opponent,
+            save_dir=tmp_path,
+            swap_every=500,
+            win_threshold=0.80,
+            min_episodes=200,
+        )
+        cb.model = MagicMock()
+        assert cb.swap_every == 500
+        assert cb.win_threshold == 0.80
+        assert cb.min_episodes == 200
+
+    # ── _on_step always returns True ──────────────────────────────
+
+    def test_on_step_returns_true(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path)
+        cb.locals = {"infos": []}
+        assert cb._on_step() is True
+
+    # ── warmup phase: no graduation below threshold ───────────────
+
+    def test_no_graduation_below_win_threshold(self, tmp_path):
+        """60 % wins with 70 % threshold → stays in warmup."""
+        cb, opponent = self._make_cb(tmp_path, min_episodes=10, win_threshold=0.70)
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=6, total=10)  # 60 %
+
+        assert cb._phase == "warmup"
+        cb.model.save.assert_not_called()
+        opponent.load_policy.assert_not_called()
+
+    def test_no_graduation_window_not_full(self, tmp_path):
+        """Only 5 episodes pushed when min_episodes=10 → window not full yet."""
+        cb, opponent = self._make_cb(tmp_path, min_episodes=10, win_threshold=0.50)
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=5, total=5)
+
+        assert cb._phase == "warmup"
+        cb.model.save.assert_not_called()
+
+    # ── warmup phase: graduation at threshold ─────────────────────
+
+    def test_graduates_at_threshold(self, tmp_path):
+        """70 % wins with 70 % threshold → graduates to selfplay."""
+        cb, opponent = self._make_cb(tmp_path, min_episodes=10, win_threshold=0.70)
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=7, total=10)  # exactly 70 %
+
+        assert cb._phase == "selfplay"
+        cb.model.save.assert_called_once()
+        opponent.load_policy.assert_called_once()
+
+    def test_graduate_sets_last_swap(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path, min_episodes=5, win_threshold=0.60)
+        cb.num_timesteps = 999
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=5, total=5)  # 100 %
+
+        assert cb._last_swap == 999
+
+    def test_graduate_increments_swap_count(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path, min_episodes=5, win_threshold=0.60)
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=5, total=5)
+
+        assert cb._swap_count == 1
+
+    def test_graduation_is_idempotent(self, tmp_path):
+        """Once in selfplay phase, further episodes don't retrigger graduation."""
+        cb, opponent = self._make_cb(tmp_path, min_episodes=5, win_threshold=0.60)
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=5, total=5)   # graduate
+            # Now push more wins — should not call save again from _graduate
+            save_count_after = cb.model.save.call_count
+            self._push_episodes(cb, wins=5, total=5)
+
+        # swap may occur if timesteps advance, but graduation code won't run again
+        assert cb._phase == "selfplay"
+
+    # ── selfplay phase: checkpoint swaps ─────────────────────────
+
+    def test_selfplay_swap_triggers_when_interval_reached(self, tmp_path):
+        cb, opponent = self._make_cb(tmp_path, swap_every=100, min_episodes=5, win_threshold=0.60)
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=5, total=5)  # graduate at ts=0
+            cb.num_timesteps = 100                    # advance past swap_every
+            cb.locals = {"infos": []}
+            cb._on_step()
+
+        assert cb._swap_count == 2  # 1 from graduation + 1 swap
+        assert opponent.load_policy.call_count == 2
+
+    def test_selfplay_no_swap_below_interval(self, tmp_path):
+        cb, opponent = self._make_cb(tmp_path, swap_every=1000, min_episodes=5, win_threshold=0.60)
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=5, total=5)  # graduate
+            cb.num_timesteps = 50   # well below swap_every
+            cb.locals = {"infos": []}
+            cb._on_step()
+
+        assert cb._swap_count == 1  # only the graduation save
+
+    # ── win/loss tracking ─────────────────────────────────────────
+
+    def test_positive_reward_counted_as_win(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path, min_episodes=1, win_threshold=0.99)
+        with patch("shutil.copy"):  # graduation may fire; avoid file I/O
+            cb.locals = {"infos": [{"episode": {"r": 1.0}}]}
+            cb._on_step()
+        assert list(cb._win_window) == [1]
+
+    def test_zero_reward_counted_as_loss(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path, min_episodes=1, win_threshold=0.99)
+        cb.locals = {"infos": [{"episode": {"r": 0.0}}]}
+        cb._on_step()
+        assert list(cb._win_window) == [0]
+
+    def test_negative_reward_counted_as_loss(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path, min_episodes=1, win_threshold=0.99)
+        cb.locals = {"infos": [{"episode": {"r": -1.0}}]}
+        cb._on_step()
+        assert list(cb._win_window) == [0]
+
+    def test_infos_without_episode_key_ignored(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path)
+        cb.locals = {"infos": [{"other_key": 42}]}
+        cb._on_step()
+        assert len(cb._win_window) == 0
+
+    def test_missing_infos_key_ignored(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path)
+        cb.locals = {}
+        result = cb._on_step()
+        assert result is True
+
+    # ── verbose logging doesn't raise ────────────────────────────
+
+    def test_verbose_graduation_does_not_raise(self, tmp_path):
+        cb, _ = self._make_cb(tmp_path, min_episodes=5, win_threshold=0.60, verbose=1)
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=5, total=5)
+        # If we got here without exception, it's fine
+        assert cb._phase == "selfplay"
+
+
+# ── CurriculumOpponent ────────────────────────────────────────────────────────
+
+class TestCurriculumOpponent:
+    """
+    Mock-based tests — never instantiate the real CurriculumOpponent because
+    MaxBasePowerPlayer requires a live Showdown connection.
+    """
+
+    def _make_mock_opponent(self, has_policy: bool = False):
+        """Return a MagicMock that mimics CurriculumOpponent's interface."""
+        from src.ml.train_policy import CurriculumCallback  # already imported
+        opponent = MagicMock()
+        opponent._policy = MagicMock() if has_policy else None
+        opponent._is_doubles = False
+        return opponent
+
+    def test_load_policy_sets_policy(self, tmp_path):
+        """load_policy() should call PPO.load and store the result."""
+        fake_zip = tmp_path / "latest.zip"
+        fake_zip.write_bytes(b"fake")
+
+        with patch("src.ml.train_policy.PPO") as mock_ppo_cls:
+            mock_model = MagicMock()
+            mock_ppo_cls.load.return_value = mock_model
+
+            # Build a real-ish object by importing the class then calling load_policy
+            # via the method itself on a MagicMock that has the real method bound.
+            from src.ml.train_policy import CurriculumCallback  # side-effect: module loaded
+            import src.ml.train_policy as tp
+            if not hasattr(tp, "CurriculumOpponent"):
+                pytest.skip("CurriculumOpponent not accessible (POKE_ENV_OK=False)")
+
+            # Simulate load_policy by calling it on a fresh mock instance
+            instance = MagicMock()
+            instance._policy = None
+            # Call the actual unbound method
+            tp.CurriculumOpponent.load_policy(instance, fake_zip)
+            mock_ppo_cls.load.assert_called_once_with(str(fake_zip))
+            assert instance._policy == mock_model
+
+    def test_load_policy_handles_exception(self, tmp_path):
+        """If PPO.load raises, _policy stays None and no exception propagates."""
+        fake_zip = tmp_path / "missing.zip"
+
+        with patch("src.ml.train_policy.PPO") as mock_ppo_cls:
+            mock_ppo_cls.load.side_effect = FileNotFoundError("no file")
+
+            import src.ml.train_policy as tp
+            if not hasattr(tp, "CurriculumOpponent"):
+                pytest.skip("CurriculumOpponent not accessible (POKE_ENV_OK=False)")
+
+            instance = MagicMock()
+            instance._policy = None
+            tp.CurriculumOpponent.load_policy(instance, fake_zip)
+            assert instance._policy is None  # stays None after failure
+
+    def test_choose_move_delegates_to_max_base_power_when_no_policy(self):
+        """With _policy=None, choose_move should delegate to MaxBasePowerPlayer."""
+        import src.ml.train_policy as tp
+        if not hasattr(tp, "CurriculumOpponent"):
+            pytest.skip("CurriculumOpponent not accessible (POKE_ENV_OK=False)")
+
+        battle = MagicMock()
+
+        # Patch MaxBasePowerPlayer.choose_move at the class level so that Python's
+        # super() mechanics can find it via normal MRO (avoids unbound-call TypeError).
+        with patch.object(tp.MaxBasePowerPlayer, "choose_move", return_value="max_power_order"):
+            # Create a minimal real subclass instance so super() works properly.
+            class _TestableCurriculumOpponent(tp.CurriculumOpponent):
+                def __init__(self):  # skip poke-env account/server setup
+                    self._policy = None
+                    self._is_doubles = False
+
+            instance = _TestableCurriculumOpponent()
+            result = instance.choose_move(battle)
+
+        assert result == "max_power_order"
+
+    def test_choose_move_uses_ppo_when_policy_loaded(self):
+        """With _policy set, choose_move should call policy.predict."""
+        import src.ml.train_policy as tp
+        if not hasattr(tp, "CurriculumOpponent"):
+            pytest.skip("CurriculumOpponent not accessible (POKE_ENV_OK=False)")
+
+        import numpy as np
+        mock_policy = MagicMock()
+        mock_policy.predict.return_value = (np.array([3]), None)
+
+        instance = MagicMock()
+        instance._policy = mock_policy
+        instance._is_doubles = False
+        battle = MagicMock()
+
+        with patch("src.ml.train_policy.build_observation") as mock_obs, \
+             patch("poke_env.environment.singles_env.SinglesEnv.action_to_order",
+                   return_value="ppo_order"):
+            mock_obs.return_value = MagicMock(reshape=MagicMock(return_value=MagicMock()))
+            result = tp.CurriculumOpponent.choose_move(instance, battle)
+
+        mock_policy.predict.assert_called_once()

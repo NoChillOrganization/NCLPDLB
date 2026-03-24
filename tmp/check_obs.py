@@ -4,7 +4,7 @@ import os
 # Add src to path
 sys.path.append('f:/Claude Code/projects/pokemon-draft-bot/NCLPDLB')
 
-from src.ml.battle_env import build_observation, build_doubles_observation
+from src.ml.battle_env import build_observation, build_doubles_observation  # type: ignore[import]
 from unittest.mock import MagicMock
 
 class MockBattle:

@@ -55,7 +55,7 @@ except ImportError:  # pragma: no cover
 
 try:
     from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
-    from poke_env.player import RandomPlayer
+    from poke_env.player import MaxBasePowerPlayer, RandomPlayer
     from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
@@ -195,6 +195,102 @@ class SelfPlayCallback(BaseCallback):
             )
 
 
+# ── Curriculum callback ───────────────────────────────────────────────────────
+
+from collections import deque  # noqa: E402 (after SB3 guard)
+
+
+class CurriculumCallback(BaseCallback):
+    """
+    Two-phase training curriculum:
+
+    Phase 1 — warmup:
+        Opponent is a CurriculumOpponent whose policy is None, so it acts like
+        MaxBasePowerPlayer.  We track episode outcomes in a rolling window.
+        Once the agent reaches `win_threshold` win-rate over `min_episodes`
+        consecutive episodes, we save the first checkpoint and signal the
+        opponent to switch to PPO play (``_graduate()``).
+
+    Phase 2 — selfplay:
+        Every `swap_every` steps we save a new checkpoint and reload it into
+        the opponent, keeping a rolling-lag opponent just like SelfPlayCallback.
+    """
+
+    def __init__(
+        self,
+        opponent_player,
+        save_dir: Path,
+        swap_every: int = DEFAULT_SWAP_EVERY,
+        win_threshold: float = 0.70,
+        min_episodes: int = 500,
+        verbose: int = 0,
+    ) -> None:
+        super().__init__(verbose=verbose)
+        self.opponent_player = opponent_player
+        self.save_dir        = save_dir
+        self.swap_every      = swap_every
+        self.win_threshold   = win_threshold
+        self.min_episodes    = min_episodes
+
+        self._phase      = "warmup"
+        self._win_window: deque = deque(maxlen=min_episodes)
+        self._last_swap  = 0
+        self._swap_count = 0
+
+    # ── helpers ───────────────────────────────────────────────────
+
+    def _graduate(self) -> None:
+        """Save first checkpoint and promote opponent to self-play mode."""
+        self._swap_count += 1
+        ckpt  = self.save_dir / f"swap_{self._swap_count:04d}.zip"
+        latest = self.save_dir / "latest.zip"
+        self.model.save(str(ckpt))
+        shutil.copy(str(ckpt), str(latest))
+        self.opponent_player.load_policy(latest)
+        self._phase     = "selfplay"
+        self._last_swap = self.num_timesteps
+        if self.verbose:
+            win_rate = sum(self._win_window) / len(self._win_window)
+            log.info(
+                f"[Curriculum] Graduated to self-play at step "
+                f"{self.num_timesteps} (win-rate={win_rate:.1%})"
+            )
+
+    def _save_and_swap(self) -> None:
+        """Save a self-play checkpoint and reload into the opponent."""
+        self._swap_count += 1
+        ckpt   = self.save_dir / f"swap_{self._swap_count:04d}.zip"
+        latest = self.save_dir / "latest.zip"
+        self.model.save(str(ckpt))
+        shutil.copy(str(ckpt), str(latest))
+        self.opponent_player.load_policy(latest)
+        if self.verbose:
+            log.info(
+                f"[Curriculum] Swap #{self._swap_count} at step "
+                f"{self.num_timesteps}: saved {ckpt.name}"
+            )
+
+    # ── main hook ─────────────────────────────────────────────────
+
+    def _on_step(self) -> bool:
+        # Collect episode outcomes from the info dicts SB3 provides each step.
+        for info in self.locals.get("infos", []):
+            ep = info.get("episode")
+            if ep is not None:
+                self._win_window.append(1 if ep["r"] > 0 else 0)
+
+        if self._phase == "warmup":
+            if (len(self._win_window) >= self.min_episodes
+                    and sum(self._win_window) / len(self._win_window) >= self.win_threshold):
+                self._graduate()
+        else:  # selfplay
+            if self.num_timesteps - self._last_swap >= self.swap_every:
+                self._save_and_swap()
+                self._last_swap = self.num_timesteps
+
+        return True
+
+
 # ── Opponent wrapper ──────────────────────────────────────────────────────────
 
 if POKE_ENV_AVAILABLE and POKE_ENV_OK:
@@ -238,8 +334,57 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
                 log.warning(f"[Opponent] Prediction error: {exc}")
                 return self.choose_random_move(battle)
 
+    class CurriculumOpponent(MaxBasePowerPlayer):
+        """
+        poke-env player used during curriculum training.
+
+        Phase 0 (policy is None): delegates to MaxBasePowerPlayer for move
+        selection, giving the agent a stronger-than-random baseline to learn
+        against while still being beatable.
+
+        Phase 1 (policy loaded): acts like SelfPlayOpponent — uses the frozen
+        PPO checkpoint to pick moves.
+        """
+
+        def __init__(self, *args: Any, is_doubles: bool = False, **kwargs: Any) -> None:  # pragma: no cover
+            super().__init__(*args, **kwargs)
+            self._policy: "PPO | None" = None
+            self._is_doubles = is_doubles
+
+        def load_policy(self, path: Path) -> None:  # pragma: no cover
+            if not SB3_OK:
+                return
+            try:
+                self._policy = PPO.load(str(path))
+                log.info(f"[CurriculumOpponent] Loaded policy from {path}")
+            except Exception as exc:
+                log.warning(f"[CurriculumOpponent] Failed to load policy: {exc}")
+                self._policy = None
+
+        def choose_move(self, battle: Any) -> Any:  # pragma: no cover
+            if self._policy is None:
+                return super().choose_move(battle)  # MaxBasePower behaviour
+            try:
+                if self._is_doubles:
+                    obs = build_doubles_observation(battle).reshape(1, -1)
+                    action, _ = self._policy.predict(obs, deterministic=False)
+                    from poke_env.environment.doubles_env import DoublesEnv
+                    return DoublesEnv.action_to_order(int(action[0]), battle)
+                else:
+                    obs = build_observation(battle).reshape(1, -1)
+                    action, _ = self._policy.predict(obs, deterministic=False)
+                    from poke_env.environment.singles_env import SinglesEnv
+                    return SinglesEnv.action_to_order(int(action[0]), battle)
+            except Exception as exc:
+                log.warning(f"[CurriculumOpponent] Prediction error: {exc}")
+                return super().choose_move(battle)
+
 else:  # pragma: no cover
     class SelfPlayOpponent:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise ImportError("poke-env is not available")
+
+    class CurriculumOpponent:  # type: ignore
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise ImportError("poke-env is not available")
 
@@ -339,7 +484,7 @@ def train(  # pragma: no cover
     if team_builder is not None:
         opp_kwargs["team"] = team_builder
 
-    opponent = SelfPlayOpponent(**opp_kwargs)
+    opponent = CurriculumOpponent(**opp_kwargs)
 
     # ── Build Gymnasium-compatible env via SingleAgentWrapper ───────
     # strict=False: invalid actions (e.g. tera when unavailable) fall back
@@ -389,7 +534,7 @@ def train(  # pragma: no cover
         save_path=str(fmt_save_dir),
         name_prefix="ppo_ckpt",
     )
-    selfplay_cb = SelfPlayCallback(
+    curriculum_cb = CurriculumCallback(
         opponent_player=opponent,
         save_dir=fmt_save_dir,
         swap_every=swap_every,
@@ -401,11 +546,11 @@ def train(  # pragma: no cover
         "showdown":  "wss://sim3.psim.us (public Showdown)",
     }.get(server, server)
     print(f"\n{'='*60}")
-    print("  PPO Self-Play Training")
+    print("  PPO Curriculum Training")
     print(f"  Format       : {fmt}" + (f" (training as {training_fmt})" if training_fmt != fmt else ""))
     print(f"  Server mode  : {server} — {_server_desc}")
     print(f"  Total steps  : {total_timesteps:,}")
-    print(f"  Swap every   : {swap_every:,}")
+    print(f"  Swap every   : {swap_every:,} (after graduation)")
     print(f"  Save dir     : {fmt_save_dir}")
     print(f"  TensorBoard  : tensorboard --logdir {log_dir}")
     print(f"{'='*60}\n")
@@ -416,7 +561,7 @@ def train(  # pragma: no cover
     try:
         model.learn(
             total_timesteps=total_timesteps,
-            callback=[checkpoint_cb, selfplay_cb],
+            callback=[checkpoint_cb, curriculum_cb],
             reset_num_timesteps=(resume is None),
             tb_log_name=f"ppo_{fmt}",
         )

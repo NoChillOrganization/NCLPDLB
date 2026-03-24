@@ -1,0 +1,107 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- C:\Program Files\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: F:\Claude Code\projects\pokemon-draft-bot\NCLPDLB
+configfile: pytest.ini
+plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 44 items
+
+tests/unit/test_train_policy.py::TestCheckShowdownServer::test_reachable_does_not_raise PASSED [  2%]
+tests/unit/test_train_policy.py::TestCheckShowdownServer::test_unreachable_raises_runtime_error PASSED [  4%]
+tests/unit/test_train_policy.py::TestCheckShowdownServer::test_error_message_contains_port PASSED [  6%]
+tests/unit/test_train_policy.py::TestCheckShowdownServerIfLocal::test_localhost_mode_calls_check PASSED [  9%]
+tests/unit/test_train_policy.py::TestCheckShowdownServerIfLocal::test_non_localhost_skips_check PASSED [ 11%]
+tests/unit/test_train_policy.py::TestCheckShowdownServerIfLocal::test_browser_mode_skips_check PASSED [ 13%]
+tests/unit/test_train_policy.py::TestConstants::test_doubles_formats_is_set PASSED [ 15%]
+tests/unit/test_train_policy.py::TestConstants::test_doubles_formats_contains_vgc PASSED [ 18%]
+tests/unit/test_train_policy.py::TestConstants::test_doubles_formats_contains_smogon_doubles PASSED [ 20%]
+tests/unit/test_train_policy.py::TestConstants::test_ppo_hyperparams_has_required_keys PASSED [ 22%]
+tests/unit/test_train_policy.py::TestConstants::test_ppo_hyperparams_types PASSED [ 25%]
+tests/unit/test_train_policy.py::TestConstants::test_ppo_net_arch PASSED [ 27%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_init_sets_attributes PASSED [ 29%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_on_step_returns_true PASSED [ 31%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_on_step_triggers_swap_when_threshold_reached PASSED [ 34%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_on_step_no_swap_when_below_threshold PASSED [ 36%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_increments_count PASSED [ 38%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_calls_model_save PASSED [ 40%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_calls_opponent_load PASSED [ 43%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_copies_to_latest PASSED [ 45%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_verbose_logging PASSED [ 47%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_last_swap_updated_after_swap PASSED [ 50%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_multiple_swaps_on_step PASSED [ 52%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_init_defaults PASSED [ 54%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_init_stores_params PASSED [ 56%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_on_step_returns_true PASSED [ 59%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_no_graduation_below_win_threshold PASSED [ 61%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_no_graduation_window_not_full PASSED [ 63%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_graduates_at_threshold PASSED [ 65%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_graduate_sets_last_swap PASSED [ 68%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_graduate_increments_swap_count PASSED [ 70%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_graduation_is_idempotent PASSED [ 72%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_selfplay_swap_triggers_when_interval_reached PASSED [ 75%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_selfplay_no_swap_below_interval PASSED [ 77%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_positive_reward_counted_as_win FAILED [ 79%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_zero_reward_counted_as_loss PASSED [ 81%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_negative_reward_counted_as_loss PASSED [ 84%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_infos_without_episode_key_ignored PASSED [ 86%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_missing_infos_key_ignored PASSED [ 88%]
+tests/unit/test_train_policy.py::TestCurriculumCallback::test_verbose_graduation_does_not_raise PASSED [ 90%]
+tests/unit/test_train_policy.py::TestCurriculumOpponent::test_load_policy_sets_policy PASSED [ 93%]
+tests/unit/test_train_policy.py::TestCurriculumOpponent::test_load_policy_handles_exception PASSED [ 95%]
+tests/unit/test_train_policy.py::TestCurriculumOpponent::test_choose_move_delegates_to_max_base_power_when_no_policy FAILED [ 97%]
+tests/unit/test_train_policy.py::TestCurriculumOpponent::test_choose_move_uses_ppo_when_policy_loaded PASSED [100%]
+
+================================== FAILURES ===================================
+_________ TestCurriculumCallback.test_positive_reward_counted_as_win __________
+tests\unit\test_train_policy.py:381: in test_positive_reward_counted_as_win
+    cb._on_step()
+src\ml\train_policy.py:285: in _on_step
+    self._graduate()
+src\ml\train_policy.py:248: in _graduate
+    shutil.copy(str(ckpt), str(latest))
+C:\Program Files\Python314\Lib\shutil.py:489: in copy
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
+C:\Program Files\Python314\Lib\shutil.py:313: in copyfile
+    with open(src, 'rb') as fsrc:
+         ^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\power\\AppData\\Local\\Temp\\pytest-of-power\\pytest-128\\test_positive_reward_counted_a0\\swap_0001.zip'
+_ TestCurriculumOpponent.test_choose_move_delegates_to_max_base_power_when_no_policy _
+tests\unit\test_train_policy.py:486: in test_choose_move_delegates_to_max_base_power_when_no_policy
+    result = tp.CurriculumOpponent.choose_move(instance, battle)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\ml\train_policy.py:366: in choose_move
+    return super().choose_move(battle)  # MaxBasePower behaviour
+           ^^^^^^^^^^^^^^^^^^^
+E   TypeError: super(type, obj): obj (instance of MagicMock) is not an instance or subtype of type (CurriculumOpponent).
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.3-final-0 _______________
+
+Name                          Stmts   Miss  Cover   Missing
+-----------------------------------------------------------
+src\__init__.py                   0      0   100%
+src\config.py                    36     36     0%   5-82
+src\data\models.py              218     32    85%   90, 126-127, 131, 135-146, 207, 211, 215-224, 243-246, 274-275
+src\ml\__init__.py                0      0   100%
+src\ml\battle_env.py            215    171    20%   109-126, 130-132, 140-226, 276, 286-305, 336-426, 455, 465-484
+src\ml\browser_trainer.py        11     11     0%   17-31
+src\ml\feature_extractor.py     212    212     0%   26-469
+src\ml\models\__init__.py         0      0   100%
+src\ml\replay_parser.py         252    252     0%   22-508
+src\ml\replay_scraper.py        108    108     0%   15-193
+src\ml\showdown_modes.py         22     15    32%   25-30, 39-53
+src\ml\showdown_player.py        48     48     0%   38-336
+src\ml\teambuilder.py            14     14     0%   15-42
+src\ml\teams.py                  30     30     0%   19-5901
+src\ml\train_all.py              18     18     0%   48-118
+src\ml\train_matchup.py         139    139     0%   24-321
+src\ml\train_policy.py          112      1    99%   268
+src\ml\training_doctor.py       129    129     0%   29-380
+src\ml\training_players.py       26     26     0%   4-55
+src\ml\type_chart.py              9      9     0%   4-32
+-----------------------------------------------------------
+TOTAL                          1599   1251    22%
+=========================== short test summary info ===========================
+FAILED tests/unit/test_train_policy.py::TestCurriculumCallback::test_positive_reward_counted_as_win - FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\power\\AppData\\Local\\Temp\\pytest-of-power\\pytest-128\\test_positive_reward_counted_a0\\swap_0001.zip'
+FAILED tests/unit/test_train_policy.py::TestCurriculumOpponent::test_choose_move_delegates_to_max_base_power_when_no_policy - TypeError: super(type, obj): obj (instance of MagicMock) is not an instance or subtype of type (CurriculumOpponent).
+======================== 2 failed, 42 passed in 15.72s ========================
