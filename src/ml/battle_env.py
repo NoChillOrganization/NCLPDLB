@@ -48,10 +48,11 @@ except ImportError:  # pragma: no cover
 log = logging.getLogger(__name__)
 
 # ── Observation constants ─────────────────────────────────────────────────────
-
-TEAM_SIZE   = 6
-N_MOVES     = 4
-MOVE_FEATS  = 5    # base_power, accuracy, type_id, priority, effectiveness
+OBS_DIM = 48
+TEAM_SIZE = 6
+OBS_DIM_DOUBLES = 80
+N_MOVES = 4
+MOVE_FEATS = 5    # base_power, accuracy, type_id, priority, effectiveness
 STATUS_DIM  = 1
 BOOST_DIM   = 6
 FIELD_DIM   = 4
@@ -317,14 +318,14 @@ else:  # pragma: no cover
 
 # ── Doubles observation constants ─────────────────────────────────────────────
 
-# Active mon 1: [species_id, hp, 4×(4-feats), status, 6×boosts] = 25
-# Active mon 2: same = 25
+# Active mon 1: [species_id, hp, 4×(5-feats), status, 6×boosts] = 29
+# Active mon 2: same = 29
 # Opp active 1: [species_id, hp, status] = 3
 # Opp active 2: same = 3
 # My team HP:   6
 # Opp team HP:  6
 # Field:        4  (weather, terrain, trick_room, turn)
-OBS_DIM_DOUBLES = 25 + 25 + 3 + 3 + 6 + 6 + 4   # = 72
+OBS_DIM_DOUBLES = 29 + 29 + 3 + 3 + 6 + 6 + 4   # = 80
 
 
 def build_doubles_observation(battle: Any) -> np.ndarray:
@@ -361,7 +362,7 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
                 obs[idx] = (boosts.get(stat, 0) + 6) / 12.0
                 idx += 1
         else:
-            idx += 25
+            idx += 29
 
     # ── Two opponent active Pokémon ────────────────────────────────
     opp_list = getattr(battle, "opponent_active_pokemon", [None, None]) or [None, None]
