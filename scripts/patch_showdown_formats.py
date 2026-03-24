@@ -22,7 +22,7 @@ import re
 import sys
 
 SAFE_RULES = (
-    "['Obtainable', 'Team Preview', 'HP Percentage Mod', "
+    "['Team Preview', 'HP Percentage Mod', "
     "'Cancel Mod', 'Endless Battle Clause', 'Sleep Clause Mod']"
 )
 

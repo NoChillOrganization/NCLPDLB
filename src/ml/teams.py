@@ -2875,7 +2875,7 @@ Bold Nature
 - Surf
 - Wish
 - Protect
-- Wish
+- Scald
 
 Jolteon @ Choice Specs
 Ability: Volt Absorb
@@ -2885,7 +2885,7 @@ Timid Nature
 - Thunderbolt
 - Volt Switch
 - Shadow Ball
-- Shadow Ball
+- Thunder Wave
 
 Sylveon @ Choice Specs
 Ability: Pixilate
@@ -2905,7 +2905,7 @@ Calm Nature
 - Foul Play
 - Wish
 - Protect
-- Wish
+- Moonlight
 
 Espeon @ Life Orb
 Ability: Magic Bounce
@@ -2925,7 +2925,7 @@ Calm Nature
 - Moonblast
 - Synthesis
 - Wish
-- Moonblast
+- Aromatherapy
 """,
 
     # Team 2 — Trick Room Slow Offense
@@ -3321,7 +3321,7 @@ Careful Nature
 - Foul Play
 - Wish
 - Protect
-- Wish
+- Heal Bell
 
 Granbull @ Assault Vest
 Ability: Intimidate
@@ -4700,7 +4700,7 @@ Bold Nature
 - Surf
 - Wish
 - Protect
-- Wish
+- Scald
 
 Jolteon @ Choice Specs
 Ability: Volt Absorb
@@ -4710,7 +4710,7 @@ Timid Nature
 - Thunderbolt
 - Volt Switch
 - Shadow Ball
-- Shadow Ball
+- Thunder Wave
 
 Sylveon @ Choice Specs
 Ability: Pixilate
@@ -4720,7 +4720,7 @@ Timid Nature
 - Hyper Voice
 - Shadow Ball
 - Psyshock
-- Psyshock
+- Calm Mind
 
 Umbreon @ Leftovers
 Ability: Synchronize
@@ -4730,7 +4730,7 @@ Calm Nature
 - Foul Play
 - Wish
 - Protect
-- Wish
+- Moonlight
 
 Espeon @ Life Orb
 Ability: Magic Bounce
@@ -4750,7 +4750,7 @@ Calm Nature
 - Moonblast
 - Synthesis
 - Wish
-- Moonblast""",
+- Aromatherapy""",
 
     # Team 2 — Trick Room Slow Offense
     """\
