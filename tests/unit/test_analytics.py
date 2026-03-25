@@ -1,8 +1,7 @@
 """
 Unit tests for AnalyticsService — type coverage, weaknesses, archetypes.
 """
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from src.data.models import Pokemon, PokemonStats
 from src.services.analytics_service import AnalyticsService, get_type_effectiveness

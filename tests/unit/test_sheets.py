@@ -1,8 +1,6 @@
 """Tests for src/data/sheets.py — SheetsClient methods (gspread mocked)."""
-import json
 import pytest
-from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import gspread
 from src.data.sheets import SheetsClient, Tab, sheets, _col_letter, _col_num, LearningSheets
@@ -49,7 +47,7 @@ def test_connect_success(tmp_path):
     fresh._client = None
 
     with patch("src.data.sheets.settings") as ms, \
-         patch("src.data.sheets.Credentials.from_service_account_file") as mock_creds, \
+         patch("src.data.sheets.Credentials.from_service_account_file"), \
          patch("src.data.sheets.gspread.authorize") as mock_auth:
         ms.google_sheets_credentials_file = creds_file
         ms.google_sheets_spreadsheet_id = "test-id"

@@ -18,7 +18,6 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 # ---------------------------------------------------------------------------
 # Path bootstrap — add project root so data_pipeline and src.* are importable
@@ -34,7 +33,6 @@ FIXTURES_DIR = PROJECT_ROOT / "tests" / "fixtures"
 # ---------------------------------------------------------------------------
 from data_pipeline import (  # noqa: E402
     ALL_FORMATS,
-    PRIORITY_FORMATS,
     SPARSE_WARN_THRESHOLD,
     should_skip_format,
     update_manifest,
@@ -94,7 +92,6 @@ def test_pipeline_cli_mocked():
 
 def test_sparse_format_warning(caplog):
     """Sparse format (< SPARSE_WARN_THRESHOLD replays) must emit WARNING, not raise."""
-    import logging
 
     with caplog.at_level(logging.WARNING):
         # Simulate sparse warning logic: scraped < SPARSE_WARN_THRESHOLD

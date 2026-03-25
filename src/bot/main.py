@@ -31,7 +31,7 @@ logging.basicConfig(
         logging.FileHandler(settings.log_file, encoding="utf-8"),
     ],
 )
-log = logging.getLogger("pokemon_draft_bot")
+log = logging.getLogger(__name__)
 
 
 _SYNC_HASH_FILE = Path(__file__).parent.parent.parent / ".discord_sync_hash"
@@ -156,6 +156,13 @@ class DraftLeagueBot(commands.Bot):
 
 
 async def main() -> None:
+    creds = settings.google_sheets_credentials_file
+    if not creds.exists():
+        raise FileNotFoundError(
+            f"Google Sheets credentials not found at '{creds}'. "
+            "Download your service account JSON and place it there, or set "
+            "GOOGLE_SHEETS_CREDENTIALS_FILE in .env."
+        )
     bot = DraftLeagueBot()
     async with bot:
         await bot.start(settings.discord_token)

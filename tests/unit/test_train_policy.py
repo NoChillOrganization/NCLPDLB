@@ -9,7 +9,6 @@ Covers pure-logic functions only:
 """
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -344,7 +343,7 @@ class TestCurriculumCallback:
         with patch("shutil.copy"):
             self._push_episodes(cb, wins=5, total=5)   # graduate
             # Now push more wins — should not call save again from _graduate
-            save_count_after = cb.model.save.call_count
+            _ = cb.model.save.call_count
             self._push_episodes(cb, wins=5, total=5)
 
         # swap may occur if timesteps advance, but graduation code won't run again
@@ -427,7 +426,6 @@ class TestCurriculumOpponent:
 
     def _make_mock_opponent(self, has_policy: bool = False):
         """Return a MagicMock that mimics CurriculumOpponent's interface."""
-        from src.ml.train_policy import CurriculumCallback  # already imported
         opponent = MagicMock()
         opponent._policy = MagicMock() if has_policy else None
         opponent._is_doubles = False
@@ -444,7 +442,6 @@ class TestCurriculumOpponent:
 
             # Build a real-ish object by importing the class then calling load_policy
             # via the method itself on a MagicMock that has the real method bound.
-            from src.ml.train_policy import CurriculumCallback  # side-effect: module loaded
             import src.ml.train_policy as tp
             if not hasattr(tp, "CurriculumOpponent"):
                 pytest.skip("CurriculumOpponent not accessible (POKE_ENV_OK=False)")
@@ -514,6 +511,6 @@ class TestCurriculumOpponent:
              patch("poke_env.environment.singles_env.SinglesEnv.action_to_order",
                    return_value="ppo_order"):
             mock_obs.return_value = MagicMock(reshape=MagicMock(return_value=MagicMock()))
-            result = tp.CurriculumOpponent.choose_move(instance, battle)
+            _ = tp.CurriculumOpponent.choose_move(instance, battle)
 
         mock_policy.predict.assert_called_once()

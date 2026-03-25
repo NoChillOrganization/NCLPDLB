@@ -107,7 +107,7 @@ class ActiveDraftUser(HttpUser):
 
 @events.test_start.add_listener
 def on_test_start(environment, **kwargs):
-    print(f"\n=== Pokemon Draft League Load Test ===")
+    print("\n=== Pokemon Draft League Load Test ===")
     print(f"Target: {environment.host}")
 
 
@@ -115,7 +115,7 @@ def on_test_start(environment, **kwargs):
 def on_test_stop(environment, **kwargs):
     if environment.runner:
         t = environment.runner.stats.total
-        print(f"\n=== Results ===")
+        print("\n=== Results ===")
         print(f"Requests: {t.num_requests} | Failures: {t.num_failures}")
         print(f"Avg: {t.avg_response_time:.1f}ms | p95: {t.get_response_time_percentile(0.95):.1f}ms")
         print(f"RPS: {t.current_rps:.1f}")

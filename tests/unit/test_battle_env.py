@@ -9,7 +9,7 @@ __init__ methods are excluded (require live Showdown server).
 """
 from __future__ import annotations
 
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest

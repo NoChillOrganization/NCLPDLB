@@ -2,7 +2,7 @@
 Unit tests for EloService — rating calculations, matchmaking, standings.
 """
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from src.services.elo_service import EloService, expected_score, new_rating
 from src.config import settings
@@ -170,7 +170,7 @@ async def test_record_match_sets_display_names():
     with patch.object(svc, "_save_player"), \
          patch("src.services.elo_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = None
-        result = await svc.record_match(
+        _ = await svc.record_match(
             "guild_dn", "w1", "l1",
             winner_name="Alice", loser_name="Bob",
         )

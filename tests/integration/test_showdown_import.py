@@ -3,7 +3,6 @@ Integration tests for Showdown import/export, replay parsing, and console legali
 """
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
-from datetime import datetime, timezone
 
 from src.services.team_service import TeamService
 from src.services.battle_sim import BattleSimService

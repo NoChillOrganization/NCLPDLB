@@ -1,5 +1,4 @@
 """Tests for src/data/models.py — model properties not covered elsewhere."""
-import pytest
 from src.data.models import Draft, DraftFormat, DraftStatus, TeamRoster, PlayerElo
 
 

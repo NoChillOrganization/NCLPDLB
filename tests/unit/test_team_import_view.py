@@ -1,5 +1,4 @@
 import pytest
-import discord
 from unittest.mock import AsyncMock, MagicMock
 from src.bot.views.team_import_view import build_confirm_embed, TeamImportConfirmView
 

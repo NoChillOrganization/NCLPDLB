@@ -2,16 +2,13 @@
 Tests for src/bot/cogs/team.py — 100% coverage of all command handlers,
 ShowdownImportModal, autocomplete, and setup().
 """
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
-import pytest
 
 from src.bot.cogs.team import (
     ShowdownImportModal,
     TeamCog,
-    decode_attachment_bytes,
     setup,
 )
 

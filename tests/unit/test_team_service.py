@@ -3,7 +3,7 @@ Unit tests for TeamService — roster management, trades, import/export, legalit
 """
 import json
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, patch
 
 import src.services.team_service as ts_mod
 from src.services.team_service import TeamService

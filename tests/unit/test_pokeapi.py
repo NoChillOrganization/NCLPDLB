@@ -1,7 +1,6 @@
 """Tests for src/data/pokeapi.py — PokemonDatabase methods."""
 import json
 import pytest
-from pathlib import Path
 
 import src.data.pokeapi as pokeapi_mod
 from src.data.pokeapi import PokemonDatabase

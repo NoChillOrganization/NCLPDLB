@@ -3,8 +3,7 @@ Unit tests for DraftService — snake, auction, ban, admin ops.
 Run: pytest tests/unit/test_draft_service.py -v
 """
 import pytest
-import pytest_asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from src.data.models import DraftFormat, DraftStatus
 from src.services.draft_service import DraftService
@@ -221,7 +220,7 @@ async def test_start_draft_wrong_commissioner_raises(draft_svc):
 async def test_start_draft_snake_sets_active(draft_svc):
     """Non-CUSTOM formats set status to ACTIVE (draft_service.py:165)."""
     with patch("src.services.draft_service.sheets"):
-        draft = await draft_svc.create_draft("guildACT", "p1", DraftFormat.SNAKE)
+        _ = await draft_svc.create_draft("guildACT", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildACT", "p1")
         await draft_svc.add_player("guildACT", "p2")
         started = await draft_svc.start_draft("guildACT", "p1")
@@ -230,7 +229,7 @@ async def test_start_draft_snake_sets_active(draft_svc):
 
 async def test_start_draft_custom_format_enters_ban_phase(draft_svc):
     with patch("src.services.draft_service.sheets"):
-        draft = await draft_svc.create_draft("guildCUST", "p1", DraftFormat.CUSTOM)
+        _ = await draft_svc.create_draft("guildCUST", "p1", DraftFormat.CUSTOM)
         await draft_svc.add_player("guildCUST", "p1")
         await draft_svc.add_player("guildCUST", "p2")
         started = await draft_svc.start_draft("guildCUST", "p1")
@@ -275,7 +274,7 @@ async def test_make_pick_pokemon_not_found(draft_svc):
 @pytest.mark.asyncio
 async def test_make_pick_not_active(draft_svc):
     with patch("src.services.draft_service.sheets"):
-        draft = await draft_svc.create_draft("guildNA", "p1", DraftFormat.SNAKE)
+        _ = await draft_svc.create_draft("guildNA", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildNA", "p1")
         await draft_svc.add_player("guildNA", "p2")
         # Status stays SETUP
@@ -454,7 +453,8 @@ async def test_make_pick_cancels_old_timer(draft_svc):
     with patch("src.services.draft_service.sheets") as mock_sheets, \
          patch("src.services.draft_service.pokemon_db") as mock_db:
         mock_sheets.save_pick = MagicMock()
-        mon = MagicMock(); mon.name = "Pikachu"
+        mon = MagicMock()
+        mon.name = "Pikachu"
         mock_db.find = MagicMock(return_value=mon)
 
         draft = await draft_svc.create_draft("gTCancel", "p1", DraftFormat.SNAKE, timer_seconds=999)
@@ -477,7 +477,7 @@ async def test_start_draft_with_timer_starts_first_timer(draft_svc):
     import src.services.draft_service as ds_mod
 
     with patch("src.services.draft_service.sheets"):
-        draft = await draft_svc.create_draft("gTStart", "p1", DraftFormat.SNAKE, timer_seconds=999)
+        _ = await draft_svc.create_draft("gTStart", "p1", DraftFormat.SNAKE, timer_seconds=999)
         await draft_svc.add_player("gTStart", "p1")
         await draft_svc.add_player("gTStart", "p2")
         started = await draft_svc.start_draft("gTStart", "p1")

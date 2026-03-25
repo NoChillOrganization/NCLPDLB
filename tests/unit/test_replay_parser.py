@@ -35,15 +35,11 @@ from pathlib import Path
 import pytest
 
 from src.ml.replay_parser import (
-    BattleRecord,
-    BattleEvent,
-    TurnSnapshot,
     _extract_species,
     _parse_hp,
     parse_log,
     parse_replay_file,
     parse_replay_dir,
-    parse_replay_json,
 )
 
 

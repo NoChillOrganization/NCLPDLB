@@ -108,7 +108,7 @@ def test_replay_parser_smoke():
 
 def test_feature_extractor_smoke():
     """Level 2: build vocab and extract team features from a parsed record."""
-    numpy = pytest.importorskip("numpy")
+    pytest.importorskip("numpy")
 
     from src.ml.replay_parser import parse_log
     from src.ml.feature_extractor import FeatureExtractor

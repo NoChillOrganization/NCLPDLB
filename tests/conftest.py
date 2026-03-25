@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, AsyncMock
 
 tracemalloc.start()
 
-from src.data.models import (
+from src.data.models import (  # noqa: E402
     Pokemon, PokemonStats,
     Draft, DraftFormat, DraftStatus,
     TeamRoster, PlayerElo,

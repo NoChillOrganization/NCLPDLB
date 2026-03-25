@@ -2,7 +2,7 @@
 Unit tests — 16-player draft pool hard cap.
 """
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from src.data.models import MAX_PLAYERS_PER_DRAFT
 from src.services.draft_service import DraftService

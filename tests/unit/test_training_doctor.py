@@ -12,7 +12,6 @@ import zipfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from src.ml.training_doctor import (
     _can_import,
@@ -337,7 +336,6 @@ class TestApplyAllFixes:
 
 class TestCanImport:
     def test_success_returns_true(self):
-        import subprocess
         mock_result = MagicMock()
         mock_result.returncode = 0
         with patch("src.ml.training_doctor.subprocess.run", return_value=mock_result):

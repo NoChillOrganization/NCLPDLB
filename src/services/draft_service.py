@@ -11,11 +11,13 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Awaitable, Callable
 
-from src.data.models import Draft, DraftBan, DraftFormat, DraftPick, DraftStatus
+from src.data.models import Draft, DraftBan, DraftFormat, DraftPick, DraftStatus, Pokemon
 from src.data.pokeapi import pokemon_db
 from src.data.sheets import sheets
 
 log = logging.getLogger(__name__)
+
+AUCTION_STARTING_BUDGET = 1000  # Points each player starts with in auction drafts
 
 # In-memory draft cache (one active draft per guild)
 _active_drafts: dict[str, Draft] = {}
@@ -27,7 +29,7 @@ _timer_tasks: dict[str, asyncio.Task] = {}
 @dataclass
 class PickResult:
     success: bool
-    pokemon: object | None = None
+    pokemon: Pokemon | None = None
     next_player_name: str = ""
     round: int = 1
     error: str = ""
@@ -56,7 +58,7 @@ class BidResult:
 @dataclass
 class BanResult:
     success: bool
-    pokemon: object | None = None
+    pokemon: Pokemon | None = None
     error: str = ""
 
 
@@ -149,7 +151,7 @@ class DraftService:
             draft.team_names[player_id] = team_name
         # Initialize auction budget if auction format
         if draft.format == DraftFormat.AUCTION:
-            draft.budget[player_id] = 1000  # Starting budget
+            draft.budget[player_id] = AUCTION_STARTING_BUDGET
         log.info(f"Player {player_id} ({player_name}) joined draft {draft.draft_id} (pool {pool})")
         return AddPlayerResult(success=True, player_count=len(draft.player_order))
 
