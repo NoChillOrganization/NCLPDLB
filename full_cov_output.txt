@@ -1,0 +1,1055 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- C:\Program Files\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: F:\Claude Code\projects\pokemon-draft-bot\NCLPDLB
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, mock-3.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 763 items
+
+tests/e2e/test_full_draft.py::test_full_snake_draft PASSED               [  0%]
+tests/e2e/test_full_draft.py::test_ban_phase_blocks_picks PASSED         [  0%]
+tests/e2e/test_full_draft.py::test_draft_not_your_turn PASSED            [  0%]
+tests/integration/test_showdown_import.py::test_import_standard_format PASSED [  0%]
+tests/integration/test_showdown_import.py::test_import_nickname_format PASSED [  0%]
+tests/integration/test_showdown_import.py::test_import_empty_fails PASSED [  0%]
+tests/integration/test_showdown_import.py::test_legality_vgc_legal PASSED [  0%]
+tests/integration/test_showdown_import.py::test_legality_sv_available PASSED [  1%]
+tests/integration/test_showdown_import.py::test_legality_not_in_sv PASSED [  1%]
+tests/integration/test_showdown_import.py::test_legality_unknown_pokemon PASSED [  1%]
+tests/integration/test_showdown_import.py::test_replay_parse_success PASSED [  1%]
+tests/integration/test_showdown_import.py::test_replay_parse_empty_log PASSED [  1%]
+tests/integration/test_showdown_import.py::test_replay_parse_duplicate_pokemon PASSED [  1%]
+tests/integration/test_showdown_import.py::test_export_round_trip PASSED [  1%]
+tests/integration/test_showdown_import.py::test_import_with_tera_type PASSED [  1%]
+tests/integration/test_showdown_import.py::test_import_malformed_team PASSED [  2%]
+tests/unit/test_analytics.py::test_fire_vs_grass_is_super_effective PASSED [  2%]
+tests/unit/test_analytics.py::test_water_vs_fire_is_super_effective PASSED [  2%]
+tests/unit/test_analytics.py::test_normal_vs_ghost_is_immune PASSED      [  2%]
+tests/unit/test_analytics.py::test_electric_vs_ground_is_immune PASSED   [  2%]
+tests/unit/test_analytics.py::test_fire_vs_water_grass_double_resistance PASSED [  2%]
+tests/unit/test_analytics.py::test_fighting_vs_normal_ghost PASSED       [  2%]
+tests/unit/test_analytics.py::test_coverage_identifies_types PASSED      [  3%]
+tests/unit/test_analytics.py::test_weakness_counts_multiple_weak_pokemon PASSED [  3%]
+tests/unit/test_analytics.py::test_no_weakness_with_diverse_team PASSED  [  3%]
+tests/unit/test_analytics.py::test_trick_room_archetype PASSED           [  3%]
+tests/unit/test_analytics.py::test_rain_archetype PASSED                 [  3%]
+tests/unit/test_analytics.py::test_hyper_offense_archetype PASSED        [  3%]
+tests/unit/test_analytics.py::test_speed_tiers_sorted_descending PASSED  [  3%]
+tests/unit/test_analytics.py::test_high_bst_gives_high_threat_score PASSED [  3%]
+tests/unit/test_analytics.py::test_empty_team_returns_zero_threat PASSED [  4%]
+tests/unit/test_analytics.py::test_fire_core_archetype PASSED            [  4%]
+tests/unit/test_analytics.py::test_vgc_restricted_archetype PASSED       [  4%]
+tests/unit/test_analytics.py::test_stall_archetype PASSED                [  4%]
+tests/unit/test_analytics.py::test_balance_archetype PASSED              [  4%]
+tests/unit/test_analytics.py::test_wall_role_assigned PASSED             [  4%]
+tests/unit/test_analytics.py::test_mixed_role_assigned PASSED            [  4%]
+tests/unit/test_analytics.py::test_analyze_team_with_roster PASSED       [  4%]
+tests/unit/test_analytics.py::test_analyze_team_no_roster PASSED         [  5%]
+tests/unit/test_battle_env.py::TestMoveFeatures::test_none_move_returns_zeros PASSED [  5%]
+tests/unit/test_battle_env.py::TestMoveFeatures::test_normal_move PASSED [  5%]
+tests/unit/test_battle_env.py::TestMoveFeatures::test_high_priority_move PASSED [  5%]
+tests/unit/test_battle_env.py::TestMoveFeatures::test_none_base_power_treated_as_zero PASSED [  5%]
+tests/unit/test_battle_env.py::TestMoveFeatures::test_none_accuracy_treated_as_100 PASSED [  5%]
+tests/unit/test_battle_env.py::TestMoveFeatures::test_priority_exception_falls_back_to_05 PASSED [  5%]
+tests/unit/test_battle_env.py::TestMoveFeatures::test_base_power_capped_at_250 PASSED [  6%]
+tests/unit/test_battle_env.py::TestMoveFeatures::test_known_type_id PASSED [  6%]
+tests/unit/test_battle_env.py::TestPokemonHp::test_none_returns_zero PASSED [  6%]
+tests/unit/test_battle_env.py::TestPokemonHp::test_fainted_returns_zero PASSED [  6%]
+tests/unit/test_battle_env.py::TestPokemonHp::test_full_hp PASSED        [  6%]
+tests/unit/test_battle_env.py::TestPokemonHp::test_partial_hp PASSED     [  6%]
+tests/unit/test_battle_env.py::TestPokemonHp::test_none_hp_fraction_returns_zero PASSED [  6%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_shape_and_dtype PASSED [  6%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_all_values_in_unit_range PASSED [  7%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_no_active_pokemon_advances_idx PASSED [  7%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_no_opponent_advances_idx PASSED [  7%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_fewer_than_4_moves PASSED [  7%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_fewer_than_6_team_members PASSED [  7%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_turn_normalized PASSED [  7%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_turn_capped_at_50 PASSED [  7%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_zero_turn PASSED [  7%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_trick_room_effect_imported PASSED [  8%]
+tests/unit/test_battle_env.py::TestBuildObservation::test_active_terrain_field_hits_break PASSED [  8%]
+tests/unit/test_battle_env.py::TestBuildDoublesObservation::test_shape_and_dtype PASSED [  8%]
+tests/unit/test_battle_env.py::TestBuildDoublesObservation::test_all_values_in_unit_range PASSED [  8%]
+tests/unit/test_battle_env.py::TestBuildDoublesObservation::test_scalar_active_pokemon_wrapped_to_list PASSED [  8%]
+tests/unit/test_battle_env.py::TestBuildDoublesObservation::test_doubles_active_terrain_hits_break PASSED [  8%]
+tests/unit/test_battle_env.py::TestBuildDoublesObservation::test_none_active_list_falls_back PASSED [  8%]
+tests/unit/test_battle_env.py::TestBuildDoublesObservation::test_no_opponent_slots_fill_zeros PASSED [  9%]
+tests/unit/test_battle_env.py::TestBuildDoublesObservation::test_one_opponent_slot_none PASSED [  9%]
+tests/unit/test_battle_env.py::TestBattleEnvCalcReward::test_win_reward_is_positive PASSED [  9%]
+tests/unit/test_battle_env.py::TestBattleEnvCalcReward::test_loss_reward_is_negative PASSED [  9%]
+tests/unit/test_battle_env.py::TestBattleEnvCalcReward::test_neutral_step_is_zero PASSED [  9%]
+tests/unit/test_battle_env.py::TestBattleEnvCalcReward::test_opponent_faint_adds_reward PASSED [  9%]
+tests/unit/test_battle_env.py::TestBattleEnvCalcReward::test_own_faint_reduces_reward PASSED [  9%]
+tests/unit/test_battle_env.py::TestBattleEnvCalcReward::test_state_persists_across_calls PASSED [  9%]
+tests/unit/test_battle_env.py::TestBattleDoubleEnvMethods::test_win_is_positive PASSED [ 10%]
+tests/unit/test_battle_env.py::TestBattleDoubleEnvMethods::test_loss_is_negative PASSED [ 10%]
+tests/unit/test_battle_env.py::TestBattleDoubleEnvMethods::test_neutral_is_zero PASSED [ 10%]
+tests/unit/test_battle_env.py::TestEmbedBattle::test_battle_env_embed_battle_returns_observation PASSED [ 10%]
+tests/unit/test_battle_env.py::TestEmbedBattle::test_battle_double_env_embed_battle_returns_doubles_obs PASSED [ 10%]
+tests/unit/test_battle_env.py::TestFallbackStubs::test_battle_env_stub_raises_import_error SKIPPED [ 10%]
+tests/unit/test_battle_env.py::TestFallbackStubs::test_battle_double_env_stub_raises_import_error SKIPPED [ 10%]
+tests/unit/test_battle_env.py::TestFallbackStubs::test_no_custom_teampreview_override PASSED [ 11%]
+tests/unit/test_battle_sim.py::test_parse_replay_extracts_winner PASSED  [ 11%]
+tests/unit/test_battle_sim.py::test_parse_replay_extracts_teams PASSED   [ 11%]
+tests/unit/test_battle_sim.py::test_parse_replay_counts_turns PASSED     [ 11%]
+tests/unit/test_battle_sim.py::test_parse_replay_no_winner_returns_unknown PASSED [ 11%]
+tests/unit/test_battle_sim.py::test_parse_replay_empty_log PASSED        [ 11%]
+tests/unit/test_battle_sim.py::test_parse_replay_deduplicates_pokemon PASSED [ 11%]
+tests/unit/test_battle_sim.py::test_compare_teams_returns_result PASSED  [ 11%]
+tests/unit/test_battle_sim.py::test_compare_teams_missing_team PASSED    [ 12%]
+tests/unit/test_battle_sim.py::test_parse_replay_command_fetches_json PASSED [ 12%]
+tests/unit/test_battle_sim.py::test_replay_parse_result_default_teams_are_lists PASSED [ 12%]
+tests/unit/test_battle_sim.py::test_compare_teams_p1_clear_advantage PASSED [ 12%]
+tests/unit/test_battle_sim.py::test_compare_teams_p2_clear_advantage PASSED [ 12%]
+tests/unit/test_battle_sim.py::test_matchup_score_speed_bonus PASSED     [ 12%]
+tests/unit/test_battle_sim.py::test_parse_replay_http_error_status PASSED [ 12%]
+tests/unit/test_battle_sim.py::test_parse_replay_client_error PASSED     [ 12%]
+tests/unit/test_battle_sim.py::test_parse_replay_non_https_url PASSED    [ 13%]
+tests/unit/test_battle_sim.py::test_parse_replay_parse_exception PASSED  [ 13%]
+tests/unit/test_battle_sim.py::test_parse_replay_malformed_turn_line PASSED [ 13%]
+tests/unit/test_bot_cogs.py::test_decode_utf8_text PASSED                [ 13%]
+tests/unit/test_bot_cogs.py::test_decode_ascii PASSED                    [ 13%]
+tests/unit/test_bot_cogs.py::test_decode_invalid_bytes_uses_replacement PASSED [ 13%]
+tests/unit/test_bot_cogs.py::test_decode_empty_bytes PASSED              [ 13%]
+tests/unit/test_bot_cogs.py::test_build_confirm_embed_unknown_format_key PASSED [ 14%]
+tests/unit/test_bot_cogs.py::test_build_confirm_embed_empty_pokemon_list PASSED [ 14%]
+tests/unit/test_bot_cogs.py::test_model_exists_per_format_subdir PASSED  [ 14%]
+tests/unit/test_bot_cogs.py::test_model_exists_flat_root PASSED          [ 14%]
+tests/unit/test_bot_cogs.py::test_model_exists_false PASSED              [ 14%]
+tests/unit/test_bot_cogs.py::test_model_exists_different_format_no_match PASSED [ 14%]
+tests/unit/test_bot_cogs.py::test_build_progress_embed_initial PASSED    [ 14%]
+tests/unit/test_bot_cogs.py::test_build_progress_embed_done PASSED       [ 14%]
+tests/unit/test_bot_cogs.py::test_build_progress_embed_failed PASSED     [ 15%]
+tests/unit/test_bot_cogs.py::test_build_progress_embed_retry PASSED      [ 15%]
+tests/unit/test_bot_cogs.py::test_build_progress_embed_description_has_steps PASSED [ 15%]
+tests/unit/test_bot_cogs.py::test_build_progress_embed_zero_total_no_crash PASSED [ 15%]
+tests/unit/test_bot_cogs.py::test_build_queue_embed_initial_queued PASSED [ 15%]
+tests/unit/test_bot_cogs.py::test_build_queue_embed_currently_training PASSED [ 15%]
+tests/unit/test_bot_cogs.py::test_build_queue_embed_done_all_success PASSED [ 15%]
+tests/unit/test_bot_cogs.py::test_build_queue_embed_done_with_failures PASSED [ 15%]
+tests/unit/test_bot_cogs.py::test_build_queue_embed_with_skipped PASSED  [ 16%]
+tests/unit/test_bot_cogs.py::test_build_queue_embed_description_has_queue_summary PASSED [ 16%]
+tests/unit/test_bot_cogs.py::test_build_help_embed_missing_csv PASSED    [ 16%]
+tests/unit/test_bot_cogs.py::test_build_help_embed_with_real_csv PASSED  [ 16%]
+tests/unit/test_bot_cogs.py::test_build_help_embed_skips_rows_with_no_command PASSED [ 16%]
+tests/unit/test_bot_cogs.py::test_build_help_embed_groups_commands_in_field PASSED [ 16%]
+tests/unit/test_bot_cogs.py::test_misc_cog_help_cmd_defers_and_sends PASSED [ 16%]
+tests/unit/test_bot_cogs.py::test_misc_cog_setup_adds_cog PASSED         [ 17%]
+tests/unit/test_bot_cogs.py::test_admin_cog_setup_adds_cog PASSED        [ 17%]
+tests/unit/test_bot_cogs.py::test_admin_skip_sends_followup PASSED       [ 17%]
+tests/unit/test_bot_cogs.py::test_admin_pause_sends_paused_message PASSED [ 17%]
+tests/unit/test_bot_cogs.py::test_admin_resume_sends_resumed_message PASSED [ 17%]
+tests/unit/test_bot_cogs.py::test_admin_override_pick_sends_confirmation PASSED [ 17%]
+tests/unit/test_bot_cogs.py::test_admin_sync_guild_scope_syncs_to_guild PASSED [ 17%]
+tests/unit/test_bot_cogs.py::test_admin_sync_global_scope_syncs_globally PASSED [ 17%]
+tests/unit/test_bot_cogs.py::test_admin_sync_none_scope_defaults_to_guild PASSED [ 18%]
+tests/unit/test_bot_cogs.py::test_admin_sync_http_exception_reports_failure PASSED [ 18%]
+tests/unit/test_bot_cogs.py::test_admin_reset_sends_confirm_view PASSED  [ 18%]
+tests/unit/test_bot_cogs.py::test_admin_train_unknown_format_sends_error PASSED [ 18%]
+tests/unit/test_bot_cogs.py::test_admin_train_model_exists_no_force_sends_error PASSED [ 18%]
+tests/unit/test_bot_cogs.py::test_admin_train_valid_format_creates_task PASSED [ 18%]
+tests/unit/test_bot_cogs.py::test_admin_train_autocomplete_returns_matching_formats PASSED [ 18%]
+tests/unit/test_bot_cogs.py::test_admin_train_autocomplete_empty_current_returns_all_or_25 PASSED [ 19%]
+tests/unit/test_bot_cogs.py::test_admin_train_autocomplete_no_match_returns_empty PASSED [ 19%]
+tests/unit/test_bot_cogs.py::test_admin_train_all_defers_and_creates_task PASSED [ 19%]
+tests/unit/test_bot_cogs.py::test_admin_train_all_skips_existing_when_flag_set PASSED [ 19%]
+tests/unit/test_bot_cogs.py::test_admin_showdown_check_server_reachable PASSED [ 19%]
+tests/unit/test_bot_cogs.py::test_admin_showdown_check_server_unreachable PASSED [ 19%]
+tests/unit/test_bot_cogs.py::test_confirm_reset_view_confirm_resets_draft PASSED [ 19%]
+tests/unit/test_bot_cogs.py::test_confirm_reset_view_cancel_sends_cancelled PASSED [ 19%]
+tests/unit/test_bot_cogs.py::test_try_edit_none_msg_is_noop PASSED       [ 20%]
+tests/unit/test_bot_cogs.py::test_try_edit_with_msg_calls_edit PASSED    [ 20%]
+tests/unit/test_bot_cogs.py::test_try_edit_suppresses_edit_exception PASSED [ 20%]
+tests/unit/test_bot_main.py::test_command_fingerprint_stable_order_independent PASSED [ 20%]
+tests/unit/test_bot_main.py::test_command_fingerprint_with_parameters PASSED [ 20%]
+tests/unit/test_bot_main.py::test_command_fingerprint_changes_on_name_change PASSED [ 20%]
+tests/unit/test_bot_main.py::test_command_fingerprint_changes_on_description_change PASSED [ 20%]
+tests/unit/test_bot_main.py::test_command_fingerprint_empty_list PASSED  [ 20%]
+tests/unit/test_bot_main.py::test_drift_check_no_drift PASSED            [ 21%]
+tests/unit/test_bot_main.py::test_drift_check_extra_in_registered PASSED [ 21%]
+tests/unit/test_bot_main.py::test_drift_check_missing_from_registered_not_drift PASSED [ 21%]
+tests/unit/test_bot_main.py::test_drift_check_both_empty PASSED          [ 21%]
+tests/unit/test_bot_main.py::test_drift_check_all_drift PASSED           [ 21%]
+tests/unit/test_bot_main.py::test_setup_hook_loads_all_cogs PASSED       [ 21%]
+tests/unit/test_bot_main.py::test_setup_hook_continues_on_cog_load_failure PASSED [ 21%]
+tests/unit/test_bot_main.py::test_setup_hook_csv_exists_runs_drift_check PASSED [ 22%]
+tests/unit/test_bot_main.py::test_setup_hook_syncs_to_guild_when_guild_id_set PASSED [ 22%]
+tests/unit/test_bot_main.py::test_setup_hook_skips_sync_when_hash_unchanged PASSED [ 22%]
+tests/unit/test_bot_main.py::test_setup_hook_global_sync_when_no_guild_id PASSED [ 22%]
+tests/unit/test_bot_main.py::test_setup_hook_no_sync_when_both_flags_off PASSED [ 22%]
+tests/unit/test_bot_main.py::test_on_ready_changes_presence PASSED       [ 22%]
+tests/unit/test_bot_main.py::test_on_command_error_does_not_raise PASSED [ 22%]
+tests/unit/test_bot_main.py::test_main_starts_bot_with_token PASSED      [ 22%]
+tests/unit/test_config.py::test_settings_has_required_fields PASSED      [ 23%]
+tests/unit/test_config.py::test_spreadsheet_id_extracted_from_url PASSED [ 23%]
+tests/unit/test_config.py::test_spreadsheet_bare_id_unchanged PASSED     [ 23%]
+tests/unit/test_config.py::test_data_dir_property PASSED                 [ 23%]
+tests/unit/test_draft_service.py::test_create_snake_draft PASSED         [ 23%]
+tests/unit/test_draft_service.py::test_add_players PASSED                [ 23%]
+tests/unit/test_draft_service.py::test_cannot_join_twice PASSED          [ 23%]
+tests/unit/test_draft_service.py::test_start_requires_two_players PASSED [ 23%]
+tests/unit/test_draft_service.py::test_snake_pick_order PASSED           [ 24%]
+tests/unit/test_draft_service.py::test_pick_already_taken PASSED         [ 24%]
+tests/unit/test_draft_service.py::test_auction_bid PASSED                [ 24%]
+tests/unit/test_draft_service.py::test_auction_bid_exceeds_budget PASSED [ 24%]
+tests/unit/test_draft_service.py::test_pause_resume PASSED               [ 24%]
+tests/unit/test_draft_service.py::test_admin_reset PASSED                [ 24%]
+tests/unit/test_draft_service.py::test_create_draft_from_config PASSED   [ 24%]
+tests/unit/test_draft_service.py::test_add_player_no_draft PASSED        [ 25%]
+tests/unit/test_draft_service.py::test_add_player_draft_already_started PASSED [ 25%]
+tests/unit/test_draft_service.py::test_add_player_with_team_name PASSED  [ 25%]
+tests/unit/test_draft_service.py::test_start_draft_no_draft_raises PASSED [ 25%]
+tests/unit/test_draft_service.py::test_start_draft_wrong_commissioner_raises PASSED [ 25%]
+tests/unit/test_draft_service.py::test_start_draft_snake_sets_active PASSED [ 25%]
+tests/unit/test_draft_service.py::test_start_draft_custom_format_enters_ban_phase PASSED [ 25%]
+tests/unit/test_draft_service.py::test_make_pick_no_draft PASSED         [ 25%]
+tests/unit/test_draft_service.py::test_make_pick_wrong_turn PASSED       [ 26%]
+tests/unit/test_draft_service.py::test_make_pick_pokemon_not_found PASSED [ 26%]
+tests/unit/test_draft_service.py::test_make_pick_not_active PASSED       [ 26%]
+tests/unit/test_draft_service.py::test_ban_pokemon_no_draft PASSED       [ 26%]
+tests/unit/test_draft_service.py::test_ban_pokemon_wrong_phase PASSED    [ 26%]
+tests/unit/test_draft_service.py::test_ban_pokemon_not_found PASSED      [ 26%]
+tests/unit/test_draft_service.py::test_ban_pokemon_success PASSED        [ 26%]
+tests/unit/test_draft_service.py::test_make_pick_banned_pokemon PASSED   [ 26%]
+tests/unit/test_draft_service.py::test_draft_completes_after_all_rounds PASSED [ 27%]
+tests/unit/test_draft_service.py::test_start_timer_creates_task PASSED   [ 27%]
+tests/unit/test_draft_service.py::test_cancel_timer_noop_when_no_task PASSED [ 27%]
+tests/unit/test_draft_service.py::test_timer_fires_and_auto_skips PASSED [ 27%]
+tests/unit/test_draft_service.py::test_timer_callback_error_is_swallowed PASSED [ 27%]
+tests/unit/test_draft_service.py::test_make_pick_cancels_old_timer PASSED [ 27%]
+tests/unit/test_draft_service.py::test_start_draft_with_timer_starts_first_timer PASSED [ 27%]
+tests/unit/test_draft_service.py::test_pause_draft_cancels_timer PASSED  [ 28%]
+tests/unit/test_draft_service.py::test_reset_draft_cancels_timer PASSED  [ 28%]
+tests/unit/test_draft_service.py::test_start_timer_returns_early_when_no_current_player PASSED [ 28%]
+tests/unit/test_draft_service.py::test_timer_fires_and_starts_next_player_timer PASSED [ 28%]
+tests/unit/test_draft_service.py::test_start_timer_handles_no_event_loop PASSED [ 28%]
+tests/unit/test_draft_service.py::test_place_bid_no_auction_draft PASSED [ 28%]
+tests/unit/test_draft_service.py::test_force_skip_advances_pick PASSED   [ 28%]
+tests/unit/test_draft_service.py::test_override_pick_replaces_pokemon PASSED [ 28%]
+tests/unit/test_draft_service.py::test_override_pick_no_draft PASSED     [ 29%]
+tests/unit/test_elo.py::test_equal_ratings_expect_50_percent PASSED      [ 29%]
+tests/unit/test_elo.py::test_higher_rating_expects_win PASSED            [ 29%]
+tests/unit/test_elo.py::test_lower_rating_expects_loss PASSED            [ 29%]
+tests/unit/test_elo.py::test_new_rating_win_increases_rating PASSED      [ 29%]
+tests/unit/test_elo.py::test_new_rating_loss_decreases_rating PASSED     [ 29%]
+tests/unit/test_elo.py::test_upset_win_gives_large_gain PASSED           [ 29%]
+tests/unit/test_elo.py::test_k_factor_scales_change PASSED               [ 30%]
+tests/unit/test_elo.py::test_record_match_updates_both_players PASSED    [ 30%]
+tests/unit/test_elo.py::test_record_match_sum_elo_conserved PASSED       [ 30%]
+tests/unit/test_elo.py::test_standings_sorted_by_elo PASSED              [ 30%]
+tests/unit/test_elo.py::test_default_elo_is_configured_value PASSED      [ 30%]
+tests/unit/test_elo.py::test_get_player_loads_from_sheets PASSED         [ 30%]
+tests/unit/test_elo.py::test_get_standings_loads_from_sheets PASSED      [ 30%]
+tests/unit/test_elo.py::test_save_player_calls_upsert PASSED             [ 30%]
+tests/unit/test_elo.py::test_record_match_sets_display_names PASSED      [ 31%]
+tests/unit/test_feature_extractor.py::TestVocabularyToken::test_in_bounds_returns_token PASSED [ 31%]
+tests/unit/test_feature_extractor.py::TestVocabularyToken::test_zero_returns_unk PASSED [ 31%]
+tests/unit/test_feature_extractor.py::TestVocabularyToken::test_out_of_bounds_high_returns_unk PASSED [ 31%]
+tests/unit/test_feature_extractor.py::TestVocabularyToken::test_negative_index_returns_unk PASSED [ 31%]
+tests/unit/test_feature_extractor.py::TestVocabularyToken::test_exact_boundary_returns_unk PASSED [ 31%]
+tests/unit/test_feature_extractor.py::TestVocabularySaveLoad::test_load_restores_token2id PASSED [ 31%]
+tests/unit/test_feature_extractor.py::TestVocabularySaveLoad::test_load_unknown_returns_zero PASSED [ 31%]
+tests/unit/test_feature_extractor.py::TestVocabularySaveLoad::test_load_len_matches PASSED [ 32%]
+tests/unit/test_feature_extractor.py::TestVocabularySaveLoad::test_load_id2token_populated PASSED [ 32%]
+tests/unit/test_feature_extractor.py::TestFeatureExtractorLoad::test_load_restores_species_vocab PASSED [ 32%]
+tests/unit/test_feature_extractor.py::TestFeatureExtractorLoad::test_load_sets_frozen PASSED [ 32%]
+tests/unit/test_feature_extractor.py::TestFeatureExtractorLoad::test_load_restores_move_vocab PASSED [ 32%]
+tests/unit/test_feature_extractor.py::TestFeatureExtractorLoad::test_load_unknown_species_returns_zero PASSED [ 32%]
+tests/unit/test_feature_extractor.py::TestLoadOrCreate::test_returns_fresh_when_no_files PASSED [ 32%]
+tests/unit/test_feature_extractor.py::TestLoadOrCreate::test_returns_loaded_when_files_exist PASSED [ 33%]
+tests/unit/test_feature_extractor.py::TestLoadOrCreate::test_loaded_extractor_recognises_saved_species PASSED [ 33%]
+tests/unit/test_feature_extractor.py::TestTeamFeaturesSkipNonWinners::test_tie_record_skipped PASSED [ 33%]
+tests/unit/test_feature_extractor.py::TestTeamFeaturesSkipNonWinners::test_unknown_winner_skipped PASSED [ 33%]
+tests/unit/test_feature_extractor.py::TestTeamFeaturesSkipNonWinners::test_mix_keeps_only_p1_p2_winners PASSED [ 33%]
+tests/unit/test_feature_extractor.py::TestTeamFeaturesSkipNonWinners::test_all_ties_returns_empty_arrays PASSED [ 33%]
+tests/unit/test_feature_extractor.py::TestStateFeaturesSkipNonWinners::test_tie_record_skipped PASSED [ 33%]
+tests/unit/test_feature_extractor.py::TestStateFeaturesSkipNonWinners::test_unknown_winner_skipped PASSED [ 33%]
+tests/unit/test_feature_extractor.py::TestStateFeaturesSkipNonWinners::test_mix_keeps_only_valid_winners PASSED [ 34%]
+tests/unit/test_feature_extractor.py::TestBuildDatasetMinRating::test_min_rating_filters_low_rated PASSED [ 34%]
+tests/unit/test_feature_extractor.py::TestBuildDatasetMinRating::test_zero_min_rating_keeps_all PASSED [ 34%]
+tests/unit/test_feature_extractor.py::TestBuildDatasetMinRating::test_all_filtered_produces_empty PASSED [ 34%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.replay_parser-requires0] PASSED [ 34%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.teams-requires1] PASSED [ 34%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.train_all-requires2] PASSED [ 34%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.replay_scraper-requires3] PASSED [ 34%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.feature_extractor-requires4] PASSED [ 35%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.train_matchup-requires5] PASSED [ 35%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.battle_env-requires6] PASSED [ 35%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.train_policy-requires7] PASSED [ 35%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.showdown_player-requires8] PASSED [ 35%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.teambuilder-requires9] PASSED [ 35%]
+tests/unit/test_ml_audit.py::test_module_imports[src.ml.models-requires10] PASSED [ 35%]
+tests/unit/test_ml_audit.py::test_replay_parser_smoke PASSED             [ 36%]
+tests/unit/test_ml_audit.py::test_feature_extractor_smoke PASSED         [ 36%]
+tests/unit/test_ml_audit.py::test_replay_scraper_instantiation PASSED    [ 36%]
+tests/unit/test_ml_audit.py::test_train_matchup_smoke PASSED             [ 36%]
+tests/unit/test_ml_audit.py::test_teambuilder_smoke PASSED               [ 36%]
+tests/unit/test_ml_audit.py::test_teams_structure PASSED                 [ 36%]
+tests/unit/test_ml_audit.py::test_teams_showdown_format PASSED           [ 36%]
+tests/unit/test_ml_audit.py::test_infra_dependent_modules_require_showdown SKIPPED [ 36%]
+tests/unit/test_ml_audit.py::test_battle_env_poke_env_flag PASSED        [ 37%]
+tests/unit/test_ml_audit.py::test_train_policy_poke_env_flag PASSED      [ 37%]
+tests/unit/test_ml_utils.py::TestShowdownModeConstants::test_mode_constants_exist PASSED [ 37%]
+tests/unit/test_ml_utils.py::TestShowdownModeConstants::test_valid_modes_contains_all_three PASSED [ 37%]
+tests/unit/test_ml_utils.py::TestServerConfigForMode::test_showdown_mode_returns_showdown_config PASSED [ 37%]
+tests/unit/test_ml_utils.py::TestServerConfigForMode::test_localhost_mode_returns_localhost_config PASSED [ 37%]
+tests/unit/test_ml_utils.py::TestServerConfigForMode::test_browser_mode_returns_localhost_config PASSED [ 37%]
+tests/unit/test_ml_utils.py::TestAccountConfigsForMode::test_localhost_returns_none_pair PASSED [ 38%]
+tests/unit/test_ml_utils.py::TestAccountConfigsForMode::test_browser_returns_none_pair PASSED [ 38%]
+tests/unit/test_ml_utils.py::TestAccountConfigsForMode::test_showdown_mode_with_all_env_vars_returns_account_configs PASSED [ 38%]
+tests/unit/test_ml_utils.py::TestAccountConfigsForMode::test_showdown_mode_missing_env_vars_raises_value_error PASSED [ 38%]
+tests/unit/test_ml_utils.py::TestAccountConfigsForMode::test_showdown_mode_partial_env_vars_raises_value_error PASSED [ 38%]
+tests/unit/test_ml_utils.py::TestRotatingTeambuilder::test_empty_team_list_raises_value_error PASSED [ 38%]
+tests/unit/test_ml_utils.py::TestRotatingTeambuilder::test_single_team_len_is_one PASSED [ 38%]
+tests/unit/test_ml_utils.py::TestRotatingTeambuilder::test_two_teams_len_is_two PASSED [ 38%]
+tests/unit/test_ml_utils.py::TestRotatingTeambuilder::test_yield_team_returns_string PASSED [ 39%]
+tests/unit/test_ml_utils.py::TestRotatingTeambuilder::test_yield_team_cycles_round_robin PASSED [ 39%]
+tests/unit/test_ml_utils.py::TestRotatingTeambuilder::test_yield_team_increments_index PASSED [ 39%]
+tests/unit/test_ml_utils.py::TestRotatingTeambuilder::test_uses_gen9ou_teams_from_format_teams PASSED [ 39%]
+tests/unit/test_ml_utils.py::TestReplayMeta::test_init_with_full_data PASSED [ 39%]
+tests/unit/test_ml_utils.py::TestReplayMeta::test_init_with_missing_optional_fields_uses_defaults PASSED [ 39%]
+tests/unit/test_ml_utils.py::TestReplayMeta::test_init_with_none_rating_defaults_to_zero PASSED [ 39%]
+tests/unit/test_ml_utils.py::TestReplayMeta::test_repr_contains_id_and_players PASSED [ 39%]
+tests/unit/test_ml_utils.py::TestReplayScraperInit::test_init_creates_output_dir PASSED [ 40%]
+tests/unit/test_ml_utils.py::TestReplayScraperInit::test_init_format_stored PASSED [ 40%]
+tests/unit/test_ml_utils.py::TestReplayScraperInit::test_init_min_rating_stored PASSED [ 40%]
+tests/unit/test_ml_utils.py::TestReplayScraperInit::test_init_loads_existing_seen_ids PASSED [ 40%]
+tests/unit/test_ml_utils.py::TestReplayScraperInit::test_replay_path_returns_correct_path PASSED [ 40%]
+tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_list_of_replay_metas_on_success FAILED [ 40%]
+tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_empty_list_on_non_200_status FAILED [ 40%]
+tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_empty_list_on_exception FAILED [ 41%]
+tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_empty_list_when_response_is_not_list FAILED [ 41%]
+tests/unit/test_ml_utils.py::TestFetchSearchPage::test_filters_by_min_rating FAILED [ 41%]
+tests/unit/test_ml_utils.py::TestFetchReplay::test_skips_already_seen_replay FAILED [ 41%]
+tests/unit/test_ml_utils.py::TestFetchReplay::test_returns_false_on_non_200_status FAILED [ 41%]
+tests/unit/test_ml_utils.py::TestFetchReplay::test_returns_false_on_exception FAILED [ 41%]
+tests/unit/test_ml_utils.py::TestFetchReplay::test_success_writes_json_file_and_returns_true FAILED [ 41%]
+tests/unit/test_ml_utils.py::TestFetchReplay::test_success_adds_id_to_seen_set FAILED [ 41%]
+tests/unit/test_ml_utils.py::TestFetchReplay::test_success_sets_default_format_and_rating FAILED [ 42%]
+tests/unit/test_ml_utils.py::TestScrape::test_scrape_downloads_new_replays_and_returns_count FAILED [ 42%]
+tests/unit/test_ml_utils.py::TestScrape::test_scrape_skips_page_of_already_seen_metas FAILED [ 42%]
+tests/unit/test_ml_utils.py::TestScrape::test_scrape_stops_early_on_empty_page FAILED [ 42%]
+tests/unit/test_ml_utils.py::TestReplayStats::test_returns_empty_dict_when_replays_dir_absent PASSED [ 42%]
+tests/unit/test_ml_utils.py::TestReplayStats::test_returns_counts_for_all_formats_when_no_filter PASSED [ 42%]
+tests/unit/test_ml_utils.py::TestReplayStats::test_returns_count_for_specific_format PASSED [ 42%]
+tests/unit/test_models.py::test_total_picks_empty PASSED                 [ 42%]
+tests/unit/test_models.py::test_total_picks_after_picks PASSED           [ 43%]
+tests/unit/test_models.py::test_current_player_id_even_round_reversal PASSED [ 43%]
+tests/unit/test_models.py::test_current_player_id_even_round_middle PASSED [ 43%]
+tests/unit/test_models.py::test_type_coverage_property PASSED            [ 43%]
+tests/unit/test_models.py::test_type_coverage_deduplicates PASSED        [ 43%]
+tests/unit/test_models.py::test_win_rate_with_games PASSED               [ 43%]
+tests/unit/test_models.py::test_win_rate_no_games PASSED                 [ 43%]
+tests/unit/test_models.py::test_win_rate_all_wins PASSED                 [ 44%]
+tests/unit/test_models.py::test_current_player_id_empty_player_order PASSED [ 44%]
+tests/unit/test_models.py::test_pokemon_stats_total PASSED               [ 44%]
+tests/unit/test_models.py::test_pokemon_name_normalization PASSED        [ 44%]
+tests/unit/test_models.py::test_pokemon_type_string PASSED               [ 44%]
+tests/unit/test_models.py::test_speed_tier_values PASSED                 [ 44%]
+tests/unit/test_models.py::test_draft_player_count PASSED                [ 44%]
+tests/unit/test_models.py::test_current_player_id_linear FAILED          [ 44%]
+tests/unit/test_models.py::test_current_player_id_overflow FAILED        [ 45%]
+tests/unit/test_notification_service.py::test_dm_success_returns_true PASSED [ 45%]
+tests/unit/test_notification_service.py::test_dm_forbidden_returns_false PASSED [ 45%]
+tests/unit/test_notification_service.py::test_dm_not_found_returns_false PASSED [ 45%]
+tests/unit/test_notification_service.py::test_dm_generic_error_returns_false PASSED [ 45%]
+tests/unit/test_notification_service.py::test_notify_pick_turn_contains_timer PASSED [ 45%]
+tests/unit/test_notification_service.py::test_notify_pick_turn_with_hint PASSED [ 45%]
+tests/unit/test_notification_service.py::test_notify_pick_warning_contains_seconds PASSED [ 46%]
+tests/unit/test_notification_service.py::test_notify_trade_offer_contains_details PASSED [ 46%]
+tests/unit/test_notification_service.py::test_notify_trade_accepted_contains_pokemon PASSED [ 46%]
+tests/unit/test_notification_service.py::test_notify_match_reminder_contains_opponent PASSED [ 46%]
+tests/unit/test_notification_service.py::test_notify_draft_complete_contains_team PASSED [ 46%]
+tests/unit/test_notification_service.py::test_notify_elo_update_win PASSED [ 46%]
+tests/unit/test_notification_service.py::test_notify_elo_update_loss PASSED [ 46%]
+tests/unit/test_phase10.py::test_all_formats_constant PASSED             [ 46%]
+tests/unit/test_phase10.py::test_pipeline_cli_mocked PASSED              [ 47%]
+tests/unit/test_phase10.py::test_sparse_format_warning PASSED            [ 47%]
+tests/unit/test_phase10.py::test_skip_format_logic PASSED                [ 47%]
+tests/unit/test_phase10.py::test_parse_formatid_preferred PASSED         [ 47%]
+tests/unit/test_phase10.py::test_parser_doubles_slots PASSED             [ 47%]
+tests/unit/test_phase10.py::test_parser_spread_move PASSED               [ 47%]
+tests/unit/test_phase10.py::test_parser_both_faint PASSED                [ 47%]
+tests/unit/test_phase10.py::test_vgc_fixture_parses PASSED               [ 47%]
+tests/unit/test_phase10.py::test_feature_extractor_doubles PASSED        [ 48%]
+tests/unit/test_phase10.py::test_build_dataset_empty PASSED              [ 48%]
+tests/unit/test_phase10.py::test_manifest_written PASSED                 [ 48%]
+tests/unit/test_phase9.py::test_csv_schema_valid PASSED                  [ 48%]
+tests/unit/test_phase9.py::test_csv_drift_check PASSED                   [ 48%]
+tests/unit/test_phase9.py::test_csv_new_row_picked_up PASSED             [ 48%]
+tests/unit/test_phase9.py::test_help_output_reflects_csv PASSED          [ 48%]
+tests/unit/test_phase9.py::test_team_import_txt_parse PASSED             [ 49%]
+tests/unit/test_phase9.py::test_format_autocomplete PASSED               [ 49%]
+tests/unit/test_phase9.py::test_team_import_confirmation_flow PASSED     [ 49%]
+tests/unit/test_phase9.py::test_per_format_storage PASSED                [ 49%]
+tests/unit/test_player_limit.py::test_max_player_constant_is_16 PASSED   [ 49%]
+tests/unit/test_player_limit.py::test_16_players_can_join PASSED         [ 49%]
+tests/unit/test_player_limit.py::test_17th_player_is_rejected PASSED     [ 49%]
+tests/unit/test_player_limit.py::test_draft_count_shown_in_error PASSED  [ 49%]
+tests/unit/test_pokeapi.py::test_load_missing_file_does_not_crash PASSED [ 50%]
+tests/unit/test_pokeapi.py::test_load_populates_db PASSED                [ 50%]
+tests/unit/test_pokeapi.py::test_load_by_dex PASSED                      [ 50%]
+tests/unit/test_pokeapi.py::test_find_direct_match PASSED                [ 50%]
+tests/unit/test_pokeapi.py::test_find_case_insensitive PASSED            [ 50%]
+tests/unit/test_pokeapi.py::test_find_partial_match PASSED               [ 50%]
+tests/unit/test_pokeapi.py::test_find_not_found PASSED                   [ 50%]
+tests/unit/test_pokeapi.py::test_find_by_dex_found PASSED                [ 50%]
+tests/unit/test_pokeapi.py::test_find_by_dex_not_found PASSED            [ 51%]
+tests/unit/test_pokeapi.py::test_filter_by_tier PASSED                   [ 51%]
+tests/unit/test_pokeapi.py::test_filter_by_tier_empty PASSED             [ 51%]
+tests/unit/test_pokeapi.py::test_filter_by_generation PASSED             [ 51%]
+tests/unit/test_pokeapi.py::test_filter_by_generation_empty PASSED       [ 51%]
+tests/unit/test_pokeapi.py::test_filter_vgc_legal PASSED                 [ 51%]
+tests/unit/test_pokeapi.py::test_filter_console_legal_sv PASSED          [ 51%]
+tests/unit/test_pokeapi.py::test_filter_console_legal_swsh PASSED        [ 52%]
+tests/unit/test_pokeapi.py::test_search_by_prefix PASSED                 [ 52%]
+tests/unit/test_pokeapi.py::test_search_respects_limit PASSED            [ 52%]
+tests/unit/test_pokeapi.py::test_all_returns_all PASSED                  [ 52%]
+tests/unit/test_replay_parser.py::TestBattleRecordToDict::test_to_dict_returns_dict PASSED [ 52%]
+tests/unit/test_replay_parser.py::TestBattleRecordToDict::test_to_dict_keys PASSED [ 52%]
+tests/unit/test_replay_parser.py::TestBattleRecordToDict::test_to_dict_turns_is_list PASSED [ 52%]
+tests/unit/test_replay_parser.py::TestBattleRecordToDict::test_to_dict_events_structure PASSED [ 52%]
+tests/unit/test_replay_parser.py::TestBattleRecordToDict::test_to_dict_json_serializable PASSED [ 53%]
+tests/unit/test_replay_parser.py::TestExtractSpecies::test_with_slot_prefix PASSED [ 53%]
+tests/unit/test_replay_parser.py::TestExtractSpecies::test_fallback_when_no_match PASSED [ 53%]
+tests/unit/test_replay_parser.py::TestExtractSpecies::test_fallback_strips_whitespace PASSED [ 53%]
+tests/unit/test_replay_parser.py::TestExtractSpecies::test_fallback_plain_name PASSED [ 53%]
+tests/unit/test_replay_parser.py::TestParseHp::test_normal_format PASSED [ 53%]
+tests/unit/test_replay_parser.py::TestParseHp::test_faint_string PASSED  [ 53%]
+tests/unit/test_replay_parser.py::TestParseHp::test_zero_string PASSED   [ 53%]
+tests/unit/test_replay_parser.py::TestParseHp::test_empty_string PASSED  [ 54%]
+tests/unit/test_replay_parser.py::TestParseHp::test_percentage_format PASSED [ 54%]
+tests/unit/test_replay_parser.py::TestParseHp::test_integer_slash_100_matches_hp_re PASSED [ 54%]
+tests/unit/test_replay_parser.py::TestParseHp::test_percentage_decimal PASSED [ 54%]
+tests/unit/test_replay_parser.py::TestParseHp::test_unknown_format_returns_full_hp PASSED [ 54%]
+tests/unit/test_replay_parser.py::TestProcessLineEarlyReturns::test_non_pipe_line_ignored PASSED [ 54%]
+tests/unit/test_replay_parser.py::TestProcessLineEarlyReturns::test_empty_line_ignored PASSED [ 54%]
+tests/unit/test_replay_parser.py::TestHandlerGuards::test_on_player_short_parts PASSED [ 55%]
+tests/unit/test_replay_parser.py::TestHandlerGuards::test_on_poke_short_parts PASSED [ 55%]
+tests/unit/test_replay_parser.py::TestHandlerGuards::test_on_switch_short_parts PASSED [ 55%]
+tests/unit/test_replay_parser.py::TestHandlerGuards::test_on_move_short_parts PASSED [ 55%]
+tests/unit/test_replay_parser.py::TestHandlerGuards::test_on_damage_short_parts PASSED [ 55%]
+tests/unit/test_replay_parser.py::TestHandlerGuards::test_on_faint_short_parts PASSED [ 55%]
+tests/unit/test_replay_parser.py::TestHandlerGuards::test_on_win_short_parts PASSED [ 55%]
+tests/unit/test_replay_parser.py::TestSwitchHandler::test_slot_regex_no_match_returns_early PASSED [ 55%]
+tests/unit/test_replay_parser.py::TestSwitchHandler::test_switch_adds_species_without_preview PASSED [ 56%]
+tests/unit/test_replay_parser.py::TestSwitchHandler::test_switch_does_not_duplicate_preview_species PASSED [ 56%]
+tests/unit/test_replay_parser.py::TestOnHeal::test_heal_event_recorded PASSED [ 56%]
+tests/unit/test_replay_parser.py::TestOnStatus::test_status_event_recorded PASSED [ 56%]
+tests/unit/test_replay_parser.py::TestOnBoost::test_boost_event_recorded PASSED [ 56%]
+tests/unit/test_replay_parser.py::TestOnBoost::test_unboost_event_negative PASSED [ 56%]
+tests/unit/test_replay_parser.py::TestOnBoost::test_boost_invalid_value_defaults_zero PASSED [ 56%]
+tests/unit/test_replay_parser.py::TestOnBoost::test_boost_short_parts_ignored PASSED [ 57%]
+tests/unit/test_replay_parser.py::TestOnFaintP2::test_p2_faint_increments_counter PASSED [ 57%]
+tests/unit/test_replay_parser.py::TestOnFaintP2::test_p1_faint_increments_p1_counter PASSED [ 57%]
+tests/unit/test_replay_parser.py::TestOnTera::test_tera_event_recorded PASSED [ 57%]
+tests/unit/test_replay_parser.py::TestOnTera::test_tera_short_parts_ignored PASSED [ 57%]
+tests/unit/test_replay_parser.py::TestOnWinBranches::test_p1_wins PASSED [ 57%]
+tests/unit/test_replay_parser.py::TestOnWinBranches::test_p2_wins PASSED [ 57%]
+tests/unit/test_replay_parser.py::TestOnWinBranches::test_unknown_winner PASSED [ 57%]
+tests/unit/test_replay_parser.py::TestOnTie::test_tie_sets_winner PASSED [ 58%]
+tests/unit/test_replay_parser.py::TestParseReplayFile::test_reads_and_parses PASSED [ 58%]
+tests/unit/test_replay_parser.py::TestParseReplayFile::test_winner_detected PASSED [ 58%]
+tests/unit/test_replay_parser.py::TestParseReplayFile::test_formatid_preferred_over_format PASSED [ 58%]
+tests/unit/test_replay_parser.py::TestParseReplayDir::test_parses_all_files PASSED [ 58%]
+tests/unit/test_replay_parser.py::TestParseReplayDir::test_max_count_limits_results PASSED [ 58%]
+tests/unit/test_replay_parser.py::TestParseReplayDir::test_invalid_json_skipped PASSED [ 58%]
+tests/unit/test_replay_parser.py::TestParseReplayDir::test_mix_valid_and_invalid PASSED [ 58%]
+tests/unit/test_replay_parser.py::TestParseReplayDir::test_empty_dir PASSED [ 59%]
+tests/unit/test_replay_parser.py::TestParseReplayDir::test_max_count_zero_means_all PASSED [ 59%]
+tests/unit/test_sheets.py::test_connect_file_not_found PASSED            [ 59%]
+tests/unit/test_sheets.py::test_connect_success PASSED                   [ 59%]
+tests/unit/test_sheets.py::test_spreadsheet_property_calls_connect_when_none PASSED [ 59%]
+tests/unit/test_sheets.py::test_get_tab_found PASSED                     [ 59%]
+tests/unit/test_sheets.py::test_get_tab_creates_when_not_found PASSED    [ 59%]
+tests/unit/test_sheets.py::test_read_all PASSED                          [ 60%]
+tests/unit/test_sheets.py::test_append_row PASSED                        [ 60%]
+tests/unit/test_sheets.py::test_update_row PASSED                        [ 60%]
+tests/unit/test_sheets.py::test_find_row_found PASSED                    [ 60%]
+tests/unit/test_sheets.py::test_find_row_not_found PASSED                [ 60%]
+tests/unit/test_sheets.py::test_find_rows PASSED                         [ 60%]
+tests/unit/test_sheets.py::test_upsert_row_appends_when_not_found PASSED [ 60%]
+tests/unit/test_sheets.py::test_upsert_row_updates_when_found PASSED     [ 60%]
+tests/unit/test_sheets.py::test_upsert_row_appends_when_col_not_in_headers PASSED [ 61%]
+tests/unit/test_sheets.py::test_save_league_setup PASSED                 [ 61%]
+tests/unit/test_sheets.py::test_save_pick PASSED                         [ 61%]
+tests/unit/test_sheets.py::test_get_draft_picks PASSED                   [ 61%]
+tests/unit/test_sheets.py::test_update_pool_roster_pool_a PASSED         [ 61%]
+tests/unit/test_sheets.py::test_update_pool_roster_pool_b PASSED         [ 61%]
+tests/unit/test_sheets.py::test_save_schedule_match PASSED               [ 61%]
+tests/unit/test_sheets.py::test_save_match_stats PASSED                  [ 61%]
+tests/unit/test_sheets.py::test_upsert_standing PASSED                   [ 62%]
+tests/unit/test_sheets.py::test_get_league_setup_found PASSED            [ 62%]
+tests/unit/test_sheets.py::test_get_standings_all PASSED                 [ 62%]
+tests/unit/test_sheets.py::test_get_standings_filtered_by_pool PASSED    [ 62%]
+tests/unit/test_sheets.py::test_update_pokemon_stat PASSED               [ 62%]
+tests/unit/test_sheets.py::test_refresh_mvp_race PASSED                  [ 62%]
+tests/unit/test_sheets.py::test_save_transaction PASSED                  [ 62%]
+tests/unit/test_sheets.py::test_save_playoff_match PASSED                [ 63%]
+tests/unit/test_sheets.py::test_bulk_write_pokedex PASSED                [ 63%]
+tests/unit/test_sheets.py::test_bulk_write_pokedex_empty PASSED          [ 63%]
+tests/unit/test_sheets.py::test_upsert_team_page PASSED                  [ 63%]
+tests/unit/test_sheets.py::test_upsert_team_page_no_slots PASSED         [ 63%]
+tests/unit/test_sheets.py::test_set_data PASSED                          [ 63%]
+tests/unit/test_sheets.py::test_get_data_found PASSED                    [ 63%]
+tests/unit/test_sheets.py::test_get_data_not_found PASSED                [ 63%]
+tests/unit/test_sheets.py::test_save_replay_no_existing_match PASSED     [ 64%]
+tests/unit/test_sheets.py::test_save_replay_updates_existing PASSED      [ 64%]
+tests/unit/test_sheets.py::test_save_video PASSED                        [ 64%]
+tests/unit/test_sheets.py::test_col_letter_single_digits PASSED          [ 64%]
+tests/unit/test_sheets.py::test_col_letter_double_digits PASSED          [ 64%]
+tests/unit/test_sheets.py::test_col_num_single PASSED                    [ 64%]
+tests/unit/test_sheets.py::test_col_num_double PASSED                    [ 64%]
+tests/unit/test_sheets.py::test_col_num_roundtrip PASSED                 [ 65%]
+tests/unit/test_sheets.py::test_get_cell_returns_value PASSED            [ 65%]
+tests/unit/test_sheets.py::test_get_cell_empty_response PASSED           [ 65%]
+tests/unit/test_sheets.py::test_get_range_returns_data PASSED            [ 65%]
+tests/unit/test_sheets.py::test_set_cell PASSED                          [ 65%]
+tests/unit/test_sheets.py::test_append_to_range PASSED                   [ 65%]
+tests/unit/test_sheets.py::test_get_league_setup_no_server_id_returns_first PASSED [ 65%]
+tests/unit/test_sheets.py::test_get_league_setup_no_server_id_empty PASSED [ 65%]
+tests/unit/test_sheets.py::test_get_schedule_parses_match PASSED         [ 66%]
+tests/unit/test_sheets.py::test_get_schedule_skips_non_vs_rows PASSED    [ 66%]
+tests/unit/test_sheets.py::test_get_schedule_skips_empty_rows PASSED     [ 66%]
+tests/unit/test_sheets.py::test_get_match_results_parses_match PASSED    [ 66%]
+tests/unit/test_sheets.py::test_get_match_results_week_filter PASSED     [ 66%]
+tests/unit/test_sheets.py::test_get_match_results_non_match_rows_skipped PASSED [ 66%]
+tests/unit/test_sheets.py::test_get_transactions_parses_rows PASSED      [ 66%]
+tests/unit/test_sheets.py::test_get_transactions_short_row PASSED        [ 66%]
+tests/unit/test_sheets.py::test_get_rules_returns_non_empty PASSED       [ 67%]
+tests/unit/test_sheets.py::test_append_rule_with_category PASSED         [ 67%]
+tests/unit/test_sheets.py::test_append_rule_without_category PASSED      [ 67%]
+tests/unit/test_sheets.py::test_get_mvp_race_finds_record PASSED         [ 67%]
+tests/unit/test_sheets.py::test_get_mvp_race_row_too_short PASSED        [ 67%]
+tests/unit/test_sheets.py::test_get_mvp_race_no_matching_value PASSED    [ 67%]
+tests/unit/test_sheets.py::test_get_coach_tab_found PASSED               [ 67%]
+tests/unit/test_sheets.py::test_get_coach_tab_not_found PASSED           [ 68%]
+tests/unit/test_sheets.py::test_learning_sheets_enabled_true PASSED      [ 68%]
+tests/unit/test_sheets.py::test_learning_sheets_enabled_false PASSED     [ 68%]
+tests/unit/test_sheets.py::test_learning_sheets_connect_success PASSED   [ 68%]
+tests/unit/test_sheets.py::test_learning_sheets_connect_missing_creds PASSED [ 68%]
+tests/unit/test_sheets.py::test_learning_sheets_spreadsheet_property_calls_connect PASSED [ 68%]
+tests/unit/test_sheets.py::test_learning_sheets_get_replays_sheet_existing PASSED [ 68%]
+tests/unit/test_sheets.py::test_learning_sheets_get_replays_sheet_creates_new PASSED [ 68%]
+tests/unit/test_sheets.py::test_learning_sheets_save_replay_url_disabled PASSED [ 69%]
+tests/unit/test_sheets.py::test_learning_sheets_save_replay_url_enabled PASSED [ 69%]
+tests/unit/test_sheets.py::test_learning_sheets_save_replay_url_exception_suppressed PASSED [ 69%]
+tests/unit/test_showdown_player.py::TestGetOpponentName::test_returns_opponent_username PASSED [ 69%]
+tests/unit/test_showdown_player.py::TestGetOpponentName::test_returns_unknown_when_none PASSED [ 69%]
+tests/unit/test_showdown_player.py::TestGetOpponentName::test_returns_unknown_on_exception PASSED [ 69%]
+tests/unit/test_showdown_player.py::TestBestModelForFormat::test_returns_none_when_nothing_exists PASSED [ 69%]
+tests/unit/test_showdown_player.py::TestBestModelForFormat::test_prefers_dated_model_in_subdir PASSED [ 69%]
+tests/unit/test_showdown_player.py::TestBestModelForFormat::test_falls_back_to_flat_results_dir PASSED [ 70%]
+tests/unit/test_showdown_player.py::TestBestModelForFormat::test_falls_back_to_latest_zip PASSED [ 70%]
+tests/unit/test_showdown_player.py::TestBestModelForFormat::test_falls_back_to_newest_ppo_checkpoint PASSED [ 70%]
+tests/unit/test_showdown_player.py::TestBestModelForFormat::test_subdir_result_beats_flat_result PASSED [ 70%]
+tests/unit/test_showdown_player.py::TestBestModelForFormat::test_dated_model_beats_latest_zip PASSED [ 70%]
+tests/unit/test_showdown_player.py::TestBestModelForFormat::test_returns_path_object PASSED [ 70%]
+tests/unit/test_showdown_player.py::TestBotChallengerFormatResult::test_won_battle PASSED [ 70%]
+tests/unit/test_showdown_player.py::TestBotChallengerFormatResult::test_lost_battle PASSED [ 71%]
+tests/unit/test_showdown_player.py::TestBotChallengerFormatResult::test_tied_battle PASSED [ 71%]
+tests/unit/test_showdown_player.py::TestBotChallengerFormatResult::test_result_contains_required_keys PASSED [ 71%]
+tests/unit/test_showdown_player.py::TestBotChallengerFormatResult::test_result_format_matches_init PASSED [ 71%]
+tests/unit/test_showdown_player.py::TestBotChallengerFormatResult::test_replay_url_passthrough PASSED [ 71%]
+tests/unit/test_showdown_player.py::TestBotChallengerFormatResult::test_replay_url_none_by_default PASSED [ 71%]
+tests/unit/test_showdown_player.py::TestBrowserTrainerImport::test_module_importable PASSED [ 71%]
+tests/unit/test_showdown_player.py::TestBrowserTrainerImport::test_constants_defined PASSED [ 71%]
+tests/unit/test_sync_guard.py::test_fingerprint_stable PASSED            [ 72%]
+tests/unit/test_sync_guard.py::test_fingerprint_detects_new_command PASSED [ 72%]
+tests/unit/test_sync_guard.py::test_fingerprint_detects_param_change PASSED [ 72%]
+tests/unit/test_sync_guard.py::test_fingerprint_order_independent PASSED [ 72%]
+tests/unit/test_sync_guard.py::test_setup_hook_skips_sync_when_hash_matches PASSED [ 72%]
+tests/unit/test_sync_guard.py::test_commands_changed_when_hash_differs PASSED [ 72%]
+tests/unit/test_sync_guard.py::test_commands_changed_when_hash_file_missing PASSED [ 72%]
+tests/unit/test_sync_guard.py::test_admin_sync_calls_copy_global_to PASSED [ 73%]
+tests/unit/test_sync_guard.py::test_admin_sync_shows_rate_limit_error PASSED [ 73%]
+tests/unit/test_sync_guard.py::test_drift_check_no_regression PASSED     [ 73%]
+tests/unit/test_team_cog.py::test_team_cmd_no_roster_sends_no_team_message PASSED [ 73%]
+tests/unit/test_team_cog.py::test_team_cmd_with_roster_sends_embed PASSED [ 73%]
+tests/unit/test_team_cog.py::test_team_cmd_defaults_to_self_when_user_is_none PASSED [ 73%]
+tests/unit/test_team_cog.py::test_team_register_no_logo_sends_embed PASSED [ 73%]
+tests/unit/test_team_cog.py::test_team_register_with_valid_logo_uses_logo_url PASSED [ 73%]
+tests/unit/test_team_cog.py::test_team_register_invalid_logo_type_sends_error PASSED [ 74%]
+tests/unit/test_team_cog.py::test_team_register_oversized_logo_sends_error PASSED [ 74%]
+tests/unit/test_team_cog.py::test_team_register_sends_public_announcement_when_channel_exists PASSED [ 74%]
+tests/unit/test_team_cog.py::test_trade_success_sends_embed_and_dms_target PASSED [ 74%]
+tests/unit/test_team_cog.py::test_trade_failure_sends_error_message PASSED [ 74%]
+tests/unit/test_team_cog.py::test_trade_dm_forbidden_is_silently_ignored PASSED [ 74%]
+tests/unit/test_team_cog.py::test_trade_accept_success_sends_confirmation PASSED [ 74%]
+tests/unit/test_team_cog.py::test_trade_accept_failure_sends_error PASSED [ 74%]
+tests/unit/test_team_cog.py::test_trade_decline_success_sends_declined PASSED [ 75%]
+tests/unit/test_team_cog.py::test_trade_decline_failure_sends_error PASSED [ 75%]
+tests/unit/test_team_cog.py::test_teamimport_non_txt_sends_error PASSED  [ 75%]
+tests/unit/test_team_cog.py::test_teamimport_empty_file_sends_error PASSED [ 75%]
+tests/unit/test_team_cog.py::test_teamimport_valid_file_sends_confirm_view PASSED [ 75%]
+tests/unit/test_team_cog.py::test_teamimport_parses_pokemon_names PASSED [ 75%]
+tests/unit/test_team_cog.py::test_teamimport_autocomplete_filters_by_current PASSED [ 75%]
+tests/unit/test_team_cog.py::test_teamimport_autocomplete_empty_returns_up_to_25 PASSED [ 76%]
+tests/unit/test_team_cog.py::test_teamimport_autocomplete_no_match_returns_empty PASSED [ 76%]
+tests/unit/test_team_cog.py::test_teamexport_sends_showdown_text PASSED  [ 76%]
+tests/unit/test_team_cog.py::test_legality_legal_pokemon_sends_green_embed PASSED [ 76%]
+tests/unit/test_team_cog.py::test_legality_illegal_pokemon_sends_red_embed PASSED [ 76%]
+tests/unit/test_team_cog.py::test_showdown_import_modal_success_sends_count PASSED [ 76%]
+tests/unit/test_team_cog.py::test_showdown_import_modal_failure_sends_error PASSED [ 76%]
+tests/unit/test_team_cog.py::test_team_cog_setup_adds_cog PASSED         [ 76%]
+tests/unit/test_team_import_view.py::test_build_confirm_embed PASSED     [ 77%]
+tests/unit/test_team_import_view.py::test_team_import_confirm_view_confirm_success PASSED [ 77%]
+tests/unit/test_team_import_view.py::test_team_import_confirm_view_confirm_fail PASSED [ 77%]
+tests/unit/test_team_import_view.py::test_team_import_confirm_view_cancel PASSED [ 77%]
+tests/unit/test_team_service.py::test_get_team_returns_none_when_not_found PASSED [ 77%]
+tests/unit/test_team_service.py::test_get_team_from_cache PASSED         [ 77%]
+tests/unit/test_team_service.py::test_get_team_loads_from_sheets PASSED  [ 77%]
+tests/unit/test_team_service.py::test_get_team_wrong_guild PASSED        [ 77%]
+tests/unit/test_team_service.py::test_register_team_creates_roster PASSED [ 78%]
+tests/unit/test_team_service.py::test_register_team_updates_existing_in_cache PASSED [ 78%]
+tests/unit/test_team_service.py::test_propose_trade_success PASSED       [ 78%]
+tests/unit/test_team_service.py::test_propose_trade_no_from_team PASSED  [ 78%]
+tests/unit/test_team_service.py::test_propose_trade_no_to_team PASSED    [ 78%]
+tests/unit/test_team_service.py::test_propose_trade_dont_have_offering PASSED [ 78%]
+tests/unit/test_team_service.py::test_propose_trade_opponent_doesnt_have PASSED [ 78%]
+tests/unit/test_team_service.py::test_accept_trade_success PASSED        [ 79%]
+tests/unit/test_team_service.py::test_accept_trade_not_found PASSED      [ 79%]
+tests/unit/test_team_service.py::test_accept_trade_wrong_player PASSED   [ 79%]
+tests/unit/test_team_service.py::test_accept_trade_not_pending PASSED    [ 79%]
+tests/unit/test_team_service.py::test_decline_trade_success PASSED       [ 79%]
+tests/unit/test_team_service.py::test_decline_trade_not_found PASSED     [ 79%]
+tests/unit/test_team_service.py::test_decline_trade_wrong_player PASSED  [ 79%]
+tests/unit/test_team_service.py::test_decline_trade_not_pending PASSED   [ 79%]
+tests/unit/test_team_service.py::test_import_showdown_success PASSED     [ 80%]
+tests/unit/test_team_service.py::test_import_showdown_pokemon_not_in_db PASSED [ 80%]
+tests/unit/test_team_service.py::test_import_showdown_no_valid_pokemon PASSED [ 80%]
+tests/unit/test_team_service.py::test_export_showdown_no_team PASSED     [ 80%]
+tests/unit/test_team_service.py::test_export_showdown_with_team PASSED   [ 80%]
+tests/unit/test_team_service.py::test_check_legality_pokemon_not_found PASSED [ 80%]
+tests/unit/test_team_service.py::test_check_legality_vgc_legal PASSED    [ 80%]
+tests/unit/test_team_service.py::test_check_legality_vgc_illegal PASSED  [ 80%]
+tests/unit/test_team_service.py::test_check_legality_showdown_tier PASSED [ 81%]
+tests/unit/test_team_service.py::test_check_legality_showdown_wrong_tier PASSED [ 81%]
+tests/unit/test_team_service.py::test_check_legality_console_sv PASSED   [ 81%]
+tests/unit/test_team_service.py::test_check_legality_console_swsh PASSED [ 81%]
+tests/unit/test_team_service.py::test_check_legality_console_not_available PASSED [ 81%]
+tests/unit/test_team_view.py::test_build_embed_empty_team FAILED         [ 81%]
+tests/unit/test_team_view.py::test_build_embed_empty_team_no_fields FAILED [ 81%]
+tests/unit/test_team_view.py::test_build_embed_single_pokemon FAILED     [ 82%]
+tests/unit/test_team_view.py::test_build_embed_multiple_pokemon FAILED   [ 82%]
+tests/unit/test_team_view.py::test_build_embed_footer_shows_count FAILED [ 82%]
+tests/unit/test_team_view.py::test_build_embed_type_coverage_field FAILED [ 82%]
+tests/unit/test_team_view.py::test_build_embed_shows_tier_badge FAILED   [ 82%]
+tests/unit/test_team_view.py::test_build_embed_title_has_owner_name FAILED [ 82%]
+tests/unit/test_team_view.py::test_analysis_button_sends_analysis_embed PASSED [ 82%]
+tests/unit/test_team_view.py::test_analysis_button_embed_has_required_fields PASSED [ 82%]
+tests/unit/test_team_view.py::test_export_button_sends_showdown_text PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_returns_false_when_no_files PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_returns_true_when_dated_zip_exists PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_returns_false_for_different_format PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_returns_false_for_non_zip PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_returns_true_for_multiple_dated_zips PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_nonexistent_dir_returns_false PASSED [ 83%]
+tests/unit/test_train_all.py::TestModelDone::test_partial_format_name_no_match PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_returns_none_when_no_latest PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_returns_path_when_latest_exists PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_returns_path_object PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_returns_none_when_dir_missing PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_correct_path_structure PASSED [ 84%]
+tests/unit/test_train_all.py::TestResumeCheckpoint::test_checkpoint_zip_not_latest_not_returned PASSED [ 84%]
+tests/unit/test_train_all.py::TestTrainingMap::test_is_dict PASSED       [ 84%]
+tests/unit/test_train_all.py::TestTrainingMap::test_all_values_are_tuples PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_random_battle_has_no_teams PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_smogon_singles_have_team_format PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_vgc_format_present PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_all_train_fmts_are_str_or_none PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_all_team_fmts_are_str_or_none PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_contains_gen7_and_gen6 PASSED [ 85%]
+tests/unit/test_train_all.py::TestTrainingMap::test_doubles_formats_present PASSED [ 85%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_output_shape PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_all_zeros_input PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_same_team_full_overlap PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_different_teams_no_overlap PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_dtype_float32 PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_large_vocab PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_single_row PASSED [ 86%]
+tests/unit/test_train_matchup.py::TestEmbedTeamMatrix::test_partial_overlap PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_missing_data_returns_empty PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_too_few_samples_returns_empty PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_trains_and_returns_metrics PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_saves_model_and_metrics_files PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_saved_model_is_loadable PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_no_vocab_file_uses_default_512 PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestTrainFormat::test_metrics_json_has_no_model_key PASSED [ 87%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_no_model_raises_file_not_found PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_returns_probability_dict PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_probabilities_sum_to_one PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_probabilities_in_range PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_short_team_padded_with_zeros PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_no_vocab_file PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestPredictMatchup::test_unknown_species_maps_to_zero PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_no_data_returns_empty PASSED [ 88%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_trains_combined_model PASSED [ 89%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_saves_combined_files PASSED [ 89%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_combined_metrics_has_no_model PASSED [ 89%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_skips_formats_with_insufficient_data PASSED [ 89%]
+tests/unit/test_train_matchup.py::TestTrainCombined::test_global_vocab_written_correctly PASSED [ 89%]
+tests/unit/test_train_policy.py::TestCheckShowdownServer::test_reachable_does_not_raise PASSED [ 89%]
+tests/unit/test_train_policy.py::TestCheckShowdownServer::test_unreachable_raises_runtime_error PASSED [ 89%]
+tests/unit/test_train_policy.py::TestCheckShowdownServer::test_error_message_contains_port PASSED [ 90%]
+tests/unit/test_train_policy.py::TestCheckShowdownServerIfLocal::test_localhost_mode_calls_check PASSED [ 90%]
+tests/unit/test_train_policy.py::TestCheckShowdownServerIfLocal::test_non_localhost_skips_check PASSED [ 90%]
+tests/unit/test_train_policy.py::TestCheckShowdownServerIfLocal::test_browser_mode_skips_check PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_doubles_formats_is_set PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_doubles_formats_contains_vgc PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_doubles_formats_contains_smogon_doubles PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_ppo_hyperparams_has_required_keys PASSED [ 90%]
+tests/unit/test_train_policy.py::TestConstants::test_ppo_hyperparams_types PASSED [ 91%]
+tests/unit/test_train_policy.py::TestConstants::test_ppo_net_arch PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_init_sets_attributes PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_on_step_returns_true PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_on_step_triggers_swap_when_threshold_reached PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_on_step_no_swap_when_below_threshold PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_increments_count PASSED [ 91%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_calls_model_save PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_calls_opponent_load PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_save_and_swap_copies_to_latest PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_verbose_logging PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_last_swap_updated_after_swap PASSED [ 92%]
+tests/unit/test_train_policy.py::TestSelfPlayCallback::test_multiple_swaps_on_step PASSED [ 92%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_showdown_offline_explicit PASSED [ 92%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_showdown_offline_connection_refused PASSED [ 92%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_corrupt_checkpoint_badzipfile PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_corrupt_checkpoint_bad_magic PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_missing_dep_numpy PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_missing_dep_stable_baselines3 PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_wrong_python PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_no_teams_warning PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_oom_error PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_shape_mismatch PASSED [ 93%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_clean_output_returns_empty PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_deduplicates_same_type PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestDiagnoseOutput::test_multi_match_returns_multiple_types PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestParseTimestepProgress::test_extracts_timestep_from_sb3_log_line PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestParseTimestepProgress::test_returns_none_for_non_matching_line PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestParseTimestepProgress::test_returns_none_for_empty_string PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestParseTimestepProgress::test_handles_large_timestep PASSED [ 94%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_zero_percent PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_full_percent PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_fifty_percent PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_total_zero_returns_zero_bar PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestMakeProgressBar::test_over_total_clamps_to_100 PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestIsCorruptZip::test_valid_zip_returns_false PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestIsCorruptZip::test_empty_file_returns_true PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestIsCorruptZip::test_not_a_zip_returns_true PASSED [ 95%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_showdown_unreachable_adds_offline_issue PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_showdown_reachable_no_offline_issue PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_non_localhost_mode_skips_showdown_check PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_corrupt_checkpoint_detected PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_missing_dep_detected PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestPreflightCheck::test_clean_environment_returns_empty PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_corrupt_checkpoint_calls_fix PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_shape_mismatch_calls_corrupt_fix PASSED [ 96%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_missing_dep_calls_install PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_missing_dep_no_package_returns_false PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyFix::test_unknown_type_returns_false PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyAllFixes::test_skips_non_fixable PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyAllFixes::test_applies_fixable_error PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestApplyAllFixes::test_mixed_errors PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestCanImport::test_success_returns_true PASSED [ 97%]
+tests/unit/test_training_doctor.py::TestCanImport::test_failure_returns_false PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestCanImport::test_exception_returns_false PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixCorruptCheckpoints::test_deletes_zips_and_reports PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixCorruptCheckpoints::test_no_zips_returns_scratch_message PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixCorruptCheckpoints::test_unlink_exception_logs_warning PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixInstallDep::test_successful_install PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixInstallDep::test_failed_install PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixInstallDep::test_timeout_returns_false PASSED [ 98%]
+tests/unit/test_training_doctor.py::TestFixInstallDep::test_generic_exception_returns_false PASSED [ 99%]
+tests/unit/test_training_doctor.py::TestPreflightWriteError::test_write_error_adds_issue PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_rejects_oversized_file PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_accepts_max_size_file PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_records_discord_cdn_url PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_saves_metadata_to_sheets PASSED [ 99%]
+tests/unit/test_video_service.py::test_upload_returns_video_id PASSED    [ 99%]
+tests/unit/test_video_service.py::test_upload_result_dataclass_defaults PASSED [100%]
+
+================================== FAILURES ===================================
+______ TestFetchSearchPage.test_returns_list_of_replay_metas_on_success _______
+tests\unit\test_ml_utils.py:359: in test_returns_list_of_replay_metas_on_success
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+________ TestFetchSearchPage.test_returns_empty_list_on_non_200_status ________
+tests\unit\test_ml_utils.py:378: in test_returns_empty_list_on_non_200_status
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+__________ TestFetchSearchPage.test_returns_empty_list_on_exception ___________
+tests\unit\test_ml_utils.py:395: in test_returns_empty_list_on_exception
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+____ TestFetchSearchPage.test_returns_empty_list_when_response_is_not_list ____
+tests\unit\test_ml_utils.py:413: in test_returns_empty_list_when_response_is_not_list
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______________ TestFetchSearchPage.test_filters_by_min_rating ________________
+tests\unit\test_ml_utils.py:434: in test_filters_by_min_rating
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______________ TestFetchReplay.test_skips_already_seen_replay ________________
+tests\unit\test_ml_utils.py:456: in test_skips_already_seen_replay
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+____________ TestFetchReplay.test_returns_false_on_non_200_status _____________
+tests\unit\test_ml_utils.py:476: in test_returns_false_on_non_200_status
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______________ TestFetchReplay.test_returns_false_on_exception _______________
+tests\unit\test_ml_utils.py:496: in test_returns_false_on_exception
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______ TestFetchReplay.test_success_writes_json_file_and_returns_true ________
+tests\unit\test_ml_utils.py:517: in test_success_writes_json_file_and_returns_true
+    result = asyncio.get_event_loop().run_until_complete(run())
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+______________ TestFetchReplay.test_success_adds_id_to_seen_set _______________
+tests\unit\test_ml_utils.py:545: in test_success_adds_id_to_seen_set
+    asyncio.get_event_loop().run_until_complete(run())
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_________ TestFetchReplay.test_success_sets_default_format_and_rating _________
+tests\unit\test_ml_utils.py:568: in test_success_sets_default_format_and_rating
+    asyncio.get_event_loop().run_until_complete(run())
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_______ TestScrape.test_scrape_downloads_new_replays_and_returns_count ________
+tests\unit\test_ml_utils.py:598: in test_scrape_downloads_new_replays_and_returns_count
+    count = asyncio.get_event_loop().run_until_complete(run())
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+___________ TestScrape.test_scrape_skips_page_of_already_seen_metas ___________
+tests\unit\test_ml_utils.py:618: in test_scrape_skips_page_of_already_seen_metas
+    count = asyncio.get_event_loop().run_until_complete(run())
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+______________ TestScrape.test_scrape_stops_early_on_empty_page _______________
+tests\unit\test_ml_utils.py:635: in test_scrape_stops_early_on_empty_page
+    count = asyncio.get_event_loop().run_until_complete(run())
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\Python314\Lib\asyncio\events.py:715: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+________________________ test_current_player_id_linear ________________________
+tests\unit\test_models.py:147: in test_current_player_id_linear
+    format=DraftFormat.LINEAR, picks=["pick1"]
+           ^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'DraftFormat' has no attribute 'LINEAR'
+_______________________ test_current_player_id_overflow _______________________
+tests\unit\test_models.py:158: in test_current_player_id_overflow
+    format=DraftFormat.LINEAR, picks=["p1", "p2"]
+           ^^^^^^^^^^^^^^^^^^
+E   AttributeError: type object 'DraftFormat' has no attribute 'LINEAR'
+_________________________ test_build_embed_empty_team _________________________
+tests\unit\test_team_view.py:26: in test_build_embed_empty_team
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+____________________ test_build_embed_empty_team_no_fields ____________________
+tests\unit\test_team_view.py:35: in test_build_embed_empty_team_no_fields
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+_______________________ test_build_embed_single_pokemon _______________________
+tests\unit\test_team_view.py:48: in test_build_embed_single_pokemon
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+______________________ test_build_embed_multiple_pokemon ______________________
+tests\unit\test_team_view.py:65: in test_build_embed_multiple_pokemon
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+_____________________ test_build_embed_footer_shows_count _____________________
+tests\unit\test_team_view.py:83: in test_build_embed_footer_shows_count
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+____________________ test_build_embed_type_coverage_field _____________________
+tests\unit\test_team_view.py:98: in test_build_embed_type_coverage_field
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+______________________ test_build_embed_shows_tier_badge ______________________
+tests\unit\test_team_view.py:113: in test_build_embed_shows_tier_badge
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+____________________ test_build_embed_title_has_owner_name ____________________
+tests\unit\test_team_view.py:122: in test_build_embed_title_has_owner_name
+    view = TeamEmbedView(roster, owner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\bot\views\team_view.py:13: in __init__
+    super().__init__(timeout=120)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:713: in __init__
+    super().__init__(timeout=timeout)
+C:\Users\power\AppData\Roaming\Python\Python314\site-packages\discord\ui\view.py:235: in __init__
+    self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: no running event loop
+============================== warnings summary ===============================
+tests/unit/test_draft_service.py::test_timer_fires_and_starts_next_player_timer
+  C:\Program Files\Python314\Lib\asyncio\base_events.py:649: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    sys.set_asyncgen_hooks(
+  
+  Object allocated at:
+    File "C:\Program Files\Python314\Lib\unittest\mock.py", line 1179
+      return self._execute_mock_call(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.3-final-0 _______________
+
+Name                                   Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------
+src\bot\cogs\admin.py                    408    222    46%   24-26, 127-178, 391-553, 568-722
+src\bot\cogs\misc.py                      33      0   100%
+src\bot\cogs\team.py                     135      0   100%
+src\bot\constants.py                       1      0   100%
+src\bot\main.py                           81      4    95%   85, 109, 140, 165
+src\bot\views\team_import_view.py         30      0   100%
+src\bot\views\team_view.py                39     12    69%   18-38
+src\config.py                             36      0   100%
+src\data\models.py                       215      0   100%
+src\data\pokeapi.py                       49      0   100%
+src\data\sheets.py                       312      1    99%   250
+src\ml\__init__.py                         0      0   100%
+src\ml\battle_env.py                     204      0   100%
+src\ml\browser_trainer.py                 11      0   100%
+src\ml\feature_extractor.py              163      0   100%
+src\ml\models\__init__.py                  0      0   100%
+src\ml\replay_parser.py                  252      0   100%
+src\ml\replay_scraper.py                 108     58    46%   90-107, 118-141, 150-179
+src\ml\showdown_modes.py                  22      0   100%
+src\ml\showdown_player.py                 48      0   100%
+src\ml\teambuilder.py                     14      0   100%
+src\ml\teams.py                           30      0   100%
+src\ml\train_all.py                       18      0   100%
+src\ml\train_matchup.py                  139      0   100%
+src\ml\train_policy.py                    64      0   100%
+src\ml\training_doctor.py                129      0   100%
+src\services\analytics_service.py         86      0   100%
+src\services\battle_sim.py               132      0   100%
+src\services\draft_service.py            196      0   100%
+src\services\elo_service.py               60      0   100%
+src\services\notification_service.py      39      0   100%
+src\services\team_service.py             164      0   100%
+src\services\video_service.py             26      0   100%
+--------------------------------------------------------------------
+TOTAL                                   3244    297    91%
+=========================== short test summary info ===========================
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_list_of_replay_metas_on_success
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_empty_list_on_non_200_status
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_empty_list_on_exception
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_returns_empty_list_when_response_is_not_list
+FAILED tests/unit/test_ml_utils.py::TestFetchSearchPage::test_filters_by_min_rating
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_skips_already_seen_replay
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_returns_false_on_non_200_status
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_returns_false_on_exception
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_success_writes_json_file_and_returns_true
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_success_adds_id_to_seen_set
+FAILED tests/unit/test_ml_utils.py::TestFetchReplay::test_success_sets_default_format_and_rating
+FAILED tests/unit/test_ml_utils.py::TestScrape::test_scrape_downloads_new_replays_and_returns_count
+FAILED tests/unit/test_ml_utils.py::TestScrape::test_scrape_skips_page_of_already_seen_metas
+FAILED tests/unit/test_ml_utils.py::TestScrape::test_scrape_stops_early_on_empty_page
+FAILED tests/unit/test_models.py::test_current_player_id_linear - AttributeEr...
+FAILED tests/unit/test_models.py::test_current_player_id_overflow - Attribute...
+FAILED tests/unit/test_team_view.py::test_build_embed_empty_team - RuntimeErr...
+FAILED tests/unit/test_team_view.py::test_build_embed_empty_team_no_fields - ...
+FAILED tests/unit/test_team_view.py::test_build_embed_single_pokemon - Runtim...
+FAILED tests/unit/test_team_view.py::test_build_embed_multiple_pokemon - Runt...
+FAILED tests/unit/test_team_view.py::test_build_embed_footer_shows_count - Ru...
+FAILED tests/unit/test_team_view.py::test_build_embed_type_coverage_field - R...
+FAILED tests/unit/test_team_view.py::test_build_embed_shows_tier_badge - Runt...
+FAILED tests/unit/test_team_view.py::test_build_embed_title_has_owner_name - ...
+============ 24 failed, 736 passed, 3 skipped, 1 warning in 55.21s ============

@@ -48,18 +48,21 @@ except ImportError:  # pragma: no cover
 log = logging.getLogger(__name__)
 
 # ── Observation constants ─────────────────────────────────────────────────────
+OBS_DIM = 48
+TEAM_SIZE = 6
+OBS_DIM_DOUBLES = 80
+N_MOVES = 4
+MOVE_FEATS = 5    # base_power, accuracy, type_id, priority, effectiveness
+STATUS_DIM  = 1
+BOOST_DIM   = 6
+FIELD_DIM   = 4
 
-TEAM_SIZE   = 6
-N_MOVES     = 4
-MOVE_FEATS  = 4    # base_power, accuracy, type_id, priority
-BOOST_STATS = 6    # atk, def, spa, spd, spe, accuracy
-
-# Active mon: [species_id, hp, move×(4×4), status, 6×boosts] = 2 + 16 + 1 + 6 = 25
-# Opponent:   [species_id, hp, status]                         = 3
-# My team HP: [6×hp_pct]                                       = 6
-# Opp team HP:[6×hp_pct]                                       = 6
-# Field:      [weather, terrain, trick_room, turn]             = 4
-OBS_DIM = 25 + 3 + 6 + 6 + 4   # = 44
+# Active mon:    [species_id, hp, 4×(5-feats), status, 6×boosts] = 2 + 20 + 1 + 6 = 29
+# Opp active:    [species_id, hp, status]     = 3
+# My team HP:    6
+# Opp team HP:   6
+# Field:         4
+OBS_DIM = 29 + 3 + 6 + 6 + 4   # = 48
 
 # gen9 action space: 6 switches + 4 moves × (4 gimmicks + 1 none) = 26
 N_ACTIONS_GEN9 = 26
@@ -101,18 +104,26 @@ except Exception:  # pragma: no cover
 
 # ── Observation builder ───────────────────────────────────────────────────────
 
-def _move_features(move: "Move | None") -> list[float]:
-    """Extract 4-float feature vector for one move slot."""
+def _move_features(move: "Move | None", target: "Pokemon | None" = None) -> list[float]:
+    """Extract 5-float feature vector for one move slot."""
     if move is None:
-        return [0.0, 0.0, 0.0, 0.0]
+        return [0.0, 0.0, 0.0, 0.0, 0.5]
+    
     bp = min(getattr(move, "base_power", 0) or 0, 250) / 250.0
     acc = (getattr(move, "accuracy", 100) or 100) / 100.0
     type_id = TYPE_IDS.get(str(getattr(move, "type", "")).lower().split(".")[-1], 0) / 20.0
+    
     try:
         prio = (move.priority + 5) / 10.0
     except Exception:  # pragma: no cover
         prio = 0.5  # neutral priority
-    return [bp, acc, type_id, prio]
+    
+    eff = 0.5  # Neutral default
+    if target and move:
+        from src.ml.type_chart import get_type_effectiveness_float
+        eff = get_type_effectiveness_float(move, target)
+        
+    return [bp, acc, type_id, prio, eff]
 
 
 def _pokemon_hp(mon: "Pokemon | None") -> float:
@@ -138,9 +149,10 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
         idx += 1
 
         moves = list(battle.available_moves)
+        opp_active = battle.opponent_active_pokemon
         for i in range(N_MOVES):
             move = moves[i] if i < len(moves) else None
-            feats = _move_features(move)
+            feats = _move_features(move, opp_active)
             obs[idx:idx + MOVE_FEATS] = feats
             idx += MOVE_FEATS
 
@@ -152,7 +164,8 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
             obs[idx] = (boosts.get(stat, 0) + 6) / 12.0
             idx += 1
     else:
-        idx += 25
+        # Default empty active state
+        idx += 29
 
     # ── Opponent active ────────────────────────────────────────────
     opp = battle.opponent_active_pokemon
@@ -207,6 +220,9 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     obs[idx] = min(getattr(battle, "turn", 0), 50) / 50.0
     idx += 1
 
+    # ── Final Dimension Verification ──────────────────────────────────
+    assert idx == OBS_DIM, f"Observation dimension mismatch: {idx} != {OBS_DIM}"
+    
     return obs
 
 
@@ -235,11 +251,8 @@ if POKE_ENV_AVAILABLE:
             # random_teampreview() always picks 4 unique slots correctly.
             kwargs.setdefault("choose_on_teampreview", False)
             super().__init__(**kwargs)
-            # Required: set observation_spaces for all agents (action_spaces set by parent)
-            self.observation_spaces = {
-                agent: Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
-                for agent in self.possible_agents
-            }
+            # Required: set observation_space (action_space set by parent)
+            self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
             # Track previous faint counts for shaped reward (keyed by id(battle))
             self._prev_state: dict[int, dict[str, int]] = {}
 
@@ -305,14 +318,14 @@ else:  # pragma: no cover
 
 # ── Doubles observation constants ─────────────────────────────────────────────
 
-# Active mon 1: [species_id, hp, 4×(4-feats), status, 6×boosts] = 25
-# Active mon 2: same = 25
+# Active mon 1: [species_id, hp, 4×(5-feats), status, 6×boosts] = 29
+# Active mon 2: same = 29
 # Opp active 1: [species_id, hp, status] = 3
 # Opp active 2: same = 3
 # My team HP:   6
 # Opp team HP:  6
 # Field:        4  (weather, terrain, trick_room, turn)
-OBS_DIM_DOUBLES = 25 + 25 + 3 + 3 + 6 + 6 + 4   # = 72
+OBS_DIM_DOUBLES = 29 + 29 + 3 + 3 + 6 + 6 + 4   # = 80
 
 
 def build_doubles_observation(battle: Any) -> np.ndarray:
@@ -349,7 +362,7 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
                 obs[idx] = (boosts.get(stat, 0) + 6) / 12.0
                 idx += 1
         else:
-            idx += 25
+            idx += 29
 
     # ── Two opponent active Pokémon ────────────────────────────────
     opp_list = getattr(battle, "opponent_active_pokemon", [None, None]) or [None, None]
@@ -407,6 +420,9 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
     obs[idx] = min(getattr(battle, "turn", 0), 50) / 50.0
     idx += 1
 
+    # ── Final Dimension Verification ──────────────────────────────────
+    assert idx == OBS_DIM_DOUBLES, f"Doubles observation dimension mismatch: {idx} != {OBS_DIM_DOUBLES}"
+    
     return obs
 
 
@@ -432,10 +448,7 @@ if POKE_ENV_AVAILABLE:
             # random_teampreview() always picks 4 unique slots correctly.
             kwargs.setdefault("choose_on_teampreview", False)
             super().__init__(**kwargs)
-            self.observation_spaces = {
-                agent: Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
-                for agent in self.possible_agents
-            }
+            self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
             self._prev_state: dict[int, dict[str, int]] = {}
 
         def embed_battle(self, battle: Any) -> np.ndarray:

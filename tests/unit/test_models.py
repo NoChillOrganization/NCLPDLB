@@ -91,3 +91,70 @@ def test_current_player_id_empty_player_order():
         total_rounds=3, player_order=[],
     )
     assert d.current_player_id is None
+
+
+def test_pokemon_stats_total():
+    from src.data.models import PokemonStats
+    stats = PokemonStats(hp=10, atk=20, def_=30, spa=40, spd=50, spe=60)
+    assert stats.total == 210
+
+
+def test_pokemon_name_normalization():
+    from src.data.models import Pokemon, PokemonStats
+    # Test normalization in model_post_init
+    p = Pokemon(
+        national_dex=1, name="Mr. Mime Jr.",
+        types=["Psychic", "Fairy"],
+        base_stats=PokemonStats(), generation=1
+    )
+    assert p.name_normalized == "mr-mime-jr"
+
+
+def test_pokemon_type_string():
+    from src.data.models import Pokemon, PokemonStats
+    p = Pokemon(
+        national_dex=1, name="T", types=["grass", "poison"],
+        base_stats=PokemonStats(), generation=1
+    )
+    assert p.type_string == "Grass / Poison"
+
+
+def test_speed_tier_values():
+    from src.data.models import Pokemon, PokemonStats
+    def get_pkmn(spe):
+        return Pokemon(national_dex=1, name="T", types=["f"], base_stats=PokemonStats(spe=spe), generation=1)
+
+    assert get_pkmn(150).speed_tier == "Hyper Fast (130+)"
+    assert get_pkmn(120).speed_tier == "Very Fast (110-129)"
+    assert get_pkmn(100).speed_tier == "Fast (90-109)"
+    assert get_pkmn(80).speed_tier == "Average (70-89)"
+    assert get_pkmn(60).speed_tier == "Slow (50-69)"
+    assert get_pkmn(40).speed_tier == "Very Slow (<50)"
+
+
+def test_draft_player_count():
+    d = Draft(
+        draft_id="d1", guild_id="g1", commissioner_id="p1",
+        player_order=["p1", "p2", "p3"]
+    )
+    assert d.player_count == 3
+
+
+def test_current_player_id_linear():
+    d = Draft(
+        draft_id="d1", guild_id="g1", commissioner_id="p1",
+        player_order=["p1", "p2"], total_rounds=2,
+        format=DraftFormat.LINEAR, current_pick_index=1,
+    )
+    # current_pick_index=1 -> idx=1 -> player_order[1] = "p2"
+    assert d.current_player_id == "p2"
+
+
+def test_current_player_id_overflow():
+    d = Draft(
+        draft_id="d1", guild_id="g1", commissioner_id="p1",
+        player_order=["p1", "p2"], total_rounds=1,
+        format=DraftFormat.LINEAR, current_round=2,
+    )
+    # current_round=2 > total_rounds=1 -> draft finished -> None
+    assert d.current_player_id is None

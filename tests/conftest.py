@@ -6,7 +6,10 @@ The pytest.ini at project root sets asyncio_mode=auto, so async test
 functions and async fixtures work without @pytest.mark.asyncio.
 """
 import pytest
+import tracemalloc
 from unittest.mock import MagicMock, AsyncMock
+
+tracemalloc.start()
 
 from src.data.models import (
     Pokemon, PokemonStats,

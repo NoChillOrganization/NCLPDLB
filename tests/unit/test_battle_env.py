@@ -31,7 +31,7 @@ from src.ml.battle_env import (
 
 class TestMoveFeatures:
     def test_none_move_returns_zeros(self):
-        assert _move_features(None) == [0.0, 0.0, 0.0, 0.0]
+        assert _move_features(None) == [0.0, 0.0, 0.0, 0.0, 0.5]
 
     def test_normal_move(self):
         move = MagicMock()
@@ -41,7 +41,7 @@ class TestMoveFeatures:
         move.type.__str__ = lambda s: "PokemonType.FIRE"
         move.priority = 0
         feats = _move_features(move)
-        assert len(feats) == 4
+        assert len(feats) == 5
         assert 0.0 <= feats[0] <= 1.0  # base_power normalized
         assert feats[1] == 1.0          # accuracy 100 / 100
         assert 0.0 <= feats[2] <= 1.0  # type_id normalized
@@ -239,19 +239,20 @@ class TestBuildObservation:
         assert obs.shape == (OBS_DIM,)
 
     def test_turn_normalized(self):
-        battle = _make_mock_battle(turn=50)
+        battle = _make_mock_battle(turn=25)
         obs = build_observation(battle)
-        # Turn is at idx OBS_DIM-1
-        assert obs[OBS_DIM - 1] == pytest.approx(1.0)
+        # Turn is at last index
+        assert obs[OBS_DIM - 1] == pytest.approx(0.5)
 
-    def test_turn_capped_at_50(self):
-        battle = _make_mock_battle(turn=100)
+    def test_turn_capped_at_100(self):
+        battle = _make_mock_battle(turn=200)
         obs = build_observation(battle)
         assert obs[OBS_DIM - 1] == pytest.approx(1.0)
 
     def test_zero_turn(self):
         battle = _make_mock_battle(turn=0)
         obs = build_observation(battle)
+        # Turn is at last index
         assert obs[OBS_DIM - 1] == pytest.approx(0.0)
 
     def test_trick_room_effect_imported(self):
