@@ -6,9 +6,6 @@ Collects credentials, writes .env, and optionally runs setup scripts.
 Usage:
     python setup.py
 """
-import asyncio
-import json
-import os
 import shutil
 import subprocess
 import sys
@@ -88,7 +85,7 @@ def _write_env(values: dict[str, str]) -> None:
 def _run(cmd: list[str], desc: str) -> bool:
     print(f"\n  Running: {desc} ...")
     try:
-        result = subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True)
         print(f"  ✅ {desc} complete.")
         return True
     except subprocess.CalledProcessError as e:

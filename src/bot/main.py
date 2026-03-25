@@ -168,5 +168,5 @@ async def main() -> None:
         await bot.start(settings.discord_token)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     asyncio.run(main())

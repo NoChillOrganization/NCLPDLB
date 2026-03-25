@@ -296,7 +296,6 @@ def run_pipeline(formats: list[str], pages: int, min_rating: int) -> None:
         log.info("%s: scraped=%d, parsed=%d (after min_rating=%d)", fmt, scraped, parsed, min_rating)
 
         # Step 3: Extract features
-        import numpy as np  # noqa: F811 — already imported above, but kept for clarity
         if records:
             X_team, y_team = extractor.team_features(records)
             X_state, y_state = extractor.state_features(records)
