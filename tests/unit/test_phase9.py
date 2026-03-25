@@ -11,7 +11,6 @@ Requirements covered:
 import csv
 from pathlib import Path
 
-import pytest
 from src.bot.constants import SUPPORTED_FORMATS
 
 

@@ -396,6 +396,11 @@ async def _run_training(
     project_root = Path(__file__).parents[3]
     save_dir = project_root / "data" / "ml" / "policy"
 
+    # ── 0. Whitelist validation ─────────────────────────────────────
+    if fmt not in TRAINING_MAP:
+        await interaction.user.send(f"❌ Unknown format `{fmt}`. Valid formats: {', '.join(TRAINING_MAP)}")
+        return
+
     # ── 1. Preflight ────────────────────────────────────────────────
     issues = preflight_check(fmt, save_dir, python_exe=sys.executable, server_mode=server)
     blocking = [i for i in issues if not i["fixable"]]

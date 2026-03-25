@@ -2,8 +2,7 @@
 Unit tests for VideoService — Discord CDN URL recording.
 sheets is mocked; no external storage required.
 """
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, patch
 
 from src.services.video_service import VideoService, VideoUploadResult, MAX_FILE_SIZE_MB
 
@@ -38,7 +37,7 @@ async def test_upload_accepts_max_size_file():
     svc = VideoService()
     att = make_attachment(size_mb=MAX_FILE_SIZE_MB)
 
-    with patch("src.services.video_service.sheets") as mock_sheets:
+    with patch("src.services.video_service.sheets"):
         result = await svc.upload_match_video("g1", "p1", "p2", att)
 
     assert result.success
@@ -51,7 +50,7 @@ async def test_upload_records_discord_cdn_url():
     cdn_url = "https://cdn.discordapp.com/attachments/999/888/game.mp4"
     att = make_attachment(url=cdn_url)
 
-    with patch("src.services.video_service.sheets") as mock_sheets:
+    with patch("src.services.video_service.sheets"):
         result = await svc.upload_match_video("g1", "p1", "p2", att)
 
     assert result.success
@@ -63,7 +62,7 @@ async def test_upload_saves_metadata_to_sheets():
     att = make_attachment()
 
     with patch("src.services.video_service.sheets") as mock_sheets:
-        result = await svc.upload_match_video("g1", "p1", "p2", att, notes="great match")
+        _ = await svc.upload_match_video("g1", "p1", "p2", att, notes="great match")
 
     mock_sheets.save_video.assert_called_once()
     call_args = mock_sheets.save_video.call_args[0][0]

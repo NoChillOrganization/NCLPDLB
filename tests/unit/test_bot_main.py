@@ -1,10 +1,8 @@
 """Tests for src/bot/main.py — pure helper functions and bot lifecycle."""
-import asyncio
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
-import pytest
 
 from src.bot.main import _command_fingerprint, drift_check_commands, DraftLeagueBot, COGS
 
@@ -163,15 +161,15 @@ async def test_setup_hook_continues_on_cog_load_failure(tmp_path):
 
 async def test_setup_hook_csv_exists_runs_drift_check(tmp_path):
     """When CSV exists, drift_check_commands is invoked."""
-    bot = _make_bot_with_mocked_internals()
+    _ = _make_bot_with_mocked_internals()
 
     csv_file = tmp_path / "discord_commands.csv"
     csv_file.write_text("Command\n/draft\n/team\n", encoding="utf-8")
 
     with patch("src.bot.main.settings") as mock_settings, \
          patch("src.bot.main._SYNC_HASH_FILE", tmp_path / ".hash"), \
-         patch("src.bot.main.drift_check_commands", return_value=set()) as mock_drift, \
-         patch("src.bot.main.Path") as mock_path_cls:
+         patch("src.bot.main.drift_check_commands", return_value=set()), \
+         patch("src.bot.main.Path"):
         # Make the CSV path resolve to our tmp file
         mock_settings.discord_guild_id = None
         mock_settings.sync_commands_on_startup = False

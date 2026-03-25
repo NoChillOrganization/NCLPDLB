@@ -4,7 +4,7 @@ Tests the entire flow: create → join → start → pick all rounds → complet
 Run: pytest tests/e2e/test_full_draft.py -v
 """
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch
 
 from src.data.models import DraftFormat, DraftStatus
 from src.services.draft_service import DraftService
@@ -39,7 +39,6 @@ async def test_full_snake_draft():
     - Round 3: alice, bob, charlie, diana
     """
     svc = DraftService()
-    pick_index = [0]
 
     with patch("src.services.draft_service.sheets") as mock_sheets, \
          patch("src.services.draft_service.pokemon_db") as mock_db:

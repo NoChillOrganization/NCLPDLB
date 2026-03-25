@@ -7,7 +7,6 @@ import logging
 from typing import Any
 
 import random
-import numpy as np
 from poke_env.player import Player
 
 log = logging.getLogger(__name__)

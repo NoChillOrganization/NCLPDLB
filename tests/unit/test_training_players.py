@@ -1,8 +1,6 @@
 """Tests for src.ml.training_players — MaxBasePowerPlayer and SimpleHeuristicPlayer."""
 from unittest.mock import MagicMock, patch
 
-import numpy as np
-import pytest
 
 from src.ml.training_players import MaxBasePowerPlayer, SimpleHeuristicPlayer
 

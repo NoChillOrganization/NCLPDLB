@@ -72,7 +72,13 @@ class TeamService:
             return None
 
         import json
-        pokemon_names: list[str] = json.loads(record.get("pokemon_list", "[]"))
+        try:
+            pokemon_names: list[str] = json.loads(record.get("pokemon_list", "[]"))
+            if not isinstance(pokemon_names, list):
+                pokemon_names = []
+        except (json.JSONDecodeError, TypeError):
+            log.warning("Invalid pokemon_list JSON for player %s — defaulting to empty", player_id)
+            pokemon_names = []
         pokemon_list = [p for name in pokemon_names if (p := pokemon_db.find(name))]
 
         roster = TeamRoster(

@@ -12,17 +12,12 @@ Covers uncovered lines: 88, 99-106, 168-176, 184, 216, 249, 331
 """
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from unittest.mock import patch
 
-import numpy as np
-import pytest
 
 from src.ml.feature_extractor import (
     UNKNOWN_ID,
     TEAM_SIZE,
-    STATE_FEATURE_DIM,
     FeatureExtractor,
     Vocabulary,
     build_dataset,

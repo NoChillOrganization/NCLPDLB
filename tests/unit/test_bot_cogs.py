@@ -1,10 +1,8 @@
 """Tests for pure helper functions in bot cogs and views."""
 import asyncio
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
-import pytest
 
 from src.bot.cogs.team import decode_attachment_bytes
 from src.bot.views.team_import_view import build_confirm_embed
@@ -497,7 +495,7 @@ async def test_admin_train_valid_format_creates_task():
     interaction = make_interaction()
 
     with patch("src.bot.cogs.admin._model_exists", return_value=False), \
-         patch("src.bot.cogs.admin._run_training", new_callable=AsyncMock) as mock_run, \
+         patch("src.bot.cogs.admin._run_training", new_callable=AsyncMock), \
          patch("asyncio.create_task") as mock_task:
         await cog.admin_train.callback(cog, interaction, format=fmt, timesteps=10_000)
 
@@ -510,7 +508,6 @@ async def test_admin_train_valid_format_creates_task():
 
 async def test_admin_train_autocomplete_returns_matching_formats():
     """Autocomplete filters TRAINING_MAP keys by the current input."""
-    from src.ml.train_all import TRAINING_MAP
     bot = MagicMock()
     cog = AdminCog(bot)
     interaction = make_interaction()
@@ -569,7 +566,6 @@ async def test_admin_train_all_defers_and_creates_task():
 
 async def test_admin_train_all_skips_existing_when_flag_set():
     """With skip_existing=True, already-existing models are counted as skipped."""
-    from src.ml.train_all import TRAINING_MAP
     bot = MagicMock()
     cog = AdminCog(bot)
 
@@ -722,7 +718,6 @@ def _make_proc(returncode=0, lines=()):
 
 async def test_admin_update_success_all_ok():
     """Full success path: git pull OK, cogs reload OK, guild sync OK."""
-    from src.bot.main import COGS
     bot = MagicMock()
     cog = AdminCog(bot)
     interaction = make_interaction()

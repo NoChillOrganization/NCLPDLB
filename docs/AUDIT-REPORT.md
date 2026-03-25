@@ -50,6 +50,7 @@ environment intentionally excludes async web dependencies. The module was not te
 tool for building replay training datasets.
 
 **Notes:**
+
 - Requires `aiohttp` — only available under system Python 3.14, not in `.venv`
 - Uses `PROJECT_ROOT` from `src/config.py` for data path resolution; ensure config is initialized
   before running the scraper
@@ -149,6 +150,7 @@ teams in round-robin order.
 diversity. The import guard issue (see Notes) should be resolved before v2.0.
 
 **Notes:**
+
 - **Design inconsistency — flag for v2.0:** `teambuilder.py` imports `poke_env` at the top level
   with no `try/except` guard. If `poke-env` is not installed, the module raises `ModuleNotFoundError`
   immediately on import.
@@ -177,6 +179,7 @@ infrastructure-gated.
 Full validation is deferred to Phase 13 when Showdown infra is provisioned.
 
 **Notes:**
+
 - **Required infrastructure:** A live Pokemon Showdown server (default: `localhost:8000`, or
   `ps.lookclient.com` for the public test server)
 - **poke-env version:** Requires poke-env 0.12.0+ — uses `SinglesEnv`, `DoublesEnv`, and
@@ -204,6 +207,7 @@ live Showdown server (imported from `battle_env.py`).
 validation deferred to Phase 12 (Policy Model) when Showdown infra is available.
 
 **Notes:**
+
 - **Same infrastructure requirements as battle_env.py:** Requires a live Pokemon Showdown server
   (default: `localhost:8000`)
 - **poke-env version:** Same constraint as `battle_env.py` — poke-env 0.12.0+ required
@@ -230,6 +234,7 @@ without live infra.
 validation deferred to Phase 12.
 
 **Notes:**
+
 - **Same infrastructure requirements as train_policy.py:** Requires Showdown server to actually
   execute training
 - The `train_policy` subprocess import is guarded inside `train_all.py` — this is why the import
@@ -258,6 +263,7 @@ be imported in the ML virtual environment. The fix is to add a try/except import
 `src.data.sheets` import, consistent with how `battle_env.py` handles `poke-env`.
 
 **Notes:**
+
 - **Cross-environment dependency — unique among ml/ modules:** `showdown_player.py` is the only
   module that requires BOTH the ML environment (poke-env, numpy, torch) AND the bot environment
   (gspread, google-auth, Google Sheets credentials) simultaneously
@@ -286,6 +292,7 @@ model artifacts (`.zip` files from stable-baselines3, `.pkl` files from joblib) 
 after Phase 12 training runs.
 
 **Notes:**
+
 - **No trained artifacts exist** — training has never been executed in this environment. The
   `models/` directory contains only `__init__.py`.
 - `.zip` files (PPO policy checkpoints) and `.pkl` files (matchup classifier) will populate this

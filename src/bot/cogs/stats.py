@@ -17,6 +17,8 @@ from src.services.video_service import VideoService
 
 log = logging.getLogger(__name__)
 
+REPLAY_DOMAIN = "replay.pokemonshowdown.com"
+
 # ── Supported spar formats (must have a trained model) ────────────────────────
 SPAR_FORMATS = [
     # Random Battle
@@ -200,8 +202,8 @@ class StatsCog(commands.Cog, name="Stats"):
     @app_commands.describe(url="Pokemon Showdown replay URL (replay.pokemonshowdown.com/...)")
     async def replay(self, interaction: discord.Interaction, url: str) -> None:
         await interaction.response.defer()
-        if "replay.pokemonshowdown.com" not in url:
-            await interaction.followup.send("Please provide a valid replay.pokemonshowdown.com link.", ephemeral=True)
+        if REPLAY_DOMAIN not in url:
+            await interaction.followup.send(f"Please provide a valid {REPLAY_DOMAIN} link.", ephemeral=True)
             return
         result = await self.battle_sim.parse_replay(
             guild_id=str(interaction.guild_id),

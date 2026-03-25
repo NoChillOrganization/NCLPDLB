@@ -13,7 +13,6 @@ Patterns used throughout:
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
-import pytest
 
 from src.bot.cogs.team import ShowdownImportModal, TeamCog, setup
 

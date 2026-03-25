@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, List, Dict, Union
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from src.ml.type_chart import get_type_effectiveness_float
@@ -302,10 +302,12 @@ class FeatureExtractor:
 
         # 3. Team HP (6 + 6 = 12)
         my_team_hp = [p.current_hp_fraction for p in battle.team.values()]
-        while len(my_team_hp) < 6: my_team_hp.append(0.0)
-        
+        while len(my_team_hp) < 6:
+            my_team_hp.append(0.0)
+
         opp_team_hp = [p.current_hp_fraction for p in battle.opponent_team.values()]
-        while len(opp_team_hp) < 6: opp_team_hp.append(0.0)
+        while len(opp_team_hp) < 6:
+            opp_team_hp.append(0.0)
 
         # 4. Field (4)
         weather_id = 0.0

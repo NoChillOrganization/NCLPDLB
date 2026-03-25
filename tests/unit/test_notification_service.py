@@ -2,8 +2,7 @@
 Unit tests for NotificationService — DMs for pick turns, trades, match results.
 All Discord API calls are mocked so no real bot is needed.
 """
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import discord
 

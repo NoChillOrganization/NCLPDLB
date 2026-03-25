@@ -15,7 +15,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -293,7 +293,7 @@ class TestReplayScraperInit:
         pytest.importorskip("aiohttp")
         from src.ml.replay_scraper import ReplayScraper
 
-        scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
+        _ = ReplayScraper(format="gen9ou", output_dir=tmp_path)
         assert (tmp_path / "gen9ou").is_dir()
 
     def test_init_format_stored(self, tmp_path):
@@ -587,7 +587,6 @@ class TestScrape:
         replay_url = REPLAY_URL.format(id="gen9ou-s1")
 
         async def run():
-            import aiohttp
             with aioresponses() as mock:
                 # Page 1 returns one result; page 2 returns empty (stops early)
                 mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=search_page)
@@ -609,7 +608,6 @@ class TestScrape:
         search_page = [{"id": "gen9ou-seen", "rating": 1600}]
 
         async def run():
-            import aiohttp
             with aioresponses() as mock:
                 mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=search_page)
                 mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=[])  # second page — stops early
@@ -626,7 +624,6 @@ class TestScrape:
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
 
         async def run():
-            import aiohttp
             with aioresponses() as mock:
                 # First page empty — should stop immediately
                 mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=[])
@@ -641,7 +638,7 @@ class TestReplayStats:
 
     def test_returns_empty_dict_when_replays_dir_absent(self, tmp_path):
         pytest.importorskip("aiohttp")
-        from src.ml.replay_scraper import replay_stats, REPLAYS_DIR
+        from src.ml.replay_scraper import replay_stats
         import src.ml.replay_scraper as scraper_mod
 
         nonexistent = tmp_path / "does_not_exist"

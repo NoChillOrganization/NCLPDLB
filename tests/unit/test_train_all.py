@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 
 from src.ml.train_all import (
     TRAINING_MAP,
