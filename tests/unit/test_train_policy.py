@@ -354,6 +354,7 @@ class TestCurriculumCallback:
 
     def test_selfplay_swap_triggers_when_interval_reached(self, tmp_path):
         cb, opponent = self._make_cb(tmp_path, swap_every=100, min_episodes=5, win_threshold=0.60)
+        cb.verbose = 1
         with patch("shutil.copy"):
             self._push_episodes(cb, wins=5, total=5)  # graduate at ts=0
             cb.num_timesteps = 100                    # advance past swap_every
