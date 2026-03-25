@@ -688,3 +688,742 @@ async def test_try_edit_suppresses_edit_exception():
 
     # Must not raise
     await _try_edit(msg, embed)
+
+
+# ── Async subprocess helper ───────────────────────────────────────────────────
+
+class _AsyncLineIter:
+    """Minimal async iterator for mocking proc.stdout in _run_training tests."""
+    def __init__(self, lines=()):
+        self._lines = list(lines)
+        self._pos = 0
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if self._pos >= len(self._lines):
+            raise StopAsyncIteration
+        val = self._lines[self._pos]
+        self._pos += 1
+        return val
+
+
+def _make_proc(returncode=0, lines=()):
+    proc = MagicMock()
+    proc.returncode = returncode
+    proc.stdout = _AsyncLineIter(lines)
+    proc.wait = AsyncMock()
+    proc.communicate = AsyncMock(return_value=(b"output text", None))
+    return proc
+
+
+# ── admin_update ──────────────────────────────────────────────────────────────
+
+async def test_admin_update_success_all_ok():
+    """Full success path: git pull OK, cogs reload OK, guild sync OK."""
+    from src.bot.main import COGS
+    bot = MagicMock()
+    cog = AdminCog(bot)
+    interaction = make_interaction()
+    proc = _make_proc(returncode=0)
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc), \
+         patch("asyncio.wait_for", new_callable=AsyncMock, return_value=(b"Already up to date.", None)):
+        await cog.admin_update.callback(cog, interaction)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "✅" in sent_text
+    assert "git pull" in sent_text
+    assert "Cogs reloaded" in sent_text
+
+
+async def test_admin_update_git_pull_timeout():
+    """asyncio.wait_for raises TimeoutError → 'timed out' in response."""
+    bot = MagicMock()
+    cog = AdminCog(bot)
+    interaction = make_interaction()
+    proc = _make_proc()
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc), \
+         patch("asyncio.wait_for", side_effect=asyncio.TimeoutError):
+        await cog.admin_update.callback(cog, interaction)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "timed out" in sent_text.lower()
+
+
+async def test_admin_update_git_pull_exception():
+    """create_subprocess_exec raises → 'failed' in response."""
+    bot = MagicMock()
+    cog = AdminCog(bot)
+    interaction = make_interaction()
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, side_effect=OSError("no git")):
+        await cog.admin_update.callback(cog, interaction)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "failed" in sent_text.lower()
+
+
+async def test_admin_update_cog_reload_failure():
+    """reload_extension raises for one cog → ❌ appears for that cog."""
+    bot = MagicMock()
+    cog = AdminCog(bot)
+    interaction = make_interaction()
+    proc = _make_proc()
+
+    from src.bot.main import COGS
+    fail_cog = COGS[0] if COGS else "src.bot.cogs.admin"
+
+    def reload_side_effect(name):
+        if name == fail_cog:
+            raise Exception("load error")
+        return AsyncMock()()  # resolved coroutine
+
+    interaction.client.reload_extension = AsyncMock(side_effect=reload_side_effect)
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc), \
+         patch("asyncio.wait_for", new_callable=AsyncMock, return_value=(b"ok", None)):
+        await cog.admin_update.callback(cog, interaction)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "❌" in sent_text
+
+
+async def test_admin_update_sync_no_guild():
+    """interaction.guild = None → global sync (no guild kwarg)."""
+    bot = MagicMock()
+    cog = AdminCog(bot)
+    interaction = make_interaction()
+    interaction.guild = None
+    proc = _make_proc()
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc), \
+         patch("asyncio.wait_for", new_callable=AsyncMock, return_value=(b"ok", None)):
+        await cog.admin_update.callback(cog, interaction)
+
+    interaction.client.tree.sync.assert_awaited_once_with()
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "globally" in sent_text
+
+
+async def test_admin_update_sync_http_exception():
+    """HTTPException from tree.sync → ❌ Command sync failed in response."""
+    bot = MagicMock()
+    cog = AdminCog(bot)
+    interaction = make_interaction()
+    proc = _make_proc()
+
+    http_exc = discord.HTTPException(MagicMock(status=429), "Rate limited")
+    http_exc.status = 429
+    http_exc.text = "Rate limited"
+    interaction.client.tree.sync = AsyncMock(side_effect=http_exc)
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc), \
+         patch("asyncio.wait_for", new_callable=AsyncMock, return_value=(b"ok", None)):
+        await cog.admin_update.callback(cog, interaction)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "❌" in sent_text
+    assert "sync failed" in sent_text.lower()
+
+
+async def test_admin_update_sync_general_exception():
+    """General exception from tree.sync → ❌ Command sync failed in response."""
+    bot = MagicMock()
+    cog = AdminCog(bot)
+    interaction = make_interaction()
+    proc = _make_proc()
+    interaction.client.tree.sync = AsyncMock(side_effect=RuntimeError("unexpected"))
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc), \
+         patch("asyncio.wait_for", new_callable=AsyncMock, return_value=(b"ok", None)):
+        await cog.admin_update.callback(cog, interaction)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "❌" in sent_text
+
+
+# ── _run_training ─────────────────────────────────────────────────────────────
+
+async def test_run_training_blocking_preflight_aborts():
+    """Blocking preflight issue → sends DM and returns without launching subprocess."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+
+    blocking = [{"type": "SHOWDOWN_OFFLINE", "description": "server down", "fixable": False}]
+    with patch("src.ml.training_doctor.preflight_check", return_value=blocking), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+        await _run_training(interaction, "gen9ou", 100_000, channel_msg=None, force=False)
+
+    mock_exec.assert_not_called()
+
+
+async def test_run_training_fixable_preflight_applies_fix():
+    """Fixable preflight issue → apply_all_fixes called before launching subprocess."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+
+    fixable = [{"type": "CORRUPT_CHECKPOINT", "description": "bad ckpt", "fixable": True}]
+    proc = _make_proc(returncode=0)
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=fixable), \
+         patch("src.ml.training_doctor.apply_all_fixes", return_value=[]) as mock_fix, \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=[]), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training(interaction, "gen9ou", 100_000, channel_msg=None, force=False)
+
+    mock_fix.assert_called_once()
+
+
+async def test_run_training_success_sends_done_embed():
+    """Subprocess returns 0 → user.send called with ✅ Training Complete embed."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    proc = _make_proc(returncode=0, lines=[b"step 1000/100000\n"])
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training(interaction, "gen9ou", 100_000, channel_msg=None, force=False)
+
+    interaction.user.send.assert_awaited()
+    embed_arg = interaction.user.send.call_args[1].get("embed") or interaction.user.send.call_args[0][0] if interaction.user.send.call_args[0] else interaction.user.send.call_args[1]["embed"]
+    assert "Complete" in embed_arg.title or "✅" in embed_arg.title
+
+
+async def test_run_training_failure_unfixable_sends_fail_embed():
+    """Both attempts fail with unfixable errors → fail embed sent."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    proc = _make_proc(returncode=1)
+
+    unfixable = [{"type": "UNKNOWN", "description": "mystery", "fixable": False}]
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=unfixable), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training(interaction, "gen9ou", 100_000, channel_msg=None, force=False)
+
+    interaction.user.send.assert_awaited()
+    embed_arg = interaction.user.send.call_args[1].get("embed")
+    assert embed_arg is not None
+    assert "Failed" in embed_arg.title or "❌" in embed_arg.title
+
+
+async def test_run_training_failure_with_fixable_retries_and_succeeds():
+    """First attempt fails with fixable errors → fix applied → second attempt succeeds."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+
+    fail_proc = _make_proc(returncode=1)
+    success_proc = _make_proc(returncode=0)
+    procs = [fail_proc, success_proc]
+
+    fixable = [{"type": "CORRUPT_CHECKPOINT", "description": "bad ckpt", "fixable": True}]
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=fixable), \
+         patch("src.ml.training_doctor.apply_all_fixes", return_value=[]) as mock_fix, \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, side_effect=procs):
+        await _run_training(interaction, "gen9ou", 100_000, channel_msg=None, force=False)
+
+    mock_fix.assert_called()
+    # Last send should be success embed
+    last_embed = interaction.user.send.call_args[1].get("embed")
+    assert last_embed is not None
+    assert "Complete" in last_embed.title or "✅" in last_embed.title
+
+
+async def test_run_training_subprocess_exception_sends_fail_embed():
+    """Subprocess raises exception → fail embed sent."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+
+    unfixable = [{"type": "UNKNOWN", "description": "crash", "fixable": False}]
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=unfixable), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock,
+               side_effect=OSError("exec failed")):
+        await _run_training(interaction, "gen9ou", 100_000, channel_msg=None, force=False)
+
+    interaction.user.send.assert_awaited()
+
+
+# ── _run_training_all ─────────────────────────────────────────────────────────
+
+async def test_run_training_all_no_formats_sends_summary():
+    """All models exist → 0 formats queued → final summary DM sent."""
+    from src.bot.cogs.admin import _run_training_all
+    interaction = make_interaction()
+
+    with patch("src.bot.cogs.admin._model_exists", return_value=True), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]):
+        await _run_training_all(interaction, 100_000, force=False)
+
+    interaction.user.send.assert_awaited()
+
+
+async def test_run_training_all_blocking_preflight_aborts():
+    """Blocking preflight → returns early, no subprocess spawned."""
+    from src.bot.cogs.admin import _run_training_all
+    interaction = make_interaction()
+
+    blocking = [{"type": "SHOWDOWN_OFFLINE", "description": "down", "fixable": False}]
+    with patch("src.bot.cogs.admin._model_exists", return_value=False), \
+         patch("src.ml.training_doctor.preflight_check", return_value=blocking), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+        await _run_training_all(interaction, 100_000, force=False)
+
+    mock_exec.assert_not_called()
+
+
+async def test_run_training_all_one_format_success():
+    """One format runs successfully → n_done=1, summary sent with ✅."""
+    from src.bot.cogs.admin import _run_training_all
+    from src.ml.train_all import TRAINING_MAP
+
+    interaction = make_interaction()
+    one_fmt = next(iter(TRAINING_MAP))
+    proc = _make_proc(returncode=0)
+
+    def model_exists_fn(results_dir, fmt):
+        # only the first format lacks a model
+        return fmt != one_fmt
+
+    with patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training_all(interaction, 100_000, force=False)
+
+    interaction.user.send.assert_awaited()
+    # At least two sends: startup DM + summary
+    assert interaction.user.send.await_count >= 2
+
+
+async def test_run_training_all_failure_applies_fix():
+    """Format fails → diagnose finds fixable error → apply_all_fixes called."""
+    from src.bot.cogs.admin import _run_training_all
+    from src.ml.train_all import TRAINING_MAP
+
+    interaction = make_interaction()
+    one_fmt = next(iter(TRAINING_MAP))
+    proc = _make_proc(returncode=1)
+
+    fixable = [{"type": "CORRUPT_CHECKPOINT", "description": "bad", "fixable": True}]
+
+    def model_exists_fn(results_dir, fmt):
+        return fmt != one_fmt
+
+    with patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=fixable), \
+         patch("src.ml.training_doctor.apply_all_fixes", return_value=[]) as mock_fix, \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training_all(interaction, 100_000, force=False)
+
+    mock_fix.assert_called()
+
+
+# ── TeamCog command handlers ───────────────────────────────────────────────────
+
+async def test_team_cog_team_no_roster():
+    """team command with no roster → ephemeral 'no team yet' message."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+    cog.team_service.get_team = AsyncMock(return_value=None)
+
+    interaction = make_interaction()
+    await cog.team.callback(cog, interaction, user=None)
+
+    interaction.response.defer.assert_awaited_once()
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "no team" in sent_text.lower()
+
+
+async def test_team_cog_team_with_roster():
+    """team command with roster → embed+view sent."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    mock_roster = [MagicMock()]
+    cog.team_service.get_team = AsyncMock(return_value=mock_roster)
+
+    interaction = make_interaction()
+    with patch("src.bot.cogs.team.TeamEmbedView") as MockView:
+        mock_view = MagicMock()
+        mock_view.build_embed.return_value = MagicMock()
+        MockView.return_value = mock_view
+        await cog.team.callback(cog, interaction, user=None)
+
+    interaction.followup.send.assert_awaited_once()
+    call_kwargs = interaction.followup.send.call_args[1]
+    assert "embed" in call_kwargs
+    assert "view" in call_kwargs
+
+
+async def test_team_cog_team_register_invalid_content_type():
+    """logo with wrong MIME type → immediate error, no defer."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+
+    logo = MagicMock()
+    logo.content_type = "application/pdf"
+    logo.size = 1024
+
+    interaction = make_interaction()
+    await cog.team_register.callback(cog, interaction, team_name="TestTeam", pool="A", logo=logo)
+
+    interaction.response.send_message.assert_awaited_once()
+    err_text = interaction.response.send_message.call_args[0][0]
+    assert "PNG" in err_text or "JPG" in err_text or "❌" in err_text
+
+
+async def test_team_cog_team_register_logo_too_large():
+    """logo > 8 MB → immediate error."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+
+    logo = MagicMock()
+    logo.content_type = "image/png"
+    logo.size = 9 * 1024 * 1024  # 9 MB
+
+    interaction = make_interaction()
+    await cog.team_register.callback(cog, interaction, team_name="TestTeam", pool="A", logo=logo)
+
+    err_text = interaction.response.send_message.call_args[0][0]
+    assert "8 MB" in err_text or "❌" in err_text
+
+
+async def test_team_cog_team_register_no_logo():
+    """team_register without logo → registers, sends ephemeral + public embed."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+    cog.team_service.register_team = AsyncMock()
+
+    interaction = make_interaction()
+    await cog.team_register.callback(cog, interaction, team_name="TestTeam", pool="A", logo=None)
+
+    interaction.response.defer.assert_awaited_once()
+    cog.team_service.register_team.assert_awaited_once()
+    interaction.followup.send.assert_awaited_once()
+    # Public channel announcement
+    interaction.channel.send.assert_awaited_once()
+
+
+async def test_team_cog_trade_success():
+    """trade success → embed with offer/request names sent."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    result = MagicMock()
+    result.success = True
+    result.trade_id = "trade-001"
+    cog.team_service.propose_trade = AsyncMock(return_value=result)
+
+    interaction = make_interaction()
+    target = MagicMock()
+    target.id = "9999"
+    target.mention = "<@9999>"
+    target.send = AsyncMock()
+
+    await cog.trade.callback(cog, interaction, target=target, offer="Garchomp", request="Tyranitar")
+
+    interaction.followup.send.assert_awaited_once()
+    embed = interaction.followup.send.call_args[1]["embed"]
+    assert "Garchomp" in embed.description
+    assert "Tyranitar" in embed.description
+
+
+async def test_team_cog_trade_success_dm_forbidden():
+    """trade success but DM to target raises Forbidden → no crash."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    result = MagicMock()
+    result.success = True
+    result.trade_id = "trade-002"
+    cog.team_service.propose_trade = AsyncMock(return_value=result)
+
+    interaction = make_interaction()
+    target = MagicMock()
+    target.id = "9999"
+    target.mention = "<@9999>"
+    target.send = AsyncMock(side_effect=discord.Forbidden(MagicMock(status=403), "blocked"))
+
+    await cog.trade.callback(cog, interaction, target=target, offer="Garchomp", request="Tyranitar")
+
+    # embed still sent to channel
+    interaction.followup.send.assert_awaited_once()
+
+
+async def test_team_cog_trade_failure():
+    """trade failure → error followup."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    result = MagicMock()
+    result.success = False
+    result.error = "No such Pokemon in your pool"
+    cog.team_service.propose_trade = AsyncMock(return_value=result)
+
+    interaction = make_interaction()
+    target = MagicMock()
+    target.id = "9999"
+    target.mention = "<@9999>"
+
+    await cog.trade.callback(cog, interaction, target=target, offer="Pikachu", request="Raichu")
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "failed" in sent_text.lower() or "error" in sent_text.lower()
+
+
+async def test_team_cog_trade_accept_success():
+    """trade_accept success → ✅ message."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    result = MagicMock()
+    result.success = True
+    result.summary = "Garchomp → Tyranitar"
+    cog.team_service.accept_trade = AsyncMock(return_value=result)
+
+    interaction = make_interaction()
+    await cog.trade_accept.callback(cog, interaction, trade_id="trade-001")
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "✅" in sent_text
+
+
+async def test_team_cog_trade_accept_failure():
+    """trade_accept failure → ❌ error message."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    result = MagicMock()
+    result.success = False
+    result.error = "Trade not found"
+    cog.team_service.accept_trade = AsyncMock(return_value=result)
+
+    interaction = make_interaction()
+    await cog.trade_accept.callback(cog, interaction, trade_id="bad-id")
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "❌" in sent_text
+
+
+async def test_team_cog_trade_decline_success():
+    """trade_decline success → 'declined' message."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    result = MagicMock()
+    result.success = True
+    cog.team_service.decline_trade = AsyncMock(return_value=result)
+
+    interaction = make_interaction()
+    await cog.trade_decline.callback(cog, interaction, trade_id="trade-001")
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "declined" in sent_text.lower() or "trade-001" in sent_text
+
+
+async def test_team_cog_trade_decline_failure():
+    """trade_decline failure → ❌ error message."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    result = MagicMock()
+    result.success = False
+    result.error = "Not your trade"
+    cog.team_service.decline_trade = AsyncMock(return_value=result)
+
+    interaction = make_interaction()
+    await cog.trade_decline.callback(cog, interaction, trade_id="bad-id")
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "❌" in sent_text
+
+
+async def test_team_cog_teamimport_non_txt():
+    """teamimport with non-.txt attachment → immediate error response."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+
+    attachment = MagicMock()
+    attachment.filename = "team.json"
+    attachment.read = AsyncMock(return_value=b"...")
+
+    interaction = make_interaction()
+    await cog.teamimport.callback(cog, interaction, format="gen9ou", team_file=attachment)
+
+    interaction.response.send_message.assert_awaited_once()
+    err_text = interaction.response.send_message.call_args[0][0]
+    assert ".txt" in err_text
+
+
+async def test_team_cog_teamimport_empty_file():
+    """teamimport with empty .txt → 'empty' error."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+
+    attachment = MagicMock()
+    attachment.filename = "team.txt"
+    attachment.read = AsyncMock(return_value=b"   ")
+
+    interaction = make_interaction()
+    await cog.teamimport.callback(cog, interaction, format="gen9ou", team_file=attachment)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "empty" in sent_text.lower()
+
+
+async def test_team_cog_teamimport_valid():
+    """teamimport with valid team .txt → confirmation embed+view sent."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    showdown_text = (
+        "Garchomp @ Choice Scarf\n"
+        "Ability: Rough Skin\n"
+        "EVs: 252 Atk / 4 SpD / 252 Spe\n"
+        "Jolly Nature\n"
+        "- Earthquake\n"
+        "- Dragon Claw\n"
+    )
+    attachment = MagicMock()
+    attachment.filename = "team.txt"
+    attachment.read = AsyncMock(return_value=showdown_text.encode())
+
+    interaction = make_interaction()
+    with patch("src.bot.cogs.team.TeamImportConfirmView") as MockView, \
+         patch("src.bot.cogs.team.build_confirm_embed") as mock_embed:
+        mock_embed.return_value = MagicMock()
+        MockView.return_value = MagicMock()
+        await cog.teamimport.callback(cog, interaction, format="gen9ou", team_file=attachment)
+
+    interaction.followup.send.assert_awaited_once()
+    call_kwargs = interaction.followup.send.call_args[1]
+    assert "embed" in call_kwargs
+    assert "view" in call_kwargs
+
+
+async def test_teamimport_format_autocomplete_matches():
+    """Autocomplete returns matching format choices for a prefix."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    interaction = make_interaction()
+
+    choices = await cog.teamimport_format_autocomplete(interaction, "gen9")
+
+    assert len(choices) > 0
+    for c in choices:
+        assert "gen9" in c.value.lower() or "gen9" in c.name.lower()
+
+
+async def test_teamimport_format_autocomplete_empty_returns_all():
+    """Empty current string returns up to 25 choices."""
+    from src.bot.cogs.team import TeamCog
+    from src.bot.constants import SUPPORTED_FORMATS
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    interaction = make_interaction()
+
+    choices = await cog.teamimport_format_autocomplete(interaction, "")
+    assert len(choices) == min(len(SUPPORTED_FORMATS), 25)
+
+
+async def test_team_cog_teamexport():
+    """teamexport calls export_showdown and sends result in code block."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+    cog.team_service.export_showdown = AsyncMock(return_value="Garchomp @ Choice Scarf\n...")
+
+    interaction = make_interaction()
+    await cog.teamexport.callback(cog, interaction)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "Garchomp" in sent_text
+    assert "```" in sent_text
+
+
+async def test_team_cog_legality_legal():
+    """legality legal → green embed."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    result = MagicMock()
+    result.legal = True
+    result.reason = "Fully legal in SV."
+    cog.team_service.check_legality = AsyncMock(return_value=result)
+
+    interaction = make_interaction()
+    await cog.legality.callback(cog, interaction, pokemon="Garchomp", game="sv")
+
+    embed = interaction.followup.send.call_args[1]["embed"]
+    assert embed.color == discord.Color.green()
+
+
+async def test_team_cog_legality_illegal():
+    """legality illegal → red embed."""
+    from src.bot.cogs.team import TeamCog
+    bot = MagicMock()
+    cog = TeamCog(bot)
+    cog.team_service = MagicMock()
+
+    result = MagicMock()
+    result.legal = False
+    result.reason = "Not available in SV Dex."
+    cog.team_service.check_legality = AsyncMock(return_value=result)
+
+    interaction = make_interaction()
+    await cog.legality.callback(cog, interaction, pokemon="Mewtwo", game="sv")
+
+    embed = interaction.followup.send.call_args[1]["embed"]
+    assert embed.color == discord.Color.red()
+
+
+async def test_team_cog_setup_adds_cog():
+    """setup() registers TeamCog to the bot."""
+    bot = MagicMock()
+    bot.add_cog = AsyncMock()
+    from src.bot.cogs.team import setup
+    await setup(bot)
+    bot.add_cog.assert_awaited_once()
+    from src.bot.cogs.team import TeamCog
+    assert isinstance(bot.add_cog.call_args[0][0], TeamCog)
