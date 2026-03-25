@@ -22,6 +22,7 @@ This document is a curated, structured reference of community resources relevant
 ## 1. VGC Format Rules & Official Resources
 
 ### Official Competition Rules
+
 | Resource | URL | Notes |
 |----------|-----|-------|
 | Pokémon Play — VGC Rules & Formats | https://play.pokemon.com/en-us/resources/rules/?category=vgc | Official Play! Pokémon season structure, Regulation ruleset PDFs |
@@ -29,6 +30,7 @@ This document is a curated, structured reference of community resources relevant
 | VGC Leaderboard | https://www.pokemon.com/us/play-pokemon/leaderboards/vg-masters/ | Official points leaderboard |
 
 ### Community Rules & Glossaries
+
 | Resource | URL | Notes |
 |----------|-----|-------|
 | VGC Guide | https://www.vgcguide.com | Comprehensive beginner-to-intermediate guide; covers Intro, Battling, Teambuilding, Circuit structure — SV-focused |
@@ -37,6 +39,7 @@ This document is a curated, structured reference of community resources relevant
 | DevonCorp — VGC Resources | https://devoncorp.press/short-form-content/up-to-date-vgc-resources | Curated community link list: SPAMS matchup tool, Speed Tier spreadsheet (Reg H), StatCrusher, Porydex, MunchStats, MunchTeams, VGC Pokepaste Repository |
 
 **Key linked tools from DevonCorp resource list:**
+
 - **SPAMS** (matchup planning): https://docs.google.com/spreadsheets/d/1FW9TZJN66q3XaE4VJz9LWtm0OVsgVBqkaBTJhaQMLY4
 - **Reg H Speed Tier Spreadsheet**: https://docs.google.com/spreadsheets/d/1CgGA-iSV_fOv1xiD9ePFeRVHxFVCs6gRPsAbH0SqXn4
 - **StatCrusher** (EV spread analysis): https://statcrusher.com/
@@ -50,6 +53,7 @@ This document is a curated, structured reference of community resources relevant
 ## 2. Meta Tracking & Usage Statistics
 
 ### Usage Stats & Tournament Data
+
 | Resource | URL | Notes |
 |----------|-----|-------|
 | Limitless VGC | https://limitlessvgc.com | Tournament DB with usage %, player rankings, recent results. **Top Pokémon (current format):** Incineroar 48.3%, Flutter Mane 47.7%, Urshifu-RS 43.5%, Raging Bolt 35.2%, Ogerpon-Wellspring 30.8%, Amoonguss 27.6%, Tornadus 27.3%, Landorus 26.2%, Rillaboom 24.2%, Chien-Pao 22.5% |
@@ -58,6 +62,7 @@ This document is a curated, structured reference of community resources relevant
 | MunchTeams | https://munchteams.com/ | Scans PS for open games of top-rated teams; similar to Statsugiri |
 
 ### Smogon VGC Hub
+
 | Resource | URL | Notes |
 |----------|-----|-------|
 | Smogon VGC Resources | https://www.smogon.com/tiers/vgc/resources | Forum threads: Battle Spot Doubles discussion, Simple Q&A, Sample Teams, Viability Rankings, GBU rule differences |
@@ -68,6 +73,7 @@ This document is a curated, structured reference of community resources relevant
 ## 3. Teambuilding Theory & Smogon Fundamentals
 
 ### Getting Started
+
 | Resource | URL | Notes |
 |----------|-----|-------|
 | Getting Started with Competitive Battling | https://www.smogon.com/articles/getting-started | Covers prediction, team preview, risk vs reward, short/long-term thinking |
@@ -75,7 +81,9 @@ This document is a curated, structured reference of community resources relevant
 | Pokémon Showdown! | https://pokemonshowdown.com | Simulator — primary practice environment |
 
 ### Team Archetypes
+
 From *Getting Started with Competitive Battling* (Smogon):
+
 - **Hyper Offense** — wallbreakers + setup sweepers, supports via dual screens/hazards, momentum-critical
 - **Bulky Offense** — defensive + offensive pivots (Volt Switch, U-turn, Flip Turn), keeps offensive pressure
 - **Balance** — defensive backbone + wallbreakers; walls chip with Scald/Knock Off; walls enable late-game clean
@@ -83,7 +91,9 @@ From *Getting Started with Competitive Battling* (Smogon):
 - **Stall** — entirely passive; PP wars and attrition via status, residual damage, Knock Off
 
 ### Pokémon Roles
+
 From *Getting Started* (Smogon):
+
 | Role | Description | Example |
 |------|-------------|---------|
 | **Wallbreaker** | High immediate power, punches holes. Items: Life Orb, Choice Band/Specs | Rillaboom (base 125 Atk + Grassy Surge) |
@@ -92,7 +102,9 @@ From *Getting Started* (Smogon):
 | **Pivot** | Maintains momentum; forces switches without wasting turns. Defensive or offensive | Toxapex (defensive, Regenerator) / Zeraora (offensive, Volt Switch) |
 
 ### Synergy Theory
+
 From *Smogon Smog Issue 39 — Synergy and Cores*:
+
 - **Type Synergy** — each Pokémon covers the other's type weaknesses (e.g. Venusaur + Heatran mutual resistances)
 - **Check/Counter Synergy** — each removes the other's specific counters (e.g. Mega Gyarados + Talonflame)
 - **Offensive Core** — share offensive pressure against same targets (Dragapult + Hydreigon vs. Clefable/Mandibuzz)
@@ -101,6 +113,7 @@ From *Smogon Smog Issue 39 — Synergy and Cores*:
 - Key test tool: **bReakMyTeam** (https://jake-white.github.io/bReakMyTeam/)
 
 ### Additional Reading
+
 | Resource | URL |
 |----------|-----|
 | Smogon Dex (for Team Options / Checks & Counters per Pokémon) | https://www.smogon.com/dex/ |
@@ -124,10 +137,12 @@ From *Smogon Smog Issue 39 — Synergy and Cores*:
 
 **Programmatic note for NCLPDLB:**
 `@smogon/calc` is the standard backend library:
+
 ```
 npm install @smogon/calc
 import { calculate, Pokemon, Move, Field, Generations } from '@smogon/calc';
 ```
+
 It runs server-side or in-browser and covers all generations including Gen 9 Tera.
 
 ---
@@ -135,23 +150,27 @@ It runs server-side or in-browser and covers all generations including Gen 9 Ter
 ## 5. Replay Archives & Analysis Tools
 
 ### Live Replay Access
+
 | Tool | URL | Notes |
 |------|-----|-------|
 | Pokémon Showdown Replays | https://replay.pokemonshowdown.com | Official PS replay browser; search by format/username |
 
 ### Bulk Replay Datasets
+
 | Tool | URL | Notes |
 |------|-----|-------|
 | **HolidayOugi/pokemon-showdown-replays** (HuggingFace) | https://huggingface.co/datasets/HolidayOugi/pokemon-showdown-replays | 30.9 million replays (2005–2026); 65.1 GB raw + 65.1 GB Parquet; public domain; used by Showdown Shower project |
 | Smogon Tour Playoffs Replay Archive | https://www.smogon.com/forums/threads/smogon-tour-playoffs-replay-archive.3658302/ | Historical competitive replays from Smogon official tournaments |
 
 ### Replay Downloader Tools
+
 | Tool | URL | Notes |
 |------|-----|-------|
 | **PS Replay Downloader** (StatsugiriLabs) | https://github.com/StatsugiriLabs/PsReplayDownloader | Chrome extension; one-click download all replays, or manual select up to 50 most recent; Chromium only |
 | **Showdown Companion** (ReplayScouter) | https://fulllifegames.com/Tools/ReplayScouter/ | Vue-based SPA; uses `@pkmn/sim`, `@smogon/calc`, `@pkmn/img` — full replay analysis suite |
 
 ### Replay Analysis Tools
+
 | Tool | URL | Notes |
 |------|-----|-------|
 | **VS Recorder** (Pocolip) | https://github.com/Pocolip/vs-recorder | Full-featured VGC replay analyzer: paste Showdown URL → auto-parse battle log; win rates, usage stats, lead pairs, tera frequency, move usage charts, Bo3 match grouping, built-in damage calc (NCP sets), opponent planner, cloud sync; `@smogon/calc` powered |
@@ -172,6 +191,7 @@ It runs server-side or in-browser and covers all generations including Gen 9 Ter
 | **Showdex** | https://www.smogon.com/forums/threads/showdex-an-auto-updating-damage-calculator-built-into-showdown.3707265/ | Browser extension: injects auto-updating damage calculator directly into Pokémon Showdown UI during battles |
 
 **stalruth.dev project suite summary:**
+
 - Author: Stuart Rutherford (backend dev, Node.js/Python/Go/Kotlin)
 - All projects: JavaScript/Svelte; hosted as managed containers or GitHub Pages
 - Top Cut Explorer: SvelteKit, Core Web Vitals optimized, updated continuously with new Regional data
@@ -181,6 +201,7 @@ It runs server-side or in-browser and covers all generations including Gen 9 Ter
 ## 7. Educational YouTube Channels & Videos
 
 ### Key General Channels
+
 | Channel | URL | Focus |
 |---------|-----|-------|
 | **Wolfey VGC** (Wolfe Glick) | https://www.youtube.com/@WolfeyVGC | Top player; teambuilds, tournament commentary, meta discussion; also hosts Wolfey Draft League |
@@ -191,6 +212,7 @@ It runs server-side or in-browser and covers all generations including Gen 9 Ter
 | **NumbNexus** | https://www.youtube.com/@NumbNexus | Draft league participant (SPL S3, BBR Little Cup, BUBL, PPL); broad draft league coverage |
 
 ### Top VGC Players & Educators
+
 | Channel | URL | Notes |
 |---------|-----|-------|
 | **Ray Rizzo** | https://www.youtube.com/@RayRizzo | 3× World Champion (2010–2012); "GOAT" of VGC; history + analysis |
@@ -219,6 +241,7 @@ It runs server-side or in-browser and covers all generations including Gen 9 Ter
 | **Freezai** | https://www.youtube.com/@Freezai | VGC + Smogon cross-content; meta analysis |
 
 ### Smogon Singles Players & Educators
+
 | Channel | URL | Notes |
 |---------|-----|-------|
 | **Smogon University** (official) | https://www.youtube.com/@SmogonUniversity | SPL XVI recaps, tournament interviews, tier deep-dives |
@@ -232,6 +255,7 @@ It runs server-side or in-browser and covers all generations including Gen 9 Ter
 | **Storm Zone** | https://www.youtube.com/@StormZone | OST20 winner (2024); strong SPL record |
 
 ### Additional Draft League Coaches
+
 | Channel | URL | League(s) |
 |---------|-----|-----------|
 | **aimel8846** | https://www.youtube.com/@aimel8846 | SPL S3 + BBR |
@@ -248,6 +272,7 @@ It runs server-side or in-browser and covers all generations including Gen 9 Ter
 | **MichaelDerBeste** | https://www.youtube.com/@MichaelDerBeste | MDBL host; detailed set + team breakdowns |
 
 ### Recommended Videos
+
 | Title / Topic | URL |
 |---------------|-----|
 | VGC Video 1 | https://www.youtube.com/watch?v=ilQOnWnq_aU |
@@ -275,12 +300,14 @@ It runs server-side or in-browser and covers all generations including Gen 9 Ter
 Draft leagues are community-run competitive leagues where players **draft** a pool of Pokémon at the start of a season and build all their teams exclusively from that drafted roster, battling weekly against other coaches. This provides uniquely constrained teambuilding data — highly relevant for NCLPDLB draft-mode training.
 
 ### Dedicated League Channels
+
 | Channel / League | URL | Notes |
 |-----------------|-----|-------|
 | **Pokemon Draft League** (Refried PDL) | https://www.youtube.com/@PokemonDraftLeague | Community channel hosting Refried Pokémon Draft League match VODs |
 | **BonusWolfe** (secondary Wolfey channel) | https://www.youtube.com/@BonusWolfe | Houses Wolfey Draft League content separate from main WolfeyVGC channel |
 
 ### Major Community Draft Leagues (2024–2025)
+
 | League | Format | Notable Channels |
 |--------|--------|------------------|
 | **Wolfey Draft League** | VGC Reg H; hosted by Wolfe Glick | @WolfeyVGC, @CybertronVGC, @shadypenguinn, @Nekkra, @jameswbaekpkmn, @mountaih, @TheUziGunner |
@@ -292,6 +319,7 @@ Draft leagues are community-run competitive leagues where players **draft** a po
 | **GBA** (Gym Leader Battle Association) | Wi-Fi | Major Wi-Fi draft league |
 
 ### Key Participant Channels for Draft League Content
+
 | Channel | URL | Draft League Role |
 |---------|-----|------------------|
 | **shadypenguinn** | https://www.youtube.com/@shadypenguinn | Wolfey DL + Shuckle Premier League participant |
@@ -306,6 +334,7 @@ Draft leagues are community-run competitive leagues where players **draft** a po
 | **PlayMoreEsports** | https://www.youtube.com/@PlayMoreEsports | BUBL + MD Draft League coverage |
 
 ### Draft League Data Value for NCLPDLB
+
 - **Constrained drafting decisions** — coaches must build teams from a fixed legal pool, directly mirroring NCLPDLB draft mode
 - **Repeated head-to-head matchups** — same roster battled across a full season yields rich adaptation/counter-strategy data
 - **Teambuilding under resource constraints** — ideal training signal for draft-restricted team construction
@@ -319,12 +348,14 @@ Draft leagues are community-run competitive leagues where players **draft** a po
 ## Key Takeaways for NCLPDLB
 
 ### Programmatic Integrations Available
+
 1. **`@smogon/calc`** — npm package for server-side damage calculation; covers Gen 9 including Tera mechanics
 2. **Pokémon Showdown Replay API** — public JSON endpoints at `replay.pokemonshowdown.com/{id}.json`
 3. **HuggingFace dataset** — 30.9M replays (65 GB) for BC pre-training corpus (Phase 03 relevance)
 4. **Limitless VGC** — usage statistics accessible via site; no official public API but data is structured
 
 ### Resource Priority for ML Training
+
 | Priority | Resource | Use Case |
 |----------|----------|----------|
 | High | HuggingFace replay dataset | Phase 03 behavioral cloning training data |

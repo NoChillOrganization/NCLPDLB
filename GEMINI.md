@@ -31,6 +31,7 @@ Graduate to self-play when agent achieves ≥70% win-rate over a rolling 500-epi
 **Changes needed in `src/ml/train_policy.py`:**
 
 1. Add `MaxBasePowerPlayer` import in the `poke_env` guard block (line 58):
+
    ```python
    from poke_env.player import MaxBasePowerPlayer, RandomPlayer
    ```
@@ -56,10 +57,12 @@ Graduate to self-play when agent achieves ≥70% win-rate over a rolling 500-epi
    `[checkpoint_cb, selfplay_cb]` callbacks with `[checkpoint_cb, curriculum_cb]`.
 
 **Tests to add/update in `tests/unit/test_train_policy.py`:**
+
 - `TestCurriculumCallback`: init, warmup→selfplay graduation, win-rate threshold, swap in selfplay phase
 - `TestCurriculumOpponent` (mock-based): `load_policy`, `choose_move` with/without policy
 
 **Key invariants:**
+
 - `train()` public signature unchanged (`fmt`, `total_timesteps`, `swap_every`, `save_dir`, `results_dir`, `resume`, `team_format`, `server`)
 - `SelfPlayCallback` class stays (it's tested and exported)
 - `CurriculumCallback` is the new default used by `train()`
