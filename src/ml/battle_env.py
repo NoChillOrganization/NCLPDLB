@@ -253,25 +253,26 @@ if POKE_ENV_AVAILABLE:
             # random_teampreview() always picks 4 unique slots correctly.
             kwargs.setdefault("choose_on_teampreview", False)
             super().__init__(**kwargs)
-            # Required: set observation_space (action_space set by parent)
-            self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
-            # poke-env defines action_space as a method, but SB3 expects a
-            # gymnasium.spaces object.  Resolve the method once and store it.
-            parent_as = super().action_space
-            if callable(parent_as):
-                parent_as = parent_as()
-            self._sb3_action_space = parent_as if parent_as is not None else Discrete(N_ACTIONS_GEN9)
-            # poke-env SingleAgentWrapper expects observation_spaces (plural, dict)
-            # Gymnasium uses observation_space (singular). Expose both.
-            self.observation_spaces = {"battle": self.observation_space}
-            # poke-env also expects action_spaces (plural, dict)
-            self.action_spaces = {"battle": self._sb3_action_space}
+            # poke-env defines action_space as a method (takes agent name),
+            # but SB3 expects a gymnasium.spaces object via a property.
+            # SinglesEnv.__init__ already populated self.action_spaces with
+            # {username: Discrete(26)} — store a concrete copy for SB3.
+            self._sb3_action_space = Discrete(N_ACTIONS_GEN9)
+            # Override observation_spaces with our custom flat Box per agent
+            # (poke-env's __setattr__ wraps these with action_mask).
+            obs_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            self.observation_spaces = {
+                agent: obs_space for agent in self.possible_agents
+            }
             # Track previous faint counts for shaped reward (keyed by id(battle))
             self._prev_state: dict[int, dict[str, int]] = {}
 
         @property
         def action_space(self):
-            return self._sb3_action_space
+            if hasattr(self, "_sb3_action_space"):
+                return self._sb3_action_space
+            # Fallback during super().__init__() before _sb3_action_space is set
+            return Discrete(N_ACTIONS_GEN9)
 
         @action_space.setter
         def action_space(self, space):
@@ -469,23 +470,27 @@ if POKE_ENV_AVAILABLE:
             # random_teampreview() always picks 4 unique slots correctly.
             kwargs.setdefault("choose_on_teampreview", False)
             super().__init__(**kwargs)
-            self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
-            # poke-env defines action_space as a method, but SB3 expects a
-            # gymnasium.spaces object.  Resolve the method once and store it.
-            parent_as = super().action_space
-            if callable(parent_as):
-                parent_as = parent_as()
-            self._sb3_action_space = parent_as
-            # poke-env SingleAgentWrapper expects observation_spaces (plural, dict)
-            # Gymnasium uses observation_space (singular). Expose both.
-            self.observation_spaces = {"battle": self.observation_space}
-            # poke-env also expects action_spaces (plural, dict)
-            self.action_spaces = {"battle": self._sb3_action_space}
+            # poke-env defines action_space as a method (takes agent name),
+            # but SB3 expects a gymnasium.spaces object via a property.
+            # DoublesEnv.__init__ already populated self.action_spaces —
+            # grab the first agent's concrete space for SB3.
+            first_agent = next(iter(self.action_spaces))
+            self._sb3_action_space = self.action_spaces[first_agent]
+            # Override observation_spaces with our custom flat Box per agent
+            # (poke-env's __setattr__ wraps these with action_mask).
+            obs_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
+            self.observation_spaces = {
+                agent: obs_space for agent in self.possible_agents
+            }
             self._prev_state: dict[int, dict[str, int]] = {}
 
         @property
         def action_space(self):
-            return self._sb3_action_space
+            if hasattr(self, "_sb3_action_space"):
+                return self._sb3_action_space
+            # Fallback during super().__init__() — DoublesEnv will set
+            # action_spaces before we can read it, so use a safe default.
+            return Discrete(1)
 
         @action_space.setter
         def action_space(self, space):
