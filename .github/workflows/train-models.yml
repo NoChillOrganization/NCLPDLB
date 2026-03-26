@@ -8,14 +8,14 @@ on:
   workflow_dispatch:
     inputs:
       timesteps:
-        description: "Training steps per format (manual production runs only — CI uses matrix.timesteps)"
+        description: "Training steps per format (manual production runs only — CI uses matrix.config.timesteps)"
         required: false
         default: "500000"
 
 permissions:
   contents: write
   actions: write
-  packages: write
+  packages: read
   pull-requests: write
 
 env:
@@ -29,67 +29,27 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - format: gen9randombattle
-            team_format: ""
-            timesteps: 500000
-          - format: gen9ou
-            team_format: gen9ou
-            timesteps: 500000
-          - format: gen9doublesou
-            team_format: gen9doublesou
-            timesteps: 500000
-          - format: gen9nationaldex
-            team_format: gen9nationaldex
-            timesteps: 500000
-          - format: gen9monotype
-            team_format: gen9monotype
-            timesteps: 500000
-          - format: gen9anythinggoes
-            team_format: gen9anythinggoes
-            timesteps: 500000
-          - format: gen9vgc2026regi
-            team_format: gen9vgc2026regi
-            timesteps: 500000
-          - format: gen9vgc2026regf
-            team_format: gen9vgc2026regf
-            timesteps: 500000
-          - format: gen9randomdoublesbattle
-            team_format: ""
-            timesteps: 500000
-          - format: gen9ubers
-            team_format: gen9ubers
-            timesteps: 500000
-          - format: gen9uu
-            team_format: gen9uu
-            timesteps: 500000
-          - format: gen9ru
-            team_format: gen9ru
-            timesteps: 500000
-          - format: gen9nu
-            team_format: gen9nu
-            timesteps: 500000
-          - format: gen9pu
-            team_format: gen9pu
-            timesteps: 500000
-          - format: gen9zu
-            team_format: gen9zu
-            timesteps: 500000
-          - format: gen9lc
-            team_format: gen9lc
-            timesteps: 500000
-          - format: gen9doublesubers
-            team_format: gen9doublesubers
-            timesteps: 500000
-          - format: gen9doublesuu
-            team_format: gen9doublesuu
-            timesteps: 500000
-          - format: gen9vgc2026regfbo3
-            team_format: gen9vgc2026regfbo3
-            timesteps: 500000
-          - format: gen9vgc2026regibo3
-            team_format: gen9vgc2026regibo3
-            timesteps: 500000
+        config:
+          - { format: gen9randombattle,    team_format: "",                  timesteps: 500000 }
+          - { format: gen9ou,              team_format: gen9ou,              timesteps: 500000 }
+          - { format: gen9doublesou,       team_format: gen9doublesou,       timesteps: 500000 }
+          - { format: gen9nationaldex,     team_format: gen9nationaldex,     timesteps: 500000 }
+          - { format: gen9monotype,        team_format: gen9monotype,        timesteps: 500000 }
+          - { format: gen9anythinggoes,    team_format: gen9anythinggoes,    timesteps: 500000 }
+          - { format: gen9vgc2026regi,     team_format: gen9vgc2026regi,     timesteps: 500000 }
+          - { format: gen9vgc2026regf,     team_format: gen9vgc2026regf,     timesteps: 500000 }
+          - { format: gen9randomdoublesbattle, team_format: "",              timesteps: 500000 }
+          - { format: gen9ubers,           team_format: gen9ubers,           timesteps: 500000 }
+          - { format: gen9uu,              team_format: gen9uu,              timesteps: 500000 }
+          - { format: gen9ru,              team_format: gen9ru,              timesteps: 500000 }
+          - { format: gen9nu,              team_format: gen9nu,              timesteps: 500000 }
+          - { format: gen9pu,              team_format: gen9pu,              timesteps: 500000 }
+          - { format: gen9zu,              team_format: gen9zu,              timesteps: 500000 }
+          - { format: gen9lc,              team_format: gen9lc,              timesteps: 500000 }
+          - { format: gen9doublesubers,    team_format: gen9doublesubers,    timesteps: 500000 }
+          - { format: gen9doublesuu,       team_format: gen9doublesuu,       timesteps: 500000 }
+          - { format: gen9vgc2026regfbo3,  team_format: gen9vgc2026regfbo3,  timesteps: 500000 }
+          - { format: gen9vgc2026regibo3,  team_format: gen9vgc2026regibo3,  timesteps: 500000 }
 
     steps:
       - name: Checkout
@@ -121,10 +81,10 @@ jobs:
           echo "--- Installing Showdown dependencies ---"
           npm install
 
-          echo "--- Patching config/formats.ts: emptying banlists for tier/doubles-tier formats ---"
+          echo "--- Patching config/formats.ts ---"
           python3 "$GITHUB_WORKSPACE/scripts/patch_showdown_formats.py" config/formats.ts
 
-          echo "--- Starting Showdown server (auto-builds patched TypeScript on start) ---"
+          echo "--- Starting Showdown server ---"
           node pokemon-showdown start --no-security --max-old-space-size=3000 > "$RUNNER_TEMP/showdown.log" 2>&1 &
           SHOWDOWN_PID=$!
 
@@ -141,19 +101,19 @@ jobs:
             sleep 1
           done
 
-          echo "--- Verifying WebSocket connectivity (poke-env requires WS, not just HTTP) ---"
+          echo "--- Verifying WebSocket connectivity ---"
           python3 "$GITHUB_WORKSPACE/scripts/check_showdown_ws.py" \
-            || (echo "WS check failed. Showdown log:" && cat "$RUNNER_TEMP/showdown.log" && exit 1)
+            || (echo "WS check failed. Log:" && cat "$RUNNER_TEMP/showdown.log" && exit 1)
 
           echo "--- Showdown server is ready ---"
 
-      - name: Train ${{ matrix.format }}
-        timeout-minutes: 80
+      - name: Train ${{ matrix.config.format }}
+        timeout-minutes: 110
         shell: bash
         run: |
-          ARGS="--format ${{ matrix.format }} --timesteps ${{ matrix.timesteps }} --save-dir data/ml/policy"
-          if [ -n "${{ matrix.team_format }}" ]; then
-            ARGS="$ARGS --team-format ${{ matrix.team_format }}"
+          ARGS="--format ${{ matrix.config.format }} --timesteps ${{ matrix.config.timesteps }} --save-dir data/ml/policy"
+          if [ -n "${{ matrix.config.team_format }}" ]; then
+            ARGS="$ARGS --team-format ${{ matrix.config.team_format }}"
           fi
           python -m src.ml.train_policy $ARGS
         env:
@@ -163,8 +123,8 @@ jobs:
         uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: model-${{ matrix.os }}-${{ matrix.format }}
-          path: data/ml/policy/${{ matrix.format }}/final_model.zip
+          name: model-${{ matrix.os }}-${{ matrix.config.format }}
+          path: data/ml/policy/${{ matrix.config.format }}/final_model.zip
           if-no-files-found: warn
           retention-days: 90
 
