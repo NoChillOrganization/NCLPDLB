@@ -3,7 +3,7 @@ One-shot command sync script.
 Loads all cogs, syncs slash commands to the configured guild (or globally), then exits.
 
 Usage:
-    .venv\Scripts\python scripts\sync_commands.py
+    .venv/Scripts/python scripts/sync_commands.py
 """
 import asyncio
 import sys

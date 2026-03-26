@@ -334,10 +334,35 @@ class DraftService:
         draft = _active_drafts.get(guild_id)
         if not draft or draft.format != DraftFormat.AUCTION:
             return BidResult(success=False, error="No active auction draft.")
+        if draft.status != DraftStatus.ACTIVE:
+            return BidResult(success=False, error="Draft is not currently active.")
+        if not draft.current_nomination_id:
+            return BidResult(success=False, error="No active nomination to bid on.")
+
+        # Budget check
         budget = draft.budget.get(player_id, 0)
+        if amount < 1:
+            return BidResult(success=False, error="Bid must be at least 1 coin.")
         if amount > budget:
             return BidResult(success=False, error=f"Insufficient budget. You have {budget} coins.")
-        # TODO: track current bids per nomination
+
+        # Reject if bid does not exceed current high bid
+        current_bids: dict[str, int] = draft.nomination_bids.setdefault(
+            draft.current_nomination_id, {}
+        )
+        current_high_val = max(current_bids.values(), default=0)
+        if amount <= current_high_val:
+            return BidResult(
+                success=False,
+                error=f"Your bid of {amount} must exceed the current high bid of {current_high_val}.",
+            )
+
+        # Record the bid
+        current_bids[player_id] = amount
+        log.info(
+            f"Bid placed: guild={guild_id} player={player_id} "
+            f"amount={amount} nomination={draft.current_nomination_id}"
+        )
         return BidResult(success=True, current_high=amount)
 
     # ── Admin ops ──────────────────────────────────────────────

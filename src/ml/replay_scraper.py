@@ -208,8 +208,8 @@ async def _main() -> None:  # pragma: no cover
     start = time.monotonic()
     count = await scraper.scrape(pages=args.pages)
     elapsed = time.monotonic() - start
-    print(f"\nDone: {count} new replays in {elapsed:.1f}s")
-    print("Replay counts:", replay_stats())
+    log.info("Done: %d new replays in %.1fs", count, elapsed)
+    log.info("Replay counts: %s", replay_stats())
 
 
 if __name__ == "__main__":  # pragma: no cover

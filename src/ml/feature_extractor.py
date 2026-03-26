@@ -51,13 +51,17 @@ TEAM_SIZE   = 6     # Pokemon per team in team preview
 #   + type coverage flags, BST bins, tier bins (added when Smogon data available)
 TEAM_FEATURE_DIM = TEAM_SIZE * 2   # minimum — extended below when data is available
 
-# State feature vector layout (per turn): MATCHES BattleEnv.py build_observation()
-#   Active mon:    [species_id, hp, 4×(5-feats), status, 6×boosts] = 2 + 20 + 1 + 6 = 29
-#   Opp active:    [species_id, hp, status]     = 3
-#   My team HP:    6
-#   Opp team HP:   6
-#   Field:         4
-#   TOTAL:         48
+# State feature vector layout (per turn, offline replay pipeline):
+#   [p1_active_id, p2_active_id]           = 2   (species vocab IDs)
+#   p1 team HPs   (6 slots)                = 6
+#   p2 team HPs   (6 slots)                = 6
+#   [p1_fainted, p2_fainted]               = 2
+#   [turn_norm]                            = 1
+#   [last_move_p1, last_move_p2]           = 2   (move vocab IDs)
+#   TOTAL                                  = 19
+#
+# Note: This is DIFFERENT from BattleEnv.OBS_DIM (=48), which is the
+# real-time RL observation space used during self-play training.
 STATE_FEATURE_DIM = 19
 
 
@@ -66,7 +70,8 @@ STATE_FEATURE_DIM = 19
 TYPE_IDS = {
     "normal": 1, "fire": 2, "water": 3, "electric": 4, "grass": 5, "ice": 6,
     "fighting": 7, "poison": 8, "ground": 9, "flying": 10, "psychic": 11,
-    "bug": 12, "rock": 13, "ghost": 14, "dragon": 15, "dark": 16, "steel": 17, "fairy": 18
+    "bug": 12, "rock": 13, "ghost": 14, "dragon": 15, "dark": 16, "steel": 17, "fairy": 18,
+    "stellar": 19,
 }
 
 STATUS_IDS = {
@@ -277,7 +282,7 @@ class FeatureExtractor:
                 move_feats.extend([
                     (m.base_power / 250.0),
                     (m.accuracy if m.accuracy is not True else 1.0),
-                    (TYPE_IDS.get(m.type.name.lower(), 0) / 18.0),
+                    (TYPE_IDS.get(m.type.name.lower(), 0) / 19.0),
                     ((m.priority + 1) / 5.0),
                     eff
                 ])

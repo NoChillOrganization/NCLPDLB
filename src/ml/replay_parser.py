@@ -504,7 +504,7 @@ def parse_replay_dir(directory: Path, max_count: int = 0) -> list[BattleRecord]:
         try:
             records.append(parse_replay_file(path))
         except Exception as exc:
-            print(f"[parser] Skipping {path.name}: {exc}")
+            log.warning("[parser] Skipping %s: %s", path.name, exc)
     return records
 
 
