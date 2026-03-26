@@ -56,7 +56,7 @@ if __name__ == "__main__":
                 total += int(inc)
             else:
                 # Need to find constant value
-                const_match = re.search(f"{inc} = (\d+)", content)
+                const_match = re.search(rf"{inc} = (\d+)", content)
                 if const_match:
                     total += int(const_match.group(1))
                 else:

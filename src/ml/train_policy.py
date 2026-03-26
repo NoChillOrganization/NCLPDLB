@@ -545,18 +545,18 @@ def train(  # pragma: no cover
         "localhost": "ws://127.0.0.1:8000 (local Node.js server)",
         "showdown":  "wss://sim3.psim.us (public Showdown)",
     }.get(server, server)
-    print(f"\n{'='*60}")
-    print("  PPO Curriculum Training")
-    print(f"  Format       : {fmt}" + (f" (training as {training_fmt})" if training_fmt != fmt else ""))
-    print(f"  Server mode  : {server} — {_server_desc}")
-    print(f"  Total steps  : {total_timesteps:,}")
-    print(f"  Swap every   : {swap_every:,} (after graduation)")
-    print(f"  Save dir     : {fmt_save_dir}")
-    print(f"  TensorBoard  : tensorboard --logdir {log_dir}")
-    print(f"{'='*60}\n")
+    log.info("============================================================")
+    log.info("  PPO Curriculum Training")
+    log.info(f"  Format       : {fmt}" + (f" (training as {training_fmt})" if training_fmt != fmt else ""))
+    log.info(f"  Server mode  : {server} — {_server_desc}")
+    log.info(f"  Total steps  : {total_timesteps:,}")
+    log.info(f"  Swap every   : {swap_every:,} (after graduation)")
+    log.info(f"  Save dir     : {fmt_save_dir}")
+    log.info(f"  TensorBoard  : tensorboard --logdir {log_dir}")
+    log.info("============================================================")
     if server == MODE_LOCALHOST:
-        print("Make sure Pokemon Showdown server is running on ws://localhost:8000")
-    print("Press Ctrl+C to stop training early.\n")
+        log.info("Make sure Pokemon Showdown server is running on ws://localhost:8000")
+    log.info("Press Ctrl+C to stop training early.")
 
     try:
         model.learn(
@@ -572,7 +572,7 @@ def train(  # pragma: no cover
     # CI expects save_dir/fmt/final_model.zip
     final_path = fmt_save_dir / "final_model.zip"
     model.save(str(final_path))
-    print(f"\nFinal model saved to {final_path}")
+    log.info(f"\nFinal model saved to {final_path}")
 
     return final_path
 
@@ -623,7 +623,7 @@ def evaluate(  # pragma: no cover
             ties += 1
 
         if (i + 1) % 10 == 0:
-            print(f"  Battle {i+1}/{n_battles}: W={wins} L={losses} T={ties}")
+            log.info(f"  Battle {i+1}/{n_battles}: W={wins} L={losses} T={ties}")
 
     total = wins + losses + ties
     results = {
@@ -635,10 +635,10 @@ def evaluate(  # pragma: no cover
         "win_rate"  : wins / total if total > 0 else 0.0,
         "loss_rate" : losses / total if total > 0 else 0.0,
     }
-    print(f"\n=== Evaluation vs RandomPlayer ({n_battles} battles) ===")
-    print(f"  Win rate : {results['win_rate']*100:.1f}%")
-    print(f"  Loss rate: {results['loss_rate']*100:.1f}%")
-    print(f"  Ties     : {ties}")
+    log.info(f"\n=== Evaluation vs RandomPlayer ({n_battles} battles) ===")
+    log.info(f"  Win rate : {results['win_rate']*100:.1f}%")
+    log.info(f"  Loss rate: {results['loss_rate']*100:.1f}%")
+    log.info(f"  Ties     : {ties}")
     return results
 
 

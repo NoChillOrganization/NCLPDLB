@@ -226,11 +226,11 @@ def run(  # pragma: no cover
             continue
 
         # ── Train ──────────────────────────────────────────────────
-        print(f"\n{'#'*60}")
-        print(f"  Training: {spar_fmt}")
+        log.info("############################################################")
+        log.info(f"  Training: {spar_fmt}")
         if team_fmt:
-            print(f"  (teams: {team_fmt})")
-        print(f"{'#'*60}")
+            log.info(f"  (teams: {team_fmt})")
+        log.info("############################################################")
 
         t0 = time.time()
         ok = train_format(
@@ -245,16 +245,16 @@ def run(  # pragma: no cover
         )
         elapsed = time.time() - t0
         results[spar_fmt] = "done" if ok else "failed"
-        print(f"\n[train_all] {spar_fmt}: {'OK' if ok else 'FAILED'} ({elapsed/60:.1f} min)")
+        log.info(f"\n[train_all] {spar_fmt}: {'OK' if ok else 'FAILED'} ({elapsed/60:.1f} min)")
 
     # ── Summary ────────────────────────────────────────────────────
-    print(f"\n{'='*60}")
-    print("  Training Summary")
-    print(f"{'='*60}")
+    log.info("============================================================")
+    log.info("  Training Summary")
+    log.info("============================================================")
     for fmt, status in results.items():
         icon = {"done": "OK", "already_done": "--", "skipped": "~~", "failed": "XX"}.get(status, "??")
-        print(f"  {icon}  {fmt:<25} {status}")
-    print()
+        log.info(f"  {icon}  {fmt:<25} {status}")
+    log.info("")
 
 
 def _parse_args() -> argparse.Namespace:  # pragma: no cover

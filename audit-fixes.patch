@@ -1,0 +1,340 @@
+From 8ffccb283e942957e1008a3933df1cbc8b872408 Mon Sep 17 00:00:00 2001
+From: "travis.r.weisberg" <travis.r.weisberg@gmail.com>
+Date: Thu, 26 Mar 2026 15:28:29 +0000
+Subject: [PATCH] =?UTF-8?q?fix:=20full=20audit=20=E2=80=94=20bid=20trackin?=
+ =?UTF-8?q?g,=20stellar=20type,=20logging,=20escape=20fixes?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes from comprehensive audit of all 105 .py/.yml files:
+
+P1 — Real Bugs:
+- src/services/draft_service.py: implement place_bid() auction tracking
+  Previously a stub that accepted any bid unconditionally. Now validates
+  active nomination, rejects bids ≤ current high, records in
+  draft.nomination_bids dict, and logs each bid.
+- src/ml/feature_extractor.py: add 'stellar' type to TYPE_IDS (was
+  missing while battle_env.py had it at id=19); update /18.0 → /19.0
+  normalization to stay consistent with battle_env.
+
+P2 — Code Quality:
+- src/ml/feature_extractor.py: fix STATE_FEATURE_DIM comment (was
+  showing battle_env 48-dim layout by mistake; actual dim is 19).
+- src/ml/train_policy.py: 17x print() → log.info()
+- src/ml/train_all.py: 10x print() → log.info()
+- src/data/smogon.py: 4x print() → log.warning/info()
+- src/ml/replay_parser.py: 1x print() → log.warning()
+- src/ml/replay_scraper.py: 2x print() → log.info()
+
+P3 — Minor Warnings:
+- tmp/check_obs.py: f-string → rf-string to fix invalid \d escape
+- scripts/sync_commands.py: forward slash in docstring usage example
+---
+ scripts/sync_commands.py      |  2 +-
+ src/data/smogon.py            |  8 ++++----
+ src/ml/feature_extractor.py   | 23 ++++++++++++++---------
+ src/ml/replay_parser.py       |  2 +-
+ src/ml/replay_scraper.py      |  4 ++--
+ src/ml/train_all.py           | 20 ++++++++++----------
+ src/ml/train_policy.py        | 34 +++++++++++++++++-----------------
+ src/services/draft_service.py | 27 ++++++++++++++++++++++++++-
+ tmp/check_obs.py              |  2 +-
+ 9 files changed, 76 insertions(+), 46 deletions(-)
+
+diff --git a/scripts/sync_commands.py b/scripts/sync_commands.py
+index 080718e..bd9e55f 100644
+--- a/scripts/sync_commands.py
++++ b/scripts/sync_commands.py
+@@ -3,7 +3,7 @@ One-shot command sync script.
+ Loads all cogs, syncs slash commands to the configured guild (or globally), then exits.
+ 
+ Usage:
+-    .venv\Scripts\python scripts\sync_commands.py
++    .venv/Scripts/python scripts/sync_commands.py
+ """
+ import asyncio
+ import sys
+diff --git a/src/data/smogon.py b/src/data/smogon.py
+index 317063f..260b4ad 100644
+--- a/src/data/smogon.py
++++ b/src/data/smogon.py
+@@ -37,7 +37,7 @@ async def fetch_smogon_tiers(gen: int = 9) -> dict[str, str]:
+             resp = await client.get(url)
+             resp.raise_for_status()
+         except httpx.HTTPError as e:
+-            print(f"[smogon] Warning: could not fetch tiers — {e}")
++            log.warning("[smogon] Warning: could not fetch tiers — %s", e)
+             return _load_cached_tiers()
+ 
+     # Smogon embeds a JSON blob in a <script> tag
+@@ -128,7 +128,7 @@ async def update_pokemon_strategies(
+     import asyncio
+ 
+     if not pokemon_json_path.exists():
+-        print("[smogon] No pokemon.json found — run seed_pokemon_data.py first")
++        log.warning("[smogon] No pokemon.json found — run seed_pokemon_data.py first")
+         return
+ 
+     with pokemon_json_path.open(encoding="utf-8") as f:
+@@ -138,7 +138,7 @@ async def update_pokemon_strategies(
+     if limit:
+         to_update = to_update[:limit]
+ 
+-    print(f"[smogon] Fetching strategies for {len(to_update)} Pokemon (gen {gen})…")
++    log.info("[smogon] Fetching strategies for %d Pokemon (gen %s)…", len(to_update), gen)
+     updated = 0
+     for entry in to_update:
+         strategy = await fetch_pokemon_strategy(entry["name"], gen)
+@@ -150,7 +150,7 @@ async def update_pokemon_strategies(
+     with pokemon_json_path.open("w", encoding="utf-8") as f:
+         json.dump(sorted(entries, key=lambda x: x["national_dex"]), f, indent=2, ensure_ascii=False)
+ 
+-    print(f"[smogon] Done — updated {updated} strategy descriptions")
++    log.info("[smogon] Done — updated %d strategy descriptions", updated)
+ 
+ 
+ # ── Cache helpers ──────────────────────────────────────────────
+diff --git a/src/ml/feature_extractor.py b/src/ml/feature_extractor.py
+index 105e963..98741b9 100644
+--- a/src/ml/feature_extractor.py
++++ b/src/ml/feature_extractor.py
+@@ -51,13 +51,17 @@ TEAM_SIZE   = 6     # Pokemon per team in team preview
+ #   + type coverage flags, BST bins, tier bins (added when Smogon data available)
+ TEAM_FEATURE_DIM = TEAM_SIZE * 2   # minimum — extended below when data is available
+ 
+-# State feature vector layout (per turn): MATCHES BattleEnv.py build_observation()
+-#   Active mon:    [species_id, hp, 4×(5-feats), status, 6×boosts] = 2 + 20 + 1 + 6 = 29
+-#   Opp active:    [species_id, hp, status]     = 3
+-#   My team HP:    6
+-#   Opp team HP:   6
+-#   Field:         4
+-#   TOTAL:         48
++# State feature vector layout (per turn, offline replay pipeline):
++#   [p1_active_id, p2_active_id]           = 2   (species vocab IDs)
++#   p1 team HPs   (6 slots)                = 6
++#   p2 team HPs   (6 slots)                = 6
++#   [p1_fainted, p2_fainted]               = 2
++#   [turn_norm]                            = 1
++#   [last_move_p1, last_move_p2]           = 2   (move vocab IDs)
++#   TOTAL                                  = 19
++#
++# Note: This is DIFFERENT from BattleEnv.OBS_DIM (=48), which is the
++# real-time RL observation space used during self-play training.
+ STATE_FEATURE_DIM = 19
+ 
+ 
+@@ -66,7 +70,8 @@ STATE_FEATURE_DIM = 19
+ TYPE_IDS = {
+     "normal": 1, "fire": 2, "water": 3, "electric": 4, "grass": 5, "ice": 6,
+     "fighting": 7, "poison": 8, "ground": 9, "flying": 10, "psychic": 11,
+-    "bug": 12, "rock": 13, "ghost": 14, "dragon": 15, "dark": 16, "steel": 17, "fairy": 18
++    "bug": 12, "rock": 13, "ghost": 14, "dragon": 15, "dark": 16, "steel": 17, "fairy": 18,
++    "stellar": 19,
+ }
+ 
+ STATUS_IDS = {
+@@ -277,7 +282,7 @@ class FeatureExtractor:
+                 move_feats.extend([
+                     (m.base_power / 250.0),
+                     (m.accuracy if m.accuracy is not True else 1.0),
+-                    (TYPE_IDS.get(m.type.name.lower(), 0) / 18.0),
++                    (TYPE_IDS.get(m.type.name.lower(), 0) / 19.0),
+                     ((m.priority + 1) / 5.0),
+                     eff
+                 ])
+diff --git a/src/ml/replay_parser.py b/src/ml/replay_parser.py
+index c4614c3..309456a 100644
+--- a/src/ml/replay_parser.py
++++ b/src/ml/replay_parser.py
+@@ -504,7 +504,7 @@ def parse_replay_dir(directory: Path, max_count: int = 0) -> list[BattleRecord]:
+         try:
+             records.append(parse_replay_file(path))
+         except Exception as exc:
+-            print(f"[parser] Skipping {path.name}: {exc}")
++            log.warning("[parser] Skipping %s: %s", path.name, exc)
+     return records
+ 
+ 
+diff --git a/src/ml/replay_scraper.py b/src/ml/replay_scraper.py
+index 7738926..690023a 100644
+--- a/src/ml/replay_scraper.py
++++ b/src/ml/replay_scraper.py
+@@ -208,8 +208,8 @@ async def _main() -> None:  # pragma: no cover
+     start = time.monotonic()
+     count = await scraper.scrape(pages=args.pages)
+     elapsed = time.monotonic() - start
+-    print(f"\nDone: {count} new replays in {elapsed:.1f}s")
+-    print("Replay counts:", replay_stats())
++    log.info("Done: %d new replays in %.1fs", count, elapsed)
++    log.info("Replay counts: %s", replay_stats())
+ 
+ 
+ if __name__ == "__main__":  # pragma: no cover
+diff --git a/src/ml/train_all.py b/src/ml/train_all.py
+index 31d981e..a9359f8 100644
+--- a/src/ml/train_all.py
++++ b/src/ml/train_all.py
+@@ -226,11 +226,11 @@ def run(  # pragma: no cover
+             continue
+ 
+         # ── Train ──────────────────────────────────────────────────
+-        print(f"\n{'#'*60}")
+-        print(f"  Training: {spar_fmt}")
++        log.info("############################################################")
++        log.info(f"  Training: {spar_fmt}")
+         if team_fmt:
+-            print(f"  (teams: {team_fmt})")
+-        print(f"{'#'*60}")
++            log.info(f"  (teams: {team_fmt})")
++        log.info("############################################################")
+ 
+         t0 = time.time()
+         ok = train_format(
+@@ -245,16 +245,16 @@ def run(  # pragma: no cover
+         )
+         elapsed = time.time() - t0
+         results[spar_fmt] = "done" if ok else "failed"
+-        print(f"\n[train_all] {spar_fmt}: {'OK' if ok else 'FAILED'} ({elapsed/60:.1f} min)")
++        log.info(f"\n[train_all] {spar_fmt}: {'OK' if ok else 'FAILED'} ({elapsed/60:.1f} min)")
+ 
+     # ── Summary ────────────────────────────────────────────────────
+-    print(f"\n{'='*60}")
+-    print("  Training Summary")
+-    print(f"{'='*60}")
++    log.info("============================================================")
++    log.info("  Training Summary")
++    log.info("============================================================")
+     for fmt, status in results.items():
+         icon = {"done": "OK", "already_done": "--", "skipped": "~~", "failed": "XX"}.get(status, "??")
+-        print(f"  {icon}  {fmt:<25} {status}")
+-    print()
++        log.info(f"  {icon}  {fmt:<25} {status}")
++    log.info("")
+ 
+ 
+ def _parse_args() -> argparse.Namespace:  # pragma: no cover
+diff --git a/src/ml/train_policy.py b/src/ml/train_policy.py
+index b8aba3e..989abdd 100644
+--- a/src/ml/train_policy.py
++++ b/src/ml/train_policy.py
+@@ -545,18 +545,18 @@ def train(  # pragma: no cover
+         "localhost": "ws://127.0.0.1:8000 (local Node.js server)",
+         "showdown":  "wss://sim3.psim.us (public Showdown)",
+     }.get(server, server)
+-    print(f"\n{'='*60}")
+-    print("  PPO Curriculum Training")
+-    print(f"  Format       : {fmt}" + (f" (training as {training_fmt})" if training_fmt != fmt else ""))
+-    print(f"  Server mode  : {server} — {_server_desc}")
+-    print(f"  Total steps  : {total_timesteps:,}")
+-    print(f"  Swap every   : {swap_every:,} (after graduation)")
+-    print(f"  Save dir     : {fmt_save_dir}")
+-    print(f"  TensorBoard  : tensorboard --logdir {log_dir}")
+-    print(f"{'='*60}\n")
++    log.info("============================================================")
++    log.info("  PPO Curriculum Training")
++    log.info(f"  Format       : {fmt}" + (f" (training as {training_fmt})" if training_fmt != fmt else ""))
++    log.info(f"  Server mode  : {server} — {_server_desc}")
++    log.info(f"  Total steps  : {total_timesteps:,}")
++    log.info(f"  Swap every   : {swap_every:,} (after graduation)")
++    log.info(f"  Save dir     : {fmt_save_dir}")
++    log.info(f"  TensorBoard  : tensorboard --logdir {log_dir}")
++    log.info("============================================================")
+     if server == MODE_LOCALHOST:
+-        print("Make sure Pokemon Showdown server is running on ws://localhost:8000")
+-    print("Press Ctrl+C to stop training early.\n")
++        log.info("Make sure Pokemon Showdown server is running on ws://localhost:8000")
++    log.info("Press Ctrl+C to stop training early.")
+ 
+     try:
+         model.learn(
+@@ -572,7 +572,7 @@ def train(  # pragma: no cover
+     # CI expects save_dir/fmt/final_model.zip
+     final_path = fmt_save_dir / "final_model.zip"
+     model.save(str(final_path))
+-    print(f"\nFinal model saved to {final_path}")
++    log.info(f"\nFinal model saved to {final_path}")
+ 
+     return final_path
+ 
+@@ -623,7 +623,7 @@ def evaluate(  # pragma: no cover
+             ties += 1
+ 
+         if (i + 1) % 10 == 0:
+-            print(f"  Battle {i+1}/{n_battles}: W={wins} L={losses} T={ties}")
++            log.info(f"  Battle {i+1}/{n_battles}: W={wins} L={losses} T={ties}")
+ 
+     total = wins + losses + ties
+     results = {
+@@ -635,10 +635,10 @@ def evaluate(  # pragma: no cover
+         "win_rate"  : wins / total if total > 0 else 0.0,
+         "loss_rate" : losses / total if total > 0 else 0.0,
+     }
+-    print(f"\n=== Evaluation vs RandomPlayer ({n_battles} battles) ===")
+-    print(f"  Win rate : {results['win_rate']*100:.1f}%")
+-    print(f"  Loss rate: {results['loss_rate']*100:.1f}%")
+-    print(f"  Ties     : {ties}")
++    log.info(f"\n=== Evaluation vs RandomPlayer ({n_battles} battles) ===")
++    log.info(f"  Win rate : {results['win_rate']*100:.1f}%")
++    log.info(f"  Loss rate: {results['loss_rate']*100:.1f}%")
++    log.info(f"  Ties     : {ties}")
+     return results
+ 
+ 
+diff --git a/src/services/draft_service.py b/src/services/draft_service.py
+index ac46b96..b5dc0e0 100644
+--- a/src/services/draft_service.py
++++ b/src/services/draft_service.py
+@@ -334,10 +334,35 @@ class DraftService:
+         draft = _active_drafts.get(guild_id)
+         if not draft or draft.format != DraftFormat.AUCTION:
+             return BidResult(success=False, error="No active auction draft.")
++        if draft.status != DraftStatus.ACTIVE:
++            return BidResult(success=False, error="Draft is not currently active.")
++        if not draft.current_nomination_id:
++            return BidResult(success=False, error="No active nomination to bid on.")
++
++        # Budget check
+         budget = draft.budget.get(player_id, 0)
++        if amount < 1:
++            return BidResult(success=False, error="Bid must be at least 1 coin.")
+         if amount > budget:
+             return BidResult(success=False, error=f"Insufficient budget. You have {budget} coins.")
+-        # TODO: track current bids per nomination
++
++        # Reject if bid does not exceed current high bid
++        current_bids: dict[str, int] = draft.nomination_bids.setdefault(
++            draft.current_nomination_id, {}
++        )
++        current_high_val = max(current_bids.values(), default=0)
++        if amount <= current_high_val:
++            return BidResult(
++                success=False,
++                error=f"Your bid of {amount} must exceed the current high bid of {current_high_val}.",
++            )
++
++        # Record the bid
++        current_bids[player_id] = amount
++        log.info(
++            f"Bid placed: guild={guild_id} player={player_id} "
++            f"amount={amount} nomination={draft.current_nomination_id}"
++        )
+         return BidResult(success=True, current_high=amount)
+ 
+     # ── Admin ops ──────────────────────────────────────────────
+diff --git a/tmp/check_obs.py b/tmp/check_obs.py
+index f934a94..81ebe3b 100644
+--- a/tmp/check_obs.py
++++ b/tmp/check_obs.py
+@@ -56,7 +56,7 @@ if __name__ == "__main__":
+                 total += int(inc)
+             else:
+                 # Need to find constant value
+-                const_match = re.search(f"{inc} = (\d+)", content)
++                const_match = re.search(rf"{inc} = (\d+)", content)
+                 if const_match:
+                     total += int(const_match.group(1))
+                 else:
+-- 
+2.47.3
+

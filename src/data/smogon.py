@@ -37,7 +37,7 @@ async def fetch_smogon_tiers(gen: int = 9) -> dict[str, str]:
             resp = await client.get(url)
             resp.raise_for_status()
         except httpx.HTTPError as e:
-            print(f"[smogon] Warning: could not fetch tiers — {e}")
+            log.warning("[smogon] Warning: could not fetch tiers — %s", e)
             return _load_cached_tiers()
 
     # Smogon embeds a JSON blob in a <script> tag
@@ -128,7 +128,7 @@ async def update_pokemon_strategies(
     import asyncio
 
     if not pokemon_json_path.exists():
-        print("[smogon] No pokemon.json found — run seed_pokemon_data.py first")
+        log.warning("[smogon] No pokemon.json found — run seed_pokemon_data.py first")
         return
 
     with pokemon_json_path.open(encoding="utf-8") as f:
@@ -138,7 +138,7 @@ async def update_pokemon_strategies(
     if limit:
         to_update = to_update[:limit]
 
-    print(f"[smogon] Fetching strategies for {len(to_update)} Pokemon (gen {gen})…")
+    log.info("[smogon] Fetching strategies for %d Pokemon (gen %s)…", len(to_update), gen)
     updated = 0
     for entry in to_update:
         strategy = await fetch_pokemon_strategy(entry["name"], gen)
@@ -150,7 +150,7 @@ async def update_pokemon_strategies(
     with pokemon_json_path.open("w", encoding="utf-8") as f:
         json.dump(sorted(entries, key=lambda x: x["national_dex"]), f, indent=2, ensure_ascii=False)
 
-    print(f"[smogon] Done — updated {updated} strategy descriptions")
+    log.info("[smogon] Done — updated %d strategy descriptions", updated)
 
 
 # ── Cache helpers ──────────────────────────────────────────────
