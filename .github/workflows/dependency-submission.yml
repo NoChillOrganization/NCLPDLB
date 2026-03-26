@@ -27,22 +27,23 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
 
-      - name: Submit Python dependency snapshot
-        uses: advanced-security/python-dependency-submission-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Export dependency list artifact
+      - name: Generate dependency snapshot
         run: |
-          pip list --format=freeze > dependency-snapshot.txt
-          echo "Dependency snapshot generated."
+          mkdir -p dependency-reports
+          pip list --format=freeze > dependency-reports/requirements-frozen.txt
+          pip list --format=json > dependency-reports/packages.json
+          pip show $(pip list --format=freeze | cut -d= -f1 | tr '\n' ' ') \
+            > dependency-reports/packages-detail.txt 2>/dev/null || true
+          echo "Dependency snapshot generated at $(date -u)" >> dependency-reports/snapshot-meta.txt
 
       - name: Upload dependency snapshot artifact
         uses: actions/upload-artifact@v4
         with:
           name: dependency-snapshot
-          path: dependency-snapshot.txt
+          path: dependency-reports/
           if-no-files-found: warn
           retention-days: 30
