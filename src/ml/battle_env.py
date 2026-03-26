@@ -31,9 +31,11 @@ from typing import Any
 import numpy as np
 
 try:
-    from gymnasium.spaces import Box
+    from gymnasium.spaces import Box, Discrete, MultiDiscrete
 except ImportError:  # pragma: no cover
     Box = None  # type: ignore
+    Discrete = None  # type: ignore
+    MultiDiscrete = None  # type: ignore
 
 try:
     from poke_env.battle import AbstractBattle, Field, Move, Pokemon, Status, Weather
@@ -253,13 +255,27 @@ if POKE_ENV_AVAILABLE:
             super().__init__(**kwargs)
             # Required: set observation_space (action_space set by parent)
             self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            # poke-env defines action_space as a method, but SB3 expects a
+            # gymnasium.spaces object.  Resolve the method once and store it.
+            parent_as = super().action_space
+            if callable(parent_as):
+                parent_as = parent_as()
+            self._sb3_action_space = parent_as if parent_as is not None else Discrete(N_ACTIONS_GEN9)
             # poke-env SingleAgentWrapper expects observation_spaces (plural, dict)
             # Gymnasium uses observation_space (singular). Expose both.
             self.observation_spaces = {"battle": self.observation_space}
             # poke-env also expects action_spaces (plural, dict)
-            self.action_spaces = {"battle": self.action_space}
+            self.action_spaces = {"battle": self._sb3_action_space}
             # Track previous faint counts for shaped reward (keyed by id(battle))
             self._prev_state: dict[int, dict[str, int]] = {}
+
+        @property
+        def action_space(self):
+            return self._sb3_action_space
+
+        @action_space.setter
+        def action_space(self, space):
+            self._sb3_action_space = space
 
         def order_to_action(self, order: Any, battle: Any, **kwargs: Any) -> int:  # pragma: no cover
             # poke-env bug: two-turn moves (Dig, Fly, etc.) are "locked in" on
@@ -454,12 +470,26 @@ if POKE_ENV_AVAILABLE:
             kwargs.setdefault("choose_on_teampreview", False)
             super().__init__(**kwargs)
             self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
+            # poke-env defines action_space as a method, but SB3 expects a
+            # gymnasium.spaces object.  Resolve the method once and store it.
+            parent_as = super().action_space
+            if callable(parent_as):
+                parent_as = parent_as()
+            self._sb3_action_space = parent_as
             # poke-env SingleAgentWrapper expects observation_spaces (plural, dict)
             # Gymnasium uses observation_space (singular). Expose both.
             self.observation_spaces = {"battle": self.observation_space}
             # poke-env also expects action_spaces (plural, dict)
-            self.action_spaces = {"battle": self.action_space}
+            self.action_spaces = {"battle": self._sb3_action_space}
             self._prev_state: dict[int, dict[str, int]] = {}
+
+        @property
+        def action_space(self):
+            return self._sb3_action_space
+
+        @action_space.setter
+        def action_space(self, space):
+            self._sb3_action_space = space
 
         def embed_battle(self, battle: Any) -> np.ndarray:
             return build_doubles_observation(battle)
