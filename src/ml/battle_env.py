@@ -253,6 +253,11 @@ if POKE_ENV_AVAILABLE:
             super().__init__(**kwargs)
             # Required: set observation_space (action_space set by parent)
             self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            # poke-env SingleAgentWrapper expects observation_spaces (plural, dict)
+            # Gymnasium uses observation_space (singular). Expose both.
+            self.observation_spaces = {"battle": self.observation_space}
+            # poke-env also expects action_spaces (plural, dict)
+            self.action_spaces = {"battle": self.action_space}
             # Track previous faint counts for shaped reward (keyed by id(battle))
             self._prev_state: dict[int, dict[str, int]] = {}
 
@@ -449,6 +454,11 @@ if POKE_ENV_AVAILABLE:
             kwargs.setdefault("choose_on_teampreview", False)
             super().__init__(**kwargs)
             self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
+            # poke-env SingleAgentWrapper expects observation_spaces (plural, dict)
+            # Gymnasium uses observation_space (singular). Expose both.
+            self.observation_spaces = {"battle": self.observation_space}
+            # poke-env also expects action_spaces (plural, dict)
+            self.action_spaces = {"battle": self.action_space}
             self._prev_state: dict[int, dict[str, int]] = {}
 
         def embed_battle(self, battle: Any) -> np.ndarray:
