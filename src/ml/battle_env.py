@@ -294,6 +294,16 @@ if POKE_ENV_AVAILABLE:
                 )
                 return 0
 
+        def step(self, action):
+            """Guard against poke-env AssertionError when battle ends mid-rollout."""
+            try:
+                return super().step(action)
+            except AssertionError:
+                # Battle ended before SB3 could observe done=True.
+                # Return a terminal step with zero reward so the rollout closes cleanly.
+                obs = np.zeros(self.observation_space.shape, dtype=self.observation_space.dtype)
+                return obs, 0.0, True, True, {}
+
         def embed_battle(self, battle: AbstractBattle) -> np.ndarray:
             return build_observation(battle)
 
@@ -495,6 +505,16 @@ if POKE_ENV_AVAILABLE:
         @action_space.setter
         def action_space(self, space):
             self._sb3_action_space = space
+
+        def step(self, action):
+            """Guard against poke-env AssertionError when battle ends mid-rollout."""
+            try:
+                return super().step(action)
+            except AssertionError:
+                # Battle ended before SB3 could observe done=True.
+                # Return a terminal step with zero reward so the rollout closes cleanly.
+                obs = np.zeros(self.observation_space.shape, dtype=self.observation_space.dtype)
+                return obs, 0.0, True, True, {}
 
         def embed_battle(self, battle: Any) -> np.ndarray:
             return build_doubles_observation(battle)
