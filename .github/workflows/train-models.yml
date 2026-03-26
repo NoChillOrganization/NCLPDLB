@@ -15,7 +15,7 @@ on:
 permissions:
   contents: write
   actions: write
-  packages: read
+  packages: write
   pull-requests: write
 
 env:
