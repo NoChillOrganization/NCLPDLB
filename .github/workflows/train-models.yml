@@ -1,12 +1,22 @@
 name: Train ML Models
 
 on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
   workflow_dispatch:
     inputs:
       timesteps:
         description: "Training steps per format (manual production runs only — CI uses matrix.timesteps)"
         required: false
         default: "500000"
+
+permissions:
+  actions: write
+  contents: write
+  packages: read
+  pull-requests: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -82,10 +92,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
@@ -97,7 +107,7 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
 
@@ -145,8 +155,8 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
 
-      - name: Upload model
-        uses: actions/upload-artifact@v7
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: model-${{ matrix.format }}
@@ -158,9 +168,14 @@ jobs:
     needs: train
     runs-on: ubuntu-latest
     if: always()
+
+    permissions:
+      actions: write
+      contents: write
+
     steps:
       - name: Download all models
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           pattern: model-*
           path: all-models
@@ -170,7 +185,7 @@ jobs:
         run: find all-models -name "*.zip" | sort
 
       - name: Upload combined artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: all-models
           path: all-models/
