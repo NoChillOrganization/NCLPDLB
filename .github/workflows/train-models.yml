@@ -179,7 +179,7 @@ jobs:
         with:
           pattern: model-*
           path: all-models
-          merge-multiple: false
+          merge-multiple: true
 
       - name: List models
         run: find all-models -name "*.zip" | sort
