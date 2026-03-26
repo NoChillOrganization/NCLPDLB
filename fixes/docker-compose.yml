@@ -1,0 +1,52 @@
+# Pokemon Draft League Bot — Docker Compose
+# Free tier: bot + api run together on Fly.io or any Docker host
+# Path B: same compose, different env vars for Azure
+
+services:
+  bot:
+    build:
+      context: .
+      target: bot
+    env_file: .env
+    volumes:
+      - ./data:/app/data          # Pokemon JSON data
+      - ./logs:/app/logs          # Log files
+      - ./credentials.json:/app/credentials.json:ro  # Google Sheets creds
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - draft-net
+
+  api:
+    build:
+      context: .
+      target: api
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./credentials.json:/app/credentials.json:ro
+    restart: unless-stopped
+    networks:
+      - draft-net
+
+  # Optional: frontend dev server (remove in production — use Cloudflare Pages)
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./src/web:/app
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    networks:
+      - draft-net
+    profiles:
+      - dev  # Only starts with: docker compose --profile dev up
+
+networks:
+  draft-net:
+    driver: bridge
