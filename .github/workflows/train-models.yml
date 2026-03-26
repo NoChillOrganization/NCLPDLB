@@ -13,9 +13,6 @@ on:
         default: "500000"
 
 permissions:
-<<<<<<< alert-autofix-1
-  contents: read
-=======
   actions: write
   contents: write
   packages: write
