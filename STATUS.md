@@ -34,7 +34,7 @@
   gen9anythinggoes, gen9doublesou, gen9vgc2026regi, gen9vgc2026regf, gen7randombattle,
   gen6randombattle
 - ✅ **Documentation**: README.md, docs/COMMANDS.md, docs/DEPLOYMENT.md
-- ✅ **GitHub**: All code synced to https://github.com/NoChillModeOnline/NCLPDLB.git
+- ✅ **GitHub**: All code synced to <https://github.com/NoChillModeOnline/NCLPDLB.git>
 - ✅ **Standalone .exe**: PyInstaller spec updated (`src/bot/NCLPDLB.spec`)
 
 ### Deployment
@@ -119,5 +119,5 @@ Models saved to: `data/ml/policy/<format>/final_model.zip`
 ## 📞 Support
 
 - **Documentation**: `README.md`, `docs/COMMANDS.md`, `docs/DEPLOYMENT.md`
-- **GitHub**: https://github.com/NoChillModeOnline/NCLPDLB
-- **Spreadsheet**: https://docs.google.com/spreadsheets/d/16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs
+- **GitHub**: <https://github.com/NoChillModeOnline/NCLPDLB>
+- **Spreadsheet**: <https://docs.google.com/spreadsheets/d/16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs>

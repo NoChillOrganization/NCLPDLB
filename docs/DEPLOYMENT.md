@@ -7,14 +7,14 @@ How to run the Pokemon Draft League Bot — standalone exe or from source.
 ## Prerequisites
 
 1. **Discord Bot Setup:**
-   - Create application at https://discord.com/developers/applications
+   - Create application at <https://discord.com/developers/applications>
    - Create bot user and copy token
    - Enable **Message Content Intent** and **Server Members Intent**
    - Invite bot with scopes: `bot` + `applications.commands`
    - Required permissions: Send Messages, Embed Links, Attach Files, Manage Roles
 
 2. **Google Sheets Setup:**
-   - Create Google Cloud project: https://console.cloud.google.com
+   - Create Google Cloud project: <https://console.cloud.google.com>
    - Enable **Google Sheets API**
    - Create service account → download `credentials.json`
    - Create a new Google Sheet
@@ -87,7 +87,7 @@ cp .env.example .env
 # Edit .env with your tokens
 ```
 
-### 3. Run
+### 3. Run (Python)
 
 ```bash
 python src/bot/main.py

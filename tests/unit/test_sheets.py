@@ -550,6 +550,21 @@ def test_get_schedule_skips_empty_rows():
     assert len(result) == 0
 
 
+def test_get_schedule_pads_short_rows():
+    """Rows with fewer than 13 elements are padded with empty strings."""
+    fresh = SheetsClient.__new__(SheetsClient)
+    fresh._client = None
+    fresh._spreadsheet = MagicMock()
+    week_row = ["Week #1"] + [""] * 12
+    # Only 10 columns — triggers the row padding branch (line 250)
+    short_row = ["", "", "", "", "", "", "TrainerA", "W", "2-0", "vs."]
+    with patch.object(fresh, "_get_range", return_value=[week_row, short_row]):
+        result = fresh.get_schedule()
+    # coach1="TrainerA", vs_="vs." → match is appended
+    assert len(result) == 1
+    assert result[0]["coach1"] == "TrainerA"
+
+
 # ── get_match_results ─────────────────────────────────────────────────────────
 
 def test_get_match_results_parses_match():

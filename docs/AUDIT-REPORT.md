@@ -1,6 +1,6 @@
 # ML Codebase Audit Report
 
-**Phase 8 — v2.0 ML Battle Intelligence**
+## Phase 8 — v2.0 ML Battle Intelligence
 
 - **Date audited:** 2026-03-18
 - **Test command:** `cd projects/pokemon-draft-bot && .venv/Scripts/pytest tests/unit/test_ml_audit.py -v`
@@ -306,7 +306,7 @@ after Phase 12 training runs.
 
 Two stale entries were identified in `requirements.txt` during the Phase 8 audit:
 
-**1. poke-env minimum version is stale**
+### 1. poke-env minimum version is stale
 
 - `requirements.txt` specifies: `poke-env>=0.8.1`
 - Installed version: `poke-env 0.12.0`
@@ -316,7 +316,7 @@ Two stale entries were identified in `requirements.txt` during the Phase 8 audit
 - **Fix for v2.0:** Update to `poke-env>=0.8.4` (minimum viable) or `poke-env>=0.12.0` (tested
   version, recommended)
 
-**2. torch is commented out but is already installed**
+### 2. torch is commented out but is already installed
 
 - `requirements.txt` has torch commented out (e.g., `# torch>=2.2.0`)
 - Installed in `.venv`: `torch 2.10.0`

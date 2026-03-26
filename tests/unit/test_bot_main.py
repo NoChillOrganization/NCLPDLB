@@ -239,6 +239,45 @@ async def test_setup_hook_skips_sync_when_hash_unchanged(tmp_path):
     bot.tree.sync.assert_not_awaited()
 
 
+async def test_setup_hook_logs_drift_warning(tmp_path):
+    """When drift is detected (commands in tree but not in CSV), a warning is logged."""
+    bot = _make_bot_with_mocked_internals()
+
+    csv_file = tmp_path / "discord_commands.csv"
+    # CSV lists only 'draft'; bot tree has 'draft' + 'secret-cmd' → drift
+    csv_file.write_text("Command\n/draft\n", encoding="utf-8")
+
+    hash_file = tmp_path / ".hash"
+
+    with patch("src.bot.main.settings") as mock_settings, \
+         patch("src.bot.main._SYNC_HASH_FILE", hash_file), \
+         patch("src.bot.main._command_fingerprint", return_value="newhash"), \
+         patch("src.bot.main.Path") as mock_path_cls:
+        mock_settings.discord_guild_id = None
+        mock_settings.sync_commands_on_startup = False
+
+        # Make bot.tree.get_commands() return a command named 'secret-cmd'
+        mock_cmd = MagicMock()
+        mock_cmd.name = "secret-cmd"
+        bot.tree.get_commands = MagicMock(return_value=[mock_cmd])
+
+        # Make Path(...) for the CSV resolve to our tmp file
+        csv_path_mock = MagicMock()
+        csv_path_mock.exists.return_value = True
+        csv_path_mock.__str__ = lambda s: str(csv_file)
+        mock_path_cls.return_value.__truediv__ = MagicMock(return_value=csv_path_mock)
+
+        # Patch open so the CSV read returns our file content
+        import io
+        csv_content = "Command\n/draft\n"
+        with patch("builtins.open", return_value=io.StringIO(csv_content)):
+            # drift_check_commands({'draft'}, {'secret-cmd'}) → {'secret-cmd'}
+            with patch("src.bot.main.drift_check_commands", return_value={"secret-cmd"}) as mock_drift:
+                await bot.setup_hook()
+
+        mock_drift.assert_called_once()
+
+
 async def test_setup_hook_global_sync_when_no_guild_id(tmp_path):
     """When guild_id is not set but sync_commands_on_startup=True, global sync runs."""
     bot = _make_bot_with_mocked_internals()
@@ -256,6 +295,30 @@ async def test_setup_hook_global_sync_when_no_guild_id(tmp_path):
 
     # sync() called globally (no guild kwarg)
     bot.tree.sync.assert_awaited_once_with()
+
+
+async def test_setup_hook_global_sync_unchanged_skipped(tmp_path):
+    """When sync_commands_on_startup=True but hash unchanged, no sync is issued."""
+    bot = _make_bot_with_mocked_internals()
+
+    hash_file = tmp_path / ".hash"
+    hash_file.write_text("same_hash")
+
+    csv_path_mock = MagicMock()
+    csv_path_mock.exists.return_value = False
+
+    with patch("src.bot.main.settings") as mock_settings, \
+         patch("src.bot.main._SYNC_HASH_FILE", hash_file), \
+         patch("src.bot.main._command_fingerprint", return_value="same_hash"), \
+         patch("src.bot.main.Path") as mock_path_cls:
+        mock_settings.discord_guild_id = None
+        mock_settings.sync_commands_on_startup = True
+        mock_path_cls.return_value = csv_path_mock
+        mock_path_cls.return_value.__truediv__ = MagicMock(return_value=csv_path_mock)
+
+        await bot.setup_hook()
+
+    bot.tree.sync.assert_not_awaited()
 
 
 async def test_setup_hook_no_sync_when_both_flags_off(tmp_path):

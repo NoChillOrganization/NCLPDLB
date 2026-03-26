@@ -13,7 +13,7 @@ and format rules, used to ensure teams in `src/ml/teams.py` are legal for their 
 
 From highest to lowest power level:
 
-```
+```text
 AG (Anything Goes)
 Uber
 OU (OverUsed)
@@ -183,6 +183,6 @@ Garganacl, Mimikyu, Talonflame, Arcanine-Hisui, Tsareena, Klefki, Slowking, Sylv
 
 - Tiers shift monthly based on Smogon usage statistics
 - Council bans can happen at any time outside the monthly cycle
-- Check: https://www.smogon.com/forums/threads/usage-based-tier-update-for-july-2025-august-44-september-56.3767211/
-- Check formats-data.ts: https://github.com/smogon/pokemon-showdown/blob/master/data/formats-data.ts
+- Check: <https://www.smogon.com/forums/threads/usage-based-tier-update-for-july-2025-august-44-september-56.3767211/>
+- Check formats-data.ts: <https://github.com/smogon/pokemon-showdown/blob/master/data/formats-data.ts>
 - This file was last audited against Pokemon Showdown's formats-data.ts in March 2025

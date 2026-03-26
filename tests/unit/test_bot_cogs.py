@@ -856,15 +856,19 @@ async def test_run_training_blocking_preflight_aborts():
 
 
 async def test_run_training_fixable_preflight_applies_fix():
-    """Fixable preflight issue → apply_all_fixes called before launching subprocess."""
+    """Fixable preflight issue → apply_all_fixes called before launching subprocess.
+    Returns a non-empty list to cover the log.info line inside the for loop (line 418).
+    """
     from src.bot.cogs.admin import _run_training
     interaction = make_interaction()
 
     fixable = [{"type": "CORRUPT_CHECKPOINT", "description": "bad ckpt", "fixable": True}]
     proc = _make_proc(returncode=0)
+    # Return one result tuple so the for loop body (line 418) is executed
+    fix_result = [(fixable[0], True, "checkpoint deleted")]
 
     with patch("src.ml.training_doctor.preflight_check", return_value=fixable), \
-         patch("src.ml.training_doctor.apply_all_fixes", return_value=[]) as mock_fix, \
+         patch("src.ml.training_doctor.apply_all_fixes", return_value=fix_result) as mock_fix, \
          patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
          patch("src.ml.training_doctor.diagnose_output", return_value=[]), \
          patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
@@ -874,13 +878,15 @@ async def test_run_training_fixable_preflight_applies_fix():
 
 
 async def test_run_training_success_sends_done_embed():
-    """Subprocess returns 0 → user.send called with ✅ Training Complete embed."""
+    """Subprocess returns 0 → user.send called with ✅ Training Complete embed.
+    parse_timestep_progress returns a non-None value to cover line 482 (latest_steps = steps).
+    """
     from src.bot.cogs.admin import _run_training
     interaction = make_interaction()
     proc = _make_proc(returncode=0, lines=[b"step 1000/100000\n"])
 
     with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
-         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=1000), \
          patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
         await _run_training(interaction, "gen9ou", 100_000, channel_msg=None, force=False)
 
@@ -1422,3 +1428,464 @@ async def test_team_cog_setup_adds_cog():
     bot.add_cog.assert_awaited_once()
     from src.bot.cogs.team import TeamCog
     assert isinstance(bot.add_cog.call_args[0][0], TeamCog)
+
+
+# ── is_commissioner predicate (lines 24-26) ───────────────────────────────────
+
+async def test_is_commissioner_predicate_with_manage_guild_returns_true():
+    """Lines 24-25: predicate returns True when user has manage_guild permission."""
+    from src.bot.cogs.admin import is_commissioner
+
+    # The predicate is stored in the closure of the check decorator
+    check_decorator = is_commissioner()
+    predicate = check_decorator.__closure__[0].cell_contents
+
+    interaction = make_interaction()
+    interaction.user.guild_permissions.manage_guild = True
+
+    result = await predicate(interaction)
+    assert result is True
+
+
+async def test_is_commissioner_predicate_without_manage_guild_raises():
+    """Line 26: predicate raises CheckFailure when user lacks permission."""
+    from src.bot.cogs.admin import is_commissioner
+    from discord import app_commands
+
+    check_decorator = is_commissioner()
+    predicate = check_decorator.__closure__[0].cell_contents
+
+    interaction = make_interaction()
+    interaction.user.guild_permissions.manage_guild = False
+
+    try:
+        await predicate(interaction)
+        assert False, "Expected CheckFailure to be raised"
+    except app_commands.CheckFailure:
+        pass
+
+
+# ── _run_training: additional branch coverage ──────────────────────────────────
+
+async def test_run_training_invalid_fmt_sends_dm():
+    """Lines 401-402: unknown format sends DM and returns early."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+        await _run_training(interaction, "totally_invalid_format_xyz", 100_000, force=False)
+
+    interaction.user.send.assert_awaited_once()
+    sent_text = interaction.user.send.call_args[0][0]
+    assert "Unknown format" in sent_text
+    mock_exec.assert_not_called()
+
+
+async def test_run_training_fixable_preflight_dm_send_raises():
+    """Lines 415-416: DM send exception for fixable issues is silently swallowed."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    # Make the DM send raise on first call (fixable notify), succeed after
+    proc = _make_proc(returncode=0)
+    interaction.user.send = AsyncMock(
+        side_effect=[Exception("DM blocked"), None]
+    )
+
+    fixable = [{"type": "CORRUPT_CHECKPOINT", "description": "bad ckpt", "fixable": True}]
+    with patch("src.ml.training_doctor.preflight_check", return_value=fixable), \
+         patch("src.ml.training_doctor.apply_all_fixes", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=[]), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        # Should not raise even though DM failed
+        await _run_training(interaction, "gen9ou", 100_000, force=False)
+
+
+async def test_run_training_blocking_dm_send_raises():
+    """Lines 433-434: DM send exception for blocking issues is silently swallowed."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    interaction.user.send = AsyncMock(side_effect=Exception("DM blocked"))
+
+    blocking = [{"type": "SHOWDOWN_OFFLINE", "description": "server down", "fixable": False}]
+    channel_msg = MagicMock()
+    channel_msg.edit = AsyncMock()
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=blocking), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+        await _run_training(interaction, "gen9ou", 100_000, force=False, channel_msg=channel_msg)
+
+    mock_exec.assert_not_called()
+
+
+async def test_run_training_user_send_raises_for_dm_msg():
+    """Lines 451-452: dm_msg is None when interaction.user.send raises for initial DM."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    proc = _make_proc(returncode=0)
+    # First call (initial progress DM) raises; subsequent calls (success embed) succeed
+    call_count = {"n": 0}
+
+    async def send_side_effect(*args, **kwargs):
+        n = call_count["n"]
+        call_count["n"] += 1
+        if n == 0:
+            raise Exception("DM blocked")
+        return MagicMock()
+
+    interaction.user.send = AsyncMock(side_effect=send_side_effect)
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        # Must complete without raising even though dm_msg is None
+        await _run_training(interaction, "gen9ou", 100_000, force=False)
+
+
+async def test_run_training_force_and_server_flags():
+    """Lines 460, 462: force=True and non-localhost server add flags to cmd."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    proc = _make_proc(returncode=0)
+    captured_cmds = []
+
+    async def fake_exec(*cmd, **kwargs):
+        captured_cmds.append(list(cmd))
+        return proc
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.create_subprocess_exec", side_effect=fake_exec):
+        await _run_training(
+            interaction, "gen9ou", 100_000,
+            force=True, server="showdown",
+        )
+
+    assert len(captured_cmds) == 1
+    cmd = captured_cmds[0]
+    assert "--force" in cmd
+    assert "--server" in cmd
+    assert "showdown" in cmd
+
+
+async def test_run_training_success_dm_send_raises():
+    """Lines 514-515: success embed DM exception is silently swallowed."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    proc = _make_proc(returncode=0)
+    # Initial DM send succeeds; success embed send raises
+    call_count = {"n": 0}
+
+    async def send_side_effect(*args, **kwargs):
+        call_count["n"] += 1
+        if call_count["n"] > 1:
+            raise Exception("DM blocked")
+        return MagicMock()
+
+    interaction.user.send = AsyncMock(side_effect=send_side_effect)
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training(interaction, "gen9ou", 100_000, force=False)
+
+
+async def test_run_training_failure_no_diagnosed_errors_uses_unknown():
+    """Line 521: When diagnose_output returns [], uses UNKNOWN error."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    proc = _make_proc(returncode=1)
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=[]), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training(interaction, "gen9ou", 100_000, force=False)
+
+    # Should still send a fail embed
+    interaction.user.send.assert_awaited()
+    embed_arg = interaction.user.send.call_args[1].get("embed")
+    assert embed_arg is not None
+
+
+async def test_run_training_retry_dm_send_raises():
+    """Lines 537-538: retry notification DM exception is silently swallowed."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+
+    fail_proc = _make_proc(returncode=1)
+    success_proc = _make_proc(returncode=0)
+    procs = [fail_proc, success_proc]
+
+    fixable = [{"type": "CORRUPT_CHECKPOINT", "description": "bad ckpt", "fixable": True}]
+
+    # First two calls succeed (initial DM + retry DM raises), final call (success embed) succeeds
+    call_count = {"n": 0}
+
+    async def send_side_effect(*args, **kwargs):
+        call_count["n"] += 1
+        if call_count["n"] == 2:
+            raise Exception("DM blocked")
+        return MagicMock()
+
+    interaction.user.send = AsyncMock(side_effect=send_side_effect)
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=fixable), \
+         patch("src.ml.training_doctor.apply_all_fixes", return_value=[]), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, side_effect=procs):
+        await _run_training(interaction, "gen9ou", 100_000, force=False)
+
+
+async def test_run_training_final_fail_dm_send_raises():
+    """Lines 556-557: final failure DM exception is silently swallowed."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    proc = _make_proc(returncode=1)
+
+    unfixable = [{"type": "UNKNOWN", "description": "crash", "fixable": False}]
+
+    # Make all user.send calls raise
+    interaction.user.send = AsyncMock(side_effect=Exception("DM blocked"))
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=unfixable), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        # Should complete without raising
+        await _run_training(interaction, "gen9ou", 100_000, force=False)
+
+
+async def test_run_training_progress_update_when_time_elapsed():
+    """Lines 487-490: progress embed is edited when 60s have elapsed."""
+    from src.bot.cogs.admin import _run_training
+    interaction = make_interaction()
+    proc = _make_proc(returncode=0, lines=[b"step 1000\n"])
+
+    channel_msg = MagicMock()
+    channel_msg.edit = AsyncMock()
+
+    # Mock event loop time so 'now - last_edit_time >= 60' is True on first line
+    mock_loop = MagicMock()
+    # First call = last_edit_time (0), second call = now (61)
+    mock_loop.time = MagicMock(side_effect=[0, 61])
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.get_event_loop", return_value=mock_loop), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training(
+            interaction, "gen9ou", 100_000,
+            force=False, channel_msg=channel_msg,
+        )
+
+    # _try_edit should have been called on channel_msg (in addition to the success path)
+    channel_msg.edit.assert_awaited()
+
+
+# ── _run_training_all: additional branch coverage ─────────────────────────────
+
+async def test_run_training_all_blocking_dm_send_raises():
+    """Lines 605-606: DM exception for blocking preflight is silently swallowed."""
+    from src.bot.cogs.admin import _run_training_all
+    interaction = make_interaction()
+    interaction.user.send = AsyncMock(side_effect=Exception("DM blocked"))
+
+    blocking = [{"type": "SHOWDOWN_OFFLINE", "description": "down", "fixable": False}]
+    with patch("src.bot.cogs.admin._model_exists", return_value=False), \
+         patch("src.ml.training_doctor.preflight_check", return_value=blocking), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+        await _run_training_all(interaction, 100_000, force=False)
+
+    mock_exec.assert_not_called()
+
+
+async def test_run_training_all_startup_dm_raises():
+    """Lines 615-616: startup DM exception is silently swallowed."""
+    from src.bot.cogs.admin import _run_training_all
+
+    interaction = make_interaction()
+    # All models already exist → 0 formats queued → goes straight to summary
+    # Startup DM send raises (line 610-616 block)
+    call_count = {"n": 0}
+
+    async def send_side_effect(*args, **kwargs):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            raise Exception("DM blocked")
+        return MagicMock()
+
+    interaction.user.send = AsyncMock(side_effect=send_side_effect)
+
+    with patch("src.bot.cogs.admin._model_exists", return_value=True), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]):
+        # Should complete without raising
+        await _run_training_all(interaction, 100_000, force=False)
+
+
+async def test_run_training_all_force_and_server_flags():
+    """Lines 630, 632: force=True and non-localhost server add flags to cmd.
+
+    With force=True, _model_exists is skipped (all formats run). We use a
+    small TRAINING_MAP with only one entry to keep the test fast — the key
+    assertion is that --force and --server flags appear in every cmd.
+    """
+    from src.bot.cogs.admin import _run_training_all
+    from src.ml.train_all import TRAINING_MAP
+
+    interaction = make_interaction()
+    one_fmt = next(iter(TRAINING_MAP))
+    proc = _make_proc(returncode=0)
+    captured_cmds = []
+
+    async def fake_exec(*cmd, **kwargs):
+        captured_cmds.append(list(cmd))
+        return proc
+
+    # Limit TRAINING_MAP to one entry so only one subprocess is spawned
+    single_entry = {one_fmt: TRAINING_MAP[one_fmt]}
+    with patch("src.bot.cogs.admin.TRAINING_MAP", single_entry), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.create_subprocess_exec", side_effect=fake_exec):
+        await _run_training_all(
+            interaction, 100_000,
+            force=True, server="showdown",
+        )
+
+    assert len(captured_cmds) == 1
+    cmd = captured_cmds[0]
+    assert "--force" in cmd
+    assert "--server" in cmd
+    assert "showdown" in cmd
+
+
+async def test_run_training_all_progress_dm_raises():
+    """Lines 646-647: initial per-format DM exception sets dm_msg=None."""
+    from src.bot.cogs.admin import _run_training_all
+    from src.ml.train_all import TRAINING_MAP
+
+    interaction = make_interaction()
+    one_fmt = next(iter(TRAINING_MAP))
+    proc = _make_proc(returncode=0)
+
+    # First send = startup DM (succeeds), second send = per-format DM (raises),
+    # third send = summary DM (succeeds)
+    call_count = {"n": 0}
+
+    async def send_side_effect(*args, **kwargs):
+        call_count["n"] += 1
+        if call_count["n"] == 2:
+            raise Exception("DM blocked")
+        return MagicMock()
+
+    interaction.user.send = AsyncMock(side_effect=send_side_effect)
+
+    def model_exists_fn(results_dir, fmt):
+        return fmt != one_fmt
+
+    with patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training_all(interaction, 100_000, force=False)
+
+
+async def test_run_training_all_subprocess_streaming_lines():
+    """Lines 660-673: async for loop processes stdout lines and updates progress.
+    parse_timestep_progress returns a non-None value to cover line 664 (latest_steps = steps).
+    """
+    from src.bot.cogs.admin import _run_training_all
+    from src.ml.train_all import TRAINING_MAP
+
+    interaction = make_interaction()
+    one_fmt = next(iter(TRAINING_MAP))
+    # Provide some lines to stream through the async for loop
+    proc = _make_proc(returncode=0, lines=[b"step 500\n", b"step 1000\n"])
+
+    def model_exists_fn(results_dir, fmt):
+        return fmt != one_fmt
+
+    with patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=500), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training_all(interaction, 100_000, force=False)
+
+    interaction.user.send.assert_awaited()
+
+
+async def test_run_training_all_subprocess_exception_continues():
+    """Lines 678-681: subprocess exception is caught, ok=False, loop continues."""
+    from src.bot.cogs.admin import _run_training_all
+    from src.ml.train_all import TRAINING_MAP
+
+    interaction = make_interaction()
+    one_fmt = next(iter(TRAINING_MAP))
+
+    def model_exists_fn(results_dir, fmt):
+        return fmt != one_fmt
+
+    with patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("src.ml.training_doctor.diagnose_output", return_value=[]), \
+         patch("asyncio.create_subprocess_exec",
+               new_callable=AsyncMock, side_effect=OSError("exec failed")):
+        # Should complete with n_failed=1 and still send summary
+        await _run_training_all(interaction, 100_000, force=False)
+
+    interaction.user.send.assert_awaited()
+
+
+async def test_run_training_all_summary_dm_raises():
+    """Lines 726-727: summary DM exception is logged, not re-raised."""
+    from src.bot.cogs.admin import _run_training_all
+
+    interaction = make_interaction()
+    # All models exist → 0 formats → goes straight to summary
+    # Make summary send (last call) raise
+    call_count = {"n": 0}
+
+    async def send_side_effect(*args, **kwargs):
+        call_count["n"] += 1
+        if call_count["n"] >= 2:
+            raise Exception("DM blocked")
+        return MagicMock()
+
+    interaction.user.send = AsyncMock(side_effect=send_side_effect)
+
+    with patch("src.bot.cogs.admin._model_exists", return_value=True), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]):
+        # Should complete without re-raising
+        await _run_training_all(interaction, 100_000, force=False)
+
+
+async def test_run_training_all_progress_update_when_time_elapsed():
+    """Lines 666-673: progress embed is edited when 60s elapsed during streaming."""
+    from src.bot.cogs.admin import _run_training_all
+    from src.ml.train_all import TRAINING_MAP
+
+    interaction = make_interaction()
+    one_fmt = next(iter(TRAINING_MAP))
+    proc = _make_proc(returncode=0, lines=[b"step 500\n"])
+    channel_msg = MagicMock()
+    channel_msg.edit = AsyncMock()
+
+    # Mock time so the 60s check triggers
+    mock_loop = MagicMock()
+    mock_loop.time = MagicMock(side_effect=[0, 61])
+
+    def model_exists_fn(results_dir, fmt):
+        return fmt != one_fmt
+
+    with patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.get_event_loop", return_value=mock_loop), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training_all(
+            interaction, 100_000,
+            force=False, channel_msg=channel_msg,
+        )

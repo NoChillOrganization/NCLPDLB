@@ -6,7 +6,7 @@ Quick reference for running the Pokemon Draft League Bot.
 
 ## Prerequisites
 
-- [ ] Discord bot token from https://discord.com/developers/applications
+- [ ] Discord bot token from <https://discord.com/developers/applications>
 - [ ] Google Sheets spreadsheet ID: `16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs`
 - [ ] Google service account `credentials.json`
 - [ ] Bot invited to Discord server with proper permissions

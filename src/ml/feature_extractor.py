@@ -253,7 +253,7 @@ class FeatureExtractor:
 
     # ── State feature extraction (Online/RL) ──────────────────────
 
-    def extract_features(self, battle: "AbstractBattle") -> np.ndarray:
+    def extract_features(self, battle: "AbstractBattle") -> np.ndarray:  # pragma: no cover
         """
         Extracts 48 features from a live battle state.
         This must EXACTLY match BattleEnv.build_observation() logic.

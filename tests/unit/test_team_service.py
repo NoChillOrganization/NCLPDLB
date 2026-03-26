@@ -84,6 +84,34 @@ async def test_get_team_wrong_guild():
     assert result is None
 
 
+@pytest.mark.asyncio
+async def test_get_team_invalid_json_pokemon_list():
+    """pokemon_list with invalid JSON triggers JSONDecodeError → defaults to empty list."""
+    svc = TeamService()
+    with patch("src.services.team_service.sheets") as mock_sheets:
+        mock_sheets.find_row.return_value = {
+            "team_id": "T1", "player_id": "p1", "guild_id": "g1",
+            "pokemon_list": "not valid json ][",
+        }
+        result = await svc.get_team("g1", "p1")
+    assert result is not None
+    assert result.pokemon == []
+
+
+@pytest.mark.asyncio
+async def test_get_team_non_list_json_pokemon_list():
+    """pokemon_list containing a JSON string (not a list) triggers isinstance check → empty list."""
+    svc = TeamService()
+    with patch("src.services.team_service.sheets") as mock_sheets:
+        mock_sheets.find_row.return_value = {
+            "team_id": "T1", "player_id": "p1", "guild_id": "g1",
+            "pokemon_list": '"a string value"',
+        }
+        result = await svc.get_team("g1", "p1")
+    assert result is not None
+    assert result.pokemon == []
+
+
 # ── register_team ─────────────────────────────────────────────
 
 @pytest.mark.asyncio

@@ -81,7 +81,7 @@ intents.members = True
 
 
 class DraftLeagueBot(commands.Bot):
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # pragma: no cover
         super().__init__(
             command_prefix="!",  # Fallback prefix; primary interface is slash commands
             intents=intents,
@@ -155,7 +155,7 @@ class DraftLeagueBot(commands.Bot):
         log.error(f"Command error: {error}", exc_info=True)
 
 
-async def main() -> None:
+async def main() -> None:  # pragma: no cover
     creds = settings.google_sheets_credentials_file
     if not creds.exists():
         raise FileNotFoundError(

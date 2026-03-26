@@ -63,7 +63,8 @@ Graduate to self-play when agent achieves ≥70% win-rate over a rolling 500-epi
 
 **Key invariants:**
 
-- `train()` public signature unchanged (`fmt`, `total_timesteps`, `swap_every`, `save_dir`, `results_dir`, `resume`, `team_format`, `server`)
+- `train()` public signature unchanged
+  (`fmt`, `total_timesteps`, `swap_every`, `save_dir`, `results_dir`, `resume`, `team_format`, `server`)
 - `SelfPlayCallback` class stays (it's tested and exported)
 - `CurriculumCallback` is the new default used by `train()`
 
