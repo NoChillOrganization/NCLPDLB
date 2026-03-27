@@ -400,6 +400,7 @@ def train(  # pragma: no cover
     resume: str | None = None,
     team_format: str | None = None,
     server: str = MODE_LOCALHOST,
+    save_replays: str | None = None,
 ) -> Path:
     """
     Run PPO self-play training for the given Showdown format.
@@ -415,6 +416,7 @@ def train(  # pragma: no cover
         team_format: If set, load teams from FORMAT_TEAMS[team_format] and use
                      a RotatingTeambuilder (for formats that require custom teams).
         server:      Connection mode — "localhost", "showdown", or "browser".
+        save_replays: If set, directory to save HTML battle replays.
 
     Returns the path to the final saved model zip.
     """
@@ -503,6 +505,10 @@ def train(  # pragma: no cover
             env_kwargs["account_configuration2"] = acc2
         if team_builder is not None:
             env_kwargs["team"] = team_builder
+        if save_replays:
+            import os
+            os.makedirs(save_replays, exist_ok=True)
+            env_kwargs["save_replays"] = save_replays
         if is_doubles:
             poke_env = BattleDoubleEnv(**env_kwargs)
         else:
@@ -553,6 +559,8 @@ def train(  # pragma: no cover
     log.info(f"  Swap every   : {swap_every:,} (after graduation)")
     log.info(f"  Save dir     : {fmt_save_dir}")
     log.info(f"  TensorBoard  : tensorboard --logdir {log_dir}")
+    if save_replays:
+        log.info(f"  Replays      : {save_replays}  (open .html files in browser)")
     log.info("============================================================")
     if server == MODE_LOCALHOST:
         log.info("Make sure Pokemon Showdown server is running on ws://localhost:8000")
@@ -701,6 +709,13 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
              "(e.g. gen9ou, gen9doublesou, gen9vgc2026regi)",
     )
     ap.add_argument(
+        "--save-replays",
+        default=None,
+        metavar="DIR",
+        help="Directory to save HTML battle replays (viewable in any browser). "
+             "Each battle is saved as a .html file.",
+    )
+    ap.add_argument(
         "--server",
         default=MODE_LOCALHOST,
         choices=list(VALID_MODES),
@@ -739,4 +754,5 @@ if __name__ == "__main__":  # pragma: no cover
             resume=args.resume,
             team_format=args.team_format,
             server=args.server,
+            save_replays=args.save_replays,
         )
