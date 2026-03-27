@@ -1,0 +1,20 @@
+Refactor the existing Showdown client code in the repo.
+
+Requirements:
+
+* Must work on Windows
+* Default to local server:
+  ws://localhost:8000/showdown/websocket
+* Support 2 simultaneous clients (AccountA, AccountB)
+* Clean separation of:
+
+  * connection
+  * message handling
+  * command sending
+
+If code already exists:
+
+* Improve it
+* Do NOT rewrite from scratch unless necessary
+
+Add logging and stability improvements.

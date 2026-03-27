@@ -1,0 +1,17 @@
+Find any existing battle parsing logic.
+
+Refactor and improve it to:
+
+* Extract:
+
+  * available moves
+  * HP (normalized)
+  * turn number
+
+Return structured state dict.
+
+If missing:
+
+* Implement it cleanly
+
+Ensure compatibility with training pipeline.

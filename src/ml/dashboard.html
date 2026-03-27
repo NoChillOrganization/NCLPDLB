@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokemon AI Trainer</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h1 span { color: #6366f1; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: #1e2130;
+      border: 1px solid #2d3348;
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .card .label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1;
+    }
+
+    .card.accent .value { color: #6366f1; }
+    .card.green  .value { color: #22c55e; }
+    .card.red    .value { color: #ef4444; }
+
+    .chart-wrap {
+      background: #1e2130;
+      border: 1px solid #2d3348;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .chart-wrap h2 {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      background: #1e2130;
+      border: 1px solid #2d3348;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    button {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    button:hover { opacity: 0.85; }
+    button:active { opacity: 0.7; }
+
+    #btn-start { background: #6366f1; color: #fff; }
+    #btn-stop  { background: #374151; color: #e2e8f0; }
+
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    .slider-group label {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      accent-color: #6366f1;
+      width: 120px;
+    }
+
+    #mcts-val {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #6366f1;
+      width: 28px;
+      text-align: right;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status-badge.running  { background: #14532d; color: #86efac; }
+    .status-badge.stopped  { background: #1c1917; color: #78716c; }
+    .status-badge.error    { background: #450a0a; color: #fca5a5; }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-badge.running .dot { animation: pulse 1.4s ease-in-out infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    .footer {
+      font-size: 0.7rem;
+      color: #475569;
+      text-align: center;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Pokemon AI Trainer <span>●</span></h1>
+
+<!-- Status + metrics -->
+<div class="grid">
+  <div class="card">
+    <div class="label">Status</div>
+    <div id="status-badge" class="status-badge stopped"><span class="dot"></span><span id="status-text">stopped</span></div>
+  </div>
+  <div class="card accent">
+    <div class="label">Games</div>
+    <div class="value" id="stat-games">0</div>
+  </div>
+  <div class="card green">
+    <div class="label">Win rate</div>
+    <div class="value" id="stat-winrate">0%</div>
+  </div>
+  <div class="card green">
+    <div class="label">Wins (A)</div>
+    <div class="value" id="stat-wins">0</div>
+  </div>
+  <div class="card red">
+    <div class="label">Losses (B)</div>
+    <div class="value" id="stat-losses">0</div>
+  </div>
+  <div class="card">
+    <div class="label">Ties</div>
+    <div class="value" id="stat-ties">0</div>
+  </div>
+  <div class="card">
+    <div class="label">Train steps</div>
+    <div class="value" id="stat-steps">0</div>
+  </div>
+  <div class="card">
+    <div class="label">Buffer</div>
+    <div class="value" id="stat-buffer">0</div>
+  </div>
+</div>
+
+<!-- Win-rate chart -->
+<div class="chart-wrap">
+  <h2>Win rate over time</h2>
+  <canvas id="chart" height="90"></canvas>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button id="btn-start">▶ Start</button>
+  <button id="btn-stop">■ Stop</button>
+
+  <div class="slider-group">
+    <label>MCTS sims</label>
+    <input type="range" id="mcts-slider" min="1" max="200" value="30" step="1" />
+    <span id="mcts-val">30</span>
+  </div>
+</div>
+
+<div class="footer">
+  Auto-refreshing every 2 s &nbsp;·&nbsp; API at <code>http://localhost:8080</code>
+</div>
+
+<script>
+  const API = '';  // same origin
+
+  // ── Chart ──────────────────────────────────────────────────────────────────
+  const ctx = document.getElementById('chart').getContext('2d');
+  const winrateHistory = [];
+  const labelHistory   = [];
+
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labelHistory,
+      datasets: [{
+        label: 'Win rate (%)',
+        data: winrateHistory,
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.12)',
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0.35,
+        fill: true,
+      }],
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          ticks: { color: '#475569', maxTicksLimit: 10 },
+          grid:  { color: '#1e2130' },
+        },
+        y: {
+          min: 0, max: 100,
+          ticks: { color: '#475569', callback: v => v + '%' },
+          grid:  { color: '#2d3348' },
+        },
+      },
+    },
+  });
+
+  // ── Poll /stats ────────────────────────────────────────────────────────────
+  let lastGames = -1;
+
+  async function refresh() {
+    try {
+      const res = await fetch(API + '/stats');
+      if (!res.ok) return;
+      const d = await res.json();
+
+      document.getElementById('stat-games').textContent   = d.games;
+      document.getElementById('stat-wins').textContent    = d.wins;
+      document.getElementById('stat-losses').textContent  = d.losses;
+      document.getElementById('stat-ties').textContent    = d.ties ?? 0;
+      document.getElementById('stat-winrate').textContent = (d.winrate * 100).toFixed(1) + '%';
+      document.getElementById('stat-steps').textContent   = d.train_steps ?? 0;
+      document.getElementById('stat-buffer').textContent  = d.buffer_size ?? 0;
+
+      // Status badge
+      const badge = document.getElementById('status-badge');
+      const text  = document.getElementById('status-text');
+      badge.className = 'status-badge ' + (d.status || 'stopped');
+      text.textContent = d.status || 'stopped';
+
+      // MCTS slider sync (if server changed it)
+      const slider = document.getElementById('mcts-slider');
+      if (document.activeElement !== slider) {
+        slider.value = d.mcts_sims;
+        document.getElementById('mcts-val').textContent = d.mcts_sims;
+      }
+
+      // Append to chart when game count changes
+      if (d.games !== lastGames && d.games > 0) {
+        lastGames = d.games;
+        winrateHistory.push((d.winrate * 100).toFixed(1));
+        labelHistory.push(d.games);
+        // Keep last 200 points
+        if (winrateHistory.length > 200) {
+          winrateHistory.shift();
+          labelHistory.shift();
+        }
+        chart.update();
+      }
+    } catch (_) {
+      // Server may be starting up — ignore
+    }
+  }
+
+  setInterval(refresh, 2000);
+  refresh();
+
+  // ── Buttons ────────────────────────────────────────────────────────────────
+  document.getElementById('btn-start').addEventListener('click', async () => {
+    await fetch(API + '/start', { method: 'POST' });
+    refresh();
+  });
+
+  document.getElementById('btn-stop').addEventListener('click', async () => {
+    await fetch(API + '/stop', { method: 'POST' });
+    refresh();
+  });
+
+  // ── MCTS slider ───────────────────────────────────────────────────────────
+  let sliderTimer = null;
+  const slider = document.getElementById('mcts-slider');
+
+  slider.addEventListener('input', () => {
+    document.getElementById('mcts-val').textContent = slider.value;
+    clearTimeout(sliderTimer);
+    sliderTimer = setTimeout(async () => {
+      await fetch(API + '/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mcts_sims: parseInt(slider.value) }),
+      });
+    }, 400);  // debounce: send only after user stops moving slider
+  });
+</script>
+</body>
+</html>

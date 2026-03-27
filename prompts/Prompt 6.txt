@@ -1,0 +1,19 @@
+Refactor or implement self-play system.
+
+Requirements:
+
+* Use AccountA vs AccountB
+* Use direct challenge (local server only)
+* Continuous training loop
+
+Each game:
+
+* Use MCTS decisions
+* Store:
+  state, action, reward
+
+Append to replay buffer
+
+Update shared training stats.
+
+Reuse existing code where possible.

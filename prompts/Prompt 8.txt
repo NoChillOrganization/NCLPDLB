@@ -1,0 +1,16 @@
+Add or refactor FastAPI backend.
+
+Requirements:
+
+* Global STATE:
+  games, wins, losses, winrate, status, mcts_sims
+
+Endpoints:
+GET /stats
+POST /start
+POST /stop
+POST /config
+
+Integrate with existing training system.
+
+Ensure thread-safe updates.

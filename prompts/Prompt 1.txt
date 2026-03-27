@@ -1,0 +1,30 @@
+Analyze the current repository.
+
+Goals:
+
+* Identify existing modules related to:
+
+  * Pokémon Showdown connection
+  * training / ML
+  * battle logic
+* Summarize current architecture
+
+Then compare it to this target system:
+
+TARGET:
+
+* Local-only training (Windows)
+* Self-play using 2 accounts
+* MCTS decision engine
+* Transformer policy/value model
+* Replay buffer training loop
+* FastAPI dashboard + browser UI
+
+Output:
+
+1. What already exists
+2. What is missing
+3. What needs refactoring
+4. A step-by-step upgrade plan
+
+DO NOT modify code yet.

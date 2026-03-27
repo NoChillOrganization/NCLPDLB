@@ -1,12 +1,24 @@
 name: Train ML Models
 
 on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
   workflow_dispatch:
     inputs:
       timesteps:
         description: "Training steps per format (manual production runs only — CI uses matrix.timesteps)"
         required: false
         default: "500000"
+
+permissions:
+  contents: read
+  actions: write
+  contents: write
+  packages: write
+  pull-requests: write
+>>>>>>> master
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -145,7 +157,7 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
 
-      - name: Upload model
+      - name: Upload model artifact
         uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -158,13 +170,18 @@ jobs:
     needs: train
     runs-on: ubuntu-latest
     if: always()
+
+    permissions:
+      actions: write
+      contents: write
+
     steps:
       - name: Download all models
         uses: actions/download-artifact@v8
         with:
           pattern: model-*
           path: all-models
-          merge-multiple: false
+          merge-multiple: true
 
       - name: List models
         run: find all-models -name "*.zip" | sort

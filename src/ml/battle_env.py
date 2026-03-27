@@ -222,8 +222,132 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
 
     # ── Final Dimension Verification ──────────────────────────────────
     assert idx == OBS_DIM, f"Observation dimension mismatch: {idx} != {OBS_DIM}"
-    
+
     return obs
+
+
+def build_state_dict(battle: "AbstractBattle") -> dict:
+    """
+    Convert a poke-env AbstractBattle into a structured state dictionary.
+
+    Unlike build_observation() which returns a flat float32 vector for RL,
+    this returns a human-readable dict suitable for:
+      • MCTS simulation nodes
+      • Debugging and logging
+      • Custom training loops
+      • Compatibility with the offline replay pipeline
+
+    Returns
+    -------
+    dict with keys:
+      turn          (int)    current turn number
+      available_moves  (list[dict])  one entry per legal move:
+          name (str), base_power (int), accuracy (float), type (str),
+          priority (int), is_switch (bool), switch_slot (int | None)
+      my_active     (dict)   active Pokemon: species, hp_pct, status, boosts
+      opp_active    (dict)   opponent active: species, hp_pct, status
+      my_team_hp    (list[float])  6 normalized HP values (0.0 = fainted)
+      opp_team_hp   (list[float])  6 normalized HP values (1.0 = unknown/full)
+      weather       (str)    active weather name or ""
+      terrain       (str)    active terrain name or ""
+      trick_room    (bool)   whether Trick Room is in effect
+      obs_vector    (np.ndarray)  the flat observation for direct RL use
+    """
+    # ── Turn ────────────────────────────────────────────────────────
+    turn = int(getattr(battle, "turn", 0))
+
+    # ── Available moves ─────────────────────────────────────────────
+    available_moves: list[dict] = []
+
+    # Legal moves
+    for move in battle.available_moves:
+        available_moves.append({
+            "name":       getattr(move, "id", "") or getattr(move, "entry", {}).get("name", ""),
+            "base_power": int(getattr(move, "base_power", 0) or 0),
+            "accuracy":   float(getattr(move, "accuracy", 100) or 100) / 100.0,
+            "type":       str(getattr(move, "type", "")).lower().split(".")[-1],
+            "priority":   int(getattr(move, "priority", 0) or 0),
+            "is_switch":  False,
+            "switch_slot": None,
+        })
+
+    # Legal switches
+    team = list(battle.team.values())
+    for i, mon in enumerate(battle.available_switches):
+        # Find slot index relative to full team
+        try:
+            slot = team.index(mon)
+        except ValueError:
+            slot = i
+        available_moves.append({
+            "name":        f"switch {mon.species}",
+            "base_power":  0,
+            "accuracy":    1.0,
+            "type":        "",
+            "priority":    0,
+            "is_switch":   True,
+            "switch_slot": slot,
+        })
+
+    # ── Active Pokemon ───────────────────────────────────────────────
+    active = battle.active_pokemon
+    my_active: dict = {
+        "species": getattr(active, "species", "") if active else "",
+        "hp_pct":  _pokemon_hp(active),
+        "status":  str(getattr(active, "status", None) or "").lower(),
+        "boosts":  dict(getattr(active, "boosts", {}) or {}),
+    }
+
+    opp = battle.opponent_active_pokemon
+    opp_active: dict = {
+        "species": getattr(opp, "species", "") if opp else "",
+        "hp_pct":  _pokemon_hp(opp),
+        "status":  str(getattr(opp, "status", None) or "").lower(),
+    }
+
+    # ── Team HP ─────────────────────────────────────────────────────
+    my_team_hp = [
+        _pokemon_hp(team[i]) if i < len(team) else 0.0
+        for i in range(TEAM_SIZE)
+    ]
+    opp_team = list(battle.opponent_team.values())
+    opp_team_hp = [
+        _pokemon_hp(opp_team[i]) if i < len(opp_team) else 1.0
+        for i in range(TEAM_SIZE)
+    ]
+
+    # ── Field conditions ────────────────────────────────────────────
+    weather_dict = getattr(battle, "weather", {}) or {}
+    active_weather = next(iter(weather_dict), None)
+    weather_name = str(active_weather).split(".")[-1].lower() if active_weather else ""
+
+    fields = getattr(battle, "fields", {}) or {}
+    terrain_name = ""
+    for fld in fields:
+        name = str(fld).split(".")[-1].lower()
+        if "terrain" in name:
+            terrain_name = name
+            break
+
+    trick_room = False
+    try:
+        from poke_env.battle import Effect
+        trick_room = Effect.TRICK_ROOM in fields
+    except Exception:  # pragma: no cover
+        pass
+
+    return {
+        "turn":           turn,
+        "available_moves": available_moves,
+        "my_active":      my_active,
+        "opp_active":     opp_active,
+        "my_team_hp":     my_team_hp,
+        "opp_team_hp":    opp_team_hp,
+        "weather":        weather_name,
+        "terrain":        terrain_name,
+        "trick_room":     trick_room,
+        "obs_vector":     build_observation(battle),
+    }
 
 
 # ── RL Environment ────────────────────────────────────────────────────────────
@@ -253,6 +377,11 @@ if POKE_ENV_AVAILABLE:
             super().__init__(**kwargs)
             # Required: set observation_space (action_space set by parent)
             self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            # poke-env SingleAgentWrapper expects observation_spaces (plural, dict)
+            # Gymnasium uses observation_space (singular). Expose both.
+            self.observation_spaces = {"battle": self.observation_space}
+            # poke-env also expects action_spaces (plural, dict)
+            self.action_spaces = {"battle": self.action_space}
             # Track previous faint counts for shaped reward (keyed by id(battle))
             self._prev_state: dict[int, dict[str, int]] = {}
 
@@ -449,6 +578,11 @@ if POKE_ENV_AVAILABLE:
             kwargs.setdefault("choose_on_teampreview", False)
             super().__init__(**kwargs)
             self.observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
+            # poke-env SingleAgentWrapper expects observation_spaces (plural, dict)
+            # Gymnasium uses observation_space (singular). Expose both.
+            self.observation_spaces = {"battle": self.observation_space}
+            # poke-env also expects action_spaces (plural, dict)
+            self.action_spaces = {"battle": self.action_space}
             self._prev_state: dict[int, dict[str, int]] = {}
 
         def embed_battle(self, battle: Any) -> np.ndarray:

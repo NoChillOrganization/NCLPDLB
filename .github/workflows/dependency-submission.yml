@@ -1,0 +1,49 @@
+name: Automatic Dependency Submission
+
+on:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependency-submission:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Generate dependency snapshot
+        run: |
+          mkdir -p dependency-reports
+          pip list --format=freeze > dependency-reports/requirements-frozen.txt
+          pip list --format=json > dependency-reports/packages.json
+          pip show $(pip list --format=freeze | cut -d= -f1 | tr '\n' ' ') \
+            > dependency-reports/packages-detail.txt 2>/dev/null || true
+          echo "Dependency snapshot generated at $(date -u)" >> dependency-reports/snapshot-meta.txt
+
+      - name: Upload dependency snapshot artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dependency-snapshot
+          path: dependency-reports/
+          if-no-files-found: warn
+          retention-days: 30
