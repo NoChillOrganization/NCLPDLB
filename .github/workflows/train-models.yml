@@ -15,7 +15,7 @@ on:
 permissions:
   contents: write
   actions: write
-  packages: read
+  packages: write
   pull-requests: write
 
 env:
@@ -30,26 +30,26 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         config:
-          - { format: gen9randombattle,    team_format: "",                  timesteps: 500000 }
-          - { format: gen9ou,              team_format: gen9ou,              timesteps: 500000 }
-          - { format: gen9doublesou,       team_format: gen9doublesou,       timesteps: 500000 }
-          - { format: gen9nationaldex,     team_format: gen9nationaldex,     timesteps: 500000 }
-          - { format: gen9monotype,        team_format: gen9monotype,        timesteps: 500000 }
-          - { format: gen9anythinggoes,    team_format: gen9anythinggoes,    timesteps: 500000 }
-          - { format: gen9vgc2026regi,     team_format: gen9vgc2026regi,     timesteps: 500000 }
-          - { format: gen9vgc2026regf,     team_format: gen9vgc2026regf,     timesteps: 500000 }
-          - { format: gen9randomdoublesbattle, team_format: "",              timesteps: 500000 }
-          - { format: gen9ubers,           team_format: gen9ubers,           timesteps: 500000 }
-          - { format: gen9uu,              team_format: gen9uu,              timesteps: 500000 }
-          - { format: gen9ru,              team_format: gen9ru,              timesteps: 500000 }
-          - { format: gen9nu,              team_format: gen9nu,              timesteps: 500000 }
-          - { format: gen9pu,              team_format: gen9pu,              timesteps: 500000 }
-          - { format: gen9zu,              team_format: gen9zu,              timesteps: 500000 }
-          - { format: gen9lc,              team_format: gen9lc,              timesteps: 500000 }
-          - { format: gen9doublesubers,    team_format: gen9doublesubers,    timesteps: 500000 }
-          - { format: gen9doublesuu,       team_format: gen9doublesuu,       timesteps: 500000 }
-          - { format: gen9vgc2026regfbo3,  team_format: gen9vgc2026regfbo3,  timesteps: 500000 }
-          - { format: gen9vgc2026regibo3,  team_format: gen9vgc2026regibo3,  timesteps: 500000 }
+          - { format: gen9randombattle,    team_format: "",                  timesteps: 100000 }
+          - { format: gen9ou,              team_format: gen9ou,              timesteps: 100000 }
+          - { format: gen9doublesou,       team_format: gen9doublesou,       timesteps: 100000 }
+          - { format: gen9nationaldex,     team_format: gen9nationaldex,     timesteps: 100000 }
+          - { format: gen9monotype,        team_format: gen9monotype,        timesteps: 100000 }
+          - { format: gen9anythinggoes,    team_format: gen9anythinggoes,    timesteps: 100000 }
+          - { format: gen9vgc2026regi,     team_format: gen9vgc2026regi,     timesteps: 100000 }
+          - { format: gen9vgc2026regf,     team_format: gen9vgc2026regf,     timesteps: 100000 }
+          - { format: gen9randomdoublesbattle, team_format: "",              timesteps: 100000 }
+          - { format: gen9ubers,           team_format: gen9ubers,           timesteps: 100000 }
+          - { format: gen9uu,              team_format: gen9uu,              timesteps: 100000 }
+          - { format: gen9ru,              team_format: gen9ru,              timesteps: 100000 }
+          - { format: gen9nu,              team_format: gen9nu,              timesteps: 100000 }
+          - { format: gen9pu,              team_format: gen9pu,              timesteps: 100000 }
+          - { format: gen9zu,              team_format: gen9zu,              timesteps: 100000 }
+          - { format: gen9lc,              team_format: gen9lc,              timesteps: 100000 }
+          - { format: gen9doublesubers,    team_format: gen9doublesubers,    timesteps: 100000 }
+          - { format: gen9doublesuu,       team_format: gen9doublesuu,       timesteps: 100000 }
+          - { format: gen9vgc2026regfbo3,  team_format: gen9vgc2026regfbo3,  timesteps: 100000 }
+          - { format: gen9vgc2026regibo3,  team_format: gen9vgc2026regibo3,  timesteps: 100000 }
 
     steps:
       - name: Checkout
