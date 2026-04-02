@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     showdown_username: str = ""
     showdown_password: str = ""
 
+    # GitHub — used by /admin-pull-models to download trained models from releases
+    github_token: str = ""          # Personal access token (optional for public repos)
+    github_repo: str = "NoChillModeOnline/NCLPDLB"
+
     # ML policy models directory
     ml_policy_dir: str = "data/ml/policy"
 

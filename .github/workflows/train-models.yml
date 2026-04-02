@@ -142,6 +142,17 @@ jobs:
         shell: bash
         run: find all-models -name "*.zip" | sort
 
+      - name: Rename models for release
+        shell: bash
+        run: |
+          mkdir -p release-models
+          find all-models -path "*/policy/*/final_model.zip" | while IFS= read -r f; do
+            format=$(basename "$(dirname "$f")")
+            cp "$f" "release-models/${format}_final_model.zip"
+          done
+          echo "Release assets:"
+          ls release-models/
+
       - name: Publish models as GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -151,5 +162,5 @@ jobs:
             Trained models for all formats from workflow run #${{ github.run_number }}.
             Each zip contains the final PPO policy for one Showdown format.
             Download individual format models below and place them in `data/ml/policy/<format>/final_model.zip`.
-          files: all-models/**/*.zip
+          files: release-models/*.zip
           fail_on_unmatched_files: false

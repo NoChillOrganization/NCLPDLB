@@ -296,6 +296,40 @@ class AdminCog(commands.Cog, name="Admin"):
             )
         )
 
+    # ── /admin-pull-models ────────────────────────────────────
+    @app_commands.command(
+        name="admin-pull-models",
+        description="Download trained models from the latest GitHub Release into data/ml/policy/",
+    )
+    @app_commands.describe(
+        format="Format to download, or leave blank to download all available",
+        release="Release tag (e.g. ml-models-r5); default: latest",
+    )
+    @is_commissioner()
+    async def admin_pull_models(
+        self,
+        interaction: discord.Interaction,
+        format: str | None = None,
+        release: str | None = None,
+    ) -> None:
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        asyncio.create_task(
+            _pull_models(interaction, fmt=format, release_tag=release)
+        )
+
+    @admin_pull_models.autocomplete("format")
+    async def admin_pull_models_format_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        needle = current.lower()
+        return [
+            app_commands.Choice(name=fmt, value=fmt)
+            for fmt in TRAINING_MAP
+            if needle in fmt.lower()
+        ][:25]
+
     # ── /admin-showdown-check ──────────────────────────────────
     @app_commands.command(
         name="admin-showdown-check",
@@ -813,6 +847,92 @@ def _build_progress_embed(
         desc += "\n_Updates every 60 seconds. You'll get a DM when done._"
 
     return discord.Embed(title=title, description=desc, color=color)
+
+
+async def _pull_models(
+    interaction: discord.Interaction,
+    fmt: str | None,
+    release_tag: str | None,
+) -> None:
+    """Background task: download trained model zips from a GitHub Release."""
+    import httpx
+    from src.config import settings
+
+    repo = settings.github_repo
+    headers: dict[str, str] = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    if settings.github_token:
+        headers["Authorization"] = f"Bearer {settings.github_token}"
+
+    project_root = Path(__file__).parents[3]
+    policy_dir = project_root / "data" / "ml" / "policy"
+    formats_to_download = [fmt] if fmt else list(TRAINING_MAP.keys())
+
+    try:
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=300) as client:
+            # Resolve release
+            if release_tag:
+                resp = await client.get(
+                    f"https://api.github.com/repos/{repo}/releases/tags/{release_tag}"
+                )
+            else:
+                resp = await client.get(
+                    f"https://api.github.com/repos/{repo}/releases"
+                )
+                resp.raise_for_status()
+                releases = resp.json()
+                ml_releases = [r for r in releases if r["tag_name"].startswith("ml-models-r")]
+                if not ml_releases:
+                    await interaction.followup.send(
+                        "No `ml-models-r*` releases found on GitHub. Run the Train ML Models workflow first.",
+                        ephemeral=True,
+                    )
+                    return
+                resp = await client.get(
+                    f"https://api.github.com/repos/{repo}/releases/{ml_releases[0]['id']}"
+                )
+
+            resp.raise_for_status()
+            release = resp.json()
+            tag = release["tag_name"]
+            assets: list[dict] = release.get("assets", [])
+            asset_map = {a["name"]: a for a in assets}
+
+            results: dict[str, str] = {}
+            for target_fmt in formats_to_download:
+                asset_name = f"{target_fmt}_final_model.zip"
+                asset = asset_map.get(asset_name)
+                if asset is None:
+                    results[target_fmt] = "not in release"
+                    continue
+
+                save_path = policy_dir / target_fmt / "final_model.zip"
+                save_path.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    dl = await client.get(asset["browser_download_url"])
+                    dl.raise_for_status()
+                    save_path.write_bytes(dl.content)
+                    size_kb = len(dl.content) // 1024
+                    results[target_fmt] = f"✅ {size_kb} KB"
+                except Exception as exc:
+                    results[target_fmt] = f"❌ {exc}"
+
+    except Exception as exc:
+        await interaction.followup.send(f"❌ GitHub API error: `{exc}`", ephemeral=True)
+        return
+
+    ok = sum(1 for v in results.values() if v.startswith("✅"))
+    fail = len(results) - ok
+    lines = [f"`{f}` — {s}" for f, s in results.items()]
+    embed = discord.Embed(
+        title=f"Model Download — {tag}",
+        description="\n".join(lines),
+        color=discord.Color.green() if fail == 0 else discord.Color.orange(),
+    )
+    embed.set_footer(text=f"{ok} downloaded, {fail} skipped/failed")
+    await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:
