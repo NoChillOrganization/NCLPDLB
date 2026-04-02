@@ -6,9 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
   contents: write
-  pull-requests: write
 
 jobs:
   dependency-submission:
@@ -16,10 +14,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
@@ -41,7 +39,7 @@ jobs:
           echo "Dependency snapshot generated at $(date -u)" >> dependency-reports/snapshot-meta.txt
 
       - name: Upload dependency snapshot artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: dependency-snapshot
           path: dependency-reports/
