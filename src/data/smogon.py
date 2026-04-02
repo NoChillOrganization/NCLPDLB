@@ -6,11 +6,14 @@ Falls back gracefully if network is unavailable.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any
 
 import httpx
+
+log = logging.getLogger(__name__)
 
 SMOGON_BASE = "https://www.smogon.com"
 SMOGON_DEX_API = "https://smogon.com/dex/_rg/pokemon"   # returns embedded JSON

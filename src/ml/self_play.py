@@ -42,7 +42,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
-from dataclasses import dataclass, field
+import time
 from typing import Any
 
 import numpy as np
@@ -67,8 +67,8 @@ except ImportError:  # pragma: no cover
     TORCH_OK = False
     torch = None  # type: ignore
 
-from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9, POKE_ENV_AVAILABLE
-from src.ml.mcts import MCTSConfig, run_mcts, _build_legal_mask
+from src.ml.battle_env import N_ACTIONS_GEN9, POKE_ENV_AVAILABLE  # noqa: E402
+from src.ml.mcts import MCTSConfig, run_mcts, _build_legal_mask  # noqa: E402
 
 
 # ── Shared stats ──────────────────────────────────────────────────────────────
@@ -198,13 +198,10 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             # Determine terminal reward from this player's perspective
             if battle.won:
                 reward = 1.0
-                winner = self._name
             elif battle.lost:
                 reward = -1.0
-                winner = "AccountB" if self._name == "AccountA" else "AccountA"
             else:
                 reward = 0.0
-                winner = "tie"
 
             # Push entire game to replay buffer
             try:
@@ -310,10 +307,11 @@ class SelfPlayLoop:
         )
         player_a = MCTSPlayer(name="AccountA", **common)
         player_b = MCTSPlayer(name="AccountB", **common)
-        import time; time.sleep(2.0)
-314    return player_a, player_b
-315
-316    async def run_game(self) -> dict:
+        time.sleep(2.0)
+        return player_a, player_b
+
+    async def run_game(self) -> dict:
+        player_a, player_b = self._make_players()
 
         wins_before   = player_a.n_won_battles
         losses_before = player_a.n_lost_battles

@@ -40,6 +40,8 @@ import socket
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 log = logging.getLogger(__name__)
 
 # ── Dependency guards ─────────────────────────────────────────────────────────
@@ -223,21 +225,93 @@ class CurriculumCallback(BaseCallback):
         swap_every: int = DEFAULT_SWAP_EVERY,
         win_threshold: float = 0.70,
         min_episodes: int = 500,
+        mean_type_eff_threshold: float = 1.2,
+        min_type_eff_samples: int = 200,
         verbose: int = 0,
     ) -> None:
         super().__init__(verbose=verbose)
-        self.opponent_player = opponent_player
-        self.save_dir        = save_dir
-        self.swap_every      = swap_every
-        self.win_threshold   = win_threshold
-        self.min_episodes    = min_episodes
+        self.opponent_player          = opponent_player
+        self.save_dir                 = save_dir
+        self.swap_every               = swap_every
+        self.win_threshold            = win_threshold
+        self.min_episodes             = min_episodes
+        self.mean_type_eff_threshold  = mean_type_eff_threshold
+        self.min_type_eff_samples     = min_type_eff_samples
 
-        self._phase      = "warmup"
-        self._win_window: deque = deque(maxlen=min_episodes)
-        self._last_swap  = 0
-        self._swap_count = 0
+        self._phase           = "warmup"
+        self._win_window: deque      = deque(maxlen=min_episodes)
+        self._type_eff_window: deque = deque(maxlen=min_type_eff_samples)
+        self._last_swap       = 0
+        self._swap_count      = 0
+        self._action_counts: dict[int, int] = {}
+        self._action_total    = 0
 
     # ── helpers ───────────────────────────────────────────────────
+
+    def _should_graduate(self) -> bool:
+        """Return True when both graduation metrics are satisfied."""
+        if len(self._win_window) < self.min_episodes:
+            return False
+        win_rate = sum(self._win_window) / len(self._win_window)
+        if win_rate < self.win_threshold:
+            return False
+        # Secondary metric only enforced once enough type_eff data is collected.
+        if len(self._type_eff_window) >= self.min_type_eff_samples:
+            mean_eff = sum(self._type_eff_window) / len(self._type_eff_window)
+            if mean_eff < self.mean_type_eff_threshold:
+                return False
+        return True
+
+    def _track_step_type_eff(self) -> None:
+        """Append the raw type-effectiveness multiplier for the chosen move to the rolling window."""
+        from src.ml.battle_env import MOVE_TYPE_EFF_OBS_IDXS
+        obs_tensor = self.locals.get("obs_tensor")
+        actions    = self.locals.get("actions")
+        if obs_tensor is None or actions is None:
+            return
+        try:
+            obs_np = (
+                obs_tensor.detach().cpu().numpy()
+                if hasattr(obs_tensor, "detach")
+                else np.asarray(obs_tensor)
+            )
+            for i, a in enumerate(np.asarray(actions).flatten()):
+                action = int(a)
+                if 6 <= action <= 25:   # move action (not a switch)
+                    move_slot = (action - 6) % 4
+                    eff_obs_val = float(obs_np[i, MOVE_TYPE_EFF_OBS_IDXS[move_slot]])
+                    # Convert log2-normalized value to raw damage multiplier.
+                    # eff_obs ∈ [-1, 1] → mult = 2^(eff_obs × 2)
+                    raw_mult = 2.0 ** (eff_obs_val * 2.0)
+                    self._type_eff_window.append(raw_mult)
+        except Exception:
+            pass
+
+    def _check_policy_collapse(self) -> None:
+        """Warn if a single action dominates > 80 % of steps in the last check window."""
+        actions = self.locals.get("actions")
+        if actions is None:
+            return
+        try:
+            for a in np.asarray(actions).flatten():
+                action = int(a)
+                self._action_counts[action] = self._action_counts.get(action, 0) + 1
+                self._action_total += 1
+        except Exception:
+            return
+
+        if self._action_total >= 1000:
+            max_freq = max(self._action_counts.values()) / self._action_total
+            if max_freq > 0.8:
+                log.warning(
+                    "[PolicyCollapse] Action distribution concentrated: top action = %.1f%% "
+                    "of all steps at timestep %d — possible policy collapse.",
+                    max_freq * 100,
+                    self.num_timesteps,
+                )
+            # Reset counters for the next check window.
+            self._action_counts = {}
+            self._action_total  = 0
 
     def _graduate(self) -> None:
         """Save first checkpoint and promote opponent to self-play mode."""
@@ -251,9 +325,14 @@ class CurriculumCallback(BaseCallback):
         self._last_swap = self.num_timesteps
         if self.verbose:
             win_rate = sum(self._win_window) / len(self._win_window)
+            mean_eff = (
+                sum(self._type_eff_window) / len(self._type_eff_window)
+                if self._type_eff_window else float("nan")
+            )
             log.info(
-                f"[Curriculum] Graduated to self-play at step "
-                f"{self.num_timesteps} (win-rate={win_rate:.1%})"
+                "[Curriculum] Graduated to self-play at step %d "
+                "(win-rate=%.1f%%, mean_type_eff=%.3f)",
+                self.num_timesteps, win_rate * 100, mean_eff,
             )
 
     def _save_and_swap(self) -> None:
@@ -279,9 +358,11 @@ class CurriculumCallback(BaseCallback):
             if ep is not None:
                 self._win_window.append(1 if ep["r"] > 0 else 0)
 
+        self._track_step_type_eff()
+        self._check_policy_collapse()
+
         if self._phase == "warmup":
-            if (len(self._win_window) >= self.min_episodes
-                    and sum(self._win_window) / len(self._win_window) >= self.win_threshold):
+            if self._should_graduate():
                 self._graduate()
         else:  # selfplay
             if self.num_timesteps - self._last_swap >= self.swap_every:

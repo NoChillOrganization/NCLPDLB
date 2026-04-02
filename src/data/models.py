@@ -199,7 +199,9 @@ class Draft(BaseModel):
     current_pick_index: int = 0       # Index in player_order
     picks: list[DraftPick] = []
     bans: list[DraftBan] = []
-    budget: dict[str, int] = {}       # Auction: player_id -> remaining budget
+    budget: dict[str, int] = {}                 # Auction: player_id -> remaining budget
+    current_nomination_id: str = ""             # Auction: Pokémon name currently up for bid
+    nomination_bids: dict[str, dict[str, int]] = {}  # Auction: nomination_id -> {player_id: amount}
     created_at: str = ""
 
     @property

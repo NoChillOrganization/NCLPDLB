@@ -110,6 +110,8 @@ async def test_auction_bid(draft_svc):
         draft = await draft_svc.create_draft("guild7", "p1", DraftFormat.AUCTION)
         await draft_svc.add_player("guild7", "p1")
         draft.budget["p1"] = 1000
+        draft.status = DraftStatus.ACTIVE
+        draft.current_nomination_id = "Garchomp"
 
     result = await draft_svc.place_bid("guild7", "p1", 500)
     assert result.success
@@ -122,6 +124,8 @@ async def test_auction_bid_exceeds_budget(draft_svc):
         draft = await draft_svc.create_draft("guild8", "p1", DraftFormat.AUCTION)
         await draft_svc.add_player("guild8", "p1")
         draft.budget["p1"] = 100
+        draft.status = DraftStatus.ACTIVE
+        draft.current_nomination_id = "Garchomp"
 
     result = await draft_svc.place_bid("guild8", "p1", 500)
     assert not result.success

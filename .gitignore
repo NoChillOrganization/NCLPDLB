@@ -83,3 +83,12 @@ coverage/
 
 # Audit / script output
 scripts/*.json
+
+# Captured output / temp debug files
+bot_output.txt
+main.py.error.txt
+*_output.txt
+cov*.txt
+pytest_out.txt
+test_results.txt
+discord_commands.csv

@@ -52,7 +52,7 @@ except ImportError:  # pragma: no cover
     torch = None   # type: ignore
     nn    = None   # type: ignore
 
-from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9
+from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9  # noqa: E402
 
 
 # ── Replay Buffer ─────────────────────────────────────────────────────────────

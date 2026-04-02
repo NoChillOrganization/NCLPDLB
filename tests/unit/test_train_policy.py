@@ -514,3 +514,170 @@ class TestCurriculumOpponent:
             _ = tp.CurriculumOpponent.choose_move(instance, battle)
 
         mock_policy.predict.assert_called_once()
+
+
+# ── CurriculumCallback — secondary metrics ────────────────────────────────────
+
+class TestCurriculumCallbackTypeEff:
+    """Tests for mean_type_eff graduation metric and policy collapse check."""
+
+    import numpy as _np
+
+    def _make_cb(self, tmp_path, min_episodes=10, win_threshold=0.70,
+                 mean_type_eff_threshold=1.2, min_type_eff_samples=5):
+        opponent = MagicMock()
+        cb = CurriculumCallback(
+            opponent_player=opponent,
+            save_dir=tmp_path,
+            swap_every=10_000,
+            win_threshold=win_threshold,
+            min_episodes=min_episodes,
+            mean_type_eff_threshold=mean_type_eff_threshold,
+            min_type_eff_samples=min_type_eff_samples,
+        )
+        cb.model = MagicMock()
+        cb.num_timesteps = 0
+        return cb, opponent
+
+    def _push_wins(self, cb, wins, total):
+        """Push episode results without obs_tensor (type_eff window stays empty)."""
+        results = [1] * wins + [0] * (total - wins)
+        for r in results:
+            cb.locals = {"infos": [{"episode": {"r": r}}]}
+            cb._on_step()
+
+    def _push_type_eff_obs(self, cb, n, eff_obs_val):
+        """Push N steps with a move action (action=6, move slot 0) and given type_eff obs."""
+        import numpy as np
+        # Build obs with the eff value at MOVE_TYPE_EFF_OBS_IDXS[0] = index 6
+        obs = np.zeros((1, 48), dtype=np.float32)
+        obs[0, 6] = eff_obs_val   # slot 0 type_eff
+        for _ in range(n):
+            cb.locals = {
+                "infos": [],
+                "obs_tensor": obs,
+                "actions": np.array([6]),   # move slot 0, no gimmick
+            }
+            cb._on_step()
+
+    # ── _should_graduate ──────────────────────────────────────────
+
+    def test_should_graduate_win_rate_only_when_eff_window_empty(self, tmp_path):
+        """When type_eff window has fewer than min_type_eff_samples, only win_rate is checked."""
+        cb, _ = self._make_cb(tmp_path, min_episodes=5, min_type_eff_samples=100)
+        with patch("shutil.copy"):
+            self._push_wins(cb, wins=5, total=5)   # 100 % wins, no obs injected
+        assert cb._phase == "selfplay"
+
+    def test_should_not_graduate_when_eff_below_threshold(self, tmp_path):
+        """70 % wins but mean_type_eff below 1.2 → stays in warmup."""
+        import numpy as np
+        cb, _ = self._make_cb(
+            tmp_path, min_episodes=10, win_threshold=0.70,
+            mean_type_eff_threshold=1.2, min_type_eff_samples=5,
+        )
+        # neutral obs_val → raw_mult = 2^(0.0 * 2) = 1.0 < 1.2
+        with patch("shutil.copy"):
+            self._push_type_eff_obs(cb, n=5, eff_obs_val=0.0)
+            self._push_wins(cb, wins=7, total=10)
+        assert cb._phase == "warmup"
+
+    def test_should_graduate_when_both_metrics_met(self, tmp_path):
+        """70 % wins AND mean_type_eff >= 1.2 → graduates."""
+        import numpy as np
+        cb, _ = self._make_cb(
+            tmp_path, min_episodes=10, win_threshold=0.70,
+            mean_type_eff_threshold=1.2, min_type_eff_samples=5,
+        )
+        # obs_val=0.5 → raw_mult = 2^(0.5*2) = 2.0 ≥ 1.2
+        with patch("shutil.copy"):
+            self._push_type_eff_obs(cb, n=5, eff_obs_val=0.5)
+            self._push_wins(cb, wins=7, total=10)
+        assert cb._phase == "selfplay"
+
+    # ── _track_step_type_eff ─────────────────────────────────────
+
+    def test_switch_action_not_tracked(self, tmp_path):
+        """Switch actions (0-5) should not append to type_eff window."""
+        import numpy as np
+        cb, _ = self._make_cb(tmp_path)
+        obs = np.zeros((1, 48), dtype=np.float32)
+        obs[0, 6] = 0.9
+        cb.locals = {"infos": [], "obs_tensor": obs, "actions": np.array([3])}  # switch
+        cb._on_step()
+        assert len(cb._type_eff_window) == 0
+
+    def test_move_action_appends_raw_mult(self, tmp_path):
+        """Move action 6 (slot 0) with eff_obs=0.5 → raw_mult=2.0 appended."""
+        import numpy as np
+        cb, _ = self._make_cb(tmp_path)
+        obs = np.zeros((1, 48), dtype=np.float32)
+        obs[0, 6] = 0.5   # slot 0 type_eff obs value
+        cb.locals = {"infos": [], "obs_tensor": obs, "actions": np.array([6])}
+        cb._on_step()
+        assert len(cb._type_eff_window) == 1
+        assert cb._type_eff_window[0] == pytest.approx(2.0)
+
+    def test_tera_action_uses_correct_slot(self, tmp_path):
+        """Action 22 → tera slot 0 → move_slot = (22-6) % 4 = 0."""
+        import numpy as np
+        cb, _ = self._make_cb(tmp_path)
+        obs = np.zeros((1, 48), dtype=np.float32)
+        obs[0, 6] = 1.0   # slot 0 → 4x effective → raw_mult=4.0
+        cb.locals = {"infos": [], "obs_tensor": obs, "actions": np.array([22])}
+        cb._on_step()
+        assert cb._type_eff_window[0] == pytest.approx(4.0)
+
+    def test_missing_obs_tensor_silently_skipped(self, tmp_path):
+        """No obs_tensor in locals → no crash, no data added."""
+        import numpy as np
+        cb, _ = self._make_cb(tmp_path)
+        cb.locals = {"infos": [], "actions": np.array([6])}
+        cb._on_step()
+        assert len(cb._type_eff_window) == 0
+
+    # ── _check_policy_collapse ────────────────────────────────────
+
+    def test_policy_collapse_warning_when_concentrated(self, tmp_path, caplog):
+        """Warning is emitted when one action exceeds 80 % over 1000 steps."""
+        import numpy as np
+        import logging
+        cb, _ = self._make_cb(tmp_path)
+        obs = np.zeros((1, 48), dtype=np.float32)
+        with caplog.at_level(logging.WARNING, logger="src.ml.train_policy"):
+            for _ in range(1000):
+                cb.locals = {
+                    "infos": [],
+                    "obs_tensor": obs,
+                    "actions": np.array([6]),   # always same action
+                }
+                cb._on_step()
+        assert any("PolicyCollapse" in r.message for r in caplog.records)
+
+    def test_no_collapse_warning_with_diverse_actions(self, tmp_path, caplog):
+        """No warning when actions are spread across multiple indices."""
+        import numpy as np
+        import logging
+        cb, _ = self._make_cb(tmp_path)
+        obs = np.zeros((1, 48), dtype=np.float32)
+        with caplog.at_level(logging.WARNING, logger="src.ml.train_policy"):
+            for i in range(1000):
+                action = i % 26   # uniform distribution across all actions
+                cb.locals = {
+                    "infos": [],
+                    "obs_tensor": obs,
+                    "actions": np.array([action]),
+                }
+                cb._on_step()
+        assert not any("PolicyCollapse" in r.message for r in caplog.records)
+
+    def test_collapse_counters_reset_after_check(self, tmp_path):
+        """Action counts and total reset to 0 after each 1000-step check window."""
+        import numpy as np
+        cb, _ = self._make_cb(tmp_path)
+        obs = np.zeros((1, 48), dtype=np.float32)
+        for _ in range(1000):
+            cb.locals = {"infos": [], "obs_tensor": obs, "actions": np.array([6])}
+            cb._on_step()
+        assert cb._action_total == 0
+        assert cb._action_counts == {}

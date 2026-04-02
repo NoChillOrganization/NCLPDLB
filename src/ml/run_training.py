@@ -46,6 +46,10 @@ import logging
 import sys
 import threading
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.ml.self_play import SelfPlayLoop
 
 log = logging.getLogger(__name__)
 

@@ -17,6 +17,7 @@ import pytest
 from src.ml.battle_env import (
     OBS_DIM,
     OBS_DIM_DOUBLES,
+    MOVE_TYPE_EFF_OBS_IDXS,
     _move_features,
     _pokemon_hp,
     build_observation,
@@ -110,6 +111,60 @@ class TestMoveFeatures:
         feats = _move_features(move)
         # type "fire" → id 2 → 2/20 = 0.1
         assert feats[2] == pytest.approx(0.1)
+
+    def test_type_eff_super_effective(self):
+        """2x effective move → log2(2)/2 = 0.5."""
+        move = MagicMock()
+        move.base_power = 80
+        move.accuracy = 100
+        move.type = MagicMock()
+        move.type.__str__ = lambda s: "fire"
+        move.priority = 0
+        target = MagicMock()
+        target.damage_multiplier = MagicMock(return_value=2.0)
+        feats = _move_features(move, target)
+        assert feats[4] == pytest.approx(0.5)  # log2(2)/2
+
+    def test_type_eff_resist(self):
+        """0.5x resist → log2(0.5)/2 = -0.5."""
+        move = MagicMock()
+        move.base_power = 80
+        move.accuracy = 100
+        move.type = MagicMock()
+        move.type.__str__ = lambda s: "fire"
+        move.priority = 0
+        target = MagicMock()
+        target.damage_multiplier = MagicMock(return_value=0.5)
+        feats = _move_features(move, target)
+        assert feats[4] == pytest.approx(-0.5)  # log2(0.5)/2
+
+    def test_type_eff_immune(self):
+        """Immune (0x) → -1.0."""
+        move = MagicMock()
+        move.base_power = 80
+        move.accuracy = 100
+        move.type = MagicMock()
+        move.type.__str__ = lambda s: "normal"
+        move.priority = 0
+        target = MagicMock()
+        target.damage_multiplier = MagicMock(return_value=0)
+        feats = _move_features(move, target)
+        assert feats[4] == pytest.approx(-1.0)
+
+    def test_type_eff_neutral_no_target(self):
+        """Without a target, type_eff defaults to 0.5 (neutral sentinel)."""
+        move = MagicMock()
+        move.base_power = 80
+        move.accuracy = 100
+        move.type = MagicMock()
+        move.type.__str__ = lambda s: "fire"
+        move.priority = 0
+        feats = _move_features(move, target=None)
+        assert feats[4] == pytest.approx(0.5)
+
+    def test_move_type_eff_obs_idxs_correct(self):
+        """MOVE_TYPE_EFF_OBS_IDXS = [6, 11, 16, 21] — one per move slot."""
+        assert MOVE_TYPE_EFF_OBS_IDXS == [6, 11, 16, 21]
 
 
 # ── _pokemon_hp ───────────────────────────────────────────────────────────────
@@ -212,10 +267,18 @@ class TestBuildObservation:
         assert obs.shape == (OBS_DIM,)
         assert obs.dtype == np.float32
 
-    def test_all_values_in_unit_range(self):
+    def test_obs_shape_is_48(self):
+        """Obs vector for singles battles must be exactly 48 dimensions."""
         battle = _make_mock_battle()
         obs = build_observation(battle)
-        assert np.all(obs >= 0.0)
+        assert obs.shape == (48,)
+        assert OBS_DIM == 48
+
+    def test_all_values_in_expected_range(self):
+        """Most obs values lie in [0, 1]; type_eff slots may be in [-1, 1]."""
+        battle = _make_mock_battle()
+        obs = build_observation(battle)
+        assert np.all(obs >= -1.0)
         assert np.all(obs <= 1.0)
 
     def test_no_active_pokemon_advances_idx(self):

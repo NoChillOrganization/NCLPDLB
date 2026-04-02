@@ -1,6 +1,6 @@
 # Project Index: NCLPDLB (Pokemon Draft League Bot)
 
-Generated: 2026-03-26
+Generated: 2026-04-02
 
 ---
 
@@ -125,6 +125,10 @@ pokemon-draft-bot/
 | `training_players.py` | Baseline opponent players for training |
 | `training_doctor.py` | Training diagnostics |
 | `browser_trainer.py` | Browser-based training helper |
+| `self_play.py` | MCTS Self-Play Loop — AccountA vs AccountB via poke-env; feeds ReplayBuffer |
+| `trainer.py` | ReplayBuffer (thread-safe circular buffer) + PolicyTrainer (BattleTransformer policy+value loss) |
+| `run_training.py` | Local AI training runner — wires SelfPlayLoop + PolicyTrainer + FastAPI server |
+| `api.py` | FastAPI backend: `/stats`, `/start`, `/stop`, `/config` endpoints + dashboard |
 
 ---
 

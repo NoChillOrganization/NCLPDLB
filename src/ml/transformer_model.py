@@ -51,14 +51,13 @@ log = logging.getLogger(__name__)
 try:
     import torch
     import torch.nn as nn
-    import torch.nn.functional as F
     TORCH_OK = True
 except ImportError:  # pragma: no cover
     TORCH_OK = False
     torch = None  # type: ignore
     nn = None     # type: ignore
 
-from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9
+from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9  # noqa: E402
 
 
 # ── Positional encoding ───────────────────────────────────────────────────────

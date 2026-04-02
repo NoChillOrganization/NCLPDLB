@@ -5,12 +5,12 @@ Wraps a Gen 9 Singles battle as a Gymnasium environment so stable-baselines3
 can train a PPO agent via self-play.
 
 Observation space (float32 vector):
-  Active mon:  species_id/vocab, hp_pct, 4×(move_base_power/100, move_accuracy/100,
-               move_type_id/20, priority/5), status_id, 6×boost/4
-  Opponent:    species_id/vocab, hp_pct, status_id
-  Team HP:     6×hp_pct for both sides
-  Field:       weather_id/10, terrain_id/10, trick_room, turn/50
-  Total dims:  OBS_DIM (see below)
+  Active mon:  species_id/10000, hp_pct, 4×(base_power/250, accuracy/100,
+               type_id/20, priority/10, type_eff∈[-1,1]), status_id/6, 6×boost/12
+  Opponent:    species_id/10000, hp_pct, status_id/6
+  Team HP:     6×hp_pct for each side
+  Field:       weather_id/5, terrain_id/4, trick_room (0/1), turn/50
+  Total dims:  OBS_DIM = 48 — see MOVE_TYPE_EFF_OBS_IDXS for type_eff slot indices
 
 Action space (Discrete — gen9 = 26):
   0-5   → switch to team slot 0-5
@@ -65,6 +65,14 @@ FIELD_DIM   = 4
 # Opp team HP:   6
 # Field:         4
 OBS_DIM = 29 + 3 + 6 + 6 + 4   # = 48
+
+# Obs-vector indices for the type-effectiveness feature, one per move slot.
+# Active-mon layout: [species(1), hp(1), slot0…slot3(5 feats each), …]
+# The eff feature is the last (5th) feature of each move slot.
+# Slot 0 → idx 6, slot 1 → idx 11, slot 2 → idx 16, slot 3 → idx 21.
+MOVE_TYPE_EFF_OBS_IDXS: list[int] = [
+    2 + MOVE_FEATS * i + (MOVE_FEATS - 1) for i in range(N_MOVES)
+]
 
 # gen9 action space: 6 switches + 4 moves × (4 gimmicks + 1 none) = 26
 N_ACTIONS_GEN9 = 26

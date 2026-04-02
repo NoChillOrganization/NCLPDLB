@@ -50,9 +50,10 @@ ALL_FORMATS = [
     # Smogon Gen 9 (9 formats)
     "gen9ou", "gen9ubers", "gen9uu", "gen9ru", "gen9nu",
     "gen9pu", "gen9lc", "gen9monotype", "gen9doublesou",
-    # VGC Gen 9 Regulations (8 formats — Reg A through H)
+    # VGC Gen 9 Regulations (10 formats — Reg A through H + 2025)
     "gen9vgc2023regulationa", "gen9vgc2023regulationb",
     "gen9vgc2023regulationc", "gen9vgc2023regulationd",
+    "gen9vgc2024rege", "gen9vgc2024regf",
     "gen9vgc2024regg", "gen9vgc2024regh",
     "gen9vgc2024reggregf", "gen9vgc2025regg",
     # Draft League (1 format — yields 0 replays; private battles not on public ladder)
