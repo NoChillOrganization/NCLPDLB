@@ -179,7 +179,17 @@ class SheetsClient:
 
     def read_all(self, tab_name: str) -> list[dict]:
         """Generic read — returns all records from a tab via gspread get_all_records()."""
-        return self.get_tab(tab_name).get_all_records()
+        ws = self.get_tab(tab_name)
+        vals = ws.get_all_values()
+        if not vals:
+            return []
+        seen: set[str] = set()
+        hdrs: list[str] = []
+        for h in vals[0]:
+            if h and h not in seen:
+                hdrs.append(h)
+                seen.add(h)
+        return ws.get_all_records(expected_headers=hdrs)
 
     def find_row(self, tab_name: str, col: str, value: str) -> dict | None:
         """Return the first row where col == value, or None."""

@@ -310,16 +310,15 @@ class SelfPlayLoop:
         )
         player_a = MCTSPlayer(name="AccountA", **common)
         player_b = MCTSPlayer(name="AccountB", **common)
-        return player_a, player_b
-
-    async def run_game(self) -> dict:
-        """Run a single AccountA vs AccountB game. Returns the stats snapshot."""
-        player_a, player_b = self._make_players()
+        import time; time.sleep(2.0)
+314    return player_a, player_b
+315
+316    async def run_game(self) -> dict:
 
         wins_before   = player_a.n_won_battles
         losses_before = player_a.n_lost_battles
 
-        await player_a.battle_against(player_b, n_battles=1)
+        await asyncio.wait_for(player_a.battle_against(player_b, n_battles=1), timeout=600.0)
 
         # Record outcome once here (not in each player's callback — avoids double-counting)
         if player_a.n_won_battles > wins_before:
