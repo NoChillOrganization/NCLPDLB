@@ -7,7 +7,22 @@ import logging
 from typing import Any
 
 import random
-try:     from poke_env.player import Player     _POKE_ENV_OK = True except ImportError:  # pragma: no cover     _POKE_ENV_OK = False      class Player:  # type: ignore         """Stub so tests can import this module without poke_env installed."""         def __init__(self, *args: object, **kwargs: object) -> None:             pass          def choose_random_move(self, battle: object) -> object:             raise ImportError("poke_env is not installed")          def create_order(self, move: object) -> object:             raise ImportError("poke_env is not installed")
+try:
+    from poke_env.player import Player
+    _POKE_ENV_OK = True
+except ImportError:  # pragma: no cover
+    _POKE_ENV_OK = False
+
+    class Player:  # type: ignore
+        """Stub so tests can import this module without poke_env installed."""
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
+        def choose_random_move(self, battle: object) -> object:
+            raise ImportError("poke_env is not installed")
+
+        def create_order(self, move: object) -> object:
+            raise ImportError("poke_env is not installed")
 
 log = logging.getLogger(__name__)
 
