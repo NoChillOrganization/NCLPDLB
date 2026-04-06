@@ -59,6 +59,7 @@ except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
     Player = object       # type: ignore
     RandomPlayer = object # type: ignore
+    LocalhostServerConfiguration = None  # type: ignore
 
 try:
     import torch

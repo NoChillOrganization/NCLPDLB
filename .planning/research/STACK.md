@@ -95,7 +95,7 @@ To transfer weights into a PPO model:
 bc_policy = bc_trainer.policy
 
 # Load into PPO — copy state dict directly:
-ppo_model = PPO("MlpPolicy", env, ...)
+ppo_model = PPO("MlpPolicy", env)
 ppo_model.policy.load_state_dict(bc_policy.state_dict())
 ```
 

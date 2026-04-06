@@ -74,7 +74,6 @@ data/ml/policy/
 
 # Node / Frontend build
 node_modules/
-dist/
 .vite/
 
 # Coverage reports

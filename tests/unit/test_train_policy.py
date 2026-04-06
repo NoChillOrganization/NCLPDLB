@@ -571,7 +571,6 @@ class TestCurriculumCallbackTypeEff:
 
     def test_should_not_graduate_when_eff_below_threshold(self, tmp_path):
         """70 % wins but mean_type_eff below 1.2 → stays in warmup."""
-        import numpy as np
         cb, _ = self._make_cb(
             tmp_path, min_episodes=10, win_threshold=0.70,
             mean_type_eff_threshold=1.2, min_type_eff_samples=5,
@@ -584,7 +583,6 @@ class TestCurriculumCallbackTypeEff:
 
     def test_should_graduate_when_both_metrics_met(self, tmp_path):
         """70 % wins AND mean_type_eff >= 1.2 → graduates."""
-        import numpy as np
         cb, _ = self._make_cb(
             tmp_path, min_episodes=10, win_threshold=0.70,
             mean_type_eff_threshold=1.2, min_type_eff_samples=5,

@@ -64,6 +64,7 @@ try:
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
     Player = object  # type: ignore
+    AbstractBattle = LocalhostServerConfiguration = ShowdownServerConfiguration = None  # type: ignore
 
 try:
     from src.data.sheets import learning_sheets

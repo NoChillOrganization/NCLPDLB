@@ -87,8 +87,8 @@ policy must agree on obs dimensionality. Do not mix checkpoints across this boun
 `SelfPlayCallback` in `train_policy.py` currently calls something like:
 
 ```python
-opponent = RandomPlayer(battle_format=...)
-env = BattleEnv(opponent=opponent, ...)
+opponent = RandomPlayer(battle_format=battle_format)
+env = BattleEnv(opponent=opponent)
 ```
 
 ### Recommended Change
@@ -105,7 +105,7 @@ def build_opponent(epoch: int, battle_format: str) -> Player:
 
 # Pass to BattleEnv constructor
 opponent = build_opponent(epoch=args.epoch, battle_format=BATTLE_FORMAT)
-env = BattleEnv(opponent=opponent, ...)
+env = BattleEnv(opponent=opponent)
 ```
 
 ### Curriculum Progression (Recommended)

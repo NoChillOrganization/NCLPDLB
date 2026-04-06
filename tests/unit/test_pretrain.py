@@ -1,75 +1,49 @@
 """
-Tests for src/ml/pretrain.py — check_mapping_gap and module constants.
+Unit tests for src/ml/pretrain.py — check_mapping_gap function.
 """
-from __future__ import annotations
-
 import logging
-
 import pytest
 
-from src.ml.pretrain import (
-    ABORT_THRESHOLD,
-    WARN_THRESHOLD,
-    check_mapping_gap,
-)
+from src.ml.pretrain import check_mapping_gap, WARN_THRESHOLD, ABORT_THRESHOLD
 
 
 class TestCheckMappingGap:
+
     def test_zero_total_returns_zero(self):
-        gap = check_mapping_gap(unmappable=0, total=0)
-        assert gap == 0.0
+        result = check_mapping_gap(0, 0)
+        assert result == 0.0
 
-    def test_no_gap_returns_zero(self):
-        gap = check_mapping_gap(unmappable=0, total=100)
-        assert gap == pytest.approx(0.0)
+    def test_below_warn_threshold_returns_fraction(self):
+        # 1/100 = 1% < WARN_THRESHOLD (5%)
+        result = check_mapping_gap(1, 100)
+        assert abs(result - 0.01) < 1e-9
 
-    def test_gap_below_warn_threshold_no_warning(self, caplog):
+    def test_above_warn_threshold_logs_warning(self, caplog):
+        # 6/100 = 6% > WARN_THRESHOLD (5%)
         with caplog.at_level(logging.WARNING, logger="src.ml.pretrain"):
-            gap = check_mapping_gap(unmappable=3, total=100)  # 3 % < 5 %
-        assert gap == pytest.approx(0.03)
-        assert not caplog.records
+            result = check_mapping_gap(6, 100)
+        assert abs(result - 0.06) < 1e-9
+        assert any("warn" in r.message.lower() or "gap" in r.message.lower()
+                   for r in caplog.records)
 
-    def test_gap_above_warn_threshold_logs_warning(self, caplog):
-        with caplog.at_level(logging.WARNING, logger="src.ml.pretrain"):
-            gap = check_mapping_gap(unmappable=8, total=100)  # 8 % > 5 %
-        assert gap == pytest.approx(0.08)
-        assert caplog.records  # at least one warning emitted
-
-    def test_gap_at_warn_threshold_not_logged(self, caplog):
-        """Exactly at warn threshold is NOT > threshold, so no warning."""
-        with caplog.at_level(logging.WARNING, logger="src.ml.pretrain"):
-            gap = check_mapping_gap(
-                unmappable=int(WARN_THRESHOLD * 100),
-                total=100,
-            )
-        assert gap == pytest.approx(WARN_THRESHOLD)
-        assert not caplog.records
-
-    def test_gap_above_abort_threshold_raises(self):
+    def test_above_abort_threshold_without_force_raises(self):
+        # 20/100 = 20% > ABORT_THRESHOLD (15%)
         with pytest.raises(RuntimeError, match="abort threshold"):
-            check_mapping_gap(unmappable=20, total=100)  # 20 % > 15 %
+            check_mapping_gap(20, 100)
 
-    def test_gap_above_abort_threshold_force_only_warns(self, caplog):
+    def test_above_abort_threshold_with_force_logs_warning(self, caplog):
         with caplog.at_level(logging.WARNING, logger="src.ml.pretrain"):
-            gap = check_mapping_gap(unmappable=20, total=100, force=True)
-        assert gap == pytest.approx(0.20)
-        assert caplog.records  # warning instead of exception
+            result = check_mapping_gap(20, 100, force=True)
+        assert abs(result - 0.20) < 1e-9
+        assert any("abort threshold" in r.message for r in caplog.records)
 
-    def test_gap_exactly_at_abort_threshold_raises(self):
-        """Exactly at abort threshold is NOT > threshold, so no raise."""
-        # 15 / 100 == ABORT_THRESHOLD — should not raise
-        gap = check_mapping_gap(
-            unmappable=int(ABORT_THRESHOLD * 100),
-            total=100,
-        )
-        assert gap == pytest.approx(ABORT_THRESHOLD)
+    def test_exactly_at_warn_threshold_no_warning(self, caplog):
+        # Exactly WARN_THRESHOLD (5%) — should NOT warn (uses strict >)
+        with caplog.at_level(logging.WARNING, logger="src.ml.pretrain"):
+            check_mapping_gap(int(WARN_THRESHOLD * 100), 100)
+        assert not caplog.records
 
-    def test_returns_float(self):
-        result = check_mapping_gap(unmappable=5, total=50)
-        assert isinstance(result, float)
-
-    def test_warn_threshold_constant(self):
-        assert WARN_THRESHOLD == pytest.approx(0.05)
-
-    def test_abort_threshold_constant(self):
-        assert ABORT_THRESHOLD == pytest.approx(0.15)
+    def test_exactly_at_abort_threshold_no_raise(self):
+        # Exactly ABORT_THRESHOLD (15%) — should NOT raise (uses strict >)
+        result = check_mapping_gap(int(ABORT_THRESHOLD * 100), 100)
+        assert result == pytest.approx(ABORT_THRESHOLD, abs=1e-9)

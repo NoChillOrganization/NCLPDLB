@@ -691,3 +691,78 @@ class TestReplayStats:
             scraper_mod.REPLAYS_DIR = original
 
         assert result == {"gen9ou": 1}
+
+
+# ── client_pool_for_mode ───────────────────────────────────────────────────────
+
+class TestClientPoolForMode:
+    """client_pool_for_mode() returns a ShowdownClientPool for localhost and showdown modes.
+    ShowdownClientPool is a local import inside the function, so patch at the source module.
+    """
+
+    PATCH_TARGET = "src.ml.showdown_client.ShowdownClientPool"
+
+    def test_localhost_mode_uses_default_accounts(self):
+        from unittest.mock import patch, MagicMock
+        from src.ml.showdown_modes import client_pool_for_mode, ACCOUNT_A, ACCOUNT_B, LOCAL_WS_URL
+
+        mock_pool_cls = MagicMock()
+        with patch(self.PATCH_TARGET, mock_pool_cls):
+            client_pool_for_mode("localhost")
+
+        mock_pool_cls.assert_called_once_with(
+            username_a=ACCOUNT_A,
+            username_b=ACCOUNT_B,
+            url=LOCAL_WS_URL,
+        )
+
+    def test_browser_mode_uses_same_local_config(self):
+        from unittest.mock import patch, MagicMock
+        from src.ml.showdown_modes import client_pool_for_mode, ACCOUNT_A, ACCOUNT_B, LOCAL_WS_URL
+
+        mock_pool_cls = MagicMock()
+        with patch(self.PATCH_TARGET, mock_pool_cls):
+            client_pool_for_mode("browser")
+
+        mock_pool_cls.assert_called_once_with(
+            username_a=ACCOUNT_A,
+            username_b=ACCOUNT_B,
+            url=LOCAL_WS_URL,
+        )
+
+    def test_showdown_mode_uses_env_vars(self):
+        from unittest.mock import patch, MagicMock
+        from src.ml.showdown_modes import client_pool_for_mode
+
+        mock_pool_cls = MagicMock()
+        env = {
+            "SHOWDOWN_TRAIN_USER1": "u1",
+            "SHOWDOWN_TRAIN_PASS1": "p1",
+            "SHOWDOWN_TRAIN_USER2": "u2",
+            "SHOWDOWN_TRAIN_PASS2": "p2",
+        }
+        with patch.dict(os.environ, env):
+            with patch(self.PATCH_TARGET, mock_pool_cls):
+                client_pool_for_mode("showdown")
+
+        mock_pool_cls.assert_called_once_with(
+            username_a="u1", password_a="p1",
+            username_b="u2", password_b="p2",
+            url="wss://sim3.psim.us/showdown/websocket",
+        )
+
+    def test_showdown_mode_falls_back_to_defaults_when_no_env_vars(self):
+        from unittest.mock import patch, MagicMock
+        from src.ml.showdown_modes import client_pool_for_mode, ACCOUNT_A, ACCOUNT_B
+
+        mock_pool_cls = MagicMock()
+        clean_env = {k: v for k, v in os.environ.items()
+                     if k not in ("SHOWDOWN_TRAIN_USER1", "SHOWDOWN_TRAIN_PASS1",
+                                  "SHOWDOWN_TRAIN_USER2", "SHOWDOWN_TRAIN_PASS2")}
+        with patch.dict(os.environ, clean_env, clear=True):
+            with patch(self.PATCH_TARGET, mock_pool_cls):
+                client_pool_for_mode("showdown")
+
+        call_kwargs = mock_pool_cls.call_args.kwargs
+        assert call_kwargs["username_a"] == ACCOUNT_A
+        assert call_kwargs["username_b"] == ACCOUNT_B

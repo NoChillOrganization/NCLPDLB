@@ -611,6 +611,65 @@ async def test_place_bid_no_auction_draft(draft_svc):
     assert "No active auction" in result.error
 
 
+@pytest.mark.asyncio
+async def test_place_bid_draft_not_active(draft_svc):
+    with patch("src.services.draft_service.sheets"):
+        draft = await draft_svc.create_draft("guildBidNA", "p1", DraftFormat.AUCTION)
+        await draft_svc.add_player("guildBidNA", "p1")
+        draft.budget["p1"] = 1000
+        draft.current_nomination_id = "Garchomp"
+        # Leave status as PENDING (not ACTIVE)
+
+    result = await draft_svc.place_bid("guildBidNA", "p1", 100)
+    assert not result.success
+    assert "not currently active" in result.error
+
+
+@pytest.mark.asyncio
+async def test_place_bid_no_nomination(draft_svc):
+    with patch("src.services.draft_service.sheets"):
+        draft = await draft_svc.create_draft("guildBidNN", "p1", DraftFormat.AUCTION)
+        await draft_svc.add_player("guildBidNN", "p1")
+        draft.budget["p1"] = 1000
+        draft.status = DraftStatus.ACTIVE
+        # current_nomination_id is None by default
+
+    result = await draft_svc.place_bid("guildBidNN", "p1", 100)
+    assert not result.success
+    assert "No active nomination" in result.error
+
+
+@pytest.mark.asyncio
+async def test_place_bid_zero_amount(draft_svc):
+    with patch("src.services.draft_service.sheets"):
+        draft = await draft_svc.create_draft("guildBidZ", "p1", DraftFormat.AUCTION)
+        await draft_svc.add_player("guildBidZ", "p1")
+        draft.budget["p1"] = 1000
+        draft.status = DraftStatus.ACTIVE
+        draft.current_nomination_id = "Garchomp"
+
+    result = await draft_svc.place_bid("guildBidZ", "p1", 0)
+    assert not result.success
+    assert "at least 1" in result.error
+
+
+@pytest.mark.asyncio
+async def test_place_bid_not_exceeding_current_high(draft_svc):
+    with patch("src.services.draft_service.sheets"):
+        draft = await draft_svc.create_draft("guildBidHigh", "p1", DraftFormat.AUCTION)
+        await draft_svc.add_player("guildBidHigh", "p1")
+        await draft_svc.add_player("guildBidHigh", "p2")
+        draft.budget["p1"] = 1000
+        draft.budget["p2"] = 1000
+        draft.status = DraftStatus.ACTIVE
+        draft.current_nomination_id = "Garchomp"
+        draft.nomination_bids["Garchomp"] = {"p2": 300}
+
+    result = await draft_svc.place_bid("guildBidHigh", "p1", 300)
+    assert not result.success
+    assert "exceed" in result.error
+
+
 # ── force_skip ────────────────────────────────────────────────
 
 @pytest.mark.asyncio

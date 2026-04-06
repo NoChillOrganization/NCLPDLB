@@ -13,35 +13,37 @@ env:
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 170
+    timeout-minutes: 250
     strategy:
       fail-fast: false
       matrix:
         config:
-          - { format: gen9randombattle,        team_format: "",                  timesteps: 500000, train_timeout: 150 }
-          - { format: gen9ou,                  team_format: gen9ou,              timesteps: 500000, train_timeout: 150 }
-          - { format: gen9doublesou,           team_format: gen9doublesou,       timesteps: 300000, train_timeout: 150 }
-          - { format: gen9nationaldex,         team_format: gen9nationaldex,     timesteps: 500000, train_timeout: 150 }
-          - { format: gen9monotype,            team_format: gen9monotype,        timesteps: 500000, train_timeout: 150 }
-          - { format: gen9anythinggoes,        team_format: gen9anythinggoes,    timesteps: 500000, train_timeout: 150 }
-          - { format: gen9vgc2026regi,         team_format: gen9vgc2026regi,     timesteps: 300000, train_timeout: 150 }
-          - { format: gen9vgc2026regf,         team_format: gen9vgc2026regf,     timesteps: 300000, train_timeout: 150 }
-          - { format: gen9randomdoublesbattle, team_format: "",                  timesteps: 300000, train_timeout: 150 }
-          - { format: gen9ubers,               team_format: gen9ubers,           timesteps: 500000, train_timeout: 150 }
-          - { format: gen9uu,                  team_format: gen9uu,              timesteps: 500000, train_timeout: 150 }
-          - { format: gen9ru,                  team_format: gen9ru,              timesteps: 500000, train_timeout: 150 }
-          - { format: gen9nu,                  team_format: gen9nu,              timesteps: 500000, train_timeout: 150 }
-          - { format: gen9pu,                  team_format: gen9pu,              timesteps: 500000, train_timeout: 150 }
-          - { format: gen9zu,                  team_format: gen9zu,              timesteps: 500000, train_timeout: 150 }
-          - { format: gen9lc,                  team_format: gen9lc,              timesteps: 500000, train_timeout: 150 }
-          - { format: gen9doublesubers,        team_format: gen9doublesubers,    timesteps: 300000, train_timeout: 150 }
-          - { format: gen9doublesuu,           team_format: gen9doublesuu,       timesteps: 300000, train_timeout: 150 }
-          - { format: gen9vgc2026regfbo3,      team_format: gen9vgc2026regfbo3,  timesteps: 300000, train_timeout: 150 }
-          - { format: gen9vgc2026regibo3,      team_format: gen9vgc2026regibo3,  timesteps: 300000, train_timeout: 150 }
+          - { format: gen9randombattle,        team_format: "",                  timesteps: 500000, train_timeout: 160 }
+          - { format: gen9ou,                  team_format: gen9ou,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9doublesou,           team_format: gen9doublesou,       timesteps: 300000, train_timeout: 230 }
+          - { format: gen9nationaldex,         team_format: gen9nationaldex,     timesteps: 500000, train_timeout: 160 }
+          - { format: gen9monotype,            team_format: gen9monotype,        timesteps: 500000, train_timeout: 160 }
+          - { format: gen9anythinggoes,        team_format: gen9anythinggoes,    timesteps: 500000, train_timeout: 160 }
+          - { format: gen9vgc2026regi,         team_format: gen9vgc2026regi,     timesteps: 300000, train_timeout: 230 }
+          - { format: gen9vgc2026regf,         team_format: gen9vgc2026regf,     timesteps: 300000, train_timeout: 230 }
+          - { format: gen9randomdoublesbattle, team_format: "",                  timesteps: 300000, train_timeout: 230 }
+          - { format: gen9ubers,               team_format: gen9ubers,           timesteps: 500000, train_timeout: 160 }
+          - { format: gen9uu,                  team_format: gen9uu,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9ru,                  team_format: gen9ru,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9nu,                  team_format: gen9nu,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9pu,                  team_format: gen9pu,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9zu,                  team_format: gen9zu,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9lc,                  team_format: gen9lc,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9doublesubers,        team_format: gen9doublesubers,    timesteps: 300000, train_timeout: 230 }
+          - { format: gen9doublesuu,           team_format: gen9doublesuu,       timesteps: 300000, train_timeout: 230 }
+          - { format: gen9vgc2026regfbo3,      team_format: gen9vgc2026regfbo3,  timesteps: 300000, train_timeout: 230 }
+          - { format: gen9vgc2026regibo3,      team_format: gen9vgc2026regibo3,  timesteps: 300000, train_timeout: 230 }
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -102,7 +104,6 @@ jobs:
           PYTHONUNBUFFERED: "1"
           TRAIN_FORMAT: ${{ matrix.config.format }}
           TRAIN_TIMESTEPS: ${{ matrix.config.timesteps }}
-          PYTHONPATH: ${{ github.workspace }}
           TRAIN_TEAM_FORMAT: ${{ matrix.config.team_format }}
         run: |
           ARGS="--format $TRAIN_FORMAT --timesteps $TRAIN_TIMESTEPS --save-dir data/ml/policy"

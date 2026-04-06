@@ -22,6 +22,7 @@ try:
     TORCH_OK = True
 except ImportError:
     TORCH_OK = False
+    torch = None  # type: ignore
 
 pytestmark = pytest.mark.skipif(not TORCH_OK, reason="PyTorch not installed")
 

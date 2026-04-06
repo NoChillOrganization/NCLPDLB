@@ -28,7 +28,7 @@ try:
         date_header = resp.headers.get("Date", "")
     if date_header:
         server_dt = email.utils.parsedate_to_datetime(date_header)
-        skew = server_dt.replace(tzinfo=None) - datetime.datetime.utcnow()
+        skew = server_dt.replace(tzinfo=None) - datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         if abs(skew.total_seconds()) > 10:
             import google.auth._helpers as _ga_helpers
             _orig_utcnow = _ga_helpers.utcnow
