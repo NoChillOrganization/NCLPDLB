@@ -54,6 +54,21 @@ try:
     SB3_OK = True
 except ImportError:  # pragma: no cover
     SB3_OK = False
+    PPO = None  # type: ignore
+    CheckpointCallback = None  # type: ignore
+    Monitor = None  # type: ignore
+    DummyVecEnv = None  # type: ignore
+
+    class BaseCallback:  # type: ignore
+        """Stub so class definitions below don't crash when SB3 is absent."""
+        def __init__(self, verbose: int = 0) -> None:
+            self.verbose = verbose
+            self.model: object = None
+            self.num_timesteps: int = 0
+            self.locals: dict = {}
+
+        def _on_step(self) -> bool:
+            return True
 
 try:
     from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
