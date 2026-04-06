@@ -503,10 +503,11 @@ async def _run_training(
                 stderr=asyncio.subprocess.STDOUT,
             )
 
-            last_edit_time = asyncio.get_event_loop().time()
+            last_edit_time = asyncio.get_running_loop().time()
 
             # Stream stdout line-by-line
-            assert proc.stdout is not None
+            if proc.stdout is None:
+                raise RuntimeError("subprocess stdout pipe is None")
             async for raw_line in proc.stdout:
                 line = raw_line.decode(errors="replace").rstrip()
                 collected.append(line)
@@ -516,7 +517,7 @@ async def _run_training(
                     latest_steps = steps
 
                 # Edit progress embed every 60 s (both channel and DM)
-                now = asyncio.get_event_loop().time()
+                now = asyncio.get_running_loop().time()
                 if now - last_edit_time >= 60:
                     prog_embed = _build_progress_embed(fmt, latest_steps, timesteps, attempt)
                     await _try_edit(dm_msg, prog_embed)
@@ -687,16 +688,17 @@ async def _run_training_all(
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
             )
-            last_edit_time = asyncio.get_event_loop().time()
+            last_edit_time = asyncio.get_running_loop().time()
 
-            assert proc.stdout is not None
+            if proc.stdout is None:
+                raise RuntimeError("subprocess stdout pipe is None")
             async for raw_line in proc.stdout:
                 line = raw_line.decode(errors="replace").rstrip()
                 collected.append(line)
                 steps = parse_timestep_progress(line)
                 if steps is not None:
                     latest_steps = steps
-                now = asyncio.get_event_loop().time()
+                now = asyncio.get_running_loop().time()
                 if now - last_edit_time >= 60:
                     await _try_edit(dm_msg, _build_progress_embed(fmt, latest_steps, timesteps, attempt=1))
                     await _try_edit(channel_msg, _build_queue_embed(

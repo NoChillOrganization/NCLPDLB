@@ -143,6 +143,7 @@ class BattleTransformer(nn.Module):
         self.encoder = nn.TransformerEncoder(
             encoder_layer=encoder_layer,
             num_layers=n_layers,
+            enable_nested_tensor=False,  # norm_first=True is incompatible with nested tensors
         )
 
         # Policy head: d_model → n_actions (logits)

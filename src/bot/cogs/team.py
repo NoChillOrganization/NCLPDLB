@@ -254,7 +254,8 @@ class TeamCog(commands.Cog, name="Team"):
             if not line or line.startswith("-") or line.startswith("Ability:") or \
                     line.startswith("EVs:") or line.startswith("IVs:") or \
                     line.endswith("Nature") or line.startswith("Level") or \
-                    line.startswith("Shiny") or line.startswith("Happiness"):
+                    line.startswith("Shiny") or line.startswith("Happiness") or \
+                    line.startswith("Tera Type:"):
                 continue
             # First line of a new Pokemon block — may have "@ Item"
             if re.match(r"^[A-Za-z]", line):

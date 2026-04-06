@@ -494,9 +494,13 @@ async def test_admin_train_valid_format_creates_task():
     cog = AdminCog(bot)
     interaction = make_interaction()
 
+    def _close_task(coro):
+        coro.close()
+        return MagicMock()
+
     with patch("src.bot.cogs.admin._model_exists", return_value=False), \
          patch("src.bot.cogs.admin._run_training", new_callable=AsyncMock), \
-         patch("asyncio.create_task") as mock_task:
+         patch("asyncio.create_task", side_effect=_close_task) as mock_task:
         await cog.admin_train.callback(cog, interaction, format=fmt, timesteps=10_000)
 
     # followup.send called (status embed) and create_task called
@@ -552,9 +556,13 @@ async def test_admin_train_all_defers_and_creates_task():
 
     interaction = make_interaction()
 
+    def _close_task(coro):
+        coro.close()
+        return MagicMock()
+
     with patch("src.bot.cogs.admin._model_exists", return_value=False), \
          patch("src.bot.cogs.admin._run_training_all", new_callable=AsyncMock), \
-         patch("asyncio.create_task") as mock_task:
+         patch("asyncio.create_task", side_effect=_close_task) as mock_task:
         await cog.admin_train_all.callback(
             cog, interaction, timesteps=10_000, skip_existing=False
         )
@@ -574,7 +582,7 @@ async def test_admin_train_all_skips_existing_when_flag_set():
     # All models "exist" so they should all be skipped
     with patch("src.bot.cogs.admin._model_exists", return_value=True), \
          patch("src.bot.cogs.admin._run_training_all", new_callable=AsyncMock), \
-         patch("asyncio.create_task"):
+         patch("asyncio.create_task", side_effect=lambda c: c.close() or MagicMock()):
         await cog.admin_train_all.callback(
             cog, interaction, timesteps=10_000, skip_existing=True
         )
@@ -710,7 +718,7 @@ def _make_proc(returncode=0, lines=()):
     proc.returncode = returncode
     proc.stdout = _AsyncLineIter(lines)
     proc.wait = AsyncMock()
-    proc.communicate = AsyncMock(return_value=(b"output text", None))
+    proc.communicate = MagicMock(return_value=(b"output text", None))
     return proc
 
 
@@ -774,7 +782,6 @@ async def test_admin_update_cog_reload_failure():
     def reload_side_effect(name):
         if name == fail_cog:
             raise Exception("load error")
-        return AsyncMock()()  # resolved coroutine
 
     interaction.client.reload_extension = AsyncMock(side_effect=reload_side_effect)
 

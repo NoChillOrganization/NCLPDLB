@@ -650,3 +650,70 @@ async def test_override_pick_replaces_pokemon(draft_svc):
 async def test_override_pick_no_draft(draft_svc):
     """override_pick with no draft does nothing (no crash)."""
     await draft_svc.override_pick("no_guild", "p1", "Old", "New")  # no exception
+
+
+# ── place_bid — additional edge cases ─────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_place_bid_draft_not_active(draft_svc):
+    """place_bid on a SETUP (not ACTIVE) auction draft returns error."""
+    with patch("src.services.draft_service.sheets"):
+        draft = await draft_svc.create_draft("guildBidSetup", "p1", DraftFormat.AUCTION)
+        await draft_svc.add_player("guildBidSetup", "p1")
+        draft.budget["p1"] = 1000
+        # status stays SETUP (not ACTIVE)
+        draft.current_nomination_id = "Garchomp"
+
+    result = await draft_svc.place_bid("guildBidSetup", "p1", 100)
+    assert not result.success
+    assert "not currently active" in result.error.lower()
+
+
+@pytest.mark.asyncio
+async def test_place_bid_no_current_nomination(draft_svc):
+    """place_bid when no nomination is active returns error."""
+    with patch("src.services.draft_service.sheets"):
+        draft = await draft_svc.create_draft("guildBidNoNom", "p1", DraftFormat.AUCTION)
+        await draft_svc.add_player("guildBidNoNom", "p1")
+        draft.budget["p1"] = 1000
+        draft.status = DraftStatus.ACTIVE
+        # current_nomination_id stays None
+
+    result = await draft_svc.place_bid("guildBidNoNom", "p1", 100)
+    assert not result.success
+    assert "no active nomination" in result.error.lower()
+
+
+@pytest.mark.asyncio
+async def test_place_bid_zero_amount(draft_svc):
+    """place_bid with amount < 1 returns error."""
+    with patch("src.services.draft_service.sheets"):
+        draft = await draft_svc.create_draft("guildBidZero", "p1", DraftFormat.AUCTION)
+        await draft_svc.add_player("guildBidZero", "p1")
+        draft.budget["p1"] = 1000
+        draft.status = DraftStatus.ACTIVE
+        draft.current_nomination_id = "Garchomp"
+
+    result = await draft_svc.place_bid("guildBidZero", "p1", 0)
+    assert not result.success
+    assert "at least 1" in result.error.lower()
+
+
+@pytest.mark.asyncio
+async def test_place_bid_not_exceeding_current_high(draft_svc):
+    """place_bid that does not exceed current high bid returns error."""
+    with patch("src.services.draft_service.sheets"):
+        draft = await draft_svc.create_draft("guildBidLow", "p1", DraftFormat.AUCTION)
+        await draft_svc.add_player("guildBidLow", "p1")
+        await draft_svc.add_player("guildBidLow", "p2")
+        draft.budget["p1"] = 1000
+        draft.budget["p2"] = 1000
+        draft.status = DraftStatus.ACTIVE
+        draft.current_nomination_id = "Garchomp"
+
+    # p2 bids 300 first
+    await draft_svc.place_bid("guildBidLow", "p2", 300)
+    # p1 tries to bid 300 (not strictly higher) → should fail
+    result = await draft_svc.place_bid("guildBidLow", "p1", 300)
+    assert not result.success
+    assert "300" in result.error
