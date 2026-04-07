@@ -657,13 +657,18 @@ def train(  # pragma: no cover
             tb_log_name=f"ppo_{fmt}",
         )
     except KeyboardInterrupt:
-        log.info("Training interrupted by user.")
+        log.info("Training interrupted by user — saving checkpoint.")
+    except Exception as exc:  # noqa: BLE001
+        # Catches SIGTERM (via timeout command sending SIGINT→SystemExit),
+        # poke-env connection errors, and any other unexpected failure.
+        # We still save whatever the model learned so CI artifacts are populated.
+        log.warning(f"Training stopped early ({type(exc).__name__}: {exc}) — saving checkpoint.")
 
-    # ── Save final model to results dir with date-stamped name ─────
+    # ── Save final model ───────────────────────────────────────────
     # CI expects save_dir/fmt/final_model.zip
     final_path = fmt_save_dir / "final_model.zip"
     model.save(str(final_path))
-    log.info(f"\nFinal model saved to {final_path}")
+    log.info(f"Final model saved to {final_path} ({final_path.stat().st_size // 1024} KB)")
 
     return final_path
 

@@ -105,12 +105,39 @@ jobs:
           TRAIN_FORMAT: ${{ matrix.config.format }}
           TRAIN_TIMESTEPS: ${{ matrix.config.timesteps }}
           TRAIN_TEAM_FORMAT: ${{ matrix.config.team_format }}
+          TRAIN_TIMEOUT_MINUTES: ${{ matrix.config.train_timeout }}
         run: |
           ARGS="--format $TRAIN_FORMAT --timesteps $TRAIN_TIMESTEPS --save-dir data/ml/policy"
           if [ -n "$TRAIN_TEAM_FORMAT" ]; then
             ARGS="$ARGS --team-format $TRAIN_TEAM_FORMAT"
           fi
-          python -m src.ml.train_policy $ARGS
+          # Send SIGINT (KeyboardInterrupt in Python) 3 min before the GitHub
+          # step timeout fires SIGKILL. This lets train_policy.py save the model
+          # before the process is force-killed.
+          GRACE_SECS=$(( (TRAIN_TIMEOUT_MINUTES - 3) * 60 ))
+          timeout --signal=INT ${GRACE_SECS}s python -m src.ml.train_policy $ARGS || {
+            EXIT=$?
+            if [ $EXIT -eq 124 ]; then
+              echo "Training timed out after ${GRACE_SECS}s — final_model.zip should have been saved."
+            else
+              echo "Training exited with code $EXIT"
+              exit $EXIT
+            fi
+          }
+
+      - name: Verify model artifact exists
+        shell: bash
+        env:
+          TRAIN_FORMAT: ${{ matrix.config.format }}
+        run: |
+          MODEL_PATH="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
+          if [ -f "$MODEL_PATH" ]; then
+            SIZE=$(stat -c%s "$MODEL_PATH" 2>/dev/null || stat -f%z "$MODEL_PATH")
+            echo "✅ Model saved: $MODEL_PATH (${SIZE} bytes)"
+          else
+            echo "⚠️  final_model.zip not found at $MODEL_PATH — artifact will be empty"
+            ls -la "data/ml/policy/${TRAIN_FORMAT}/" 2>/dev/null || echo "Directory does not exist"
+          fi
 
       - name: Upload model artifact
         uses: actions/upload-artifact@v4
