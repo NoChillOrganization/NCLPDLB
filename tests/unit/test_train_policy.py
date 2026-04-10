@@ -436,7 +436,8 @@ class TestCurriculumOpponent:
         fake_zip = tmp_path / "latest.zip"
         fake_zip.write_bytes(b"fake")
 
-        with patch("src.ml.train_policy.PPO") as mock_ppo_cls:
+        with patch("src.ml.train_policy.PPO") as mock_ppo_cls, \
+             patch("src.ml.train_policy.SB3_OK", True):
             mock_model = MagicMock()
             mock_ppo_cls.load.return_value = mock_model
 
