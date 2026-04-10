@@ -1,7 +1,0 @@
-{
-  "id": "gen9vgc2024regh-test001",
-  "format": "[Gen 9] VGC 2024 Reg H",
-  "formatid": "gen9vgc2024regh",
-  "rating": 1600,
-  "log": "|player|p1|TrainerA|\n|player|p2|TrainerB|\n|gametype|doubles\n|teampreview|4\n|poke|p1|Garchomp, L50, M|\n|poke|p1|Flutter Mane, L50|\n|poke|p1|Incineroar, L50, M|\n|poke|p1|Landorus-Therian, L50, M|\n|poke|p2|Miraidon, L50|\n|poke|p2|Calyrex-Shadow, L50|\n|poke|p2|Rillaboom, L50, M|\n|poke|p2|Urshifu, L50, M|\n|turn|1\n|switch|p1a: Garchomp|Garchomp, L50, M|175/175\n|switch|p1b: Flutter Mane|Flutter Mane, L50|141/141\n|switch|p2a: Miraidon|Miraidon, L50|193/193\n|switch|p2b: Calyrex-Shadow|Calyrex-Shadow, L50|177/177\n|move|p1a: Garchomp|Earthquake|p2a: Miraidon|[spread] p2a,p2b\n|-damage|p2a: Miraidon|0 fnt\n|-damage|p2b: Calyrex-Shadow|0 fnt\n|faint|p2a: Miraidon\n|faint|p2b: Calyrex-Shadow\n|turn|2\n|win|TrainerA\n"
-}
