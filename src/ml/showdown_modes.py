@@ -48,8 +48,8 @@ def account_configs_for_mode(mode: str) -> tuple:
     For showdown: reads SHOWDOWN_TRAIN_USER1/2 + SHOWDOWN_TRAIN_PASS1/2 from env.
     """
     import os
-    from poke_env.ps_client.account_configuration import AccountConfiguration
     if mode == MODE_SHOWDOWN:
+        from poke_env.ps_client.account_configuration import AccountConfiguration
         u1 = os.environ.get("SHOWDOWN_TRAIN_USER1", "")
         p1 = os.environ.get("SHOWDOWN_TRAIN_PASS1", "")
         u2 = os.environ.get("SHOWDOWN_TRAIN_USER2", "")

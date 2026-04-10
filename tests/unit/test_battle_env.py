@@ -327,6 +327,7 @@ class TestBuildObservation:
 
     def test_active_terrain_field_hits_break(self):
         """TERRAIN_IDS loop hits terrain=val; break for a known terrain key."""
+        pytest.importorskip("poke_env")
         from poke_env.battle import Field
         battle = _make_mock_battle()
         battle.fields = {Field.ELECTRIC_TERRAIN: 1}
@@ -429,6 +430,7 @@ class TestBuildDoublesObservation:
 
     def test_doubles_active_terrain_hits_break(self):
         """TERRAIN_IDS loop in doubles hits terrain=val; break."""
+        pytest.importorskip("poke_env")
         from poke_env.battle import Field
         battle = _make_mock_doubles_battle()
         battle.fields = {Field.ELECTRIC_TERRAIN: 1}

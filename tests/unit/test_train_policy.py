@@ -443,8 +443,8 @@ class TestCurriculumOpponent:
             # Build a real-ish object by importing the class then calling load_policy
             # via the method itself on a MagicMock that has the real method bound.
             import src.ml.train_policy as tp
-            if not hasattr(tp, "CurriculumOpponent"):
-                pytest.skip("CurriculumOpponent not accessible (POKE_ENV_OK=False)")
+            if not hasattr(tp.CurriculumOpponent, "load_policy"):
+                pytest.skip("CurriculumOpponent.load_policy not available (POKE_ENV_OK=False)")
 
             # Simulate load_policy by calling it on a fresh mock instance
             instance = MagicMock()
@@ -462,8 +462,8 @@ class TestCurriculumOpponent:
             mock_ppo_cls.load.side_effect = FileNotFoundError("no file")
 
             import src.ml.train_policy as tp
-            if not hasattr(tp, "CurriculumOpponent"):
-                pytest.skip("CurriculumOpponent not accessible (POKE_ENV_OK=False)")
+            if not hasattr(tp.CurriculumOpponent, "load_policy"):
+                pytest.skip("CurriculumOpponent.load_policy not available (POKE_ENV_OK=False)")
 
             instance = MagicMock()
             instance._policy = None
@@ -473,8 +473,8 @@ class TestCurriculumOpponent:
     def test_choose_move_delegates_to_max_base_power_when_no_policy(self):
         """With _policy=None, choose_move should delegate to MaxBasePowerPlayer."""
         import src.ml.train_policy as tp
-        if not hasattr(tp, "CurriculumOpponent"):
-            pytest.skip("CurriculumOpponent not accessible (POKE_ENV_OK=False)")
+        if not hasattr(tp.CurriculumOpponent, "choose_move") or not hasattr(tp, "MaxBasePowerPlayer"):
+            pytest.skip("CurriculumOpponent.choose_move not available (POKE_ENV_OK=False)")
 
         battle = MagicMock()
 
@@ -494,9 +494,10 @@ class TestCurriculumOpponent:
 
     def test_choose_move_uses_ppo_when_policy_loaded(self):
         """With _policy set, choose_move should call policy.predict."""
+        pytest.importorskip("poke_env")
         import src.ml.train_policy as tp
-        if not hasattr(tp, "CurriculumOpponent"):
-            pytest.skip("CurriculumOpponent not accessible (POKE_ENV_OK=False)")
+        if not hasattr(tp.CurriculumOpponent, "choose_move"):
+            pytest.skip("CurriculumOpponent.choose_move not available (POKE_ENV_OK=False)")
 
         import numpy as np
         mock_policy = MagicMock()

@@ -108,6 +108,7 @@ class TestAccountConfigsForMode:
         assert acc2.username == "user2"
 
     def test_showdown_mode_missing_env_vars_raises_value_error(self):
+        pytest.importorskip("poke_env")
         from src.ml.showdown_modes import account_configs_for_mode
 
         # Remove all 4 env vars if present
@@ -119,6 +120,7 @@ class TestAccountConfigsForMode:
                 account_configs_for_mode("showdown")
 
     def test_showdown_mode_partial_env_vars_raises_value_error(self):
+        pytest.importorskip("poke_env")
         from src.ml.showdown_modes import account_configs_for_mode
 
         # Only 2 of the 4 required vars are set
@@ -338,6 +340,7 @@ class TestFetchSearchPage:
 
     def test_returns_list_of_replay_metas_on_success(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
 
@@ -363,6 +366,7 @@ class TestFetchSearchPage:
 
     def test_returns_empty_list_on_non_200_status(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
 
@@ -380,6 +384,7 @@ class TestFetchSearchPage:
 
     def test_returns_empty_list_on_exception(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
 
@@ -397,6 +402,7 @@ class TestFetchSearchPage:
 
     def test_returns_empty_list_when_response_is_not_list(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
 
@@ -415,6 +421,7 @@ class TestFetchSearchPage:
 
     def test_filters_by_min_rating(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
 
@@ -458,6 +465,7 @@ class TestFetchReplay:
 
     def test_returns_false_on_non_200_status(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
 
@@ -478,6 +486,7 @@ class TestFetchReplay:
 
     def test_returns_false_on_exception(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
 
@@ -498,6 +507,7 @@ class TestFetchReplay:
 
     def test_success_writes_json_file_and_returns_true(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
 
@@ -527,6 +537,7 @@ class TestFetchReplay:
 
     def test_success_adds_id_to_seen_set(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
 
@@ -548,6 +559,7 @@ class TestFetchReplay:
     def test_success_sets_default_format_and_rating(self, tmp_path):
         """setdefault calls on data dict are covered — format/rating filled in if absent."""
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
 
@@ -578,6 +590,7 @@ class TestScrape:
 
     def test_scrape_downloads_new_replays_and_returns_count(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, SEARCH_URL, REPLAY_URL
 
@@ -599,6 +612,7 @@ class TestScrape:
 
     def test_scrape_skips_page_of_already_seen_metas(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
 
@@ -618,6 +632,7 @@ class TestScrape:
 
     def test_scrape_stops_early_on_empty_page(self, tmp_path):
         pytest.importorskip("aiohttp")
+        pytest.importorskip("aioresponses")
         from aioresponses import aioresponses
         from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
 
