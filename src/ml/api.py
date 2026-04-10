@@ -41,7 +41,6 @@ try:
 except ImportError:  # pragma: no cover
     FASTAPI_OK = False
     FastAPI = None       # type: ignore
-    HTTPException = CORSMiddleware = FileResponse = JSONResponse = Field = None  # type: ignore
     BaseModel = object   # type: ignore
 
 

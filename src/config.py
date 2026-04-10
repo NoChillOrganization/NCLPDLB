@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     showdown_data_url: str = "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/config/formats.ts"
     showdown_tiers_url: str = "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/formats-data.ts"
 
-    # Showdown bot account (used by /spar for live challenges)
+    # Showdown bot account — used by /spar and ladder training
     showdown_username: str = ""
     showdown_password: str = ""
 

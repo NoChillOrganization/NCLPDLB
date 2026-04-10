@@ -1,0 +1,6 @@
+{
+  "id": "gen9ou-test001",
+  "format": "gen9ou",
+  "rating": 1500,
+  "log": "|player|p1|Ash|\n|player|p2|Gary|\n|poke|p1|Garchomp, M|\n|poke|p1|Corviknight|\n|poke|p2|Miraidon|\n|poke|p2|Flutter Mane|\n|turn|1\n|switch|p1a: Garchomp|Garchomp, M|342/342\n|switch|p2a: Miraidon|Miraidon|397/397\n|move|p1a: Garchomp|Earthquake|p2a: Miraidon\n|-damage|p2a: Miraidon|0 fnt\n|faint|p2a: Miraidon\n|turn|2\n|win|Ash\n"
+}

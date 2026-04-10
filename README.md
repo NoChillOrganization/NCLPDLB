@@ -166,51 +166,99 @@ pyinstaller NCLPDLB.spec
 
 | Command | Description |
 |---------|-------------|
-| `/spar <format> [username]` | Battle the trained PPO agent live on Pokemon Showdown |
+| `/spar <format> [username]` | Battle the trained AI agent live on Pokemon Showdown |
 
 **Supported formats:**
 
 - Gen 9: Random Battle, OU, Doubles OU, National Dex, Monotype, Anything Goes, VGC 2026 Reg I/F
 - Gen 7/6: Random Battle
 
-**Training the agents:**
+**ML Architecture:**
 
-```bash
-# Train all formats sequentially (500k steps each, ~8-12 hours total)
-python -m src.ml.train_all
+The battle AI uses an **AlphaZero-style pipeline** — a custom Transformer-based policy+value network trained via MCTS self-play, not a standard PPO agent.
 
-# Train a specific format
-python -m src.ml.train_policy --format gen9ou --timesteps 500000 --team-format gen9ou
-
-# Doubles formats (VGC, Doubles OU) use BattleDoubleEnv automatically
-python -m src.ml.train_policy --format gen9vgc2026regi --team-format gen9vgc2026regi
+```
+BattleTransformer (policy head + value head)
+        ↑ trains from
+ReplayBuffer  ←  MCTS Ladder Play (bot vs real opponents on play.pokemonshowdown.com)
+                        ↑ guided by
+                   MCTSConfig (simulations, exploration)
 ```
 
-Models are saved to `data/ml/policy/<format>/final_model.zip`. The bot loads these when a user runs `/spar`.
+**Training the agent:**
+
+```bash
+# 1. Set a Showdown account in .env:
+#    SHOWDOWN_USERNAME=YourBotAccount
+#    SHOWDOWN_PASSWORD=...
+
+# 2. Start the training system (ladder training on play.pokemonshowdown.com + trainer + dashboard)
+python -m src.ml.run_training
+
+# 3. Open the training dashboard
+open http://localhost:8080
+# Click "Start" to begin ladder training
+```
+
+The bot queues the ranked ladder on [play.pokemonshowdown.com](https://play.pokemonshowdown.com) — no local server needed. It plays against real human opponents and learns from those games.
+
+**CLI options:**
+
+```bash
+python -m src.ml.run_training \
+  --format gen9randombattle \   # battle format (default: gen9randombattle)
+  --mcts-sims 30 \              # MCTS simulations per move
+  --buffer 50000 \              # replay buffer capacity
+  --lr 3e-4 \                   # transformer learning rate
+  --train-every 5               # train after N games
+```
+
+Models are saved to `src/ml/models/latest.pt`. The bot loads this when a user runs `/spar`.
 
 ---
 
 ## Architecture
 
 ```text
-┌─────────────────────────────────┐
-│       NCLPDLB.exe               │
-│  (standalone — no server needed)│
-│                                 │
-│  Discord Bot (discord.py)       │──► Google Sheets (17 tabs)
-│  SQLite (pokemon_draft.db)      │
-│  poke-env (Showdown client)     │──► play.pokemonshowdown.com
-│  ML models (data/ml/policy/)   │
-└─────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                    NCLPDLB.exe                        │
+│            (standalone — no server needed)            │
+│                                                       │
+│  Discord Bot (discord.py)  ──► Google Sheets (17 tabs)│
+│  SQLite (pokemon_draft.db)                            │
+│  poke-env (Showdown client) ──► play.pokemonshowdown.com
+│  ML model (src/ml/models/latest.pt)                  │
+└──────────────────────────────────────────────────────┘
+
+ML Pipeline (AlphaZero-style):
+
+  LadderLoop (poke-env → play.pokemonshowdown.com)
+      │  game experience
+      ▼
+  ReplayBuffer (thread-safe)
+      │  batches
+      ▼
+  PolicyTrainer ──► BattleTransformer (policy + value heads)
+                          │  model weights
+                          ▼
+                    MCTSPlayer (battle decisions)
+
+Training Dashboard: FastAPI + HTML served at http://localhost:8080
 ```
 
 **Key components:**
 
 - **Discord Bot** — Commands, modals, views, embeds; cogs for draft/team/stats/admin/league
 - **SQLite** — Local state database, no server needed
-- **poke-env** — Python Showdown client for `/spar` battles with trained PPO agents
+- **poke-env** — Python Showdown client for `/spar` battles with trained AI agents
 - **Google Sheets** — Single source of truth for league data (no SQL migrations needed)
-- **ML Pipeline** — PPO (stable-baselines3) + custom Gym env for turn-based Showdown battles
+- **ML Pipeline** — AlphaZero-style: BattleTransformer (policy+value) trained via MCTS self-play
+  - `showdown_client.py` — WebSocket client for Showdown (layer 1)
+  - `transformer_model.py` — Transformer-based policy/value network (layer 2)
+  - `mcts.py` — Monte Carlo Tree Search decision engine (layer 3)
+  - `self_play.py` — AccountA vs AccountB self-play loop
+  - `trainer.py` — ReplayBuffer + PolicyTrainer
+  - `run_training.py` — Wires all layers + FastAPI dashboard
 
 ---
 
@@ -266,6 +314,10 @@ BOT_STATUS=Pokemon Draft League
 
 GOOGLE_SHEETS_CREDENTIALS_FILE=credentials.json
 GOOGLE_SHEETS_SPREADSHEET_ID=your_spreadsheet_id
+
+# Showdown — used for /spar and ladder training
+SHOWDOWN_USERNAME=YourBotAccount
+SHOWDOWN_PASSWORD=...
 ```
 
 ---
@@ -312,10 +364,11 @@ mypy src/
 - **Fix:** Train the model first:
 
   ```bash
-  python -m src.ml.train_policy --format gen9ou --team-format gen9ou --timesteps 500000
+  # Start the local Showdown server, then:
+  python -m src.ml.run_training --format gen9ou
   ```
 
-  Models must exist at `data/ml/policy/<format>/final_model.zip`
+  The model must exist at `src/ml/models/latest.pt`
 
 ### Video uploads fail
 

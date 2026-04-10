@@ -1,20 +1,22 @@
 """
-Local AI Training System — main runner.
+AI Training System — main runner (trains on play.pokemonshowdown.com).
 
 Wires together:
-  • SelfPlayLoop    (self_play.py)   — AccountA vs AccountB via poke-env
+  • SelfPlayLoop    (self_play.py)   — AccountA vs AccountB on the live Showdown server
   • PolicyTrainer   (trainer.py)    — trains BattleTransformer from replay buffer
   • FastAPI server  (api.py)        — exposes /stats, /start, /stop, /config
   • Dashboard       (dashboard.html)— served at GET /
 
 How to run
 ----------
-  1. Start local Pokemon Showdown server:
-       cd pokemon-showdown
-       node pokemon-showdown start --no-security
+  1. Set two Showdown accounts in .env:
+       SHOWDOWN_USERNAME=AccountA
+       SHOWDOWN_PASSWORD=...
+       SHOWDOWN_USERNAME_B=AccountB
+       SHOWDOWN_PASSWORD_B=...
 
-  2. (Optional) Install a pre-trained model:
-       Copy models/latest.pt to the project root, or let it train from scratch.
+  2. (Optional) Pre-load a checkpoint:
+       Set --model path/to/model.pt, or let it train from scratch.
 
   3. Start training system:
        python -m src.ml.run_training
@@ -26,13 +28,13 @@ How to run
 
 CLI options
 -----------
-  --port      HTTP port for API + dashboard  (default: 8080)
-  --format    Showdown battle format         (default: gen9randombattle)
-  --mcts-sims MCTS simulations per move      (default: 30)
-  --buffer    Replay buffer capacity         (default: 50000)
-  --lr        Transformer learning rate      (default: 3e-4)
-  --train-every Train after N games          (default: 5)
-  --model     Path to load a model from      (default: models/latest.pt if exists)
+  --port        HTTP port for API + dashboard  (default: 8080)
+  --format      Showdown battle format         (default: gen9randombattle)
+  --mcts-sims   MCTS simulations per move      (default: 30)
+  --buffer      Replay buffer capacity         (default: 50000)
+  --lr          Transformer learning rate      (default: 3e-4)
+  --train-every Train after N games            (default: 5)
+  --model       Path to load a model from      (default: models/latest.pt if exists)
 
 Requirements
 ------------
@@ -169,6 +171,21 @@ def main(
     except Exception:
         pass
 
+    # ── Load Showdown credentials from config ────────────────────────────
+    try:
+        from src.config import settings
+        username = settings.showdown_username
+        password = settings.showdown_password
+    except Exception as exc:
+        log.warning("Could not load settings: %s — credentials will be empty", exc)
+        username = password = ""
+
+    if not username:
+        log.error(
+            "A Showdown account is required for ladder training.\n"
+            "Set SHOWDOWN_USERNAME and SHOWDOWN_PASSWORD in .env"
+        )
+
     loop_obj = SelfPlayLoop(
         model=model,
         buffer=buffer,
@@ -177,6 +194,8 @@ def main(
         fmt=fmt,
         train_every=train_every,
         trainer=trainer,
+        username=username,
+        password=password,
     )
 
     # ── 5. Wire API config changes → MCTSConfig ──────────────────────────

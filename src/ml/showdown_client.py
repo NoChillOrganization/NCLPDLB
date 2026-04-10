@@ -14,8 +14,8 @@ Composite
 
 Default server
 --------------
-  ws://localhost:8000/showdown/websocket
-  (requires: node pokemon-showdown start --no-security)
+  wss://sim3.psim.us/showdown/websocket  (play.pokemonshowdown.com)
+  Auth: https://play.pokemonshowdown.com/action.php
 
 Windows notes
 -------------

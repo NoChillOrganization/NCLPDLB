@@ -1,93 +1,88 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
+dist/
+build/
+.venv/
+venv/
 *.egg
 
-# Virtual Environment
-venv/
-ENV/
-env/
-.venv
-
-# Credentials & Secrets
-.credentials.json
-credentials.json
+# Environment / secrets
 .env
-*.key
-*.pem
-credentials/
-*.json.secret
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-logs/
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Bot specific
-bot_data/
-cache/
-.discord_sync_hash
+credentials.json
 
 # Database
-*.db
-*.sqlite
-*.sqlite3
+pokemon_draft.db
+*.db-wal
+*.db-shm
 
-# ML Models (large binaries — store in R2/Azure)
-data/ml/policy/
-*.pt
-*.pth
-*.pkl
-*.joblib
+# ML model artifacts and training data
+src/ml/models/*.pt
+data/ml/
+data/replays/
 
-# Node / Frontend build
-node_modules/
-.vite/
+# Logs
+logs/
+*.log
 
-# Coverage reports
-coverage/
-*.xml
+# IDE
+.idea/
+.vscode/
+*.iml
 
-# Audit / script output
-scripts/*.json
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
 
-# Captured output / temp debug files
-bot_output.txt
-main.py.error.txt
-*_output.txt
-cov*.txt
-pytest_out.txt
-test_results.txt
-discord_commands.csv
+# Playwright / browser session files
+.playwright-mcp/
+
+# Claude Code / tooling artifacts
+.claude/settings.local.json
+.remember/
+
+# PyInstaller
+src/bot/dist/
+src/bot/build/
+src/bot/__pycache__/
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local Showdown server (large external dependency — not tracked)
+Pokemon Showdown/
+
+# macOS duplicate files (created by Finder copy)
+*\ 2.py
+*\ 2.ts
+*\ 2.js
+*\ 2.md
+
+# Large generated reports (JetBrains coverage, etc.)
+index.html
+*.html.report
+
+# ML model artifacts (large — use releases or cloud storage)
+src/ml/models/results/
+
+# Misc
+*.bak
+*.tmp
+audit-fixes.patch
+annotations-extracted.json
+github-actions-run.png
+full-page-text.txt
+repo-info.json
+actions-run-snapshot.md
+workflows-dir.txt
+train-models-workflow.txt

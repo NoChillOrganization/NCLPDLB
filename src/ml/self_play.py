@@ -1,30 +1,30 @@
 """
-MCTS Self-Play Loop — AccountA vs AccountB.
+Ladder Training Loop — queues the ladder on play.pokemonshowdown.com.
 
 Architecture
 ------------
-  MCTSPlayer      — poke-env Player that uses BattleTransformer + MCTS to choose moves.
-                    Collects (obs, action, action_probs) for each turn.
-  SelfPlayLoop    — runs AccountA vs AccountB continuously, pushes completed game
-                    experience to a shared ReplayBuffer, updates SharedStats.
+  MCTSPlayer  — poke-env Player that uses BattleTransformer + MCTS to choose moves.
+                Collects (obs, action, action_probs) for each turn.
+  LadderLoop  — queues the configured format's ladder repeatedly, pushes completed
+                game experience to a shared ReplayBuffer, updates SharedStats.
 
 Flow per game
 -------------
-  1. AccountA challenges AccountB in the given format.
-  2. Both players use MCTSPlayer.choose_move() — runs MCTS with the shared model.
+  1. Bot queues the ranked ladder in the configured format on play.pokemonshowdown.com.
+  2. A real opponent is matched. MCTSPlayer.choose_move() runs for every turn.
   3. On battle end, propagate terminal reward (+1 win / -1 loss / 0 tie) to all steps.
   4. Push the game's experience to ReplayBuffer.
   5. Update SharedStats (games / wins / losses / ties).
 
 Requirements
 ------------
-  • Local Pokemon Showdown server running on ws://localhost:8000
-    Start with: node pokemon-showdown start --no-security
+  • One Showdown account (set in .env):
+      SHOWDOWN_USERNAME / SHOWDOWN_PASSWORD
   • pip install poke-env>=0.8.1 torch numpy
 
 Usage
 -----
-  from src.ml.self_play import SelfPlayLoop, SharedStats
+  from src.ml.self_play import LadderLoop, SharedStats
   from src.ml.trainer import ReplayBuffer
   from src.ml.transformer_model import build_default_model
   from src.ml.mcts import MCTSConfig
@@ -34,7 +34,10 @@ Usage
   model  = build_default_model()
   config = MCTSConfig(n_simulations=30)
 
-  loop = SelfPlayLoop(model=model, buffer=buffer, stats=stats, mcts_config=config)
+  loop = LadderLoop(
+      model=model, buffer=buffer, stats=stats, mcts_config=config,
+      username="MyBot", password="...",
+  )
   asyncio.run(loop.run_forever())
 """
 from __future__ import annotations
@@ -53,13 +56,12 @@ log = logging.getLogger(__name__)
 
 try:
     from poke_env.player import Player, RandomPlayer
-    from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
+    from poke_env.ps_client.server_configuration import ShowdownServerConfiguration
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
     Player = object       # type: ignore
     RandomPlayer = object # type: ignore
-    LocalhostServerConfiguration = None  # type: ignore
 
 try:
     import torch
@@ -88,13 +90,13 @@ class SharedStats:
         self.losses  = 0   # AccountB wins
         self.ties    = 0
 
-    def record(self, winner: str) -> None:
-        """Record one game result. winner: 'AccountA' | 'AccountB' | 'tie'."""
+    def record(self, outcome: str) -> None:
+        """Record one game result. outcome: 'win' | 'loss' | 'tie'."""
         with self._lock:
             self.games += 1
-            if winner == "AccountA":
+            if outcome == "win":
                 self.wins   += 1
-            elif winner == "AccountB":
+            elif outcome == "loss":
                 self.losses += 1
             else:
                 self.ties   += 1
@@ -247,28 +249,34 @@ else:  # pragma: no cover
 
 # ── Self-play loop ────────────────────────────────────────────────────────────
 
-class SelfPlayLoop:
+class LadderLoop:
     """
-    Run AccountA vs AccountB games continuously using MCTS decisions.
+    Queue the ranked ladder repeatedly on play.pokemonshowdown.com, collecting
+    experience against real human opponents for training.
 
     Each game:
-      1. AccountA challenges AccountB in the configured format.
-      2. Both players use MCTS to choose moves.
+      1. Bot queues the ladder in the configured format.
+      2. A real opponent is matched. MCTSPlayer uses MCTS for every move decision.
       3. Experience is pushed to the shared replay buffer.
       4. SharedStats are updated.
 
     The loop checks `api.get_state()["status"]` on each iteration so the
     FastAPI /start and /stop endpoints can pause and resume training.
 
+    The player is created once and reused across games — poke-env maintains the
+    WebSocket connection to the live server.
+
     Args:
         model       : shared BattleTransformer (inference only — training happens
-                      in a separate thread via PolicyTrainer)
+                      via PolicyTrainer)
         buffer      : shared ReplayBuffer
         stats       : SharedStats
         mcts_config : MCTS hyperparameters
         fmt         : Showdown format string (default: gen9randombattle)
         train_every : run a PolicyTrainer step after every N games (0 = disabled)
         trainer     : PolicyTrainer instance (required if train_every > 0)
+        username    : Showdown account username (SHOWDOWN_USERNAME in .env)
+        password    : Showdown account password (SHOWDOWN_PASSWORD in .env)
     """
 
     def __init__(
@@ -280,6 +288,8 @@ class SelfPlayLoop:
         fmt: str = "gen9randombattle",
         train_every: int = 5,
         trainer: Any = None,
+        username: str = "",
+        password: str = "",
     ) -> None:
         self.model       = model
         self.buffer      = buffer
@@ -288,53 +298,64 @@ class SelfPlayLoop:
         self.fmt         = fmt
         self.train_every = train_every
         self.trainer     = trainer
+        self.username    = username
+        self.password    = password
+        self._player: Any = None
         self._games_since_train = 0
 
-    def _make_players(self) -> tuple[Any, Any]:
-        """Create fresh MCTSPlayer pair for one session."""
+    def _make_player(self) -> Any:
+        """Create (or return cached) MCTSPlayer connected to play.pokemonshowdown.com."""
         if not POKE_ENV_OK or not POKE_ENV_AVAILABLE:
             raise RuntimeError(
-                "poke-env is required for SelfPlayLoop. "
+                "poke-env is required for LadderLoop. "
                 "Install with: pip install poke-env>=0.8.1"
             )
 
-        common = dict(
-            model=self.model,
-            mcts_config=self.mcts_config,
-            replay_buffer=self.buffer,
-            stats=self.stats,
-            battle_format=self.fmt,
-            server_configuration=LocalhostServerConfiguration,
-        )
-        player_a = MCTSPlayer(name="AccountA", **common)
-        player_b = MCTSPlayer(name="AccountB", **common)
-        time.sleep(2.0)
-        return player_a, player_b
+        if not self.username:
+            raise RuntimeError(
+                "A Showdown account is required for ladder training.\n"
+                "Set SHOWDOWN_USERNAME and SHOWDOWN_PASSWORD in .env"
+            )
+
+        if self._player is None:
+            self._player = MCTSPlayer(
+                model=self.model,
+                mcts_config=self.mcts_config,
+                replay_buffer=self.buffer,
+                stats=self.stats,
+                battle_format=self.fmt,
+                server_configuration=ShowdownServerConfiguration,
+                username=self.username,
+                password=self.password,
+            )
+            time.sleep(2.0)  # allow WebSocket handshake + auth to complete
+
+        return self._player
 
     async def run_game(self) -> dict:
-        player_a, player_b = self._make_players()
+        """Queue one ladder game and return updated stats snapshot."""
+        player = self._make_player()
 
-        wins_before   = player_a.n_won_battles
-        losses_before = player_a.n_lost_battles
+        wins_before   = player.n_won_battles
+        losses_before = player.n_lost_battles
 
-        await asyncio.wait_for(player_a.battle_against(player_b, n_battles=1), timeout=600.0)
+        await asyncio.wait_for(player.ladder(1), timeout=600.0)
 
-        # Record outcome once here (not in each player's callback — avoids double-counting)
-        if player_a.n_won_battles > wins_before:
-            winner = "AccountA"
-        elif player_a.n_lost_battles > losses_before:
-            winner = "AccountB"
+        if player.n_won_battles > wins_before:
+            outcome = "win"
+        elif player.n_lost_battles > losses_before:
+            outcome = "loss"
         else:
-            winner = "tie"
-        self.stats.record(winner)
+            outcome = "tie"
+        self.stats.record(outcome)
 
         return self.stats.snapshot()
 
     async def run_forever(self, max_games: int | None = None) -> None:
         """
-        Run self-play games until stopped.
+        Queue ladder games until stopped.
 
-        Polls api.get_state()["status"] — stops when set to "stopped".
+        Polls api.get_state()["status"] — pauses when set to "stopped".
         Respects max_games if provided (for testing).
         """
         game_count = 0
@@ -344,7 +365,7 @@ class SelfPlayLoop:
             try:
                 from src.ml.api import get_state
                 if get_state()["status"] == "stopped":
-                    log.info("[SelfPlay] Status=stopped — waiting...")
+                    log.info("[Ladder] Status=stopped — waiting...")
                     await asyncio.sleep(2.0)
                     continue
             except Exception:
@@ -356,7 +377,7 @@ class SelfPlayLoop:
                 self._games_since_train += 1
 
                 log.info(
-                    "[SelfPlay] Game %d — W=%d L=%d T=%d winrate=%.1f%%",
+                    "[Ladder] Game %d — W=%d L=%d T=%d winrate=%.1f%%",
                     snapshot["games"],
                     snapshot["wins"],
                     snapshot["losses"],
@@ -404,14 +425,18 @@ class SelfPlayLoop:
                         self.trainer.save()
 
             except asyncio.CancelledError:
-                log.info("[SelfPlay] Cancelled.")
+                log.info("[Ladder] Cancelled.")
                 break
             except Exception as exc:
-                log.error("[SelfPlay] Game error: %s", exc, exc_info=True)
+                log.error("[Ladder] Game error: %s", exc, exc_info=True)
                 await asyncio.sleep(3.0)  # brief pause before retrying
 
             if max_games is not None and game_count >= max_games:
-                log.info("[SelfPlay] Reached max_games=%d — stopping.", max_games)
+                log.info("[Ladder] Reached max_games=%d — stopping.", max_games)
                 break
+
+
+# Alias so existing imports don't break
+SelfPlayLoop = LadderLoop
 
 

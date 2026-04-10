@@ -52,7 +52,6 @@ try:
     SB3_OK = True
 except ImportError:  # pragma: no cover
     SB3_OK = False
-    PPO = BaseCallback = CheckpointCallback = Monitor = DummyVecEnv = None  # type: ignore
 
 try:
     from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
@@ -61,7 +60,6 @@ try:
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
-    SingleAgentWrapper = MaxBasePowerPlayer = RandomPlayer = LocalhostServerConfiguration = None  # type: ignore
 
 from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER  # noqa: E402
 from src.ml.showdown_modes import server_config_for_mode, account_configs_for_mode  # noqa: E402

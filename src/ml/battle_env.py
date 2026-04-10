@@ -46,11 +46,11 @@ except ImportError:  # pragma: no cover
     POKE_ENV_AVAILABLE = False
     SinglesEnv = object  # type: ignore
     DoublesEnv = object  # type: ignore
-    AbstractBattle = Field = Move = Pokemon = Status = Weather = None  # type: ignore
 
 log = logging.getLogger(__name__)
 
 # ── Observation constants ─────────────────────────────────────────────────────
+OBS_DIM = 48
 TEAM_SIZE = 6
 OBS_DIM_DOUBLES = 80
 N_MOVES = 4

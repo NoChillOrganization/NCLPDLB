@@ -54,7 +54,21 @@ try:
     SB3_OK = True
 except ImportError:  # pragma: no cover
     SB3_OK = False
-    PPO = BaseCallback = CheckpointCallback = Monitor = DummyVecEnv = None  # type: ignore
+    PPO = None  # type: ignore
+    CheckpointCallback = None  # type: ignore
+    Monitor = None  # type: ignore
+    DummyVecEnv = None  # type: ignore
+
+    class BaseCallback:  # type: ignore
+        """Stub so class definitions below don't crash when SB3 is absent."""
+        def __init__(self, verbose: int = 0) -> None:
+            self.verbose = verbose
+            self.model: object = None
+            self.num_timesteps: int = 0
+            self.locals: dict = {}
+
+        def _on_step(self) -> bool:
+            return True
 
 try:
     from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
@@ -63,7 +77,6 @@ try:
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
-    SingleAgentWrapper = MaxBasePowerPlayer = RandomPlayer = LocalhostServerConfiguration = None  # type: ignore
 
 from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER  # noqa: E402
 from src.ml.showdown_modes import server_config_for_mode, account_configs_for_mode  # noqa: E402
@@ -657,18 +670,13 @@ def train(  # pragma: no cover
             tb_log_name=f"ppo_{fmt}",
         )
     except KeyboardInterrupt:
-        log.info("Training interrupted by user — saving checkpoint.")
-    except Exception as exc:  # noqa: BLE001
-        # Catches SIGTERM (via timeout command sending SIGINT→SystemExit),
-        # poke-env connection errors, and any other unexpected failure.
-        # We still save whatever the model learned so CI artifacts are populated.
-        log.warning(f"Training stopped early ({type(exc).__name__}: {exc}) — saving checkpoint.")
+        log.info("Training interrupted by user.")
 
-    # ── Save final model ───────────────────────────────────────────
+    # ── Save final model to results dir with date-stamped name ─────
     # CI expects save_dir/fmt/final_model.zip
     final_path = fmt_save_dir / "final_model.zip"
     model.save(str(final_path))
-    log.info(f"Final model saved to {final_path} ({final_path.stat().st_size // 1024} KB)")
+    log.info(f"\nFinal model saved to {final_path}")
 
     return final_path
 
