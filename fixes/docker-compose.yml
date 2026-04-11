@@ -1,51 +1,65 @@
 # Pokemon Draft League Bot — Docker Compose
-# Free tier: bot + api run together on Fly.io or any Docker host
-# Path B: same compose, different env vars for Azure
+#
+# Purpose: run the Discord bot + a local Pokemon Showdown server for ML training.
+# The Showdown server is required by src/ml/battle_env.py (connects to ws://localhost:8000).
+#
+# Usage:
+#   docker compose up               — start bot + showdown
+#   docker compose up showdown      — showdown only (for local ML training without Docker bot)
+#   docker compose --profile train up  — showdown only via profile
+#
+# Prerequisites:
+#   1. Copy .env.example to .env and fill in values.
+#   2. Place credentials.json (Google service account) in the project root.
+#   3. docker compose build bot  (first time only)
 
 services:
+  # ── Pokemon Showdown WebSocket server ────────────────────────────────────────
+  # Used by the RL training pipeline (src/ml/) as the self-play battle backend.
+  # Listens on ws://localhost:8000 (host) / ws://showdown:8000 (inside Docker network).
+  showdown:
+    image: ghcr.io/smogon/pokemon-showdown:latest
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - draft-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ── Discord bot ───────────────────────────────────────────────────────────────
+  # Requires a Dockerfile at the project root with a "bot" build stage.
+  # See: docs/docker-setup.md (or run: python src/bot/main.py locally instead).
   bot:
     build:
       context: .
       target: bot
-    env_file: .env
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      # Override Showdown URL so the bot's /spar command connects to the
+      # container-internal Showdown server rather than localhost.
+      SHOWDOWN_WS_URL: ws://showdown:8000
     volumes:
-      - ./data:/app/data          # Pokemon JSON data
-      - ./logs:/app/logs          # Log files
-      - ./credentials.json:/app/credentials.json:ro  # Google Sheets creds
-    restart: unless-stopped
+      - ./data:/app/data            # Pokemon JSON data + ML model files
+      - ./logs:/app/logs            # Log files
+      - ./credentials.json:/app/credentials.json:ro  # Google Sheets service account
     depends_on:
-      - api
-    networks:
-      - draft-net
-
-  api:
-    build:
-      context: .
-      target: api
-    env_file: .env
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
-      - ./credentials.json:/app/credentials.json:ro
+      showdown:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - draft-net
-
-  # Optional: frontend dev server (remove in production — use Cloudflare Pages)
-  frontend:
-    image: node:20-alpine
-    working_dir: /app
-    volumes:
-      - ./src/web:/app
-    command: sh -c "npm install && npm run dev -- --host"
-    ports:
-      - "5173:5173"
-    networks:
-      - draft-net
-    profiles:
-      - dev  # Only starts with: docker compose --profile dev up
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
 
 networks:
   draft-net:

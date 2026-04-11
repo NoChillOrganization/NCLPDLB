@@ -8,7 +8,7 @@ permissions:
   actions: write
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   train:
@@ -122,6 +122,7 @@ jobs:
     needs: train
     runs-on: ubuntu-latest
     if: always()
+    timeout-minutes: 15
 
     permissions:
       actions: write
@@ -141,6 +142,9 @@ jobs:
           find all-models -name "*.zip" | sort
           COUNT=$(find all-models -name "*.zip" | wc -l)
           echo "Found ${COUNT} model(s)"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::warning::All training jobs produced zero models — check individual job logs for errors."
+          fi
 
       - name: Rename models for release
         shell: bash

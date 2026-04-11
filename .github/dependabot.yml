@@ -4,16 +4,36 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "python"
+    reviewers:
+      - "NoChillModeOnline"
+    assignees:
+      - "NoChillModeOnline"
+    # poke-env and stable-baselines3 are tightly coupled with specific
+    # gym/numpy/torch versions used by the RL training pipeline.
+    # Only allow patch updates automatically; minor/major require manual review.
+    ignore:
+      - dependency-name: "poke-env"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "stable-baselines3"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "gymnasium"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "github-actions"
+    reviewers:
+      - "NoChillModeOnline"
+    assignees:
+      - "NoChillModeOnline"

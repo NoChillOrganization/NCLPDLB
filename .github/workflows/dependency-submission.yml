@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   dependency-submission:
@@ -20,17 +20,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
 
-      - name: Install direct dependencies
+      - name: Install dependencies
         run: |
           pip install --upgrade pip
-          # Install without pulling transitive deps for speed; pip list captures what's here
-          pip install -r requirements.txt --no-deps 2>/dev/null || pip install -r requirements.txt
+          pip install -r requirements.txt
 
       - name: Submit dependency snapshot to GitHub Dependency API
         env:
@@ -72,7 +71,7 @@ jobs:
                   "version": "1.0.0",
                   "url": "https://github.com/NoChillModeOnline/NCLPDLB/.github/workflows/dependency-submission.yml",
               },
-              "scanned": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "scanned": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
               "manifests": {
                   "requirements.txt": {
                       "name": "requirements.txt",
