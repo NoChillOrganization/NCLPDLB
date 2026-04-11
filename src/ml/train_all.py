@@ -104,7 +104,7 @@ TRAINING_MAP: dict[str, tuple[str | None, str | None]] = {
 DEFAULT_TIMESTEPS   = 500_000
 DEFAULT_SWAP_EVERY  = 50_000
 DEFAULT_SAVE_DIR    = "data/ml/policy"
-DEFAULT_RESULTS_DIR = "src/ml/models/results"
+DEFAULT_RESULTS_DIR = "data/ml/results"
 
 
 def _model_done(spar_fmt: str, results_dir: Path) -> bool:

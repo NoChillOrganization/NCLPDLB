@@ -214,7 +214,7 @@ class AdminCog(commands.Cog, name="Admin"):
             )
             return
 
-        results_dir = Path(__file__).parents[3] / "src" / "ml" / "models" / "results"
+        results_dir = Path(__file__).parents[3] / "data" / "ml" / "results"
         if not force and _model_exists(results_dir, format):
             await interaction.followup.send(
                 f"Model for `{format}` already exists. Use `force: True` to retrain.",
@@ -274,7 +274,7 @@ class AdminCog(commands.Cog, name="Admin"):
         await interaction.response.defer(thinking=True)
 
         total = len([f for f, e in TRAINING_MAP.items() if e[0] is not None])
-        results_dir = Path(__file__).parents[3] / "src" / "ml" / "models" / "results"
+        results_dir = Path(__file__).parents[3] / "data" / "ml" / "results"
         already_done = sum(
             1 for fmt in TRAINING_MAP
             if skip_existing and _model_exists(results_dir, fmt)
@@ -620,7 +620,7 @@ async def _run_training_all(
     project_root = Path(__file__).parents[3]
     save_dir = project_root / "data" / "ml" / "policy"
 
-    results_dir = project_root / "src" / "ml" / "models" / "results"
+    results_dir = project_root / "data" / "ml" / "results"
     formats_to_run = [
         fmt for fmt, entry in TRAINING_MAP.items()
         if entry[0] is not None

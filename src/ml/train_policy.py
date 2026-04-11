@@ -119,7 +119,7 @@ DEFAULT_FORMAT      = "gen9randombattle"
 DEFAULT_TIMESTEPS   = 500_000
 DEFAULT_SWAP_EVERY  = 50_000          # steps between opponent model swaps
 DEFAULT_SAVE_DIR    = "data/ml/policy"
-DEFAULT_RESULTS_DIR = "src/ml/models/results"
+DEFAULT_RESULTS_DIR = "data/ml/results"
 
 # Formats that use the doubles environment
 DOUBLES_FORMATS = {
@@ -672,11 +672,19 @@ def train(  # pragma: no cover
     except KeyboardInterrupt:
         log.info("Training interrupted by user.")
 
-    # ── Save final model to results dir with date-stamped name ─────
-    # CI expects save_dir/fmt/final_model.zip
+    # ── Save final model ────────────────────────────────────────────
+    # Primary: save_dir/fmt/final_model.zip (CI + resume checkpoint)
     final_path = fmt_save_dir / "final_model.zip"
     model.save(str(final_path))
     log.info(f"\nFinal model saved to {final_path}")
+
+    # Dated copy in results_dir so _model_done() can detect completion
+    _results_dir = results_dir if results_dir is not None else Path(DEFAULT_RESULTS_DIR)
+    _results_dir.mkdir(parents=True, exist_ok=True)
+    from datetime import date as _date
+    dated_path = _results_dir / f"{fmt}_{_date.today()}.zip"
+    model.save(str(dated_path))
+    log.info(f"Dated model saved to {dated_path}")
 
     return final_path
 
