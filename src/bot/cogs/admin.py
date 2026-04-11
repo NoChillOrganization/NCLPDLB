@@ -875,7 +875,10 @@ async def _pull_models(
     try:
         async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=300) as client:
             # Resolve release
-            if release_tag:
+            # Treat "latest" (typed literally) the same as omitting the tag —
+            # both fall through to find the newest ml-models-r* release.
+            specific_tag = release_tag and release_tag.lower() not in ("latest", "")
+            if specific_tag:
                 resp = await client.get(
                     f"https://api.github.com/repos/{repo}/releases/tags/{release_tag}"
                 )
