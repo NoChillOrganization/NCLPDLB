@@ -163,7 +163,6 @@ jobs:
         with:
           pattern: model-*
           path: all-models
-          merge-multiple: true
 
       - name: List models
         shell: bash
@@ -173,9 +172,13 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-models
-          find all-models -path "*/policy/*/final_model.zip" | while IFS= read -r f; do
-            format=$(basename "$(dirname "$f")")
+          # Each artifact downloads to all-models/model-{format}/final_model.zip
+          # Strip the "model-" prefix to recover the format name.
+          find all-models -name "final_model.zip" | while IFS= read -r f; do
+            artifact_dir=$(basename "$(dirname "$f")")
+            format="${artifact_dir#model-}"
             cp "$f" "release-models/${format}_final_model.zip"
+            echo "  Packaged: ${format}_final_model.zip"
           done
           echo "Release assets:"
           ls release-models/
