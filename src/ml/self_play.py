@@ -108,12 +108,13 @@ class SharedStats:
 
     def snapshot(self) -> dict:
         with self._lock:
+            winrate = self.wins / self.games if self.games else 0.0
             return {
                 "games":   self.games,
                 "wins":    self.wins,
                 "losses":  self.losses,
                 "ties":    self.ties,
-                "winrate": self.winrate,
+                "winrate": winrate,
             }
 
 
