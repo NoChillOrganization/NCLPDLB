@@ -89,3 +89,8 @@ repo-info.json
 actions-run-snapshot.md
 workflows-dir.txt
 train-models-workflow.txt
+
+# Repo archive artifacts
+NCLPDLB-master.zip
+NCLPDLB-master/
+*.zip
