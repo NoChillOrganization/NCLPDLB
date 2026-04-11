@@ -579,12 +579,9 @@ def train(  # pragma: no cover
     # CurriculumOpponent is used ONLY for choose_move() — it is NOT the player
     # that connects to Showdown for battle. The actual Showdown battle is between
     # env.agent1 (acc1) and env.agent2 (acc2) inside PokeEnv.reset().
-    # start_listening=False prevents CurriculumOpponent from opening its own
-    # WebSocket connection, which would conflict with acc2 being used by env.agent2.
     opp_kwargs: dict[str, Any] = dict(
         battle_format=training_fmt,
         server_configuration=srv_cfg,
-        start_listening=False,
         is_doubles=is_doubles,
     )
     if team_builder is not None:
