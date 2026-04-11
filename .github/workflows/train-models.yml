@@ -131,12 +131,16 @@ jobs:
 
       - name: List models
         shell: bash
-        run: find all-models -name "*.zip" | sort
+        run: |
+          mkdir -p all-models
+          find all-models -name "*.zip" | sort
+          COUNT=$(find all-models -name "*.zip" | wc -l)
+          echo "Found ${COUNT} model(s)"
 
       - name: Rename models for release
         shell: bash
         run: |
-          mkdir -p release-models
+          mkdir -p all-models release-models
           # Each artifact downloads to all-models/model-{format}/final_model.zip
           # Strip the "model-" prefix to recover the format name.
           find all-models -name "final_model.zip" | while IFS= read -r f; do
@@ -146,7 +150,7 @@ jobs:
             echo "  Packaged: ${format}_final_model.zip"
           done
           echo "Release assets:"
-          ls release-models/
+          ls release-models/ 2>/dev/null || echo "(none)"
 
       - name: Publish models as GitHub Release
         uses: softprops/action-gh-release@v2

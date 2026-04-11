@@ -1654,6 +1654,24 @@ async def test_is_commissioner_predicate_without_manage_guild_raises():
         pass
 
 
+async def test_is_commissioner_predicate_in_dm_raises():
+    """New DM-guard: predicate raises CheckFailure when used outside a guild."""
+    from src.bot.cogs.admin import is_commissioner
+    from discord import app_commands
+
+    check_decorator = is_commissioner()
+    predicate = check_decorator.__closure__[0].cell_contents
+
+    interaction = make_interaction()
+    interaction.guild = None  # simulate DM context
+
+    try:
+        await predicate(interaction)
+        assert False, "Expected CheckFailure to be raised"
+    except app_commands.CheckFailure:
+        pass
+
+
 # ── _run_training: additional branch coverage ──────────────────────────────────
 
 async def test_run_training_invalid_fmt_sends_dm():

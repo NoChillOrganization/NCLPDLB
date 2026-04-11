@@ -21,6 +21,8 @@ log = logging.getLogger(__name__)
 def is_commissioner():
     """Check decorator: user must be league commissioner or have Manage Guild."""
     async def predicate(interaction: discord.Interaction) -> bool:
+        if not interaction.guild or not hasattr(interaction.user, "guild_permissions"):
+            raise app_commands.CheckFailure("This command can only be used in a server.")
         if interaction.user.guild_permissions.manage_guild:
             return True
         raise app_commands.CheckFailure("You must be a commissioner or have Manage Guild permission.")
