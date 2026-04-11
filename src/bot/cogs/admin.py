@@ -214,7 +214,7 @@ class AdminCog(commands.Cog, name="Admin"):
             )
             return
 
-        results_dir = Path("src/ml/models/results")
+        results_dir = Path(__file__).parents[3] / "src" / "ml" / "models" / "results"
         if not force and _model_exists(results_dir, format):
             await interaction.followup.send(
                 f"Model for `{format}` already exists. Use `force: True` to retrain.",
@@ -263,17 +263,28 @@ class AdminCog(commands.Cog, name="Admin"):
         await interaction.response.defer(thinking=True)
 
         total = len([f for f, e in TRAINING_MAP.items() if e[0] is not None])
-        results_dir = Path("src/ml/models/results")
+        results_dir = Path(__file__).parents[3] / "src" / "ml" / "models" / "results"
         already_done = sum(
             1 for fmt in TRAINING_MAP
             if skip_existing and _model_exists(results_dir, fmt)
         )
         to_train = total - already_done
 
-        status_msg = await interaction.followup.send(
-            embed=_build_queue_embed(to_train, already_done, timesteps),
-            wait=True,
-        )
+        status_msg: discord.Message | None = None
+        try:
+            status_msg = await interaction.followup.send(
+                embed=_build_queue_embed(to_train, already_done, timesteps),
+                wait=True,
+            )
+        except discord.NotFound:
+            log.warning("[admin-train-all] followup.send got 10062 (interaction expired); continuing without channel embed")
+            try:
+                await interaction.user.send(
+                    "⚠️ Couldn't post the train-all status embed in the channel (Discord interaction expired), "
+                    "but training is starting. You'll receive DM updates per format."
+                )
+            except Exception:
+                pass
 
         asyncio.create_task(
             _run_training_all(
