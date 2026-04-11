@@ -813,14 +813,9 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
     )
     ap.add_argument(
         "--server",
-        default=MODE_LOCALHOST,
-        choices=list(VALID_MODES),
-        help=(
-            "Showdown connection mode: "
-            "localhost (local Node.js server, default), "
-            "showdown (public sim3.psim.us — needs 2 accounts), "
-            "browser (Playwright automation — needs 2 accounts)"
-        ),
+        default=MODE_SHOWDOWN,
+        choices=[MODE_SHOWDOWN],
+        help="Showdown connection mode: showdown (wss://sim3.psim.us — requires 2 accounts)",
     )
     return ap.parse_args()
 

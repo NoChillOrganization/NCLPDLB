@@ -196,13 +196,7 @@ class AdminCog(commands.Cog, name="Admin"):
         format="Format to train (e.g. gen9randombattle)",
         timesteps="Training steps — higher = stronger but slower (default: 500000)",
         force="Re-train even if a model already exists",
-        server="Connection mode (default: localhost)",
     )
-    @app_commands.choices(server=[
-        app_commands.Choice(name="localhost (local Node.js server)", value="localhost"),
-        app_commands.Choice(name="showdown (public sim3.psim.us)",   value="showdown"),
-        app_commands.Choice(name="browser (Playwright automation)",   value="browser"),
-    ])
     @is_commissioner()
     async def admin_train(
         self,
@@ -210,7 +204,6 @@ class AdminCog(commands.Cog, name="Admin"):
         format: str,
         timesteps: int = 500_000,
         force: bool = False,
-        server: str = "localhost",
     ) -> None:
         await interaction.response.defer(thinking=True)
 
@@ -235,7 +228,7 @@ class AdminCog(commands.Cog, name="Admin"):
         )
 
         asyncio.create_task(
-            _run_training(interaction, format, timesteps, force, channel_msg=status_msg, server=server)
+            _run_training(interaction, format, timesteps, force, channel_msg=status_msg, server="showdown")
         )
 
     @admin_train.autocomplete("format")
@@ -259,20 +252,13 @@ class AdminCog(commands.Cog, name="Admin"):
     @app_commands.describe(
         timesteps="Training steps per format (default: 500000)",
         skip_existing="Skip formats that already have a final_model.zip (default: True)",
-        server="Connection mode (default: localhost)",
     )
-    @app_commands.choices(server=[
-        app_commands.Choice(name="localhost (local Node.js server)", value="localhost"),
-        app_commands.Choice(name="showdown (public sim3.psim.us)",   value="showdown"),
-        app_commands.Choice(name="browser (Playwright automation)",   value="browser"),
-    ])
     @is_commissioner()
     async def admin_train_all(
         self,
         interaction: discord.Interaction,
         timesteps: int = 500_000,
         skip_existing: bool = True,
-        server: str = "localhost",
     ) -> None:
         await interaction.response.defer(thinking=True)
 
@@ -292,7 +278,7 @@ class AdminCog(commands.Cog, name="Admin"):
         asyncio.create_task(
             _run_training_all(
                 interaction, timesteps, force=not skip_existing,
-                channel_msg=status_msg, server=server,
+                channel_msg=status_msg, server="showdown",
             )
         )
 
