@@ -1896,3 +1896,264 @@ async def test_run_training_all_progress_update_when_time_elapsed():
             interaction, 100_000,
             force=False, channel_msg=channel_msg,
         )
+
+
+# ── admin_pull_models command ─────────────────────────────────────────────────
+
+async def test_admin_pull_models_defers_and_creates_task():
+    """Lines 315-316: command defers interaction and creates background task."""
+    bot = MagicMock()
+    cog = AdminCog(bot)
+    interaction = make_interaction()
+
+    with patch("asyncio.create_task") as mock_create_task:
+        await cog.admin_pull_models.callback(cog, interaction, format=None, release=None)
+
+    interaction.response.defer.assert_awaited_once_with(thinking=True, ephemeral=True)
+    mock_create_task.assert_called_once()
+
+
+async def test_admin_pull_models_format_autocomplete_filters():
+    """Lines 326-327: autocomplete filters TRAINING_MAP by current prefix."""
+    from src.ml.train_all import TRAINING_MAP
+    bot = MagicMock()
+    cog = AdminCog(bot)
+    interaction = make_interaction()
+
+    # Patch TRAINING_MAP to two known entries
+    fake_map = {"gen9ou": ..., "gen9randombattle": ...}
+    with patch("src.bot.cogs.admin.TRAINING_MAP", fake_map):
+        choices = await cog.admin_pull_models_format_autocomplete(
+            interaction, current="gen9o"
+        )
+
+    assert len(choices) == 1
+    assert choices[0].value == "gen9ou"
+
+
+# ── _run_training: proc.stdout=None branch ────────────────────────────────────
+
+async def test_run_training_proc_stdout_none_sends_fail_embed():
+    """Line 510: RuntimeError when proc.stdout is None is caught by outer except."""
+    from src.bot.cogs.admin import _run_training
+
+    interaction = make_interaction()
+    proc = _make_proc(returncode=0)
+    proc.stdout = None   # triggers RuntimeError("subprocess stdout pipe is None")
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training(interaction, "gen9ou", 100_000, force=False)
+
+    # The subprocess exception path ends with a fail DM
+    interaction.user.send.assert_awaited()
+
+
+# ── _run_training: 60s time throttle (asyncio.get_running_loop) ───────────────
+
+async def test_run_training_time_throttle_edits_progress():
+    """Lines 521-525: progress embed is edited when get_running_loop().time() >= 60s."""
+    from src.bot.cogs.admin import _run_training
+
+    interaction = make_interaction()
+    proc = _make_proc(returncode=0, lines=[b"step 1000\n"])
+    channel_msg = MagicMock()
+    channel_msg.edit = AsyncMock()
+
+    mock_loop = MagicMock()
+    # First call → last_edit_time=0, second call → now=61  (triggers throttle)
+    mock_loop.time = MagicMock(side_effect=[0, 61])
+
+    with patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.get_running_loop", return_value=mock_loop), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training(
+            interaction, "gen9ou", 100_000,
+            force=False, channel_msg=channel_msg,
+        )
+
+    channel_msg.edit.assert_awaited()
+
+
+# ── _run_training_all: proc.stdout=None branch ───────────────────────────────
+
+async def test_run_training_all_proc_stdout_none_continues():
+    """Line 694: RuntimeError when proc.stdout is None is caught; training continues."""
+    from src.bot.cogs.admin import _run_training_all
+    from src.ml.train_all import TRAINING_MAP
+
+    interaction = make_interaction()
+    one_fmt = next(iter(TRAINING_MAP))
+    proc = _make_proc(returncode=0)
+    proc.stdout = None   # triggers RuntimeError("subprocess stdout pipe is None")
+
+    def model_exists_fn(results_dir, fmt):
+        return fmt != one_fmt  # only one format needs training
+
+    with patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training_all(interaction, 100_000, force=False)
+
+    # Should complete (exception caught internally) and send summary DM
+    interaction.user.send.assert_awaited()
+
+
+# ── _run_training_all: 60s time throttle (asyncio.get_running_loop) ──────────
+
+async def test_run_training_all_time_throttle_edits_progress():
+    """Lines 702-709: queue embed is edited when get_running_loop().time() >= 60s."""
+    from src.bot.cogs.admin import _run_training_all
+    from src.ml.train_all import TRAINING_MAP
+
+    interaction = make_interaction()
+    one_fmt = next(iter(TRAINING_MAP))
+    proc = _make_proc(returncode=0, lines=[b"step 500\n"])
+    channel_msg = MagicMock()
+    channel_msg.edit = AsyncMock()
+
+    mock_loop = MagicMock()
+    mock_loop.time = MagicMock(side_effect=[0, 61])
+
+    def model_exists_fn(results_dir, fmt):
+        return fmt != one_fmt
+
+    with patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn), \
+         patch("src.ml.training_doctor.preflight_check", return_value=[]), \
+         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None), \
+         patch("asyncio.get_running_loop", return_value=mock_loop), \
+         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc):
+        await _run_training_all(
+            interaction, 100_000,
+            force=False, channel_msg=channel_msg,
+        )
+
+    channel_msg.edit.assert_awaited()
+
+
+# ── _pull_models: GitHub API paths ───────────────────────────────────────────
+
+async def test_pull_models_with_specific_release_downloads_asset():
+    """Lines 878-922: direct release_tag path downloads matching asset."""
+    from src.bot.cogs.admin import _pull_models
+
+    interaction = make_interaction()
+
+    mock_release = {
+        "tag_name": "ml-models-r1",
+        "assets": [
+            {
+                "name": "gen9ou_final_model.zip",
+                "browser_download_url": "https://example.com/gen9ou.zip",
+            }
+        ],
+    }
+    release_resp = MagicMock()
+    release_resp.raise_for_status = MagicMock()
+    release_resp.json.return_value = mock_release
+
+    dl_resp = MagicMock()
+    dl_resp.raise_for_status = MagicMock()
+    dl_resp.content = b"fake model bytes"
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(side_effect=[release_resp, dl_resp])
+
+    mock_ctx = MagicMock()
+    mock_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_ctx.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_ctx), \
+         patch("src.config.settings") as ms, \
+         patch("pathlib.Path.mkdir"), \
+         patch("pathlib.Path.write_bytes"):
+        ms.github_repo = "test/repo"
+        ms.github_token = ""
+        await _pull_models(interaction, fmt="gen9ou", release_tag="ml-models-r1")
+
+    interaction.followup.send.assert_awaited_once()
+
+
+async def test_pull_models_latest_release_no_ml_release_sends_message():
+    """Lines 888-894: when no ml-models-r* release exists, followup message is sent."""
+    from src.bot.cogs.admin import _pull_models
+
+    interaction = make_interaction()
+
+    releases_resp = MagicMock()
+    releases_resp.raise_for_status = MagicMock()
+    releases_resp.json.return_value = [
+        {"tag_name": "v1.0", "id": 1},
+        {"tag_name": "other-release", "id": 2},
+    ]
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=releases_resp)
+
+    mock_ctx = MagicMock()
+    mock_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_ctx.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_ctx), \
+         patch("src.config.settings") as ms:
+        ms.github_repo = "test/repo"
+        ms.github_token = "tok"
+        await _pull_models(interaction, fmt=None, release_tag=None)
+
+    interaction.followup.send.assert_awaited_once()
+    call_kwargs = interaction.followup.send.call_args
+    assert "No" in call_kwargs.args[0]
+
+
+async def test_pull_models_asset_not_in_release_marks_not_found():
+    """Line 910: asset missing from release → result marked 'not in release'."""
+    from src.bot.cogs.admin import _pull_models
+
+    interaction = make_interaction()
+
+    mock_release = {"tag_name": "ml-models-r2", "assets": []}  # no assets
+    release_resp = MagicMock()
+    release_resp.raise_for_status = MagicMock()
+    release_resp.json.return_value = mock_release
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=release_resp)
+
+    mock_ctx = MagicMock()
+    mock_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_ctx.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_ctx), \
+         patch("src.config.settings") as ms:
+        ms.github_repo = "test/repo"
+        ms.github_token = ""
+        await _pull_models(interaction, fmt="gen9ou", release_tag="ml-models-r2")
+
+    interaction.followup.send.assert_awaited_once()
+    embed_arg = interaction.followup.send.call_args.kwargs.get("embed")
+    assert embed_arg is not None
+    assert "not in release" in embed_arg.description
+
+
+async def test_pull_models_github_api_error_sends_error_message():
+    """Lines 924-926: httpx error → followup error message, no embed."""
+    from src.bot.cogs.admin import _pull_models
+
+    interaction = make_interaction()
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(side_effect=Exception("network failure"))
+
+    mock_ctx = MagicMock()
+    mock_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_ctx.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_ctx), \
+         patch("src.config.settings") as ms:
+        ms.github_repo = "test/repo"
+        ms.github_token = ""
+        await _pull_models(interaction, fmt=None, release_tag="ml-models-r1")
+
+    call_args = interaction.followup.send.call_args
+    assert "GitHub API error" in call_args.args[0]
