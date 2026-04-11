@@ -3,7 +3,6 @@
 
 # Discord Bot
 discord.py>=2.3.2
-discord-py-interactions>=5.11.0
 
 # Google Sheets Integration
 gspread>=6.0.0
