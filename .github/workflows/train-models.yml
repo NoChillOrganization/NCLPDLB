@@ -158,13 +158,22 @@ jobs:
           ls release-models/ 2>/dev/null || echo "(none)"
 
       - name: Publish models as GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ml-models-r${{ github.run_number }}
-          name: "ML Models — run #${{ github.run_number }}"
-          body: |
-            Trained models for all formats from workflow run #${{ github.run_number }}.
-            Each zip contains the final PPO policy for one Showdown format.
-            Download individual format models below and place them in `data/ml/policy/<format>/final_model.zip`.
-          files: release-models/*.zip
-          fail_on_unmatched_files: false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="ml-models-r${{ github.run_number }}"
+          NOTES="Trained models for all formats from workflow run #${{ github.run_number }}.
+Each zip contains the final PPO policy for one Showdown format.
+Place downloaded files in \`data/ml/policy/<format>/final_model.zip\`,
+or use the /admin-pull-models Discord command to download automatically."
+          if ls release-models/*.zip 1>/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --repo "${{ github.repository }}" \
+              --title "ML Models — run #${{ github.run_number }}" \
+              --notes "$NOTES" \
+              release-models/*.zip
+            echo "Release created: $TAG"
+          else
+            echo "No model zips found — skipping release creation."
+          fi
