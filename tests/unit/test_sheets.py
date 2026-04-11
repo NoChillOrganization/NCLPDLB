@@ -839,3 +839,27 @@ def test_learning_sheets_save_replay_url_exception_suppressed():
          patch.object(fresh, "_get_replays_sheet", side_effect=Exception("network error")):
         ms.ml_learning_spreadsheet_id = "sheetid"
         fresh.save_replay_url({"format": "gen9ou"})  # exception caught internally
+
+
+# ── read_all ──────────────────────────────────────────────────────────────────
+
+class TestReadAll:
+    """Cover SheetsClient.read_all() — empty-vals early return and header dedup."""
+
+    def test_empty_vals_returns_empty_list(self, patched_get_tab):
+        mock_ws, _ = patched_get_tab
+        mock_ws.get_all_values.return_value = []
+        result = sheets.read_all("SomeTab")
+        assert result == []
+
+    def test_valid_headers_deduped_and_forwarded(self, patched_get_tab):
+        mock_ws, _ = patched_get_tab
+        mock_ws.get_all_values.return_value = [
+            ["Name", "Score", "Name"],   # "Name" appears twice — deduplicated
+            ["Alice", "10", "Alice"],
+        ]
+        mock_ws.get_all_records.return_value = [{"Name": "Alice", "Score": "10"}]
+        result = sheets.read_all("SomeTab")
+        call_kwargs = mock_ws.get_all_records.call_args[1]
+        assert call_kwargs["expected_headers"] == ["Name", "Score"]
+        assert result == [{"Name": "Alice", "Score": "10"}]

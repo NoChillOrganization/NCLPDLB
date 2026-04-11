@@ -231,3 +231,73 @@ class TestBuildLegalMask:
         assert mask is not None
         assert mask.shape == (10,)
         assert mask.dtype == torch.bool
+
+    def test_legal_action_sets_mask_false_and_exception_leaves_mask_true(self):
+        """
+        Covers lines 412-413 (order is not None → mask[act] = False) and
+        lines 414-415 (except Exception: pass — action stays masked True).
+        action 0 returns a valid order → mask[0] = False.
+        action 1 raises → mask[1] stays True.
+        """
+        pytest.importorskip("poke_env")
+        from unittest.mock import patch, MagicMock
+        from poke_env.environment.singles_env import SinglesEnv
+        battle = MagicMock()
+
+        def _side_effect(act, b):
+            if act == 0:
+                return "some_order"   # legal action → mask[0] = False
+            raise Exception("illegal")  # illegal action → mask stays True
+
+        with patch.object(SinglesEnv, "action_to_order", side_effect=_side_effect):
+            mask = _build_legal_mask(battle=battle, n_actions=2)
+
+        assert mask[0].item() is False   # legal action — unmasked
+        assert mask[1].item() is True    # illegal action — stays masked
+
+
+# ── MCTS else-branch (already-visited leaf) ───────────────────────────────────
+
+class TestMCTSElseBranch:
+    """Cover line 172: else: value = leaf.q_value or 0.0"""
+
+    def test_non_leaf_selected_uses_q_value(self):
+        """When _select returns a non-leaf node, else branch evaluates leaf.q_value."""
+        from unittest.mock import patch
+        model = make_mock_model()
+        obs = make_obs()
+        cfg = MCTSConfig(n_simulations=1, dirichlet_eps=0.0)
+        mcts = MCTS(cfg)
+
+        # Build a node that HAS children and is_expanded=True (is_leaf() → False)
+        # is_leaf() = not self.is_expanded or not self.children
+        # → False or False → False when is_expanded=True AND children non-empty
+        non_leaf = MCTSNode()
+        non_leaf.visit_count = 2
+        non_leaf.value_sum = 1.0   # q_value = 0.5
+        non_leaf.prior = 1.0
+        non_leaf.is_expanded = True
+        non_leaf.children[0] = MCTSNode()
+
+        # Patch _select to return this non-leaf as the traversal "leaf"
+        with patch.object(mcts, "_select", return_value=[non_leaf]):
+            mcts.search(obs, model, N_ACTIONS_GEN9)
+
+        # Backprop added q_value (0.5) → visit_count 2→3, value_sum 1.0→1.5
+        assert non_leaf.visit_count == 3
+        assert non_leaf.value_sum == pytest.approx(1.5)
+
+
+# ── _add_dirichlet_noise early return ─────────────────────────────────────────
+
+class TestDirichletNoiseEmptyRoot:
+    """Cover line 290: if not root.children: return"""
+
+    def test_empty_root_returns_without_modifying_anything(self):
+        """_add_dirichlet_noise exits immediately when root has no children."""
+        cfg = MCTSConfig()
+        mcts = MCTS(cfg)
+        root = MCTSNode()
+        # No children — call must return without raising
+        mcts._add_dirichlet_noise(root)
+        assert root.children == {}

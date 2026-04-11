@@ -46,7 +46,7 @@ log = logging.getLogger(__name__)
 
 # ── Dependency guards ─────────────────────────────────────────────────────────
 
-try:
+try:  # pragma: no cover
     from stable_baselines3 import PPO
     SB3_OK = True
 except ImportError:  # pragma: no cover

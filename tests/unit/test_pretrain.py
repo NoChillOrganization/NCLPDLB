@@ -1,10 +1,12 @@
 """
 Tests for src/ml/pretrain.py — check_mapping_gap, build_obs_from_snapshot,
-and ActionResolver.
+ActionResolver, and pretrain().
 """
 from __future__ import annotations
 
 import logging
+import sys
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -215,6 +217,23 @@ class TestBuildObsFromSnapshot:
         assert obs[-2] == pytest.approx(0.0)
         assert obs[-1] == pytest.approx(1 / 50.0)
 
+    def test_event_with_empty_slot_is_skipped(self):
+        """Event with no slot (slot='') triggers the 'if not slot: continue' branch."""
+        events = [BattleEvent(kind="damage", slot="", hp_after=0.5)]
+        snap = _snap(events=events)
+        obs = build_obs_from_snapshot(snap)
+        # hp slot for p1a should remain 1.0 (default) since the event was skipped
+        assert obs[1] == pytest.approx(1.0)
+
+    def test_boost_with_non_numeric_value_is_skipped(self):
+        """Boost event with non-integer value hits 'except ValueError: continue'."""
+        events = [BattleEvent(kind="boost", slot="p1a", detail="atk:not-a-number")]
+        snap = _snap(events=events)
+        obs = build_obs_from_snapshot(snap)
+        # Boost should remain at default (no boost applied)
+        # boosts start at idx 23; atk at idx 23 → default = 6/12 = 0.5
+        assert obs[23] == pytest.approx(6 / 12.0)
+
 
 # ── ActionResolver ────────────────────────────────────────────────────────────
 
@@ -359,3 +378,106 @@ class TestActionResolver:
         resolver.resolve(record2)
         assert resolver.total == 2
         assert resolver.unmappable == 1
+
+
+# ── pretrain() ────────────────────────────────────────────────────────────────
+
+def _make_fake_record() -> BattleRecord:
+    """One-turn replay record with a single move action for p1."""
+    events = [BattleEvent(kind="move", slot="p1a", detail="Earthquake")]
+    snap = TurnSnapshot(turn_number=1, p1_active="Garchomp", p2_active="Pikachu")
+    snap.events = events
+    return BattleRecord(
+        replay_id="fake-001",
+        format="gen9ou",
+        rating=1500,
+        p1_name="Alice",
+        p2_name="Bob",
+        winner="p1",
+        winner_name="Alice",
+        p1_team=["Garchomp"],
+        p2_team=["Pikachu"],
+        turns=[snap],
+        total_turns=1,
+    )
+
+
+def _mock_deps():
+    """
+    Inject fake imitation + stable_baselines3 into sys.modules so pretrain()
+    can be exercised without those packages installed.
+    The mock PPO instance's policy.state_dict() returns a real dict of MagicMocks
+    so the dict-comprehension in pretrain() iterates cleanly.
+    """
+    mock_ppo_instance = MagicMock()
+    mock_ppo_instance.policy.state_dict.return_value = {
+        "actor.weight": MagicMock(),
+        "value_net.weight": MagicMock(),   # filtered out by name prefix
+    }
+    mock_ppo_class = MagicMock(return_value=mock_ppo_instance)
+
+    mock_bc_instance = MagicMock()
+    mock_bc_class = MagicMock(return_value=mock_bc_instance)
+
+    fake_bc_mod = MagicMock()
+    fake_bc_mod.BC = mock_bc_class
+    fake_types_mod = MagicMock()
+    fake_types_mod.Transitions = MagicMock()
+    fake_sb3_mod = MagicMock()
+    fake_sb3_mod.PPO = mock_ppo_class
+
+    return patch.dict(sys.modules, {
+        "imitation": MagicMock(),
+        "imitation.algorithms": MagicMock(),
+        "imitation.algorithms.bc": fake_bc_mod,
+        "imitation.data": MagicMock(),
+        "imitation.data.types": fake_types_mod,
+        "stable_baselines3": fake_sb3_mod,
+    })
+
+
+class TestPretrain:
+    """Tests for the pretrain() entry-point (lines 364-447)."""
+
+    def test_import_error_when_imitation_missing(self, tmp_path):
+        """pretrain() raises ImportError when imitation is not installed."""
+        from src.ml.pretrain import pretrain
+        # imitation not in sys.modules → ImportError re-raised with helpful message
+        with pytest.raises(ImportError, match="imitation"):
+            pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt")
+
+    def test_raises_value_error_when_no_records(self, tmp_path):
+        """pretrain() raises ValueError when replay_dir contains no JSON files."""
+        from src.ml.pretrain import pretrain
+        with _mock_deps(), \
+             patch("src.ml.replay_parser.parse_replay_dir", return_value=[]):
+            with pytest.raises(ValueError, match="No replay"):
+                pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt")
+
+    def test_raises_value_error_when_no_pairs(self, tmp_path):
+        """pretrain() raises ValueError when all turns are unmappable."""
+        from src.ml.pretrain import pretrain
+        empty_snap = TurnSnapshot(turn_number=1)
+        empty_snap.events = []
+        record = BattleRecord(
+            replay_id="x", format="gen9ou", rating=1500,
+            p1_name="A", p2_name="B", winner="p1", winner_name="A",
+            p1_team=["Garchomp"], p2_team=["Pikachu"],
+            turns=[empty_snap], total_turns=1,
+        )
+        with _mock_deps(), \
+             patch("src.ml.replay_parser.parse_replay_dir", return_value=[record]):
+            with pytest.raises(ValueError, match="No mappable"):
+                pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt", force=True)
+
+    def test_happy_path_saves_weights(self, tmp_path):
+        """pretrain() processes pairs, trains BC, and saves actor weights."""
+        from src.ml.pretrain import pretrain
+        record = _make_fake_record()
+        with _mock_deps(), \
+             patch("src.ml.replay_parser.parse_replay_dir", return_value=[record]), \
+             patch("torch.save") as mock_save:
+            pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt", n_epochs=1)
+        mock_save.assert_called_once()
+        saved_path = mock_save.call_args[0][1]
+        assert str(saved_path).endswith("bc.pt")

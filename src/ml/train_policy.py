@@ -46,7 +46,7 @@ log = logging.getLogger(__name__)
 
 # ── Dependency guards ─────────────────────────────────────────────────────────
 
-try:
+try:  # pragma: no cover
     from stable_baselines3 import PPO
     from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
     from stable_baselines3.common.monitor import Monitor

@@ -683,3 +683,21 @@ class TestCurriculumCallbackTypeEff:
             cb._on_step()
         assert cb._action_total == 0
         assert cb._action_counts == {}
+
+    def test_track_step_type_eff_exception_silently_ignored(self, tmp_path):
+        """Exception during obs_tensor processing → except: pass branch (lines 302-303)."""
+        import numpy as np
+        cb, _ = self._make_cb(tmp_path)
+        bad_obs = MagicMock()
+        bad_obs.detach.side_effect = RuntimeError("bad tensor")
+        cb.locals = {"infos": [], "obs_tensor": bad_obs, "actions": np.array([6])}
+        cb._on_step()  # must not raise
+        assert len(cb._type_eff_window) == 0
+
+    def test_check_policy_collapse_exception_silently_returns(self, tmp_path):
+        """Uncoercible actions value → except: return branch (lines 315-316)."""
+        cb, _ = self._make_cb(tmp_path)
+        # A list of non-integer strings: np.asarray(["x"]) succeeds but int("x") raises
+        cb.locals = {"infos": [], "actions": ["not-an-int"]}
+        cb._on_step()  # must not raise
+        assert cb._action_total == 0

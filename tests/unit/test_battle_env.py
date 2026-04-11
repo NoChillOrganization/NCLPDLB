@@ -626,3 +626,78 @@ class TestFallbackStubs:
             "BattleDoubleEnv should NOT define its own teampreview(); "
             "use choose_on_teampreview=False instead"
         )
+
+
+# ── BattleEnv.action_space property/setter + step() guard ────────────────────
+
+@pytest.mark.skipif(not POKE_ENV_AVAILABLE, reason="poke-env not installed")
+class TestBattleEnvActionSpace:
+    """Cover action_space fallback property, setter, and AssertionError guard."""
+
+    def test_fallback_returns_discrete_n_actions_gen9(self):
+        """action_space property returns Discrete(N_ACTIONS_GEN9) when _sb3_action_space absent."""
+        from src.ml.battle_env import N_ACTIONS_GEN9
+        env = BattleEnv.__new__(BattleEnv)
+        space = env.action_space
+        assert space.n == N_ACTIONS_GEN9
+
+    def test_setter_stores_custom_space(self):
+        """action_space setter stores value and getter returns it (line 281 branch)."""
+        from gymnasium.spaces import Discrete
+        env = BattleEnv.__new__(BattleEnv)
+        custom = Discrete(10)
+        env.action_space = custom
+        # Reading the property after setting covers the hasattr=True branch (line 281)
+        assert env.action_space is custom
+
+    def test_step_assertion_error_returns_terminal(self):
+        """step() catches AssertionError from poke-env and returns zero terminal step."""
+        from gymnasium.spaces import Box
+        from poke_env.environment.singles_env import SinglesEnv
+        env = BattleEnv.__new__(BattleEnv)
+        fake_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+        env.observation_spaces = {"p1": fake_space}
+        with patch.object(SinglesEnv, "step", side_effect=AssertionError):
+            obs, rew, done, trunc, info = env.step(0)
+        assert done is True
+        assert trunc is True
+        assert rew == pytest.approx(0.0)
+        assert obs.shape == (OBS_DIM,)
+        assert info == {}
+
+
+# ── BattleDoubleEnv.action_space property/setter + step() guard ───────────────
+
+@pytest.mark.skipif(not POKE_ENV_AVAILABLE, reason="poke-env not installed")
+class TestBattleDoubleEnvActionSpace:
+    """Cover doubles action_space fallback property, setter, and AssertionError guard."""
+
+    def test_fallback_returns_discrete_1(self):
+        """action_space property returns Discrete(1) when _sb3_action_space absent."""
+        env = BattleDoubleEnv.__new__(BattleDoubleEnv)
+        space = env.action_space
+        assert space.n == 1
+
+    def test_setter_stores_custom_space(self):
+        """action_space setter stores value and getter returns it (line 511 branch)."""
+        from gymnasium.spaces import Discrete
+        env = BattleDoubleEnv.__new__(BattleDoubleEnv)
+        custom = Discrete(5)
+        env.action_space = custom
+        # Reading the property after setting covers the hasattr=True branch (line 511)
+        assert env.action_space is custom
+
+    def test_step_assertion_error_returns_terminal(self):
+        """step() catches AssertionError and returns zero terminal step for doubles."""
+        from gymnasium.spaces import Box
+        from poke_env.environment.doubles_env import DoublesEnv
+        env = BattleDoubleEnv.__new__(BattleDoubleEnv)
+        fake_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
+        env.observation_spaces = {"p1": fake_space}
+        with patch.object(DoublesEnv, "step", side_effect=AssertionError):
+            obs, rew, done, trunc, info = env.step(0)
+        assert done is True
+        assert trunc is True
+        assert rew == pytest.approx(0.0)
+        assert obs.shape == (OBS_DIM_DOUBLES,)
+        assert info == {}

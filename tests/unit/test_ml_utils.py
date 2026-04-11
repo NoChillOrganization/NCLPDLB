@@ -137,6 +137,80 @@ class TestAccountConfigsForMode:
                 account_configs_for_mode("showdown")
 
 
+class TestClientPoolForMode:
+    """client_pool_for_mode() constructs ShowdownClientPool with correct args.
+
+    ShowdownClientPool is imported locally inside client_pool_for_mode(), so we
+    patch it at its definition site: src.ml.showdown_client.ShowdownClientPool.
+    """
+
+    _PATCH_TARGET = "src.ml.showdown_client.ShowdownClientPool"
+
+    def test_localhost_mode_uses_local_url(self):
+        from unittest.mock import MagicMock, patch as _patch
+        from src.ml.showdown_modes import LOCAL_WS_URL, ACCOUNT_A, ACCOUNT_B, client_pool_for_mode
+        mock_pool_cls = MagicMock()
+        with _patch(self._PATCH_TARGET, mock_pool_cls):
+            client_pool_for_mode("localhost")
+        mock_pool_cls.assert_called_once_with(
+            username_a=ACCOUNT_A, username_b=ACCOUNT_B, url=LOCAL_WS_URL,
+        )
+
+    def test_browser_mode_uses_local_url(self):
+        from unittest.mock import MagicMock, patch as _patch
+        from src.ml.showdown_modes import LOCAL_WS_URL, ACCOUNT_A, ACCOUNT_B, client_pool_for_mode
+        mock_pool_cls = MagicMock()
+        with _patch(self._PATCH_TARGET, mock_pool_cls):
+            client_pool_for_mode("browser")
+        mock_pool_cls.assert_called_once_with(
+            username_a=ACCOUNT_A, username_b=ACCOUNT_B, url=LOCAL_WS_URL,
+        )
+
+    def test_showdown_mode_uses_public_url_and_env_creds(self):
+        from unittest.mock import MagicMock, patch as _patch
+        from src.ml.showdown_modes import client_pool_for_mode
+        mock_pool_cls = MagicMock()
+        env_vars = {
+            "SHOWDOWN_TRAIN_USER1": "user1",
+            "SHOWDOWN_TRAIN_PASS1": "pass1",
+            "SHOWDOWN_TRAIN_USER2": "user2",
+            "SHOWDOWN_TRAIN_PASS2": "pass2",
+        }
+        with _patch(self._PATCH_TARGET, mock_pool_cls), \
+             patch.dict(os.environ, env_vars):
+            client_pool_for_mode("showdown")
+        call_kwargs = mock_pool_cls.call_args.kwargs
+        assert call_kwargs["username_a"] == "user1"
+        assert call_kwargs["password_a"] == "pass1"
+        assert call_kwargs["username_b"] == "user2"
+        assert call_kwargs["password_b"] == "pass2"
+        assert "sim3.psim.us" in call_kwargs["url"]
+
+    def test_showdown_mode_falls_back_to_defaults_when_env_missing(self):
+        """Without env vars, falls back to ACCOUNT_A/B with empty passwords."""
+        from unittest.mock import MagicMock, patch as _patch
+        from src.ml.showdown_modes import client_pool_for_mode, ACCOUNT_A, ACCOUNT_B
+        mock_pool_cls = MagicMock()
+        clean_env = {k: v for k, v in os.environ.items()
+                     if k not in ("SHOWDOWN_TRAIN_USER1", "SHOWDOWN_TRAIN_PASS1",
+                                  "SHOWDOWN_TRAIN_USER2", "SHOWDOWN_TRAIN_PASS2")}
+        with _patch(self._PATCH_TARGET, mock_pool_cls), \
+             patch.dict(os.environ, clean_env, clear=True):
+            client_pool_for_mode("showdown")
+        call_kwargs = mock_pool_cls.call_args.kwargs
+        assert call_kwargs["username_a"] == ACCOUNT_A
+        assert call_kwargs["username_b"] == ACCOUNT_B
+
+    def test_returns_pool_instance(self):
+        from unittest.mock import MagicMock, patch as _patch
+        from src.ml.showdown_modes import client_pool_for_mode
+        mock_instance = MagicMock()
+        mock_pool_cls = MagicMock(return_value=mock_instance)
+        with _patch(self._PATCH_TARGET, mock_pool_cls):
+            result = client_pool_for_mode("localhost")
+        assert result is mock_instance
+
+
 # ── teambuilder ────────────────────────────────────────────────────────────────
 
 class TestRotatingTeambuilder:
