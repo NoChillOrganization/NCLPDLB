@@ -222,10 +222,21 @@ class AdminCog(commands.Cog, name="Admin"):
             )
             return
 
-        status_msg = await interaction.followup.send(
-            embed=_build_progress_embed(format, 0, timesteps, 1),
-            wait=True,
-        )
+        status_msg: discord.Message | None = None
+        try:
+            status_msg = await interaction.followup.send(
+                embed=_build_progress_embed(format, 0, timesteps, 1),
+                wait=True,
+            )
+        except discord.NotFound:
+            log.warning("[admin-train] followup.send got 10062 (interaction expired); continuing without channel embed")
+            try:
+                await interaction.user.send(
+                    "⚠️ Couldn't post the training status embed (Discord interaction expired), "
+                    "but training is starting. You'll receive a DM when done."
+                )
+            except Exception:
+                pass
 
         asyncio.create_task(
             _run_training(interaction, format, timesteps, force, channel_msg=status_msg, server="showdown")
@@ -342,8 +353,10 @@ class AdminCog(commands.Cog, name="Admin"):
         host, port = "127.0.0.1", 8000
         reachable = False
         try:
-            with socket.create_connection((host, port), timeout=3):
-                reachable = True
+            await asyncio.get_running_loop().run_in_executor(
+                None, lambda: socket.create_connection((host, port), 3)
+            )
+            reachable = True
         except OSError:
             pass
 

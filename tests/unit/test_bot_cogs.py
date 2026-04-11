@@ -591,6 +591,60 @@ async def test_admin_train_all_skips_existing_when_flag_set():
     interaction.followup.send.assert_awaited_once()
 
 
+async def test_admin_train_all_followup_not_found_sends_dm_warning():
+    """discord.NotFound on followup.send → DM warning sent, task still created."""
+    bot = MagicMock()
+    cog = AdminCog(bot)
+
+    interaction = make_interaction()
+    interaction.followup.send = AsyncMock(
+        side_effect=discord.NotFound(MagicMock(status=404), "Unknown interaction")
+    )
+
+    def _close_task(coro):
+        coro.close()
+        return MagicMock()
+
+    with patch("src.bot.cogs.admin._model_exists", return_value=False), \
+         patch("src.bot.cogs.admin._run_training_all", new_callable=AsyncMock), \
+         patch("asyncio.create_task", side_effect=_close_task) as mock_task:
+        await cog.admin_train_all.callback(
+            cog, interaction, timesteps=10_000, skip_existing=False
+        )
+
+    # DM warning sent, task still spawned
+    interaction.user.send.assert_awaited()
+    dm_text = interaction.user.send.call_args[0][0]
+    assert "training is starting" in dm_text.lower() or "interaction expired" in dm_text.lower()
+    mock_task.assert_called_once()
+
+
+async def test_admin_train_followup_not_found_sends_dm_warning():
+    """discord.NotFound on admin_train followup.send → DM warning, task created."""
+    from src.ml.train_all import TRAINING_MAP
+    fmt = next(iter(TRAINING_MAP))
+
+    bot = MagicMock()
+    cog = AdminCog(bot)
+
+    interaction = make_interaction()
+    interaction.followup.send = AsyncMock(
+        side_effect=discord.NotFound(MagicMock(status=404), "Unknown interaction")
+    )
+
+    def _close_task(coro):
+        coro.close()
+        return MagicMock()
+
+    with patch("src.bot.cogs.admin._model_exists", return_value=False), \
+         patch("src.bot.cogs.admin._run_training", new_callable=AsyncMock), \
+         patch("asyncio.create_task", side_effect=_close_task) as mock_task:
+        await cog.admin_train.callback(cog, interaction, format=fmt, timesteps=10_000)
+
+    interaction.user.send.assert_awaited()
+    mock_task.assert_called_once()
+
+
 # ── admin_showdown_check ──────────────────────────────────────────────────────
 
 async def test_admin_showdown_check_server_reachable():
@@ -1035,6 +1089,85 @@ async def test_run_training_all_failure_applies_fix():
         await _run_training_all(interaction, 100_000, force=False)
 
     mock_fix.assert_called()
+
+
+# ── _pull_models ──────────────────────────────────────────────────────────────
+
+async def test_pull_models_latest_release_fetched_by_id():
+    """When no specific tag, the first ml-models-r* release is fetched by its numeric ID (line 895)."""
+    from src.bot.cogs.admin import _pull_models
+    from src.config import settings
+
+    interaction = make_interaction()
+
+    list_resp = MagicMock()
+    list_resp.raise_for_status = MagicMock()
+    list_resp.json = MagicMock(return_value=[
+        {"tag_name": "ml-models-r1", "id": 999},
+    ])
+
+    release_detail_resp = MagicMock()
+    release_detail_resp.raise_for_status = MagicMock()
+    release_detail_resp.json = MagicMock(return_value={
+        "tag_name": "ml-models-r1",
+        "assets": [],
+    })
+
+    mock_client = AsyncMock()
+    # First call → list releases; second call → fetch by id (line 895)
+    mock_client.get = AsyncMock(side_effect=[list_resp, release_detail_resp])
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_client), \
+         patch.object(settings, "github_repo", "owner/repo", create=True), \
+         patch.object(settings, "github_token", None, create=True), \
+         patch("pathlib.Path.mkdir"):
+        await _pull_models(interaction, fmt=None, release_tag=None)
+
+    # Two GET calls: list releases + fetch by id
+    assert mock_client.get.await_count == 2
+    second_url = mock_client.get.call_args_list[1][0][0]
+    assert "999" in second_url
+
+
+async def test_pull_models_download_exception_recorded():
+    """Individual asset download failure is recorded as ❌ in results (lines 921-922)."""
+    from src.bot.cogs.admin import _pull_models
+    from src.config import settings
+
+    interaction = make_interaction()
+    fmt = "gen9randombattle"
+
+    list_resp = MagicMock()
+    list_resp.raise_for_status = MagicMock()
+    list_resp.json = MagicMock(return_value=[{"tag_name": "ml-models-r1", "id": 1}])
+
+    release_resp = MagicMock()
+    release_resp.raise_for_status = MagicMock()
+    release_resp.json = MagicMock(return_value={
+        "tag_name": "ml-models-r1",
+        "assets": [{"name": f"{fmt}_final_model.zip", "browser_download_url": "https://example.com/model.zip"}],
+    })
+
+    boom_resp = MagicMock()
+    boom_resp.raise_for_status = MagicMock(side_effect=Exception("connection reset"))
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(side_effect=[list_resp, release_resp, boom_resp])
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_client), \
+         patch.object(settings, "github_repo", "owner/repo", create=True), \
+         patch.object(settings, "github_token", None, create=True), \
+         patch("pathlib.Path.mkdir"):
+        await _pull_models(interaction, fmt=fmt, release_tag=None)
+
+    # followup.send(embed=embed, ephemeral=True) — check the embed's description
+    send_kwargs = interaction.followup.send.call_args[1]
+    embed = send_kwargs["embed"]
+    assert "❌" in embed.description
 
 
 # ── TeamCog command handlers ───────────────────────────────────────────────────
