@@ -46,6 +46,9 @@ logs/
 .claude/settings.local.json
 .remember/
 
+# Discord bot runtime state
+.discord_sync_hash
+
 # PyInstaller
 src/bot/dist/
 src/bot/build/
