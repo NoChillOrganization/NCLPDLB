@@ -34,10 +34,14 @@ Format → Training format mapping
   gen9vgc2025reggbo3      → gen9vgc2025reggbo3      (direct, RotatingTeambuilder, doubles)
   gen9vgc2025reghbo3      → gen9vgc2025reghbo3      (direct, RotatingTeambuilder, doubles)
   gen9vgc2025regibo3      → gen9vgc2025regibo3      (direct, RotatingTeambuilder, doubles)
-  gen9vgc2026regf         → gen9vgc2026regf         (direct, RotatingTeambuilder, doubles)
-  gen9vgc2026regi         → gen9vgc2026regi         (direct, RotatingTeambuilder, doubles)
-  gen9vgc2026regfbo3      → gen9vgc2026regfbo3      (direct, RotatingTeambuilder, doubles)
-  gen9vgc2026regibo3      → gen9vgc2026regibo3      (direct, RotatingTeambuilder, doubles)
+  gen9vgc2026regf              → gen9vgc2026regf              (direct, RotatingTeambuilder, doubles)
+  gen9vgc2026regi              → gen9vgc2026regi              (direct, RotatingTeambuilder, doubles)
+  gen9vgc2026regfbo3           → gen9vgc2026regfbo3           (direct, RotatingTeambuilder, doubles)
+  gen9vgc2026regibo3           → gen9vgc2026regibo3           (direct, RotatingTeambuilder, doubles)
+  gen9championsou              → gen9championsou              (direct, no teams)
+  gen9championsbssregma        → gen9championsbssregma        (direct, no teams)
+  gen9championsvgc2026regma    → gen9championsvgc2026regma    (direct, no teams, doubles)
+  gen9championsvgc2026regmabo3 → gen9championsvgc2026regmabo3 (direct, no teams, doubles)
 
 Usage
 ─────
@@ -95,10 +99,15 @@ TRAINING_MAP: dict[str, tuple[str | None, str | None]] = {
     "gen9vgc2025reghbo3"     : ("gen9vgc2025reghbo3",     "gen9vgc2025regh"),
     "gen9vgc2025regibo3"     : ("gen9vgc2025regibo3",     "gen9vgc2025regi"),
     # VGC 2026
-    "gen9vgc2026regf"        : ("gen9vgc2026regf",        "gen9vgc2026regf"),
-    "gen9vgc2026regi"        : ("gen9vgc2026regi",        "gen9vgc2026regi"),
-    "gen9vgc2026regfbo3"     : ("gen9vgc2026regfbo3",     "gen9vgc2026regf"),
-    "gen9vgc2026regibo3"     : ("gen9vgc2026regibo3",     "gen9vgc2026regi"),
+    "gen9vgc2026regf"             : ("gen9vgc2026regf",             "gen9vgc2026regf"),
+    "gen9vgc2026regi"             : ("gen9vgc2026regi",             "gen9vgc2026regi"),
+    "gen9vgc2026regfbo3"          : ("gen9vgc2026regfbo3",          "gen9vgc2026regf"),
+    "gen9vgc2026regibo3"          : ("gen9vgc2026regibo3",          "gen9vgc2026regi"),
+    # Champions
+    "gen9championsou"             : ("gen9championsou",             None),
+    "gen9championsbssregma"       : ("gen9championsbssregma",       None),
+    "gen9championsvgc2026regma"   : ("gen9championsvgc2026regma",   None),
+    "gen9championsvgc2026regmabo3": ("gen9championsvgc2026regmabo3", None),
 }
 
 DEFAULT_TIMESTEPS   = 500_000

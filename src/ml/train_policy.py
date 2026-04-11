@@ -141,14 +141,18 @@ DOUBLES_FORMATS = {
     "gen9vgc2026regi",
     "gen9vgc2026regfbo3",
     "gen9vgc2026regibo3",
+    # Champions Doubles
+    "gen9championsvgc2026regma",
+    "gen9championsvgc2026regmabo3",
 }
 
 # Some formats use the same Showdown battle mechanics as a base format.
 # poke-env doesn't support the BO3 series protocol, so we train these
 # using the base single-battle format while keeping artifact paths intact.
 TRAINING_FORMAT_ALIASES: dict[str, str] = {
-    "gen9vgc2026regibo3": "gen9vgc2026regi",
-    "gen9vgc2026regfbo3": "gen9vgc2026regf",
+    "gen9vgc2026regibo3"          : "gen9vgc2026regi",
+    "gen9vgc2026regfbo3"          : "gen9vgc2026regf",
+    "gen9championsvgc2026regmabo3": "gen9championsvgc2026regma",
 }
 
 PPO_HYPERPARAMS: dict[str, Any] = {

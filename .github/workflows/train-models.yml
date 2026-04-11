@@ -36,8 +36,12 @@ jobs:
           - { format: gen9lc,                  team_format: gen9lc,              timesteps: 500000, train_timeout: 160 }
           - { format: gen9doublesubers,        team_format: gen9doublesubers,    timesteps: 300000, train_timeout: 230 }
           - { format: gen9doublesuu,           team_format: gen9doublesuu,       timesteps: 300000, train_timeout: 230 }
-          - { format: gen9vgc2026regfbo3,      team_format: gen9vgc2026regfbo3,  timesteps: 300000, train_timeout: 230 }
-          - { format: gen9vgc2026regibo3,      team_format: gen9vgc2026regibo3,  timesteps: 300000, train_timeout: 230 }
+          - { format: gen9vgc2026regfbo3,           team_format: gen9vgc2026regfbo3,  timesteps: 300000, train_timeout: 230 }
+          - { format: gen9vgc2026regibo3,           team_format: gen9vgc2026regibo3,  timesteps: 300000, train_timeout: 230 }
+          - { format: gen9championsou,              team_format: "",                  timesteps: 500000, train_timeout: 160 }
+          - { format: gen9championsbssregma,        team_format: "",                  timesteps: 500000, train_timeout: 160 }
+          - { format: gen9championsvgc2026regma,    team_format: "",                  timesteps: 300000, train_timeout: 230 }
+          - { format: gen9championsvgc2026regmabo3, team_format: "",                  timesteps: 300000, train_timeout: 230 }
 
     steps:
       - name: Checkout
