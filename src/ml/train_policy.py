@@ -35,7 +35,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import shutil
 import socket
 from pathlib import Path
 from typing import Any
@@ -73,7 +72,6 @@ except ImportError:  # pragma: no cover
 try:
     from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
     from poke_env.player import MaxBasePowerPlayer, RandomPlayer
-    from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
@@ -206,7 +204,7 @@ class SelfPlayCallback(BaseCallback):
         latest_path = self.save_dir / "latest.zip"
 
         self.model.save(str(ckpt_path))
-        shutil.copy(str(ckpt_path), str(latest_path))
+        self.model.save(str(latest_path))
         self.opponent_player.load_policy(latest_path)
 
         if self.verbose:
@@ -338,7 +336,7 @@ class CurriculumCallback(BaseCallback):
         ckpt  = self.save_dir / f"swap_{self._swap_count:04d}.zip"
         latest = self.save_dir / "latest.zip"
         self.model.save(str(ckpt))
-        shutil.copy(str(ckpt), str(latest))
+        self.model.save(str(latest))
         self.opponent_player.load_policy(latest)
         self._phase     = "selfplay"
         self._last_swap = self.num_timesteps
@@ -360,7 +358,7 @@ class CurriculumCallback(BaseCallback):
         ckpt   = self.save_dir / f"swap_{self._swap_count:04d}.zip"
         latest = self.save_dir / "latest.zip"
         self.model.save(str(ckpt))
-        shutil.copy(str(ckpt), str(latest))
+        self.model.save(str(latest))
         self.opponent_player.load_policy(latest)
         if self.verbose:
             log.info(
@@ -576,9 +574,9 @@ def train(  # pragma: no cover
     acc1, acc2 = account_configs_for_mode(server)
 
     # ── Opponent player (drives agent2 in SingleAgentWrapper) ──────
-    # CurriculumOpponent is used ONLY for choose_move() — it is NOT the player
-    # that connects to Showdown for battle. The actual Showdown battle is between
-    # env.agent1 (acc1) and env.agent2 (acc2) inside PokeEnv.reset().
+    # CurriculumOpponent generates moves locally (choose_move + CurriculumCallback).
+    # It is NOT the player that connects to Showdown for battle. The actual Showdown
+    # battle is between env.agent1 (acc1) and env.agent2 (acc2) inside PokeEnv.reset().
     opp_kwargs: dict[str, Any] = dict(
         battle_format=training_fmt,
         server_configuration=srv_cfg,
@@ -609,8 +607,7 @@ def train(  # pragma: no cover
         if team_builder is not None:
             env_kwargs["team"] = team_builder
         if save_replays:
-            import os
-            os.makedirs(save_replays, exist_ok=True)
+            Path(save_replays).mkdir(parents=True, exist_ok=True)
             env_kwargs["save_replays"] = save_replays
         if is_doubles:
             poke_env = BattleDoubleEnv(**env_kwargs)
@@ -702,6 +699,7 @@ def evaluate(  # pragma: no cover
     model_path: str,
     fmt: str,
     n_battles: int = 100,
+    server: str = MODE_LOCALHOST,
 ) -> dict:
     """
     Evaluate a trained policy against a RandomPlayer baseline.
@@ -711,15 +709,16 @@ def evaluate(  # pragma: no cover
     if not POKE_ENV_AVAILABLE or not SB3_OK:
         raise RuntimeError("poke-env and stable-baselines3 are required for evaluation.")
 
+    srv_cfg = server_config_for_mode(server)
     model = PPO.load(model_path)
     opponent = RandomPlayer(
         battle_format=fmt,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=srv_cfg,
     )
 
     poke_env = BattleEnv(
         battle_format=fmt,
-        server_configuration=LocalhostServerConfiguration,
+        server_configuration=srv_cfg,
         strict=False,
     )
     env = SingleAgentWrapper(poke_env, opponent)

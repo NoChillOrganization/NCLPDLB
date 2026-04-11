@@ -56,10 +56,6 @@ except ImportError:  # pragma: no cover
 try:
     from poke_env.battle import AbstractBattle
     from poke_env.player import Player
-    from poke_env.ps_client.server_configuration import (
-        LocalhostServerConfiguration,
-        ShowdownServerConfiguration,
-    )
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
@@ -73,6 +69,7 @@ except ImportError:  # pragma: no cover
     SHEETS_AVAILABLE = False
 
 from src.ml.battle_env import POKE_ENV_AVAILABLE, build_observation  # noqa: E402
+from src.ml.showdown_modes import server_config_for_mode  # noqa: E402
 
 # ── Bot player ────────────────────────────────────────────────────────────────
 
@@ -182,11 +179,7 @@ class BotChallenger:
         self.username   = username
         self.password   = password
 
-        server_cfg = (
-            ShowdownServerConfiguration
-            if server == "showdown"
-            else LocalhostServerConfiguration
-        )
+        server_cfg = server_config_for_mode(server)
 
         self._player = ShowdownBotPlayer(
             model_path=self.model_path,
