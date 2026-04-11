@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 250
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         config:
           - { format: gen9randombattle,        team_format: "",                  timesteps: 500000, train_timeout: 160 }

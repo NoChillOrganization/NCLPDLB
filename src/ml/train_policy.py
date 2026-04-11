@@ -576,13 +576,18 @@ def train(  # pragma: no cover
     acc1, acc2 = account_configs_for_mode(server)
 
     # ── Opponent player (drives agent2 in SingleAgentWrapper) ──────
+    # CurriculumOpponent makes its own WebSocket connection to Showdown, so it
+    # needs explicit credentials (acc2) when using the public server.  Without
+    # them, poke-env auto-generates a guest name derived from the class name
+    # ("CurriculumOppone 1"), which causes "nametaken" errors when multiple
+    # training jobs run in parallel.
     opp_kwargs: dict[str, Any] = dict(
         battle_format=training_fmt,
         server_configuration=srv_cfg,
         is_doubles=is_doubles,
     )
-    # SelfPlayOpponent is a move-picker only inside SingleAgentWrapper;
-    # Showdown auth for player 2 is handled via account_configuration2 on the env.
+    if acc2 is not None:
+        opp_kwargs["account_configuration"] = acc2
     if team_builder is not None:
         opp_kwargs["team"] = team_builder
 
@@ -601,8 +606,8 @@ def train(  # pragma: no cover
         )
         if acc1 is not None:
             env_kwargs["account_configuration1"] = acc1
-        if acc2 is not None:
-            env_kwargs["account_configuration2"] = acc2
+        # account_configuration2 intentionally omitted: the opponent player
+        # connects independently using acc2 via its own account_configuration.
         if team_builder is not None:
             env_kwargs["team"] = team_builder
         if save_replays:
