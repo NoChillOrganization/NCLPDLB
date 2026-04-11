@@ -576,18 +576,17 @@ def train(  # pragma: no cover
     acc1, acc2 = account_configs_for_mode(server)
 
     # ── Opponent player (drives agent2 in SingleAgentWrapper) ──────
-    # CurriculumOpponent makes its own WebSocket connection to Showdown, so it
-    # needs explicit credentials (acc2) when using the public server.  Without
-    # them, poke-env auto-generates a guest name derived from the class name
-    # ("CurriculumOppone 1"), which causes "nametaken" errors when multiple
-    # training jobs run in parallel.
+    # CurriculumOpponent is used ONLY for choose_move() — it is NOT the player
+    # that connects to Showdown for battle. The actual Showdown battle is between
+    # env.agent1 (acc1) and env.agent2 (acc2) inside PokeEnv.reset().
+    # start_listening=False prevents CurriculumOpponent from opening its own
+    # WebSocket connection, which would conflict with acc2 being used by env.agent2.
     opp_kwargs: dict[str, Any] = dict(
         battle_format=training_fmt,
         server_configuration=srv_cfg,
+        start_listening=False,
         is_doubles=is_doubles,
     )
-    if acc2 is not None:
-        opp_kwargs["account_configuration"] = acc2
     if team_builder is not None:
         opp_kwargs["team"] = team_builder
 
@@ -598,6 +597,8 @@ def train(  # pragma: no cover
     # to a random legal order instead of raising ValueError
     # poke-env 0.12.x: SinglesEnv/DoublesEnv use account_configuration1 / 2
     # (not the bare account_configuration kwarg accepted by Player subclasses).
+    # Both acc1 and acc2 go to env.agent1/agent2 — these are the players that
+    # actually battle on Showdown. CurriculumOpponent only generates moves locally.
     def make_env():
         env_kwargs: dict[str, Any] = dict(
             battle_format=training_fmt,
@@ -606,8 +607,8 @@ def train(  # pragma: no cover
         )
         if acc1 is not None:
             env_kwargs["account_configuration1"] = acc1
-        # account_configuration2 intentionally omitted: the opponent player
-        # connects independently using acc2 via its own account_configuration.
+        if acc2 is not None:
+            env_kwargs["account_configuration2"] = acc2
         if team_builder is not None:
             env_kwargs["team"] = team_builder
         if save_replays:
