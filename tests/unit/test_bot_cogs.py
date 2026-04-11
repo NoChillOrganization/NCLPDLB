@@ -645,6 +645,55 @@ async def test_admin_train_followup_not_found_sends_dm_warning():
     mock_task.assert_called_once()
 
 
+async def test_admin_train_all_followup_not_found_dm_also_fails():
+    """discord.NotFound on followup.send AND DM also raises → swallowed silently."""
+    bot = MagicMock()
+    cog = AdminCog(bot)
+
+    interaction = make_interaction()
+    interaction.followup.send = AsyncMock(
+        side_effect=discord.NotFound(MagicMock(status=404), "Unknown interaction")
+    )
+    interaction.user.send = AsyncMock(side_effect=Exception("DM blocked"))
+
+    def _close_task(coro):
+        coro.close()
+        return MagicMock()
+
+    with patch("src.bot.cogs.admin._model_exists", return_value=False), \
+         patch("src.bot.cogs.admin._run_training_all", new_callable=AsyncMock), \
+         patch("asyncio.create_task", side_effect=_close_task):
+        # Must not raise even when both followup and DM fail
+        await cog.admin_train_all.callback(
+            cog, interaction, timesteps=10_000, skip_existing=False
+        )
+
+
+async def test_admin_train_followup_not_found_dm_also_fails():
+    """discord.NotFound on admin_train followup AND DM raises → swallowed silently."""
+    from src.ml.train_all import TRAINING_MAP
+    fmt = next(iter(TRAINING_MAP))
+
+    bot = MagicMock()
+    cog = AdminCog(bot)
+
+    interaction = make_interaction()
+    interaction.followup.send = AsyncMock(
+        side_effect=discord.NotFound(MagicMock(status=404), "Unknown interaction")
+    )
+    interaction.user.send = AsyncMock(side_effect=Exception("DM blocked"))
+
+    def _close_task(coro):
+        coro.close()
+        return MagicMock()
+
+    with patch("src.bot.cogs.admin._model_exists", return_value=False), \
+         patch("src.bot.cogs.admin._run_training", new_callable=AsyncMock), \
+         patch("asyncio.create_task", side_effect=_close_task):
+        # Must not raise even when both followup and DM fail
+        await cog.admin_train.callback(cog, interaction, format=fmt, timesteps=10_000)
+
+
 # ── admin_showdown_check ──────────────────────────────────────────────────────
 
 async def test_admin_showdown_check_server_reachable():

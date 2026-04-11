@@ -229,8 +229,6 @@ class ShowdownMessageHandler:
             if not line.startswith("|"):
                 continue
             parts = line.split("|")
-            if len(parts) < 2:
-                continue
             msg_type = parts[1]
             payload = parts[2:] if len(parts) > 2 else []
 
