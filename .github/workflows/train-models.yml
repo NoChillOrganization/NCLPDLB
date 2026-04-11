@@ -160,18 +160,16 @@ jobs:
       - name: Publish models as GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_NUMBER: ${{ github.run_number }}
+          REPO: ${{ github.repository }}
         shell: bash
         run: |
-          TAG="ml-models-r${{ github.run_number }}"
-          NOTES="Trained models for all formats from workflow run #${{ github.run_number }}.
-Each zip contains the final PPO policy for one Showdown format.
-Place downloaded files in \`data/ml/policy/<format>/final_model.zip\`,
-or use the /admin-pull-models Discord command to download automatically."
+          TAG="ml-models-r${RUN_NUMBER}"
           if ls release-models/*.zip 1>/dev/null 2>&1; then
             gh release create "$TAG" \
-              --repo "${{ github.repository }}" \
-              --title "ML Models — run #${{ github.run_number }}" \
-              --notes "$NOTES" \
+              --repo "$REPO" \
+              --title "ML Models — run #${RUN_NUMBER}" \
+              --notes "Trained PPO models from run #${RUN_NUMBER}. Use /admin-pull-models in Discord to install, or place zips in data/ml/policy/<format>/final_model.zip manually." \
               release-models/*.zip
             echo "Release created: $TAG"
           else

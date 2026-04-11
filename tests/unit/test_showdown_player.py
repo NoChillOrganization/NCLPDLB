@@ -83,6 +83,35 @@ class TestBestModelForFormat:
         assert result is not None
         assert "2025-03-01" in result.name
 
+    def test_falls_back_to_final_model_zip(self, tmp_path):
+        fmt = "gen9ou"
+        fmt_save = tmp_path / "policy" / fmt
+        fmt_save.mkdir(parents=True)
+        (fmt_save / "final_model.zip").touch()
+
+        result = best_model_for_format(
+            fmt,
+            save_dir=str(tmp_path / "policy"),
+            results_dir=str(tmp_path / "results"),
+        )
+        assert result is not None
+        assert result.name == "final_model.zip"
+
+    def test_final_model_beats_latest_zip(self, tmp_path):
+        fmt = "gen9ou"
+        fmt_save = tmp_path / "policy" / fmt
+        fmt_save.mkdir(parents=True)
+        (fmt_save / "final_model.zip").touch()
+        (fmt_save / "latest.zip").touch()
+
+        result = best_model_for_format(
+            fmt,
+            save_dir=str(tmp_path / "policy"),
+            results_dir=str(tmp_path / "results"),
+        )
+        assert result is not None
+        assert result.name == "final_model.zip"
+
     def test_falls_back_to_latest_zip(self, tmp_path):
         fmt = "gen9ou"
         fmt_save = tmp_path / "policy" / fmt
