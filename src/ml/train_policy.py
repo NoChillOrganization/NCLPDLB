@@ -78,7 +78,7 @@ try:
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
 
-from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER  # noqa: E402
+from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_SHOWDOWN, MODE_BROWSER  # noqa: E402
 from src.ml.showdown_modes import server_config_for_mode, account_configs_for_mode  # noqa: E402
 
 from src.ml.battle_env import (  # noqa: E402
