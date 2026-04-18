@@ -115,9 +115,14 @@ class EloService:
         winner.wins += 1
         loser.losses += 1
 
-        # Persist to Sheets
+        # Persist to Sheets (sync via gspread)
         self._save_player(winner)
         self._save_player(loser)
+
+        # Persist to SQLite write-through cache — raise on failure so the
+        # caller knows the update was not durably stored.
+        await self._save_player_to_db(winner)
+        await self._save_player_to_db(loser)
 
         log.info(
             f"Match recorded: {winner_id} ({old_winner_elo}→{winner.elo}) "
