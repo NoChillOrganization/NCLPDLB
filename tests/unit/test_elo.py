@@ -51,6 +51,7 @@ def test_k_factor_scales_change():
 async def test_record_match_updates_both_players():
     svc = EloService()
     with patch.object(svc, "_save_player"), \
+         patch.object(svc, "_save_player_to_db"), \
          patch("src.services.elo_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = None
 
@@ -65,6 +66,7 @@ async def test_record_match_sum_elo_conserved():
     """ELO gained by winner ≈ ELO lost by loser (near conservation)."""
     svc = EloService()
     with patch.object(svc, "_save_player"), \
+         patch.object(svc, "_save_player_to_db"), \
          patch("src.services.elo_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = None
 
