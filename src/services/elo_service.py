@@ -7,6 +7,7 @@ import logging
 from dataclasses import dataclass
 
 from src.config import settings
+from src.data.db import load_all_elo, save_elo as _db_save_elo
 from src.data.models import PlayerElo
 from src.data.sheets import Tab, sheets
 
