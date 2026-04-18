@@ -18,6 +18,9 @@ from discord.ext import commands
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.config import settings
+from src.data.db import init_db
+from src.services.draft_service import DraftService as _DraftService
+from src.services.elo_service import EloService as _EloService
 
 # ── Logging Setup ─────────────────────────────────────────────
 log_dir = settings.log_file.parent
