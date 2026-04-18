@@ -416,6 +416,7 @@ class DraftService:
     async def reset_draft(self, guild_id: str) -> None:
         self._cancel_timer(guild_id)
         _active_drafts.pop(guild_id, None)
+        await _delete_persisted_draft(guild_id)
         log.warning(f"Draft reset for guild {guild_id}")
 
     async def override_pick(self, guild_id: str, player_id: str, old_pokemon: str, new_pokemon: str) -> None:
