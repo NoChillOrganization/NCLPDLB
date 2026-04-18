@@ -49,7 +49,10 @@ try:  # pragma: no cover
     from stable_baselines3 import PPO
     from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
     from stable_baselines3.common.monitor import Monitor
+    from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
     from stable_baselines3.common.vec_env import DummyVecEnv
+    import torch as _torch
+    import gymnasium as _gym
     SB3_OK = True
 except ImportError:  # pragma: no cover
     SB3_OK = False
@@ -57,6 +60,7 @@ except ImportError:  # pragma: no cover
     CheckpointCallback = None  # type: ignore
     Monitor = None  # type: ignore
     DummyVecEnv = None  # type: ignore
+    BaseFeaturesExtractor = object  # type: ignore
 
     class BaseCallback:  # type: ignore
         """Stub so class definitions below don't crash when SB3 is absent."""
