@@ -96,6 +96,7 @@ jobs:
           }
 
       - name: Verify model artifact exists
+        if: always()
         shell: bash
         env:
           TRAIN_FORMAT: ${{ matrix.config.format }}
