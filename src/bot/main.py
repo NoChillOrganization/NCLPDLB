@@ -93,6 +93,11 @@ class DraftLeagueBot(commands.Bot):
 
     async def setup_hook(self) -> None:
         """Called once before the bot starts. Load cogs and sync slash commands."""
+        # Initialise SQLite tables and restore in-progress state
+        await init_db()
+        await _DraftService().restore_active_drafts()
+        await _EloService().restore_ratings_from_db()
+
         for cog in COGS:
             try:
                 await self.load_extension(cog)
