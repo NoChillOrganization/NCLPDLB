@@ -255,6 +255,33 @@ class TestBuildLegalMask:
         assert mask[0].item() is False   # legal action — unmasked
         assert mask[1].item() is True    # illegal action — stays masked
 
+    def test_unexpected_exception_is_logged_as_warning(self):
+        """
+        NCLP-003: non-ValueError from action_to_order should emit a WARNING
+        rather than being silently swallowed.
+        """
+        pytest.importorskip("poke_env")
+        import logging
+        from unittest.mock import MagicMock, patch
+        from poke_env.environment.singles_env import SinglesEnv
+
+        battle = MagicMock()
+
+        def _raise_attr_error(act, b):
+            raise AttributeError("simulated unexpected error")
+
+        with patch.object(SinglesEnv, "action_to_order", side_effect=_raise_attr_error):
+            with patch("src.ml.mcts.log") as mock_log:
+                mask = _build_legal_mask(battle=battle, n_actions=3)
+
+        # All actions stay masked (True) since all raised unexpected errors
+        assert all(mask.tolist())
+        # The warning must have been called at least once
+        mock_log.warning.assert_called()
+        # The call should reference the action index and the error
+        call_args = mock_log.warning.call_args_list[0]
+        assert "0" in str(call_args) or "simulated" in str(call_args)
+
 
 # ── MCTS else-branch (already-visited leaf) ───────────────────────────────────
 
