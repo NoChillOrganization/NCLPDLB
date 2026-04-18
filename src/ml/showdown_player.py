@@ -80,18 +80,36 @@ if POKE_ENV_AVAILABLE:
 
         If the model isn't loaded or an action is invalid, it falls back
         to the best available legal move (random).
+
+        MCTS (optional)
+        ---------------
+        Pass ``use_mcts=True`` and ``transformer_path`` to enable Monte Carlo
+        Tree Search at inference time.  The transformer model provides policy
+        priors and value estimates for the search; the PPO policy is still
+        used as the primary decision-maker when MCTS is disabled.
+
+        ``use_mcts`` defaults to ``False`` so existing /spar behaviour is
+        unchanged until explicitly enabled.
         """
 
         def __init__(  # pragma: no cover
             self,
             model_path: str | Path | None = None,
             *args: Any,
+            use_mcts: bool = False,
+            transformer_path: str | Path | None = None,
+            mcts_n_simulations: int = 30,
             **kwargs: Any,
         ) -> None:
             super().__init__(*args, **kwargs)
             self._policy: "PPO | None" = None
+            self._use_mcts = use_mcts
+            self._transformer = None
+            self._mcts_n_simulations = mcts_n_simulations
             if model_path:
                 self.load_model(model_path)
+            if transformer_path:
+                self._load_transformer(transformer_path)
 
         # ── Model management ───────────────────────────────────────
 
