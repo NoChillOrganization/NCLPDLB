@@ -298,6 +298,13 @@ class DraftService:
             if draft.current_round > draft.total_rounds:
                 draft.status = DraftStatus.COMPLETED
                 log.info(f"Draft {draft.draft_id} completed!")
+                # Schedule SQLite cleanup without blocking the sync caller
+                try:
+                    asyncio.get_running_loop().create_task(
+                        _delete_persisted_draft(draft.guild_id)
+                    )
+                except RuntimeError:
+                    pass  # no running loop (tests); cleanup is best-effort
 
     # ── Timer ──────────────────────────────────────────────────
     def _start_timer(
