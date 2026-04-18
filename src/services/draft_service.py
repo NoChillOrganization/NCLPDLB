@@ -91,6 +91,21 @@ class EloMatchResult:
 class DraftService:
     """Manages all draft operations for all formats."""
 
+    # ── Startup restore ────────────────────────────────────────
+    async def restore_active_drafts(self) -> None:
+        """Reload any in-progress drafts from SQLite into the in-memory cache."""
+        rows = await load_all_drafts()
+        restored = 0
+        for guild_id, draft_json in rows:
+            try:
+                draft = Draft.model_validate_json(draft_json)
+                _active_drafts[guild_id] = draft
+                restored += 1
+            except Exception as exc:
+                log.error("Could not restore draft for guild %s: %s", guild_id, exc)
+        if restored:
+            log.info("Restored %d in-progress draft(s) from SQLite", restored)
+
     # ── Create ─────────────────────────────────────────────────
     async def create_draft(
         self,
