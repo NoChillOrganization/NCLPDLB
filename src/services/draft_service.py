@@ -222,6 +222,7 @@ class DraftService:
                 self._start_timer(guild_id, draft, on_timeout)
 
         log.info(f"Draft {draft.draft_id} started with {len(draft.player_order)} players")
+        await _persist_draft(draft)
         return draft
 
     # ── Pick ───────────────────────────────────────────────────
