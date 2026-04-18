@@ -63,6 +63,54 @@ jobs:
           pip install -r requirements.txt
           pip install torch --index-url https://download.pytorch.org/whl/cpu
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Start local Showdown server
+        shell: bash
+        run: |
+          PS_DIR="$HOME/pokemon-showdown"
+
+          # Kill any leftover server from a previous job (jobs are sequential)
+          pkill -f "node.*pokemon-showdown" 2>/dev/null || true
+          sleep 1
+
+          # Clone once; reuse on subsequent jobs in the same run
+          if [ ! -d "$PS_DIR/.git" ]; then
+            git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
+            cd "$PS_DIR" && npm install --ignore-scripts
+          fi
+
+          # Write config (overwrite each time to guarantee correct settings)
+          cat > "$PS_DIR/config/config.js" << SHOWDOWN_EOF
+          exports.port = 8000;
+          exports.bindaddress = '127.0.0.1';
+          exports.workers = 1;
+          exports.noipchecks = true;
+          exports.nothrottle = true;
+          SHOWDOWN_EOF
+
+          # Start server in background
+          cd "$PS_DIR"
+          node pokemon-showdown start --no-security > /tmp/showdown.log 2>&1 &
+
+          # Wait up to 60 s for the server to accept connections
+          echo "Waiting for Showdown server on port 8000..."
+          for i in $(seq 1 30); do
+            sleep 2
+            if curl -sf --max-time 2 http://localhost:8000 >/dev/null 2>&1; then
+              echo "Showdown server ready (attempt ${i})"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Showdown server failed to start after 60 s:"
+              cat /tmp/showdown.log
+              exit 1
+            fi
+          done
+
       - name: Train ${{ matrix.config.format }}
         timeout-minutes: ${{ matrix.config.train_timeout }}
         shell: bash
@@ -72,12 +120,8 @@ jobs:
           TRAIN_TIMESTEPS: ${{ matrix.config.timesteps }}
           TRAIN_TEAM_FORMAT: ${{ matrix.config.team_format }}
           TRAIN_TIMEOUT_MINUTES: ${{ matrix.config.train_timeout }}
-          SHOWDOWN_TRAIN_USER1: ${{ secrets.SHOWDOWN_TRAIN_USER1 }}
-          SHOWDOWN_TRAIN_PASS1: ${{ secrets.SHOWDOWN_TRAIN_PASS1 }}
-          SHOWDOWN_TRAIN_USER2: ${{ secrets.SHOWDOWN_TRAIN_USER2 }}
-          SHOWDOWN_TRAIN_PASS2: ${{ secrets.SHOWDOWN_TRAIN_PASS2 }}
         run: |
-          ARGS="--format $TRAIN_FORMAT --timesteps $TRAIN_TIMESTEPS --save-dir data/ml/policy --server showdown"
+          ARGS="--format $TRAIN_FORMAT --timesteps $TRAIN_TIMESTEPS --save-dir data/ml/policy --server local"
           if [ -n "$TRAIN_TEAM_FORMAT" ]; then
             ARGS="$ARGS --team-format $TRAIN_TEAM_FORMAT"
           fi
