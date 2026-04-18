@@ -934,4 +934,5 @@ if __name__ == "__main__":  # pragma: no cover
             team_format=args.team_format,
             server=args.server,
             save_replays=args.save_replays,
+            use_transformer=args.use_transformer,
         )
