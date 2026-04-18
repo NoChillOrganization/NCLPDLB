@@ -680,6 +680,20 @@ def train(  # pragma: no cover
             env=vec_env,
             tensorboard_log=str(log_dir),
         )
+    elif use_transformer:
+        transformer_kwargs = {k: v for k, v in PPO_HYPERPARAMS.items() if k != "policy_kwargs"}
+        transformer_kwargs["policy_kwargs"] = {
+            "features_extractor_class"  : BattleTransformerExtractor,
+            "features_extractor_kwargs" : {"d_model": 64},
+            "net_arch"                  : [64, 64],
+        }
+        log.info("[train] Using BattleTransformerExtractor as PPO feature encoder")
+        model = PPO(
+            "MlpPolicy",
+            vec_env,
+            tensorboard_log=str(log_dir),
+            **transformer_kwargs,
+        )
     else:
         model = PPO(
             "MlpPolicy",
