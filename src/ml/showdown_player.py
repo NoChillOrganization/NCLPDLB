@@ -68,7 +68,7 @@ except ImportError:  # pragma: no cover
     learning_sheets = None  # type: ignore
     SHEETS_AVAILABLE = False
 
-from src.ml.battle_env import POKE_ENV_AVAILABLE, build_observation  # noqa: E402
+from src.ml.battle_env import N_ACTIONS_GEN9, POKE_ENV_AVAILABLE, build_observation  # noqa: E402
 from src.ml.showdown_modes import server_config_for_mode  # noqa: E402
 
 # ── Bot player ────────────────────────────────────────────────────────────────
