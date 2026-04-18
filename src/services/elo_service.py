@@ -38,6 +38,35 @@ def new_rating(old_rating: int, expected: float, actual: float, k: int) -> int:
 
 
 class EloService:
+    async def restore_ratings_from_db(self) -> None:
+        """Load all ELO rows from SQLite into the in-memory cache on startup."""
+        rows = await load_all_elo()
+        for row in rows:
+            guild_id  = row["guild_id"]
+            player_id = row["player_id"]
+            _elo_cache.setdefault(guild_id, {})[player_id] = PlayerElo(
+                player_id    = player_id,
+                guild_id     = guild_id,
+                display_name = row.get("display_name", ""),
+                elo          = int(row["elo"]),
+                wins         = int(row["wins"]),
+                losses       = int(row["losses"]),
+                streak       = int(row.get("streak", 0)),
+            )
+        if rows:
+            log.info("Restored %d ELO record(s) from SQLite", len(rows))
+
+    async def _save_player_to_db(self, player: PlayerElo) -> None:
+        await _db_save_elo(
+            guild_id     = player.guild_id,
+            player_id    = player.player_id,
+            elo          = player.elo,
+            wins         = player.wins,
+            losses       = player.losses,
+            streak       = player.streak,
+            display_name = player.display_name,
+        )
+
     def _get_player(self, guild_id: str, player_id: str) -> PlayerElo:
         guild_elo = _elo_cache.setdefault(guild_id, {})
         if player_id not in guild_elo:
