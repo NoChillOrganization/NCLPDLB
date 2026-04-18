@@ -1,8 +1,32 @@
 """Tests for src.ml.training_players — MaxBasePowerPlayer and SimpleHeuristicPlayer."""
+import pytest
 from unittest.mock import MagicMock, patch
 
-
+import src.ml.training_players as _tp_mod
 from src.ml.training_players import MaxBasePowerPlayer, SimpleHeuristicPlayer
+
+
+# ── NCLP-007: stub raises ImportError on instantiation ───────────────────────
+
+def test_stub_player_raises_on_instantiation_when_poke_env_missing(monkeypatch):
+    """If poke_env is absent the module-level Player stub must raise immediately."""
+    monkeypatch.setattr(_tp_mod, "_POKE_ENV_OK", False)
+
+    # Import the stub class directly (the module already has it defined)
+    original_poke_env_ok = _tp_mod._POKE_ENV_OK
+    # When poke_env is truly not installed the Player in the module IS the stub.
+    # We simulate that by temporarily replacing the class with the stub definition.
+    import importlib, sys
+    # Force reimport with poke_env hidden
+    with patch.dict(sys.modules, {"poke_env": None, "poke_env.player": None}):
+        # Remove cached module so reimport triggers the ImportError path
+        sys.modules.pop("src.ml.training_players", None)
+        import src.ml.training_players as fresh_mod
+        if not fresh_mod._POKE_ENV_OK:
+            with pytest.raises(ImportError, match="pip install poke-env"):
+                fresh_mod.Player()
+        # Restore
+        sys.modules.pop("src.ml.training_players", None)
 
 
 def _make_player(cls):
