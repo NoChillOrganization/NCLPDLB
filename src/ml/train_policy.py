@@ -899,6 +899,12 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
         choices=[MODE_SHOWDOWN],
         help="Showdown connection mode: showdown (wss://sim3.psim.us — requires 2 accounts)",
     )
+    ap.add_argument(
+        "--use-transformer",
+        action="store_true",
+        default=False,
+        help="Use BattleTransformerExtractor (transformer encoder) instead of default MLP policy",
+    )
     return ap.parse_args()
 
 
