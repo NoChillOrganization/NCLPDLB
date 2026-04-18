@@ -178,3 +178,40 @@ async def test_record_match_sets_display_names():
     import src.services.elo_service as elo_mod
     assert elo_mod._elo_cache["guild_dn"]["w1"].display_name == "Alice"
     assert elo_mod._elo_cache["guild_dn"]["l1"].display_name == "Bob"
+
+
+# ── NCLP-006: SQLite ELO write-through ───────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_record_match_writes_to_sqlite():
+    """record_match should persist both players to SQLite (NCLP-006)."""
+    svc = EloService()
+    with patch.object(svc, "_save_player"), \
+         patch.object(svc, "_save_player_to_db") as mock_db, \
+         patch("src.services.elo_service.sheets") as mock_sheets:
+        mock_sheets.find_row.return_value = None
+        mock_db.return_value = None
+        await svc.record_match("guild_db", "w", "l")
+
+    assert mock_db.call_count == 2
+    called_ids = {mock_db.call_args_list[i][0][0].player_id for i in range(2)}
+    assert called_ids == {"w", "l"}
+
+
+@pytest.mark.asyncio
+async def test_restore_ratings_from_db_populates_cache():
+    """restore_ratings_from_db should fill _elo_cache from SQLite rows (NCLP-006)."""
+    import src.services.elo_service as elo_mod
+    elo_mod._elo_cache.clear()
+
+    rows = [
+        {"guild_id": "g1", "player_id": "pA", "elo": 1150, "wins": 6,
+         "losses": 2, "streak": 3, "display_name": "Alice"},
+    ]
+    svc = EloService()
+    with patch("src.services.elo_service.load_all_elo", return_value=rows):
+        await svc.restore_ratings_from_db()
+
+    assert "g1" in elo_mod._elo_cache
+    assert elo_mod._elo_cache["g1"]["pA"].elo == 1150
+    assert elo_mod._elo_cache["g1"]["pA"].wins == 6

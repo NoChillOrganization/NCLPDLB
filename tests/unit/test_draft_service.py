@@ -594,23 +594,24 @@ async def test_timer_fires_and_starts_next_player_timer(draft_svc):
 
 
 @pytest.mark.asyncio
-async def test_start_timer_handles_no_event_loop(draft_svc):
-    """Lines 298-300: RuntimeError from get_event_loop is silently caught."""
+async def test_start_timer_creates_task_in_running_loop(draft_svc):
+    """NCLP-001: _start_timer uses get_running_loop() and creates the task."""
     from src.data.models import Draft, DraftFormat, DraftStatus
     import src.services.draft_service as ds_mod
 
     draft = Draft(
-        draft_id="loopless", guild_id="gLoop", commissioner_id="p1",
+        draft_id="looptest", guild_id="gLoop", commissioner_id="p1",
         format=DraftFormat.SNAKE, status=DraftStatus.ACTIVE,
         total_rounds=3, player_order=["p1", "p2"], timer_seconds=999,
     )
     ds_mod._active_drafts["gLoop"] = draft
 
-    with patch("asyncio.get_event_loop", side_effect=RuntimeError("no loop")):
-        # Should not raise
-        draft_svc._start_timer("gLoop", draft, None)
+    # Called inside an async test — there IS a running event loop.
+    # get_running_loop() succeeds and the task should be registered.
+    draft_svc._start_timer("gLoop", draft, None)
 
-    assert "gLoop" not in ds_mod._timer_tasks
+    assert "gLoop" in ds_mod._timer_tasks
+    draft_svc._cancel_timer("gLoop")
     ds_mod._active_drafts.pop("gLoop", None)
 
 
@@ -729,3 +730,68 @@ async def test_place_bid_not_exceeding_current_high(draft_svc):
     result = await draft_svc.place_bid("guildBidLow", "p1", 300)
     assert not result.success
     assert "300" in result.error
+
+
+# ── NCLP-002: SQLite draft persistence round-trip ─────────────────────────────
+
+@pytest.mark.asyncio
+async def test_start_draft_persists_to_sqlite(draft_svc):
+    """start_draft should write the Draft to SQLite (NCLP-002)."""
+    with patch("src.services.draft_service.sheets"), \
+         patch("src.services.draft_service._db_save_draft") as mock_save:
+        mock_save.return_value = None
+        draft = await draft_svc.create_draft("guildDB", "p1", DraftFormat.SNAKE)
+        await draft_svc.add_player("guildDB", "p1")
+        await draft_svc.add_player("guildDB", "p2")
+        await draft_svc.start_draft("guildDB", "p1")
+
+    mock_save.assert_called_once()
+    args = mock_save.call_args[0]
+    assert args[0] == "guildDB"
+    import json
+    saved = json.loads(args[1])
+    assert saved["guild_id"] == "guildDB"
+
+
+@pytest.mark.asyncio
+async def test_restore_active_drafts_reloads_from_sqlite():
+    """restore_active_drafts should populate _active_drafts from SQLite rows (NCLP-002)."""
+    import src.services.draft_service as ds_mod
+    from src.data.models import Draft, DraftFormat, DraftStatus
+
+    svc = DraftService()
+    original_cache = dict(ds_mod._active_drafts)
+
+    dummy = Draft(
+        guild_id="guildR",
+        commissioner_id="p1",
+        format=DraftFormat.SNAKE,
+        status=DraftStatus.ACTIVE,
+        player_order=["p1", "p2"],
+        total_rounds=6,
+    )
+    rows = [("guildR", dummy.model_dump_json())]
+
+    with patch("src.services.draft_service.load_all_drafts", return_value=rows):
+        ds_mod._active_drafts.clear()
+        await svc.restore_active_drafts()
+
+    assert "guildR" in ds_mod._active_drafts
+    assert ds_mod._active_drafts["guildR"].commissioner_id == "p1"
+
+    # Cleanup
+    ds_mod._active_drafts.clear()
+    ds_mod._active_drafts.update(original_cache)
+
+
+@pytest.mark.asyncio
+async def test_reset_draft_deletes_from_sqlite(draft_svc):
+    """reset_draft should remove the row from SQLite (NCLP-002)."""
+    with patch("src.services.draft_service.sheets"), \
+         patch("src.services.draft_service._db_save_draft"), \
+         patch("src.services.draft_service._db_delete_draft") as mock_del:
+        mock_del.return_value = None
+        await draft_svc.create_draft("guildDel", "p1", DraftFormat.SNAKE)
+        await draft_svc.reset_draft("guildDel")
+
+    mock_del.assert_called_once_with("guildDel")
