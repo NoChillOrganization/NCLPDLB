@@ -280,6 +280,7 @@ class DraftService:
         if draft.status == DraftStatus.ACTIVE and draft.timer_seconds > 0:
             self._start_timer(guild_id, draft, on_timeout)
 
+        await _persist_draft(draft)
         next_id = draft.current_player_id
         return PickResult(
             success=True,
