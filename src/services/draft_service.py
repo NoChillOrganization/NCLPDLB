@@ -296,12 +296,7 @@ class DraftService:
                 if active.status == DraftStatus.ACTIVE and active.timer_seconds > 0:
                     self._start_timer(guild_id, active, on_timeout)
 
-        try:
-            loop = asyncio.get_event_loop()
-            _timer_tasks[guild_id] = loop.create_task(_timer_task())
-        except RuntimeError:
-            # No running event loop (e.g., in tests without asyncio runner)
-            pass
+        _timer_tasks[guild_id] = asyncio.get_running_loop().create_task(_timer_task())
 
     def _cancel_timer(self, guild_id: str) -> None:
         """Cancel the current pick timer for a guild, if any."""
