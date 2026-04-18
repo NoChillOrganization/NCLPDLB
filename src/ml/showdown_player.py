@@ -123,6 +123,16 @@ if POKE_ENV_AVAILABLE:
             self._policy = PPO.load(str(path))
             log.info(f"[ShowdownBotPlayer] Policy loaded from {path}")
 
+        def _load_transformer(self, path: str | Path) -> None:  # pragma: no cover
+            """Load a BattleTransformer checkpoint (.pt) for MCTS inference."""
+            try:
+                from src.ml.transformer_model import load_model as _load_tf
+                self._transformer = _load_tf(str(path))
+                log.info("[ShowdownBotPlayer] Transformer loaded from %s", path)
+            except Exception as exc:
+                log.warning("[ShowdownBotPlayer] Could not load transformer: %s", exc)
+                self._transformer = None
+
         # ── Move selection ─────────────────────────────────────────
 
         def choose_move(self, battle: AbstractBattle) -> None:  # pragma: no cover  # type: ignore[override]
