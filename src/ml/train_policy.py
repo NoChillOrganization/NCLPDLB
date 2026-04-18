@@ -173,6 +173,55 @@ PPO_HYPERPARAMS: dict[str, Any] = {
 }
 
 
+# ── Transformer feature extractor ─────────────────────────────────────────────
+
+if SB3_OK:
+    class BattleTransformerExtractor(BaseFeaturesExtractor):
+        """
+        SB3-compatible features extractor backed by BattleTransformer's encoder.
+
+        Wraps the transformer's input projection + positional encoding +
+        encoder stack.  The policy and value *heads* remain SB3's standard
+        linear layers — only the shared trunk is replaced.
+
+        Output shape: (batch, d_model)  where d_model defaults to 64.
+        """
+
+        def __init__(
+            self,
+            observation_space: "_gym.Space",
+            d_model: int = 64,
+            n_heads: int = 4,
+            n_layers: int = 2,
+            ffn_dim: int = 128,
+            dropout: float = 0.1,
+        ) -> None:
+            super().__init__(observation_space, features_dim=d_model)
+            from src.ml.transformer_model import BattleTransformer
+            obs_dim = observation_space.shape[0]
+            self._transformer = BattleTransformer(
+                obs_dim  = obs_dim,
+                n_actions = 1,       # heads unused; only encoder is called
+                d_model  = d_model,
+                n_heads  = n_heads,
+                n_layers = n_layers,
+                ffn_dim  = ffn_dim,
+                dropout  = dropout,
+            )
+
+        def forward(self, obs: "_torch.Tensor") -> "_torch.Tensor":
+            # obs: (batch, obs_dim) — SB3 flat vector format
+            x = obs.unsqueeze(1)                        # (batch, 1, obs_dim)
+            x = self._transformer.input_proj(x)         # (batch, 1, d_model)
+            x = self._transformer.pos_enc(x)            # add positional encoding
+            x = self._transformer.encoder(x)            # (batch, 1, d_model)
+            return x[:, -1, :]                          # (batch, d_model)
+else:  # pragma: no cover
+    class BattleTransformerExtractor:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise ImportError("stable-baselines3 is required for BattleTransformerExtractor")
+
+
 # ── Self-play callback ────────────────────────────────────────────────────────
 
 class SelfPlayCallback(BaseCallback):
