@@ -28,6 +28,22 @@ _active_drafts: dict[str, Draft] = {}
 _timer_tasks: dict[str, asyncio.Task] = {}
 
 
+async def _persist_draft(draft: Draft) -> None:
+    """Write draft state to SQLite.  Errors are logged but not re-raised."""
+    try:
+        await _db_save_draft(draft.guild_id, draft.model_dump_json())
+    except Exception as exc:
+        log.error("Failed to persist draft %s to SQLite: %s", draft.guild_id, exc)
+
+
+async def _delete_persisted_draft(guild_id: str) -> None:
+    """Remove draft from SQLite.  Errors are logged but not re-raised."""
+    try:
+        await _db_delete_draft(guild_id)
+    except Exception as exc:
+        log.error("Failed to delete draft %s from SQLite: %s", guild_id, exc)
+
+
 @dataclass
 class PickResult:
     success: bool
