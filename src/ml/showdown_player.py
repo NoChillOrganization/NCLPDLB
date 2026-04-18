@@ -136,6 +136,26 @@ if POKE_ENV_AVAILABLE:
         # ── Move selection ─────────────────────────────────────────
 
         def choose_move(self, battle: AbstractBattle) -> None:  # pragma: no cover  # type: ignore[override]
+            # ── MCTS path ──────────────────────────────────────────
+            if self._use_mcts and self._transformer is not None:
+                try:
+                    from src.ml.mcts import MCTSConfig, _build_legal_mask, run_mcts
+                    obs = build_observation(battle)
+                    legal_mask = _build_legal_mask(battle, N_ACTIONS_GEN9)
+                    n_legal = (
+                        int((~legal_mask).sum())
+                        if legal_mask is not None
+                        else N_ACTIONS_GEN9
+                    )
+                    cfg = MCTSConfig(n_simulations=self._mcts_n_simulations)
+                    action_id, _ = run_mcts(obs, self._transformer, n_legal, cfg)
+                    return self._action_to_move(action_id, battle)
+                except Exception as exc:
+                    log.warning(
+                        "[ShowdownBotPlayer] MCTS error: %s — falling back to PPO", exc
+                    )
+
+            # ── PPO path ───────────────────────────────────────────
             if self._policy is None:
                 log.debug("[ShowdownBotPlayer] No policy loaded — using random")
                 return self.choose_random_move(battle)
