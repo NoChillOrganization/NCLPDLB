@@ -552,6 +552,7 @@ def train(  # pragma: no cover
     team_format: str | None = None,
     server: str = MODE_LOCALHOST,
     save_replays: str | None = None,
+    use_transformer: bool = False,
 ) -> Path:
     """
     Run PPO self-play training for the given Showdown format.
