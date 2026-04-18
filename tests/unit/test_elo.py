@@ -170,6 +170,7 @@ async def test_record_match_sets_display_names():
     """winner_name and loser_name are applied to player records (lines 75, 77)."""
     svc = EloService()
     with patch.object(svc, "_save_player"), \
+         patch.object(svc, "_save_player_to_db"), \
          patch("src.services.elo_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = None
         _ = await svc.record_match(
