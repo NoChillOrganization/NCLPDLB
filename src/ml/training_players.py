@@ -1,5 +1,14 @@
 """
 Implementation of simple rule-based players for curriculum training.
+
+Stub pattern
+------------
+When ``poke_env`` is not installed, a minimal ``Player`` stub is defined so
+that this module can be *imported* in environments without poke-env (e.g. CI
+without the ML extras).  The stub defers the ``ImportError`` to instantiation
+time so that import-level checks (``hasattr``, ``isinstance``) still work,
+but any attempt to actually create a player fails loudly with a clear install
+instruction.
 """
 from __future__ import annotations
 
@@ -14,9 +23,11 @@ except ImportError:  # pragma: no cover
     _POKE_ENV_OK = False
 
     class Player:  # type: ignore
-        """Stub so tests can import this module without poke_env installed."""
+        """Stub — raises ImportError on instantiation if poke_env is missing."""
         def __init__(self, *args: object, **kwargs: object) -> None:
-            pass
+            raise ImportError(
+                "poke_env is not installed. Run: pip install poke-env>=0.8.1"
+            )
 
         def choose_random_move(self, battle: object) -> object:
             raise ImportError("poke_env is not installed")
