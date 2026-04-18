@@ -357,6 +357,7 @@ class DraftService:
             pokemon_name=pokemon.name,
         )
         draft.bans.append(ban)
+        await _persist_draft(draft)
         return BanResult(success=True, pokemon=pokemon)
 
     # ── Bid ────────────────────────────────────────────────────
