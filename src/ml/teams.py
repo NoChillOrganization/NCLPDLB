@@ -3163,7 +3163,7 @@ Brave Nature
 IVs: 0 Spe
 - Flare Blitz
 - Quick Attack
-- Superpower
+- Stomping Tantrum
 - Wild Charge
 
 Furret @ Choice Band
