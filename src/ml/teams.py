@@ -3172,7 +3172,7 @@ Tera Type: Normal
 EVs: 252 HP / 252 Atk / 4 SpD
 Brave Nature
 IVs: 0 Spe
-- Return
+- Body Slam
 - Knock Off
 - Covet
 - Sucker Punch
