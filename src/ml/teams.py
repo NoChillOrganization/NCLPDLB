@@ -3343,8 +3343,8 @@ EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Thunderbolt
 - Nasty Plot
-- Signal Beam
-- Hidden Power Ice
+- Dazzling Gleam
+- Icy Wind
 
 Minun @ Life Orb
 Ability: Minus
@@ -3353,8 +3353,8 @@ EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Thunderbolt
 - Nasty Plot
-- Signal Beam
-- Hidden Power Ice
+- Dazzling Gleam
+- Icy Wind
 
 Swalot @ Black Sludge
 Ability: Sticky Hold
@@ -3362,8 +3362,8 @@ Tera Type: Poison
 EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 - Sludge Bomb
-- Yawn
-- Recover
+- Encore
+- Pain Split
 - Toxic
 
 Chimecho @ Leftovers
