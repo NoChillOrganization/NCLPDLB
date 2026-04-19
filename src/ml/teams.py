@@ -2703,7 +2703,7 @@ Tera Type: Water
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 - Wave Crash
-- Last Respects
+- Crunch
 - Aqua Jet
 - Shadow Ball
 
