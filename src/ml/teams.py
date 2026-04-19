@@ -3664,7 +3664,7 @@ Level: 5
 Tera Type: Normal
 EVs: 236 Atk / 36 Def / 236 Spe
 Jolly Nature
-- Return
+- Body Slam
 - Quick Attack
 - U-turn
 - Bounce
