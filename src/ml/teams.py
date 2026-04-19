@@ -2413,7 +2413,7 @@ IVs: 0 Spe
 - Trick Room
 - Healing Wish
 
-Groudon @ Red Orb
+Groudon @ Leftovers
 Ability: Drought
 Tera Type: Ground
 EVs: 252 Atk / 4 Def / 252 HP
@@ -2446,7 +2446,7 @@ IVs: 0 Spe
 - Ice Beam
 - Thunder
 
-Necrozma-Dawn-Wings @ Ultranecrozium Z
+Necrozma-Dawn-Wings @ Leftovers
 Ability: Prism Armor
 Tera Type: Psychic
 EVs: 252 HP / 4 Def / 252 SpA
