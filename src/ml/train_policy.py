@@ -152,9 +152,15 @@ DOUBLES_FORMATS = {
 # poke-env doesn't support the BO3 series protocol, so we train these
 # using the base single-battle format while keeping artifact paths intact.
 TRAINING_FORMAT_ALIASES: dict[str, str] = {
+    # BO3 variants → train as the equivalent single-battle format
     "gen9vgc2026regibo3"          : "gen9vgc2026regi",
     "gen9vgc2026regfbo3"          : "gen9vgc2026regf",
-    "gen9championsvgc2026regmabo3": "gen9championsvgc2026regma",
+    # Champions formats → not on the standard Showdown server; train as
+    # the closest standard format so battles can actually start.
+    "gen9championsou"             : "gen9ou",
+    "gen9championsbssregma"       : "gen9ou",
+    "gen9championsvgc2026regma"   : "gen9vgc2026regi",
+    "gen9championsvgc2026regmabo3": "gen9vgc2026regi",
 }
 
 PPO_HYPERPARAMS: dict[str, Any] = {
