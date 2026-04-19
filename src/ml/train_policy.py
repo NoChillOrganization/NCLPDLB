@@ -588,11 +588,15 @@ def train(  # pragma: no cover
             results_dir=results_dir,
         )
 
-    # Resolve BO3 / alias formats - poke-env does not support the BO3 series
-    # protocol; train against the equivalent base single-battle format instead.
+    # Resolve aliased formats (BO3 variants, Champions formats that don't exist
+    # on the standard Showdown server).  When no explicit team_format was
+    # supplied, inherit the base format's teams so non-random battles can start.
     training_fmt = TRAINING_FORMAT_ALIASES.get(fmt, fmt)
     if training_fmt != fmt:
-        log.info(f"[train] Format alias: {fmt!r} -> {training_fmt!r} (BO3 mapped to base)")
+        log.info(f"[train] Format alias: {fmt!r} -> {training_fmt!r}")
+        if not team_format:
+            team_format = training_fmt
+            log.info(f"[train] Auto-inherited team_format from base format: {team_format!r}")
 
     _check_showdown_server_if_local(server)
 
