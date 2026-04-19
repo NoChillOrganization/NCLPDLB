@@ -3869,7 +3869,7 @@ Brave Nature
 IVs: 0 Spe
 - Sunsteel Strike
 - Rock Slide
-- Wide Guard
+- Photon Geyser
 - Protect
 
 Amoonguss @ Coba Berry
