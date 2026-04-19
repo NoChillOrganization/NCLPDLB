@@ -3626,7 +3626,7 @@ Adamant Nature
 - Fire Punch
 
 Snorunt @ Eviolite
-Ability: Moody
+Ability: Ice Body
 Level: 5
 Tera Type: Ice
 EVs: 236 SpA / 36 SpD / 236 Spe
