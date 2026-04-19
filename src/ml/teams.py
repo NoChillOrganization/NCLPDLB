@@ -2960,19 +2960,19 @@ Brave Nature
 IVs: 0 Spe
 - Flare Blitz
 - Quick Attack
-- Superpower
+- Stomping Tantrum
 - Wild Charge
 
-Palossand @ Leftovers
-Ability: Water Compaction
-Tera Type: Ghost
-EVs: 252 HP / 4 SpA / 252 SpD
-Sassy Nature
+Sableye @ Leftovers
+Ability: Prankster
+Tera Type: Dark
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
 IVs: 0 Spe
-- Shadow Ball
-- Earth Power
+- Foul Play
 - Will-O-Wisp
-- Shore Up
+- Recover
+- Taunt
 
 Araquanid @ Rocky Helmet
 Ability: Water Bubble
