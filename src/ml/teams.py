@@ -3645,7 +3645,7 @@ Timid Nature
 - Fire Blast
 - Thunderbolt
 - Cross Chop
-- Hidden Power Ice
+- Icy Wind
 
 Pawniard @ Eviolite
 Ability: Defiant
