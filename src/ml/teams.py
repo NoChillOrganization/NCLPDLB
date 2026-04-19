@@ -3828,7 +3828,7 @@ IVs: 0 Spe
 - Close Combat
 - Protect
 
-Groudon @ Red Orb
+Groudon @ Leftovers
 Ability: Drought
 Tera Type: Ground
 EVs: 252 HP / 252 Atk / 4 Def
