@@ -3658,16 +3658,16 @@ Adamant Nature
 - Knock Off
 - Stealth Rock
 
-Bunnelby @ Choice Scarf
-Ability: Huge Power
+Doduo @ Choice Scarf
+Ability: Early Bird
 Level: 5
-Tera Type: Normal
+Tera Type: Flying
 EVs: 236 Atk / 36 Def / 236 Spe
 Jolly Nature
-- Body Slam
+- Brave Bird
 - Quick Attack
-- U-turn
-- Bounce
+- Knock Off
+- Body Slam
 
 Elekid @ Life Orb
 Ability: Static
