@@ -3494,16 +3494,16 @@ Adamant Nature
 - Sucker Punch
 - Stealth Rock
 
-Abra @ Life Orb
-Ability: Inner Focus
+Ralts @ Life Orb
+Ability: Trace
 Level: 5
 Tera Type: Psychic
 EVs: 236 SpA / 36 SpD / 236 Spe
 Timid Nature
 - Psychic
 - Shadow Ball
-- Energy Ball
 - Dazzling Gleam
+- Calm Mind
 
 Larvitar @ Eviolite
 Ability: Guts
