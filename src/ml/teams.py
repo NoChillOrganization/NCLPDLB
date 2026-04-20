@@ -3151,9 +3151,9 @@ EVs: 252 HP / 4 Def / 252 SpD
 Sassy Nature
 IVs: 0 Spe
 - Body Slam
-- Wish
+- Rest
 - Protect
-- Heal Bell
+- Amnesia
 
 Flareon @ Choice Band
 Ability: Flash Fire
