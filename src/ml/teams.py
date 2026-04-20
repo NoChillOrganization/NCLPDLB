@@ -2903,7 +2903,7 @@ Tera Type: Dark
 EVs: 252 HP / 4 Def / 252 SpD
 Calm Nature
 - Foul Play
-- Wish
+- Toxic
 - Protect
 - Moonlight
 
