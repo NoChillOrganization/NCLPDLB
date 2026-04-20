@@ -2346,7 +2346,7 @@ Timid Nature
 - Dragon Pulse
 - Sludge Bomb
 - Flamethrower
-- Energy Ball
+- Shadow Ball
 
 Necrozma-Dusk-Mane @ Leftovers
 Ability: Prism Armor
