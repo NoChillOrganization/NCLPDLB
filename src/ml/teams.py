@@ -3643,9 +3643,9 @@ Tera Type: Fire
 EVs: 236 SpA / 36 SpD / 236 Spe
 Timid Nature
 - Fire Blast
-- Thunderbolt
+- Psychic
 - Cross Chop
-- Icy Wind
+- Thunder Punch
 
 Pawniard @ Eviolite
 Ability: Defiant
