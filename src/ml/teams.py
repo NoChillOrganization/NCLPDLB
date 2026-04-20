@@ -2591,7 +2591,7 @@ Calm Nature
 - Matcha Gotcha
 - Shadow Ball
 - Strength Sap
-- Will-O-Wisp
+- Calm Mind
 """,
 
     # Team 3 — Decidueye-Hisui Spikes Stack
@@ -2624,7 +2624,7 @@ Calm Nature
 - Matcha Gotcha
 - Shadow Ball
 - Strength Sap
-- Will-O-Wisp
+- Calm Mind
 
 Arcanine-Hisui @ Heavy-Duty Boots
 Ability: Rock Head
