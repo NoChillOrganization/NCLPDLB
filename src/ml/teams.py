@@ -2960,8 +2960,8 @@ Brave Nature
 IVs: 0 Spe
 - Flare Blitz
 - Quick Attack
-- Stomping Tantrum
-- Wild Charge
+- Body Slam
+- Dig
 
 Sableye @ Leftovers
 Ability: Prankster
@@ -3163,8 +3163,8 @@ Brave Nature
 IVs: 0 Spe
 - Flare Blitz
 - Quick Attack
-- Stomping Tantrum
-- Wild Charge
+- Body Slam
+- Dig
 
 Furret @ Choice Band
 Ability: Frisk
