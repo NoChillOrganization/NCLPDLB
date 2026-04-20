@@ -2335,7 +2335,7 @@ EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Moongeist Beam
 - Psyshock
-- Energy Ball
+- Shadow Ball
 - Trick
 
 Eternatus @ Choice Specs
