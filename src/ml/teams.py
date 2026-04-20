@@ -3253,11 +3253,11 @@ Calm Nature
 - Wish
 
 Smeargle @ Focus Sash
-Ability: Moody
+Ability: Own Tempo
 Tera Type: Normal
 EVs: 252 HP / 4 Def / 252 Spe
 Timid Nature
-- Spore
+- Encore
 - Sticky Web
 - Stealth Rock
 - Spikes
