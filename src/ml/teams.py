@@ -3623,7 +3623,7 @@ Adamant Nature
 - Extreme Speed
 - Dragon Dance
 - Wrap
-- Fire Punch
+- Aqua Tail
 
 Snorunt @ Eviolite
 Ability: Ice Body
