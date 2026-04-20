@@ -2873,7 +2873,7 @@ Tera Type: Water
 EVs: 252 HP / 252 Def / 4 SpA
 Bold Nature
 - Surf
-- Wish
+- Aqua Ring
 - Protect
 - Scald
 
