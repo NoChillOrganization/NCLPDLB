@@ -3055,7 +3055,7 @@ Tera Type: Fairy
 EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 - Moonblast
-- Soft-Boiled
+- Moonlight
 - Thunder Wave
 - Stealth Rock
 """,
