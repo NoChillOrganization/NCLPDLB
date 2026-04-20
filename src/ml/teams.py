@@ -2833,7 +2833,7 @@ Impish Nature
 - Power Whip
 - Knock Off
 - Rapid Spin
-- Synthesis
+- U-turn
 
 Crabominable @ Choice Band
 Ability: Iron Fist
