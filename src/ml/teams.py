@@ -3343,8 +3343,8 @@ EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Thunderbolt
 - Nasty Plot
-- Dazzling Gleam
-- Icy Wind
+- Grass Knot
+- Volt Switch
 
 Minun @ Life Orb
 Ability: Minus
