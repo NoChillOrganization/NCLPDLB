@@ -3096,7 +3096,7 @@ Tera Type: Normal
 EVs: 252 HP / 4 Def / 252 SpD
 Calm Nature
 - Hyper Voice
-- Wish
+- Rest
 - Protect
 - Thunder Wave
 
