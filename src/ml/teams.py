@@ -2925,7 +2925,7 @@ Calm Nature
 - Moonblast
 - Synthesis
 - Wish
-- Aromatherapy
+- Calm Mind
 """,
 
     # Team 2 — Trick Room Slow Offense
