@@ -2897,15 +2897,15 @@ Timid Nature
 - Psychic
 - Psyshock
 
-Umbreon @ Leftovers
-Ability: Synchronize
-Tera Type: Dark
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-- Foul Play
-- Toxic
+Flareon @ Leftovers
+Ability: Flash Fire
+Tera Type: Fire
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Flare Blitz
+- Quick Attack
+- Wish
 - Protect
-- Moonlight
 
 Espeon @ Life Orb
 Ability: Magic Bounce
