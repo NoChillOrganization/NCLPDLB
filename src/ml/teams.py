@@ -3189,13 +3189,13 @@ IVs: 0 Spe
 - Fire Punch
 
 Decidueye-Hisui @ Leftovers
-Ability: Long Reach
+Ability: Scrappy
 Tera Type: Ghost
 EVs: 252 HP / 252 Atk / 4 SpD
 Brave Nature
 IVs: 0 Spe
 - Triple Arrows
-- Poltergeist
+- Leaf Blade
 - Close Combat
 - Rapid Spin
 """,
