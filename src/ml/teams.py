@@ -3447,7 +3447,7 @@ Tera Type: Normal
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 - Body Slam
-- Covet
+- Facade
 - Sucker Punch
 - Knock Off
 
