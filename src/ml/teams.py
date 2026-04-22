@@ -2263,7 +2263,7 @@ Calm Nature
 
 GEN9UBERS = [
 
-    # Team 1 — Miraidon Hyper Offense
+    # Team 1 — Kyogre Hyper Offense
     """\
 Kyogre @ Choice Scarf
 Ability: Drizzle
