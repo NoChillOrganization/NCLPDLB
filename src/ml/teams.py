@@ -3961,14 +3961,14 @@ Timid Nature
 
     # Team 2 — Togekiss Tailwind Offense
     """\
-Togekiss @ Leftovers
-Ability: Serene Grace
+Whimsicott @ Leftovers
+Ability: Prankster
 Tera Type: Fairy
 EVs: 252 HP / 4 SpA / 252 Spe
 Timid Nature
 - Tailwind
-- Air Slash
-- Follow Me
+- Moonblast
+- Encore
 - Protect
 
 Talonflame @ Life Orb
