@@ -3490,7 +3490,7 @@ Tera Type: Dark
 EVs: 236 Atk / 36 Def / 236 Spe
 Adamant Nature
 - Iron Head
-- Knock Off
+- Night Slash
 - Sucker Punch
 - Stealth Rock
 
