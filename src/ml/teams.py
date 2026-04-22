@@ -3174,7 +3174,7 @@ Brave Nature
 IVs: 0 Spe
 - Body Slam
 - Knock Off
-- Covet
+- Facade
 - Sucker Punch
 
 Granbull @ Flame Orb
