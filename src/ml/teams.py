@@ -3655,7 +3655,7 @@ EVs: 236 Atk / 36 Def / 236 Spe
 Adamant Nature
 - Sucker Punch
 - Iron Head
-- Knock Off
+- Night Slash
 - Stealth Rock
 
 Doduo @ Choice Scarf
