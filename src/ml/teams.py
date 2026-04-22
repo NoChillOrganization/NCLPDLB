@@ -3381,7 +3381,7 @@ Ability: Hustle
 Tera Type: Ice
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
-- Icicle Crash
+- Freeze-Dry
 - Ice Shard
 - Aerial Ace
 - Quick Attack
@@ -3436,7 +3436,7 @@ Ability: Hustle
 Tera Type: Ice
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
-- Icicle Crash
+- Freeze-Dry
 - Ice Shard
 - Aerial Ace
 - Quick Attack
