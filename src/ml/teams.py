@@ -2520,12 +2520,12 @@ Impish Nature
 - Thunder Wave
 
 Decidueye-Hisui @ Choice Band
-Ability: Long Reach
+Ability: Scrappy
 Tera Type: Ghost
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 - Triple Arrows
-- Poltergeist
+- Leaf Blade
 - Close Combat
 - U-turn
 """,
@@ -2597,12 +2597,12 @@ Calm Nature
     # Team 3 — Decidueye-Hisui Spikes Stack
     """\
 Decidueye-Hisui @ Choice Band
-Ability: Long Reach
+Ability: Scrappy
 Tera Type: Ghost
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 - Triple Arrows
-- Poltergeist
+- Leaf Blade
 - Close Combat
 - U-turn
 
