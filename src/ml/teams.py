@@ -2265,15 +2265,15 @@ GEN9UBERS = [
 
     # Team 1 — Miraidon Hyper Offense
     """\
-Miraidon @ Choice Specs
-Ability: Hadron Engine
-Tera Type: Electric
+Kyogre @ Choice Scarf
+Ability: Drizzle
+Tera Type: Water
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-- Electro Drift
-- Draco Meteor
-- Overheat
-- Volt Switch
+- Water Spout
+- Origin Pulse
+- Ice Beam
+- Thunder
 
 Koraidon @ Choice Band
 Ability: Orichalcum Pulse
