@@ -1,0 +1,11 @@
+regulation,dates,restricted_limit,mythicals,legendaries,paradox,notes
+Reg A,"Jan 2–31, 2023",0,False,False,False,Paldea dex only (#001-375 + DLC exceptions)
+Reg B,"Feb 1–Mar 31, 2023",0,False,False,True,Paradox Pokémon added; no Legendaries
+Reg C,"Apr 1–Jun 30, 2023",0,False,False,True,Treasures of Ruin added
+Reg D,"Jul 1–Sep 30, 2023",0,False,False,True,HOME transfers + Kitakami Pokémon unlocked
+Reg E,"Oct 1, 2023–Jan 3, 2024",0,False,False,True,Full Kitakami Pokédex legal
+Reg F,"Jan 4–Apr 30, 2024 (+ Dec 1, 2025–Mar 31, 2026 return)",0,False,False,True,Blueberry Pokédex added (no Terapagos/restricted legends)
+Reg G,"May 1–Aug 31, 2024 (+ Jan 6–Apr 30, 2025 return)",1,False,True,True,"1 Restricted Legend allowed (Mewtwo, Zacian, Koraidon, etc.)"
+Reg H,"Sep 1, 2024–Jan 5, 2025 (+ Sep 1–Nov 30, 2025 return for events)",0,False,False,False,No Paradox/Legendary; 'Base series' refresh
+Reg I,"May 1–Aug 31, 2025 (+ Apr 1, 2026–present for events; Jan 5, 2026+ ranked)",2,False,True,True,2 Restricted Legends allowed; NO mythicals
+Reg J,"Sep 1, 2025–Jan 4, 2026 (Ranked only, no TPCi events)",2,True,True,True,2 Restricted OR Mythical; first time Mythicals legal in VGC

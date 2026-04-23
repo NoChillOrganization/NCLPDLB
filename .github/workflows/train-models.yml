@@ -9,25 +9,25 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  # Directory where competitive meta data (CSVs + format_meta.json) is staged.
+  # Passed to train_policy.py via --meta-path to log usage context per format.
+  COMPETITIVE_DATA_DIR: data/competitive
 
 jobs:
   train:
     runs-on: self-hosted
-    timeout-minutes: 250
+    timeout-minutes: 260
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
         config:
+          # ── Singles ──────────────────────────────────────────────────────────
           - { format: gen9randombattle,        team_format: "",                  timesteps: 500000, train_timeout: 160 }
           - { format: gen9ou,                  team_format: gen9ou,              timesteps: 500000, train_timeout: 160 }
-          - { format: gen9doublesou,           team_format: gen9doublesou,       timesteps: 300000, train_timeout: 230 }
           - { format: gen9nationaldex,         team_format: gen9nationaldex,     timesteps: 500000, train_timeout: 160 }
           - { format: gen9monotype,            team_format: gen9monotype,        timesteps: 500000, train_timeout: 160 }
           - { format: gen9anythinggoes,        team_format: gen9anythinggoes,    timesteps: 500000, train_timeout: 160 }
-          - { format: gen9vgc2026regi,         team_format: gen9vgc2026regi,     timesteps: 300000, train_timeout: 230 }
-          - { format: gen9vgc2026regf,         team_format: gen9vgc2026regf,     timesteps: 300000, train_timeout: 230 }
-          - { format: gen9randomdoublesbattle, team_format: "",                  timesteps: 300000, train_timeout: 230 }
           - { format: gen9ubers,               team_format: gen9ubers,           timesteps: 500000, train_timeout: 160 }
           - { format: gen9uu,                  team_format: gen9uu,              timesteps: 500000, train_timeout: 160 }
           - { format: gen9ru,                  team_format: gen9ru,              timesteps: 500000, train_timeout: 160 }
@@ -35,10 +35,21 @@ jobs:
           - { format: gen9pu,                  team_format: gen9pu,              timesteps: 500000, train_timeout: 160 }
           - { format: gen9zu,                  team_format: gen9zu,              timesteps: 500000, train_timeout: 160 }
           - { format: gen9lc,                  team_format: gen9lc,              timesteps: 500000, train_timeout: 160 }
+          # ── Doubles ──────────────────────────────────────────────────────────
+          - { format: gen9doublesou,           team_format: gen9doublesou,       timesteps: 300000, train_timeout: 230 }
+          - { format: gen9randomdoublesbattle, team_format: "",                  timesteps: 300000, train_timeout: 230 }
           - { format: gen9doublesubers,        team_format: gen9doublesubers,    timesteps: 300000, train_timeout: 230 }
           - { format: gen9doublesuu,           team_format: gen9doublesuu,       timesteps: 300000, train_timeout: 230 }
-          - { format: gen9vgc2026regfbo3,           team_format: gen9vgc2026regfbo3,  timesteps: 300000, train_timeout: 230 }
-          - { format: gen9vgc2026regibo3,           team_format: gen9vgc2026regibo3,  timesteps: 300000, train_timeout: 230 }
+          # ── VGC — current active regulation (Reg I, Jan 5 2026+) ─────────────
+          # Reg I is the live tournament format; given full singles-tier budget.
+          # April 2026 usage leaders: Incineroar 41.9%, Calyrex-Shadow 29.3%,
+          #   Calyrex-Ice 23.8%, Miraidon 23.5%, Flutter Mane 21.3%, Rillaboom 21.2%
+          - { format: gen9vgc2026regi,         team_format: gen9vgc2026regi,     timesteps: 500000, train_timeout: 250 }
+          - { format: gen9vgc2026regibo3,      team_format: gen9vgc2026regibo3,  timesteps: 500000, train_timeout: 250 }
+          # ── VGC — expired regulations (lower budget; kept for /spar coverage) ─
+          - { format: gen9vgc2026regf,         team_format: gen9vgc2026regf,     timesteps: 300000, train_timeout: 230 }
+          - { format: gen9vgc2026regfbo3,      team_format: gen9vgc2026regfbo3,  timesteps: 300000, train_timeout: 230 }
+          # ── Champions formats ─────────────────────────────────────────────────
           - { format: gen9championsou,              team_format: "",                  timesteps: 500000, train_timeout: 160 }
           - { format: gen9championsbssregma,        team_format: "",                  timesteps: 500000, train_timeout: 160 }
           - { format: gen9championsvgc2026regma,    team_format: "",                  timesteps: 300000, train_timeout: 230 }
@@ -62,6 +73,28 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Seed competitive meta data
+        shell: bash
+        run: |
+          # Copy Gen 9 competitive CSVs/JSON from the local Showdown exports
+          # directory and build data/competitive/format_meta.json.
+          # Non-fatal: missing exports on a remote runner just skips the meta log.
+          python scripts/prepare_competitive_data.py \
+            || echo "Competitive data seeding skipped — COMPETITIVE_EXPORTS_DIR not set or files not found"
+          if [ -f "$COMPETITIVE_DATA_DIR/format_meta.json" ]; then
+            echo "Meta data ready at $COMPETITIVE_DATA_DIR"
+            python -c "
+import json, sys
+data = json.load(open('$COMPETITIVE_DATA_DIR/format_meta.json'))
+print(f'  Formats indexed: {len(data)}')
+for fmt, meta in list(data.items())[:5]:
+    top = ', '.join(e[\"pokemon\"] for e in meta.get(\"top10_usage\", [])[:3])
+    print(f'  {fmt}: top usage = {top}')
+"
+          else
+            echo "No format_meta.json generated — training proceeds without meta context"
+          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -124,6 +157,9 @@ jobs:
           ARGS="--format $TRAIN_FORMAT --timesteps $TRAIN_TIMESTEPS --save-dir data/ml/policy --server localhost"
           if [ -n "$TRAIN_TEAM_FORMAT" ]; then
             ARGS="$ARGS --team-format $TRAIN_TEAM_FORMAT"
+          fi
+          if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
+            ARGS="$ARGS --meta-path $COMPETITIVE_DATA_DIR"
           fi
           # Send SIGINT (KeyboardInterrupt in Python) 3 min before the GitHub
           # step timeout fires SIGKILL. This lets train_policy.py save the model

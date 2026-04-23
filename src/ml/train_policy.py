@@ -117,6 +117,39 @@ def _check_showdown_server_if_local(server: str) -> None:
         _check_showdown_server()
 
 
+def _log_meta_context(fmt: str, meta_path: str | None) -> None:
+    """Log competitive meta context (usage leaders, archetypes) before training.
+
+    Reads data/competitive/format_meta.json when meta_path is provided.
+    Pure logging — does not alter training behaviour.
+    """
+    if not meta_path:
+        return
+    import json as _json
+    meta_file = Path(meta_path) / "format_meta.json"
+    if not meta_file.exists():
+        log.info(f"[meta] No format_meta.json found in {meta_path} — skipping context log")
+        return
+    try:
+        data = _json.loads(meta_file.read_text())
+    except Exception as exc:
+        log.warning(f"[meta] Could not read format_meta.json: {exc}")
+        return
+    entry = data.get(fmt)
+    if not entry:
+        log.info(f"[meta] No meta entry for {fmt!r}")
+        return
+    top10 = entry.get("top10_usage", [])
+    if top10:
+        names = ", ".join(r["pokemon"] for r in top10[:10])
+        log.info(f"[meta] {fmt} — top usage: {names}")
+    archetypes = entry.get("archetypes", [])
+    for arch in archetypes[:4]:
+        label = arch.get("archetype", arch.get("style", "?"))
+        core  = arch.get("core_pokemon", arch.get("restricted", ""))
+        log.info(f"[meta] {fmt} archetype: {label} — {core}")
+
+
 DEFAULT_FORMAT      = "gen9randombattle"
 DEFAULT_TIMESTEPS   = 500_000
 DEFAULT_SWAP_EVERY  = 50_000          # steps between opponent model swaps
@@ -559,6 +592,7 @@ def train(  # pragma: no cover
     server: str = MODE_LOCALHOST,
     save_replays: str | None = None,
     use_transformer: bool = False,
+    meta_path: str | None = None,
 ) -> Path:
     """
     Run PPO self-play training for the given Showdown format.
@@ -599,6 +633,7 @@ def train(  # pragma: no cover
             log.info(f"[train] Auto-inherited team_format from base format: {team_format!r}")
 
     _check_showdown_server_if_local(server)
+    _log_meta_context(fmt, meta_path)
 
     if not POKE_ENV_AVAILABLE:
         raise RuntimeError(
@@ -920,6 +955,13 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
         default=False,
         help="Use BattleTransformerExtractor (transformer encoder) instead of default MLP policy",
     )
+    ap.add_argument(
+        "--meta-path",
+        default=None,
+        metavar="DIR",
+        help="Directory containing competitive meta data (format_meta.json). "
+             "When set, usage leaders and archetypes are logged before training.",
+    )
     return ap.parse_args()
 
 
@@ -950,4 +992,5 @@ if __name__ == "__main__":  # pragma: no cover
             server=args.server,
             save_replays=args.save_replays,
             use_transformer=args.use_transformer,
+            meta_path=args.meta_path,
         )
