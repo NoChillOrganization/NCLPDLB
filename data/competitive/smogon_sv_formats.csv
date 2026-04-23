@@ -1,0 +1,12 @@
+format,tier,restricted_pokemon,battle_style,team_size,notable_bans,key_clauses,usage_threshold_pct,notes
+AG (Anything Goes),AG,6,Singles,6,No bans,Endless Battle Clause only,,No restrictions; Mega Rayquaza legal
+Ubers,Ubers,6,Singles,6,"Complex bans (Shadow Tag, Power Construct, etc.)","Species, Sleep, OHKO, Evasion, Moody, Endless Battle",,Banned from OU but not AG
+OverUsed (OU),OU,6,Singles,6,"Calyrex-Shadow/Ice, Zacian, Koraidon, Miraidon, Iron Bundle, Chi-Yu, Chien-Pao, Flutter Mane, Palafin, Annihilape, Houndstone, Sneasler, Ursaluna, Espathra, Zamazenta-Crowned, Mewtwo, Eternatus, Urshifu-SS, Mega Rayquaza, Magearna, Marshadow, etc.","Species, Sleep, OHKO, Evasion, Moody, Endless Battle",4.52,Primary Smogon tier; usage >4.52% stays in OU
+UU (UnderUsed),UU,6,Singles,6,"OU Pokémon + UUBL (e.g. Primarina, Slowking-Galar, Oricorio-G)","Species, Sleep, OHKO, Evasion, Moody, Endless Battle",1.67,Usage-based tier below OU
+RU (RarelyUsed),RU,6,Singles,6,UU Pokémon + RUBL,"Species, Sleep, OHKO, Evasion, Moody, Endless Battle",1.67,Third tier in Smogon hierarchy
+NU (NeverUsed),NU,6,Singles,6,RU Pokémon + NUBL,"Species, Sleep, OHKO, Evasion, Moody, Endless Battle",1.67,Fourth tier
+PU,PU,6,Singles,6,NU Pokémon + PUBL,"Species, Sleep, OHKO, Evasion, Moody, Endless Battle",1.67,Fifth tier
+ZU (Zero Used),ZU,6,Singles,6,PU Pokémon,"Species, Sleep, OHKO, Evasion, Moody, Endless Battle",,Lowest usage tier
+LC (Little Cup),LC,6,Singles,6,"Bagon, Drifloon, Gligar, Misdreavus, Murkrow, Scyther, Sneasel, Tangela, Yanma, Meditite, Vulpix-Alolan, Cutiefly, Swirlix, Porygon, Girafarig, Pawniard, Fletchling, Gastly-Alolan, Doduo","Species, Sleep, OHKO, Evasion, Moody, Endless Battle; Lv.5 unevolved only",,Level 5 unevolved Pokémon only
+Smogon Doubles (DOU),DOU,6,Doubles,6,"Calyrex-Shadow, Zacian, Flutter Mane (see Ubers DUbers list)","Species, Sleep, OHKO, Evasion, Moody; tiered independently",,Unofficial Smogon doubles; separate from VGC
+National Dex OU,National Dex,6,Singles,6,"Mega Rayquaza, Calyrex-Shadow, Zacian, etc.",All standard + Pokémon must be obtainable anywhere,,"Allows Mega Evolutions, Z-Moves banned in SV OU"

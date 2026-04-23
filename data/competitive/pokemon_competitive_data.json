@@ -1,0 +1,554 @@
+{
+  "metadata": {
+    "game": "Pokemon Scarlet & Violet (Gen 9)",
+    "last_updated": "April 2026",
+    "sources": [
+      "Smogon University (smogon.com)",
+      "Victory Road (victoryroad.pro)",
+      "Serebii (serebii.net)",
+      "ShowdownTier (showdowntier.com)"
+    ]
+  },
+  "smogon": {
+    "formats": [
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "AG (Anything Goes)",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 100,
+        "species_clause": true,
+        "sleep_clause": false,
+        "ohko_clause": false,
+        "evasion_clause": false,
+        "endless_battle_clause": true,
+        "banned_pokemon": "None (truly anything goes)",
+        "banned_moves": "None",
+        "banned_abilities": "None",
+        "notes": "No bans. Intended as a free-for-all format above Ubers."
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "Ubers",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 100,
+        "species_clause": true,
+        "sleep_clause": true,
+        "ohko_clause": true,
+        "evasion_clause": true,
+        "endless_battle_clause": true,
+        "banned_pokemon": "Arceus, Eternatus, Calyrex-Shadow, Calyrex-Ice, Zacian-Crowned, Zamazenta-Crowned, Kyogre, Groudon, Rayquaza, Mewtwo, Mew, Dialga, Palkia, Giratina, Reshiram, Zekrom, Kyurem-White, Kyurem-Black, Xerneas, Yveltal, Zygarde, Solgaleo, Lunala, Necrozma-DM, Necrozma-DW, Marshadow, Zeraora, Zacian, Zamazenta, Urshifu-SS, Urshifu-RS, Regieleki, Regidrago, Glastrier, Spectrier, Enamorus",
+        "banned_moves": "None beyond standard clauses",
+        "banned_abilities": "None beyond standard clauses",
+        "notes": "Catchall for Pok\u00e9mon banned from OU. Suspect: Tera Blast under Round 18 testing (April 2026)."
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "OU (OverUsed)",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 100,
+        "species_clause": true,
+        "sleep_clause": true,
+        "ohko_clause": true,
+        "evasion_clause": true,
+        "endless_battle_clause": true,
+        "banned_pokemon": "All Ubers-tier Pokemon + Flutter Mane, Palafin-Hero, Chi-Yu, Chien-Pao, Iron Bundle, Koraidon, Miraidon, Walking Wake, Iron Leaves, Gouging Fire, Raging Bolt (previously banned then suspect resolved)",
+        "banned_moves": "Baton Pass (complex ban on passing stat boosts)",
+        "banned_abilities": "Moody",
+        "notes": "Main competitive format. Top usage April 2026: Great Tusk 35.26%, Kingambit 24.69%, Gholdengo 22.27%, Dragonite 20.99%, Zamazenta 20.08%, Ogerpon-Wellspring 17.85%, Iron Valiant 17.07%, Raging Bolt 15.06%, Dragapult 14.89%, Ting-Lu 14.81%"
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "UU (UnderUsed)",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 100,
+        "species_clause": true,
+        "sleep_clause": true,
+        "ohko_clause": true,
+        "evasion_clause": true,
+        "endless_battle_clause": true,
+        "banned_pokemon": "All OU/Ubers Pokemon + Cyclizar, Roaring Moon, Enamorus-Therian, Sandy Shocks, Iron Moth, Ursaluna, Cresselia (UU banned), Slowking-Galar (dropped to UU April 2026)",
+        "banned_moves": "Baton Pass",
+        "banned_abilities": "Moody",
+        "notes": "April 2026 rises: Hydreigon, Mamoswine, Mew, Talonflame"
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "RU (RarelyUsed)",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 100,
+        "species_clause": true,
+        "sleep_clause": true,
+        "ohko_clause": true,
+        "evasion_clause": true,
+        "endless_battle_clause": true,
+        "banned_pokemon": "All UU/OU/Ubers Pokemon + RU-specific bans",
+        "banned_moves": "Baton Pass",
+        "banned_abilities": "Moody",
+        "notes": "April 2026: Necrozma, Terrakion, Barraskewda, Toxtricity newly placed here"
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "NU (NeverUsed)",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 100,
+        "species_clause": true,
+        "sleep_clause": true,
+        "ohko_clause": true,
+        "evasion_clause": true,
+        "endless_battle_clause": true,
+        "banned_pokemon": "All higher-tier Pokemon",
+        "banned_moves": "Baton Pass",
+        "banned_abilities": "Moody",
+        "notes": "April 2026: Arcanine, Uxie rose from PU to NU"
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "PU (PU is not an acronym)",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 100,
+        "species_clause": true,
+        "sleep_clause": true,
+        "ohko_clause": true,
+        "evasion_clause": true,
+        "endless_battle_clause": true,
+        "banned_pokemon": "All higher-tier Pokemon",
+        "banned_moves": "Baton Pass",
+        "banned_abilities": "Moody",
+        "notes": "April 2026 drops: Scrafty, Slowbro-Galar, Vileplume, Wo-Chien. Heracross unbanned."
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "ZU (Zero Used)",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 100,
+        "species_clause": true,
+        "sleep_clause": true,
+        "ohko_clause": true,
+        "evasion_clause": true,
+        "endless_battle_clause": true,
+        "banned_pokemon": "All higher-tier Pokemon",
+        "banned_moves": "Baton Pass",
+        "banned_abilities": "Moody",
+        "notes": "Lowest Smogon tier. April 2026: Skuntank dropped here."
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "LC (Little Cup)",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 5,
+        "species_clause": true,
+        "sleep_clause": true,
+        "ohko_clause": true,
+        "evasion_clause": true,
+        "endless_battle_clause": true,
+        "banned_pokemon": "Pok\u00e9mon that cannot evolve or were not obtained unevolved; LC bans: Chinchou, Drifloon, Elekid, Gligar, Meditite, Misdreavus, Murkrow, Rufflet, Scyther, Sneasel, Swirlix, Tangela, Yanma, Cutiefly, Vulpix-Alola, Porygon, Pawniard",
+        "banned_moves": "Dragon Rage, Sonic Boom (fixed damage), Baton Pass",
+        "banned_abilities": "Moody, Sand Rush (Drilbur), Speed Boost (Torchic)",
+        "notes": "Only unevolved Pok\u00e9mon at Lv 5. Has own ban list separate from OU."
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "format": "National Dex OU",
+        "battle_style": "Singles",
+        "team_size": "6v6",
+        "level_cap": 100,
+        "species_clause": true,
+        "sleep_clause": true,
+        "ohko_clause": true,
+        "evasion_clause": true,
+        "endless_battle_clause": true,
+        "banned_pokemon": "Mirrors standard OU bans but allows non-SV-native Pokemon from prior gens via National Dex",
+        "banned_moves": "Baton Pass",
+        "banned_abilities": "Moody",
+        "notes": "Allows Mega Evolution, Z-Moves stripped out. Popular alternative format."
+      }
+    ],
+    "ou_usage_april_2026": [
+      {
+        "pokemon": "Great Tusk",
+        "tier": "OU",
+        "usage_pct": 35.26,
+        "role": "Hazard Removal / Physical Attacker"
+      },
+      {
+        "pokemon": "Kingambit",
+        "tier": "OU",
+        "usage_pct": 24.69,
+        "role": "Late-game Sweeper"
+      },
+      {
+        "pokemon": "Gholdengo",
+        "tier": "OU",
+        "usage_pct": 22.27,
+        "role": "Blocker / Special Attacker"
+      },
+      {
+        "pokemon": "Dragonite",
+        "tier": "OU",
+        "usage_pct": 20.99,
+        "role": "Wallbreaker / Sweeper"
+      },
+      {
+        "pokemon": "Zamazenta",
+        "tier": "OU",
+        "usage_pct": 20.08,
+        "role": "Defensive Wall / Speed Control"
+      },
+      {
+        "pokemon": "Ogerpon-Wellspring",
+        "tier": "OU",
+        "usage_pct": 17.85,
+        "role": "Physical Attacker / Tera Abuser"
+      },
+      {
+        "pokemon": "Iron Valiant",
+        "tier": "OU",
+        "usage_pct": 17.07,
+        "role": "Mixed Attacker / Revenge Killer"
+      },
+      {
+        "pokemon": "Raging Bolt",
+        "tier": "OU",
+        "usage_pct": 15.06,
+        "role": "Bulky Special Attacker"
+      },
+      {
+        "pokemon": "Dragapult",
+        "tier": "OU",
+        "usage_pct": 14.89,
+        "role": "Speed Control / Attacker"
+      },
+      {
+        "pokemon": "Ting-Lu",
+        "tier": "OU",
+        "usage_pct": 14.81,
+        "role": "Hazard Setter / Special Wall"
+      },
+      {
+        "pokemon": "Kyurem",
+        "tier": "OU",
+        "usage_pct": 14.65,
+        "role": "Wallbreaker"
+      },
+      {
+        "pokemon": "Pecharunt",
+        "tier": "OU",
+        "usage_pct": 13.8,
+        "role": "Toxic Chain / Disruption"
+      },
+      {
+        "pokemon": "Slowking-Galar",
+        "tier": "OU",
+        "usage_pct": 13.37,
+        "role": "Regenerator / Special Wall"
+      },
+      {
+        "pokemon": "Hatterene",
+        "tier": "OU",
+        "usage_pct": 12.94,
+        "role": "Trick Room Setter / Magic Bounce"
+      },
+      {
+        "pokemon": "Corviknight",
+        "tier": "OU",
+        "usage_pct": 12.41,
+        "role": "Defog / Physical Wall"
+      },
+      {
+        "pokemon": "Gliscor",
+        "tier": "OU",
+        "usage_pct": 11.89,
+        "role": "Toxic Orb / Physical Wall"
+      },
+      {
+        "pokemon": "Roaring Moon",
+        "tier": "OU",
+        "usage_pct": 11.42,
+        "role": "Wallbreaker / Setup Sweeper"
+      },
+      {
+        "pokemon": "Iron Moth",
+        "tier": "OU",
+        "usage_pct": 10.77,
+        "role": "Special Attacker"
+      },
+      {
+        "pokemon": "Darkrai",
+        "tier": "OU",
+        "usage_pct": 10.22,
+        "role": "Fast Special Attacker / Sleep user"
+      },
+      {
+        "pokemon": "Rillaboom",
+        "tier": "OU",
+        "usage_pct": 9.88,
+        "role": "Grassy Terrain Setter / Physical Attacker"
+      }
+    ]
+  },
+  "vgc": {
+    "formats": [
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "regulation": "Regulation G",
+        "active_dates": "Jan 6 \u2013 Apr 30, 2025",
+        "battle_style": "Doubles",
+        "team_size_brought": 6,
+        "team_size_used": 4,
+        "level_cap": 50,
+        "species_clause": true,
+        "item_clause": true,
+        "restricted_limit": 1,
+        "mythicals_allowed": false,
+        "banned_pokemon": "All Mythicals (Mew, Jirachi, Deoxys, Phione, Manaphy, Darkrai, Shaymin, Arceus, Victini, Keldeo, Meloetta, Genesect, Diancie, Hoopa, Volcanion, Magearna, Marshadow, Zeraora, Meltan, Melmetal, Zarude, Glastrier, Spectrier, Calyrex-fused forms, Pecharunt)",
+        "restricted_pokemon": "Calyrex-Ice, Calyrex-Shadow, Zacian, Zamazenta, Eternatus, Kubfu, Urshifu, Regieleki, Regidrago, Glastrier, Spectrier, Calyrex, Mewtwo, Lugia, Ho-Oh, Kyogre, Groudon, Rayquaza, Dialga, Palkia, Giratina, Reshiram, Zekrom, Kyurem, Xerneas, Yveltal, Zygarde, Cosmog, Cosmoem, Solgaleo, Lunala, Necrozma, Zacian, Zamazenta, Eternatus, Miraidon, Koraidon, Terapagos",
+        "notes": "1 restricted max. The go-to World Championships format for first half of 2025."
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "regulation": "Regulation I",
+        "active_dates": "May 1 \u2013 Aug 31, 2025 + Jan 5, 2026 \u2013 present (current)",
+        "battle_style": "Doubles",
+        "team_size_brought": 6,
+        "team_size_used": 4,
+        "level_cap": 50,
+        "species_clause": true,
+        "item_clause": true,
+        "restricted_limit": 2,
+        "mythicals_allowed": false,
+        "banned_pokemon": "Mew, Jirachi, Deoxys, Phione, Manaphy, Darkrai, Shaymin, Arceus, Victini, Keldeo, Meloetta, Genesect, Diancie, Hoopa, Volcanion, Magearna, Marshadow, Zeraora, Meltan, Melmetal, Zarude, Pecharunt",
+        "restricted_pokemon": "Calyrex-Ice, Calyrex-Shadow, Zacian, Zamazenta, Eternatus, Kubfu, Urshifu (as restricted), Regieleki, Regidrago, Glastrier, Spectrier, Mewtwo, Lugia, Ho-Oh, Kyogre, Groudon, Rayquaza, Dialga, Palkia, Giratina, Reshiram, Zekrom, Kyurem, Xerneas, Yveltal, Zygarde, Cosmog, Cosmoem, Solgaleo, Lunala, Necrozma, Miraidon, Koraidon, Terapagos",
+        "notes": "Current active format (Jan 5 2026+). 2 restricted max. Used for 2025 World Championships. Urshifu NOT restricted in this reg."
+      },
+      {
+        "game": "Scarlet & Violet (Gen 9)",
+        "regulation": "Regulation J",
+        "active_dates": "Sep 1, 2025 \u2013 Jan 4, 2026",
+        "battle_style": "Doubles",
+        "team_size_brought": 6,
+        "team_size_used": 4,
+        "level_cap": 50,
+        "species_clause": true,
+        "item_clause": true,
+        "restricted_limit": 2,
+        "mythicals_allowed": true,
+        "banned_pokemon": "Battle Bond Greninja only",
+        "restricted_pokemon": "Same as Reg I restricted list + Mythicals now allowed (but do not count as restricted)",
+        "notes": "First regulation to allow Mythicals. Ranked Battles only \u2014 NOT used at official TPCi tournaments. Active only Sep 2025 \u2013 Jan 4 2026."
+      }
+    ],
+    "regulation_i_usage_april_2026": [
+      {
+        "pokemon": "Incineroar",
+        "tier_label": "A",
+        "usage_pct": 41.9,
+        "win_pct": 50.21,
+        "role": "Intimidate / Fake Out Support"
+      },
+      {
+        "pokemon": "Calyrex-Shadow",
+        "tier_label": "A",
+        "usage_pct": 29.29,
+        "win_pct": 52.03,
+        "role": "Restricted Sweeper"
+      },
+      {
+        "pokemon": "Flutter Mane",
+        "tier_label": "B",
+        "usage_pct": 21.33,
+        "win_pct": 50.88,
+        "role": "Fast Special Attacker"
+      },
+      {
+        "pokemon": "Rillaboom",
+        "tier_label": "B",
+        "usage_pct": 21.23,
+        "win_pct": 51.42,
+        "role": "Grassy Terrain Setter / Priority"
+      },
+      {
+        "pokemon": "Koraidon",
+        "tier_label": "B",
+        "usage_pct": 20.42,
+        "win_pct": 51.67,
+        "role": "Restricted Physical Attacker"
+      },
+      {
+        "pokemon": "Calyrex-Ice",
+        "tier_label": "A",
+        "usage_pct": 23.75,
+        "win_pct": 53.04,
+        "role": "Restricted Trick Room Sweeper"
+      },
+      {
+        "pokemon": "Miraidon",
+        "tier_label": "A",
+        "usage_pct": 23.48,
+        "win_pct": 52.81,
+        "role": "Restricted Special Attacker"
+      },
+      {
+        "pokemon": "Amoonguss",
+        "tier_label": "B",
+        "usage_pct": 18.21,
+        "win_pct": 50.33,
+        "role": "Redirection / Spore Support"
+      },
+      {
+        "pokemon": "Kyogre",
+        "tier_label": "B",
+        "usage_pct": 18.24,
+        "win_pct": 51.07,
+        "role": "Restricted Rain Sweeper"
+      },
+      {
+        "pokemon": "Zamazenta",
+        "tier_label": "B",
+        "usage_pct": 17.64,
+        "win_pct": 53.18,
+        "role": "Restricted Physical Wall/Attacker"
+      },
+      {
+        "pokemon": "Lunala",
+        "tier_label": "B",
+        "usage_pct": 17.01,
+        "win_pct": 51.86,
+        "role": "Restricted Special Attacker"
+      },
+      {
+        "pokemon": "Tornadus",
+        "tier_label": "C",
+        "usage_pct": 15.53,
+        "win_pct": 50.77,
+        "role": "Prankster Tailwind Setter"
+      },
+      {
+        "pokemon": "Urshifu",
+        "tier_label": "A",
+        "usage_pct": 15.11,
+        "win_pct": 55.23,
+        "role": "Physical Sweeper / Unseen Fist"
+      },
+      {
+        "pokemon": "Whimsicott",
+        "tier_label": "C",
+        "usage_pct": 14.78,
+        "win_pct": 49.89,
+        "role": "Prankster Tailwind / Encore"
+      },
+      {
+        "pokemon": "Raging Bolt",
+        "tier_label": "B",
+        "usage_pct": 13.67,
+        "win_pct": 51.92,
+        "role": "Bulky Special Attacker"
+      },
+      {
+        "pokemon": "Indeedee-F",
+        "tier_label": "C",
+        "usage_pct": 13.31,
+        "win_pct": 50.12,
+        "role": "Psychic Terrain / Follow Me"
+      },
+      {
+        "pokemon": "Ursaluna",
+        "tier_label": "B",
+        "usage_pct": 12.63,
+        "win_pct": 51.79,
+        "role": "Trick Room Physical Sweeper"
+      },
+      {
+        "pokemon": "Farigiraf",
+        "tier_label": "B",
+        "usage_pct": 10.79,
+        "win_pct": 51.26,
+        "role": "Trick Room Setter / Sap Sipper"
+      },
+      {
+        "pokemon": "Chien-Pao",
+        "tier_label": "B",
+        "usage_pct": 10.88,
+        "win_pct": 52.62,
+        "role": "Fast Physical Attacker"
+      },
+      {
+        "pokemon": "Grimmsnarl",
+        "tier_label": "C",
+        "usage_pct": 9.77,
+        "win_pct": 50.44,
+        "role": "Prankster / Screen Setter"
+      }
+    ]
+  },
+  "team_archetypes": [
+    {
+      "format": "Smogon OU",
+      "archetype": "Hyper Offense",
+      "core_pokemon": "Great Tusk, Dragonite, Kingambit, Iron Valiant, Roaring Moon, Gholdengo",
+      "win_condition": "Overwhelm with speed/power before opponent can set up"
+    },
+    {
+      "format": "Smogon OU",
+      "archetype": "Balance",
+      "core_pokemon": "Corviknight, Ting-Lu, Gholdengo, Great Tusk, Slowking-Galar, Kingambit",
+      "win_condition": "Hazard stack + chip damage + late-game sweeper"
+    },
+    {
+      "format": "Smogon OU",
+      "archetype": "Sun",
+      "core_pokemon": "Torkoal, Ogerpon-Wellspring, Raging Bolt, Iron Valiant, Great Tusk, Hatterene",
+      "win_condition": "Drought-boosted Fire attacks and Chlorophyll sweepers"
+    },
+    {
+      "format": "Smogon OU",
+      "archetype": "Trick Room",
+      "core_pokemon": "Hatterene, Dragapult, Rillaboom, Kingambit, Ting-Lu, Gliscor",
+      "win_condition": "Reverse speed order; win with slow powerful attackers"
+    },
+    {
+      "format": "Smogon OU",
+      "archetype": "Stall",
+      "core_pokemon": "Corviknight, Gliscor, Clodsire, Slowking-Galar, Ting-Lu, Hatterene",
+      "win_condition": "Toxic + Hazards + Regenerator chip wins long game"
+    },
+    {
+      "format": "VGC Reg I",
+      "archetype": "Calyrex-Shadow HO",
+      "core_pokemon": "Calyrex-Shadow, Incineroar, Flutter Mane, Urshifu, Tornadus, Rillaboom",
+      "win_condition": "Tailwind + Calyrex-Shadow sweeps with Astral Barrage"
+    },
+    {
+      "format": "VGC Reg I",
+      "archetype": "Calyrex-Ice Trick Room",
+      "core_pokemon": "Calyrex-Ice, Incineroar, Farigiraf, Ursaluna, Amoonguss, Rillaboom",
+      "win_condition": "Trick Room + Glacial Lance OHKO; Grassy Terrain recovery"
+    },
+    {
+      "format": "VGC Reg I",
+      "archetype": "Miraidon Rain",
+      "core_pokemon": "Miraidon, Kyogre, Incineroar, Flutter Mane, Rillaboom, Tornadus",
+      "win_condition": "Electric Terrain + Rain; Miraidon + Kyogre nuke everything"
+    },
+    {
+      "format": "VGC Reg I",
+      "archetype": "Koraidon Sun",
+      "core_pokemon": "Koraidon, Incineroar, Flutter Mane, Urshifu, Rillaboom, Whimsicott",
+      "win_condition": "Harsh Sun + Orichalcum Pulse boosts Flare Blitz/Collision Course"
+    },
+    {
+      "format": "VGC Reg I",
+      "archetype": "Zamazenta Balance",
+      "core_pokemon": "Zamazenta, Incineroar, Raging Bolt, Chien-Pao, Amoonguss, Tornadus",
+      "win_condition": "Dauntless Shield + speed; outlast restricted pairs with pivoting"
+    }
+  ]
+}
