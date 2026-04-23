@@ -16,7 +16,7 @@ env:
 jobs:
   train:
     runs-on: self-hosted
-    timeout-minutes: 260
+    timeout-minutes: 280
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -82,11 +82,12 @@ jobs:
           # Non-fatal: missing exports on a remote runner just skips the meta log.
           python scripts/prepare_competitive_data.py \
             || echo "Competitive data seeding skipped — COMPETITIVE_EXPORTS_DIR not set or files not found"
-          if [ -f "$COMPETITIVE_DATA_DIR/format_meta.json" ]; then
-            echo "Meta data ready at $COMPETITIVE_DATA_DIR"
+          if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
+            echo "Meta data ready at ${COMPETITIVE_DATA_DIR}"
             python -c "
-import json, sys
-data = json.load(open('$COMPETITIVE_DATA_DIR/format_meta.json'))
+import json
+with open('${COMPETITIVE_DATA_DIR}/format_meta.json') as f:
+    data = json.load(f)
 print(f'  Formats indexed: {len(data)}')
 for fmt, meta in list(data.items())[:5]:
     top = ', '.join(e[\"pokemon\"] for e in meta.get(\"top10_usage\", [])[:3])
@@ -159,21 +160,31 @@ for fmt, meta in list(data.items())[:5]:
             ARGS="$ARGS --team-format $TRAIN_TEAM_FORMAT"
           fi
           if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
-            ARGS="$ARGS --meta-path $COMPETITIVE_DATA_DIR"
+            ARGS="$ARGS --meta-path ${COMPETITIVE_DATA_DIR}"
           fi
+
           # Send SIGINT (KeyboardInterrupt in Python) 3 min before the GitHub
           # step timeout fires SIGKILL. This lets train_policy.py save the model
           # before the process is force-killed.
+          # Uses a background sleep+kill timer instead of GNU `timeout --signal`
+          # so the step works on macOS self-hosted runners without coreutils.
           GRACE_SECS=$(( (TRAIN_TIMEOUT_MINUTES - 3) * 60 ))
-          timeout --signal=INT ${GRACE_SECS}s python -m src.ml.train_policy $ARGS || {
-            EXIT=$?
-            if [ $EXIT -eq 124 ]; then
-              echo "Training timed out after ${GRACE_SECS}s — final_model.zip should have been saved."
-            else
-              echo "Training exited with code $EXIT"
-              exit $EXIT
-            fi
-          }
+
+          python -m src.ml.train_policy $ARGS &
+          TRAIN_PID=$!
+          { sleep ${GRACE_SECS} && kill -INT ${TRAIN_PID} 2>/dev/null; } &
+          TIMER_PID=$!
+
+          wait ${TRAIN_PID}
+          EXIT=$?
+          kill ${TIMER_PID} 2>/dev/null; wait ${TIMER_PID} 2>/dev/null || true
+
+          if [ ${EXIT} -eq 130 ]; then
+            echo "Training timed out after ${GRACE_SECS}s — final_model.zip should have been saved."
+          elif [ ${EXIT} -ne 0 ]; then
+            echo "Training exited with code ${EXIT}"
+            exit ${EXIT}
+          fi
 
       - name: Verify model artifact exists
         if: always()
