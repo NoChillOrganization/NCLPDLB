@@ -84,15 +84,7 @@ jobs:
             || echo "Competitive data seeding skipped — COMPETITIVE_EXPORTS_DIR not set or files not found"
           if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
             echo "Meta data ready at ${COMPETITIVE_DATA_DIR}"
-            python -c "
-import json
-with open('${COMPETITIVE_DATA_DIR}/format_meta.json') as f:
-    data = json.load(f)
-print(f'  Formats indexed: {len(data)}')
-for fmt, meta in list(data.items())[:5]:
-    top = ', '.join(e[\"pokemon\"] for e in meta.get(\"top10_usage\", [])[:3])
-    print(f'  {fmt}: top usage = {top}')
-"
+            python -c "import json; d=json.load(open('${COMPETITIVE_DATA_DIR}/format_meta.json')); print(f'  Formats indexed: {len(d)}'); [print(f'  {fmt}: ' + ', '.join(e.get(\"pokemon\",\"\") for e in meta.get(\"top10_usage\",[])[:3])) for fmt, meta in list(d.items())[:5]]"
           else
             echo "No format_meta.json generated — training proceeds without meta context"
           fi
