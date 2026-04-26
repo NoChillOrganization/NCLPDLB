@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Obsidian Vault
+
+Project notes, issues, and documentation live in the **No Chill Draft League Vault**:
+- Path: `~/Documents/Obsidian/No Chill Draft League Vault`
+- Use `obsidian vault="No Chill Draft League Vault" <cmd>` to interact (requires Obsidian open + CLI installed)
+
 ## Tech Stack
 
 - **Python 3.11+** with `discord.py 2.x` (slash commands via `app_commands`)
