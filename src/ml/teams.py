@@ -3586,7 +3586,7 @@ IVs: 0 Spe
 - Body Slam
 - Earthquake
 - Fire Punch
-- Whirlwind
+- Curse
 
 Magnemite @ Eviolite
 Ability: Magnet Pull
