@@ -4023,15 +4023,15 @@ IVs: 0 Spe
 - Night Shade
 """,
 
-    # Team 3 — Whimsicott + Sylveon Fairy Offense
+    # Team 3 — Jumpluff + Sylveon Fairy Offense
     """\
-Whimsicott @ Focus Sash
-Ability: Prankster
-Tera Type: Fairy
+Jumpluff @ Focus Sash
+Ability: Infiltrator
+Tera Type: Grass
 EVs: 252 HP / 4 SpA / 252 Spe
 Timid Nature
 - Tailwind
-- Moonblast
+- Sleep Powder
 - Encore
 - Protect
 
