@@ -109,13 +109,13 @@ jobs:
           fi
 
           # Write config (overwrite each time to guarantee correct settings)
-          cat > "$PS_DIR/config/config.js" << SHOWDOWN_EOF
-          exports.port = 8000;
-          exports.bindaddress = '127.0.0.1';
-          exports.workers = 1;
-          exports.noipchecks = true;
-          exports.nothrottle = true;
-          SHOWDOWN_EOF
+          cat > "$PS_DIR/config/config.js" << 'SHOWDOWN_EOF'
+exports.port = 8000;
+exports.bindaddress = '127.0.0.1';
+exports.workers = 1;
+exports.noipchecks = true;
+exports.nothrottle = true;
+SHOWDOWN_EOF
 
           # Start server in background
           cd "$PS_DIR"
