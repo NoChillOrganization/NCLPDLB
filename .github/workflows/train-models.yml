@@ -8,7 +8,6 @@ permissions:
   actions: write
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   # Directory where competitive meta data (CSVs + format_meta.json) is staged.
   # Passed to train_policy.py via --meta-path to log usage context per format.
   COMPETITIVE_DATA_DIR: data/competitive
