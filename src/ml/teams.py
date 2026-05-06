@@ -2422,7 +2422,7 @@ IVs: 0 Spe
 - Precipice Blades
 - Fire Punch
 - Stone Edge
-- Rock Polish
+- Swords Dance
 
 Zamazenta-Crowned @ Rusted Shield
 Ability: Dauntless Shield
