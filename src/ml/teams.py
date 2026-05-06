@@ -3961,13 +3961,13 @@ Timid Nature
 
     # Team 2 — Togekiss Tailwind Offense
     """\
-Whimsicott @ Leftovers
-Ability: Prankster
-Tera Type: Fairy
+Jumpluff @ Leftovers
+Ability: Infiltrator
+Tera Type: Grass
 EVs: 252 HP / 4 SpA / 252 Spe
 Timid Nature
 - Tailwind
-- Moonblast
+- Sleep Powder
 - Encore
 - Protect
 
