@@ -2651,7 +2651,7 @@ Ability: Toxic Chain
 Tera Type: Poison
 EVs: 252 HP / 4 Atk / 252 SpD
 Careful Nature
-- Hyper Drill
+- Poison Jab
 - Roost
 - Toxic
 - Knock Off
