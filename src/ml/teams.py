@@ -3309,7 +3309,7 @@ Tera Type: Poison
 EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 - Sludge Bomb
-- Recover
+- Pain Split
 - Stealth Rock
 - Toxic
 
@@ -3319,7 +3319,7 @@ Tera Type: Psychic
 EVs: 252 HP / 4 SpA / 252 SpD
 Careful Nature
 - Foul Play
-- Wish
+- Rest
 - Protect
 - Heal Bell
 
