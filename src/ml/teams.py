@@ -432,7 +432,7 @@ EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 - Stone Edge
 - Crunch
-- Pursuit
+- Ice Punch
 - Earthquake
 
 Iron Treads @ Heavy-Duty Boots
