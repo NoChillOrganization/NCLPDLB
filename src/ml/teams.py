@@ -3197,7 +3197,7 @@ IVs: 0 Spe
 - Triple Arrows
 - Leaf Blade
 - Close Combat
-- Rapid Spin
+- Shadow Sneak
 """,
 
     # Team 3 — Floatzel Rain Offense
