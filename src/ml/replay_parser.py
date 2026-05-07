@@ -525,7 +525,7 @@ if __name__ == "__main__":  # pragma: no cover
 
     record = parse_replay_file(Path(args.path))
     if args.json:
-        log.info(json.dumps(record.to_dict(), indent=2))
+        print(json.dumps(record.to_dict(), indent=2))
     else:
         log.info(f"Replay:  {record.replay_id}")
         log.info(f"Format:  {record.format}  Rating: {record.rating}")
