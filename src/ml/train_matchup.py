@@ -339,7 +339,7 @@ if __name__ == "__main__":  # pragma: no cover
         formats = [d.name for d in ml_dir.iterdir()
                    if d.is_dir() and (d / "X_team.npy").exists() and d.name != "combined"]
         formats.sort()
-        print(f"\nFormats with data: {formats}\n")
+        log.info(f"\nFormats with data: {formats}\n")
     else:
         formats = [args.format]
 
@@ -350,14 +350,14 @@ if __name__ == "__main__":  # pragma: no cover
             all_results.append(r)
 
     if args.combined and len(formats) > 1:
-        print("\nTraining combined cross-format model...")
+        log.info("\nTraining combined cross-format model...")
         train_combined(formats, ml_dir=ml_dir)
 
-    print("\n" + "=" * 60)
-    print(f"{'Format':<30} {'Samples':>8} {'Accuracy':>10} {'ROC-AUC':>10}")
-    print("-" * 60)
+    log.info("\n" + "=" * 60)
+    log.info(f"{'Format':<30} {'Samples':>8} {'Accuracy':>10} {'ROC-AUC':>10}")
+    log.info("-" * 60)
     for r in sorted(all_results, key=lambda x: -x.get("accuracy", 0)):
-        print(
+        log.info(
             f"{r['format']:<30} {r['n_samples']:>8} "
             f"{r['accuracy']:>9.1%} "
             f"{r['roc_auc']:>9.3f}"
