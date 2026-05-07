@@ -19,7 +19,7 @@ httpx>=0.28.1
 
 # Data Scraping (Smogon)
 beautifulsoup4>=4.12.3
-lxml>=5.1.0
+lxml>=6.1.0
 
 # Database
 aiosqlite>=0.20.0
