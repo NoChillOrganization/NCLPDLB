@@ -425,8 +425,8 @@ if __name__ == "__main__":  # pragma: no cover
         else:
             result = await challenger.accept_one_challenge()
 
-        print("\n=== Battle Result ===")
+        log.info("\n=== Battle Result ===")
         for k, v in result.items():
-            print(f"  {k:<12} : {v}")
+            log.info(f"  {k:<12} : {v}")
 
     asyncio.run(main())
