@@ -51,7 +51,7 @@ mypy>=1.9.0
 # Machine Learning — data pipeline
 numpy>=1.26.0
 scikit-learn>=1.4.0
-pandas>=2.2.0
+pandas>=3.0.2
 
 # Machine Learning — deep learning + RL
 # Install PyTorch separately per platform: https://pytorch.org/get-started/locally/
