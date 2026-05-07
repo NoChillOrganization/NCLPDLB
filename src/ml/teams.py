@@ -3708,7 +3708,7 @@ EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Electro Drift
 - Draco Meteor
-- Overheat
+- Dazzling Gleam
 - Protect
 
 Incineroar @ Sitrus Berry
