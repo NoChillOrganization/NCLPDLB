@@ -425,7 +425,7 @@ if __name__ == "__main__":  # pragma: no cover
         else:
             result = await challenger.accept_one_challenge()
 
-        log.info("\n=== Battle Result ===")
+        log.info("=== Battle Result ===")
         for k, v in result.items():
             log.info(f"  {k:<12} : {v}")
 
