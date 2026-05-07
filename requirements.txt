@@ -57,7 +57,7 @@ pandas>=3.0.2
 # Install PyTorch separately per platform: https://pytorch.org/get-started/locally/
 # torch>=2.2.0  (uncomment after installing torch for your platform/CUDA version)
 stable-baselines3>=2.2.0   # PPO/DQN for battle policy RL
-tensorboard>=2.16.0         # training metrics visualisation
+tensorboard>=2.20.0         # training metrics visualisation
 
 # Pokemon Showdown battle environment (RL training)
 # poke-env connects to a local Showdown server for self-play
