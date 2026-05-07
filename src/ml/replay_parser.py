@@ -516,6 +516,7 @@ def parse_replay_dir(directory: Path, max_count: int = 0) -> list[BattleRecord]:
 if __name__ == "__main__":  # pragma: no cover
     import argparse
 
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     ap = argparse.ArgumentParser(description="Parse a Showdown replay file")
     ap.add_argument("path", help="Path to replay JSON file")
