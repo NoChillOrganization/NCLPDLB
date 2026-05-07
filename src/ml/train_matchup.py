@@ -350,7 +350,7 @@ if __name__ == "__main__":  # pragma: no cover
             all_results.append(r)
 
     if args.combined and len(formats) > 1:
-        log.info("\nTraining combined cross-format model...")
+        log.info("Training combined cross-format model...")
         train_combined(formats, ml_dir=ml_dir)
 
     log.info("\n" + "=" * 60)
