@@ -339,7 +339,7 @@ if __name__ == "__main__":  # pragma: no cover
         formats = [d.name for d in ml_dir.iterdir()
                    if d.is_dir() and (d / "X_team.npy").exists() and d.name != "combined"]
         formats.sort()
-        log.info(f"\nFormats with data: {formats}\n")
+        log.info(f"Formats with data: {formats}")
     else:
         formats = [args.format]
 
