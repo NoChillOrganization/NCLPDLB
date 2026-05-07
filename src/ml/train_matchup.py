@@ -353,7 +353,7 @@ if __name__ == "__main__":  # pragma: no cover
         log.info("Training combined cross-format model...")
         train_combined(formats, ml_dir=ml_dir)
 
-    log.info("\n" + "=" * 60)
+    log.info("=" * 60)
     log.info(f"{'Format':<30} {'Samples':>8} {'Accuracy':>10} {'ROC-AUC':>10}")
     log.info("-" * 60)
     for r in sorted(all_results, key=lambda x: -x.get("accuracy", 0)):
