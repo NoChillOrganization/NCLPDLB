@@ -524,13 +524,13 @@ if __name__ == "__main__":  # pragma: no cover
 
     record = parse_replay_file(Path(args.path))
     if args.json:
-        print(json.dumps(record.to_dict(), indent=2))
+        log.info(json.dumps(record.to_dict(), indent=2))
     else:
-        print(f"Replay:  {record.replay_id}")
-        print(f"Format:  {record.format}  Rating: {record.rating}")
-        print(f"Players: {record.p1_name} vs {record.p2_name}")
-        print(f"Winner:  {record.winner_name} ({record.winner})")
-        print(f"Turns:   {record.total_turns}")
-        print(f"P1 team: {', '.join(record.p1_team)}")
-        print(f"P2 team: {', '.join(record.p2_team)}")
-        print(f"Faints:  P1={record.p1_fainted}  P2={record.p2_fainted}")
+        log.info(f"Replay:  {record.replay_id}")
+        log.info(f"Format:  {record.format}  Rating: {record.rating}")
+        log.info(f"Players: {record.p1_name} vs {record.p2_name}")
+        log.info(f"Winner:  {record.winner_name} ({record.winner})")
+        log.info(f"Turns:   {record.total_turns}")
+        log.info(f"P1 team: {', '.join(record.p1_team)}")
+        log.info(f"P2 team: {', '.join(record.p2_team)}")
+        log.info(f"Faints:  P1={record.p1_fainted}  P2={record.p2_fainted}")
