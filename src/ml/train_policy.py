@@ -153,6 +153,7 @@ def _log_meta_context(fmt: str, meta_path: str | None) -> None:
 DEFAULT_FORMAT      = "gen9randombattle"
 DEFAULT_TIMESTEPS   = 500_000
 DEFAULT_SWAP_EVERY  = 50_000          # steps between opponent model swaps
+N_MAX_EPOCH0_STEPS  = 2_000_000       # force-graduate after this many warmup steps
 DEFAULT_SAVE_DIR    = "data/ml/policy"
 DEFAULT_RESULTS_DIR = "data/ml/results"
 
