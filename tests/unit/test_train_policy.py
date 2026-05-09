@@ -178,16 +178,13 @@ class TestSelfPlayCallback:
 
         opponent.load_policy.assert_called_once_with(latest_path)
 
-    def test_save_and_swap_copies_to_latest(self, tmp_path):
+    def test_save_and_swap_writes_latest(self, tmp_path):
         cb, _ = self._make_callback(tmp_path)
 
-        with patch("shutil.copy") as mock_copy:
-            cb._save_and_swap()
+        cb._save_and_swap()
 
-        mock_copy.assert_called_once()
-        src, dst = mock_copy.call_args[0]
-        assert "swap_0001.zip" in src
-        assert "latest.zip" in dst
+        second_save = cb.model.save.call_args_list[1][0][0]
+        assert "latest.zip" in second_save
 
     def test_verbose_logging(self, tmp_path):
         """Verbose=1 should not raise."""
