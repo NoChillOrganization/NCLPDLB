@@ -135,10 +135,9 @@ class TestSelfPlayCallback:
         cb, opponent = self._make_callback(tmp_path, swap_every=100)
         cb.num_timesteps = 200  # 200 - 0 >= 100 → triggers swap
 
-        with patch("shutil.copy"):
-            cb._on_step()
+        cb._on_step()
 
-        cb.model.save.assert_called_once()
+        assert cb.model.save.call_count == 2  # numbered zip + latest.zip
         opponent.load_policy.assert_called_once()
         assert cb._swap_count == 1
 
