@@ -436,7 +436,7 @@ class CurriculumCallback(BaseCallback):
         self._phase     = "selfplay"
         self._last_swap = self.num_timesteps
         if self.verbose:
-            win_rate = sum(self._win_window) / len(self._win_window)
+            win_rate = sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
             mean_eff = (
                 sum(self._type_eff_window) / len(self._type_eff_window)
                 if self._type_eff_window else float("nan")
