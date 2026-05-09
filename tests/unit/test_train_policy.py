@@ -416,6 +416,66 @@ class TestCurriculumCallback:
         # If we got here without exception, it's fine
         assert cb._phase == "selfplay"
 
+    # ── force-graduation escape hatch ─────────────────────────────
+
+    def test_force_graduates_when_steps_exceed_limit(self, tmp_path):
+        """n_max_epoch0_steps exceeded with <70% win rate → force-graduation fires."""
+        opponent = MagicMock()
+        cb = CurriculumCallback(
+            opponent_player=opponent,
+            save_dir=tmp_path,
+            swap_every=10_000,
+            win_threshold=0.70,
+            min_episodes=10,
+            n_max_epoch0_steps=50,
+        )
+        cb.model = MagicMock()
+        cb.num_timesteps = 0
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=3, total=10)  # 30 % — below threshold
+        assert cb._phase == "warmup"  # not yet: num_timesteps still 0
+
+        cb.num_timesteps = 50  # at limit
+        cb.locals = {"infos": []}
+        with patch("shutil.copy"):
+            cb._on_step()
+
+        assert cb._phase == "selfplay"
+        cb.model.save.assert_called()
+        opponent.load_policy.assert_called()
+
+    def test_force_graduation_emits_warning(self, tmp_path, caplog):
+        """WARNING message contains step count and win rate."""
+        import logging
+        opponent = MagicMock()
+        cb = CurriculumCallback(
+            opponent_player=opponent,
+            save_dir=tmp_path,
+            swap_every=10_000,
+            win_threshold=0.70,
+            min_episodes=10,
+            n_max_epoch0_steps=5,
+        )
+        cb.model = MagicMock()
+        cb.num_timesteps = 5
+        cb.locals = {"infos": []}
+        with caplog.at_level(logging.WARNING, logger="src.ml.train_policy"):
+            with patch("shutil.copy"):
+                cb._on_step()
+        assert any("forced graduation" in r.message for r in caplog.records)
+
+    def test_per_format_window_isolation(self, tmp_path):
+        """Two CurriculumCallback instances share no win-window state."""
+        cb_a, _ = self._make_cb(tmp_path / "a", min_episodes=5, win_threshold=0.60)
+        cb_b, _ = self._make_cb(tmp_path / "b", min_episodes=5, win_threshold=0.60)
+
+        with patch("shutil.copy"):
+            self._push_episodes(cb_a, wins=5, total=5)  # 100 % → graduates
+
+        assert cb_a._phase == "selfplay"
+        assert cb_b._phase == "warmup"
+        assert len(cb_b._win_window) == 0
+
 
 # ── CurriculumOpponent ────────────────────────────────────────────────────────
 
