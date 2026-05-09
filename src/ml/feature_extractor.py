@@ -495,6 +495,6 @@ if __name__ == "__main__":  # pragma: no cover
         max_replays = args.max_replays,
         min_rating  = args.min_rating,
     )
-    print("\nDataset summary:")
+    log.info("Dataset summary:")
     for key, arr in datasets.items():
-        print(f"  {key}: shape={arr.shape}  dtype={arr.dtype}")
+        log.info(f"  {key}: shape={arr.shape}  dtype={arr.dtype}")

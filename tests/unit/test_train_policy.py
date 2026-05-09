@@ -16,6 +16,7 @@ import pytest
 
 from src.ml.train_policy import (
     DOUBLES_FORMATS,
+    N_MAX_EPOCH0_STEPS,
     PPO_HYPERPARAMS,
     CurriculumCallback,
     SelfPlayCallback,
@@ -134,10 +135,9 @@ class TestSelfPlayCallback:
         cb, opponent = self._make_callback(tmp_path, swap_every=100)
         cb.num_timesteps = 200  # 200 - 0 >= 100 → triggers swap
 
-        with patch("shutil.copy"):
-            cb._on_step()
+        cb._on_step()
 
-        cb.model.save.assert_called_once()
+        assert cb.model.save.call_count == 2  # numbered zip + latest.zip
         opponent.load_policy.assert_called_once()
         assert cb._swap_count == 1
 
@@ -163,12 +163,11 @@ class TestSelfPlayCallback:
     def test_save_and_swap_calls_model_save(self, tmp_path):
         cb, _ = self._make_callback(tmp_path)
 
-        with patch("shutil.copy"):
-            cb._save_and_swap()
+        cb._save_and_swap()
 
-        cb.model.save.assert_called_once()
-        saved_path = cb.model.save.call_args[0][0]
-        assert "swap_0001.zip" in saved_path
+        assert cb.model.save.call_count == 2  # numbered zip + latest.zip
+        first_save = cb.model.save.call_args_list[0][0][0]
+        assert "swap_0001.zip" in first_save
 
     def test_save_and_swap_calls_opponent_load(self, tmp_path):
         cb, opponent = self._make_callback(tmp_path)
@@ -179,16 +178,13 @@ class TestSelfPlayCallback:
 
         opponent.load_policy.assert_called_once_with(latest_path)
 
-    def test_save_and_swap_copies_to_latest(self, tmp_path):
+    def test_save_and_swap_writes_latest(self, tmp_path):
         cb, _ = self._make_callback(tmp_path)
 
-        with patch("shutil.copy") as mock_copy:
-            cb._save_and_swap()
+        cb._save_and_swap()
 
-        mock_copy.assert_called_once()
-        src, dst = mock_copy.call_args[0]
-        assert "swap_0001.zip" in src
-        assert "latest.zip" in dst
+        second_save = cb.model.save.call_args_list[1][0][0]
+        assert "latest.zip" in second_save
 
     def test_verbose_logging(self, tmp_path):
         """Verbose=1 should not raise."""
@@ -315,11 +311,10 @@ class TestCurriculumCallback:
     def test_graduates_at_threshold(self, tmp_path):
         """70 % wins with 70 % threshold → graduates to selfplay."""
         cb, opponent = self._make_cb(tmp_path, min_episodes=10, win_threshold=0.70)
-        with patch("shutil.copy"):
-            self._push_episodes(cb, wins=7, total=10)  # exactly 70 %
+        self._push_episodes(cb, wins=7, total=10)  # exactly 70 %
 
         assert cb._phase == "selfplay"
-        cb.model.save.assert_called_once()
+        assert cb.model.save.call_count == 2  # numbered zip + latest.zip
         opponent.load_policy.assert_called_once()
 
     def test_graduate_sets_last_swap(self, tmp_path):
@@ -414,6 +409,66 @@ class TestCurriculumCallback:
             self._push_episodes(cb, wins=5, total=5)
         # If we got here without exception, it's fine
         assert cb._phase == "selfplay"
+
+    # ── force-graduation escape hatch ─────────────────────────────
+
+    def test_force_graduates_when_steps_exceed_limit(self, tmp_path):
+        """n_max_epoch0_steps exceeded with <70% win rate → force-graduation fires."""
+        opponent = MagicMock()
+        cb = CurriculumCallback(
+            opponent_player=opponent,
+            save_dir=tmp_path,
+            swap_every=10_000,
+            win_threshold=0.70,
+            min_episodes=10,
+            n_max_epoch0_steps=50,
+        )
+        cb.model = MagicMock()
+        cb.num_timesteps = 0
+        with patch("shutil.copy"):
+            self._push_episodes(cb, wins=3, total=10)  # 30 % — below threshold
+        assert cb._phase == "warmup"  # not yet: num_timesteps still 0
+
+        cb.num_timesteps = 50  # at limit
+        cb.locals = {"infos": []}
+        with patch("shutil.copy"):
+            cb._on_step()
+
+        assert cb._phase == "selfplay"
+        cb.model.save.assert_called()
+        opponent.load_policy.assert_called()
+
+    def test_force_graduation_emits_warning(self, tmp_path, caplog):
+        """WARNING message contains step count and win rate."""
+        import logging
+        opponent = MagicMock()
+        cb = CurriculumCallback(
+            opponent_player=opponent,
+            save_dir=tmp_path,
+            swap_every=10_000,
+            win_threshold=0.70,
+            min_episodes=10,
+            n_max_epoch0_steps=5,
+        )
+        cb.model = MagicMock()
+        cb.num_timesteps = 5
+        cb.locals = {"infos": []}
+        with caplog.at_level(logging.WARNING, logger="src.ml.train_policy"):
+            with patch("shutil.copy"):
+                cb._on_step()
+        assert any("forced graduation" in r.message for r in caplog.records)
+
+    def test_per_format_window_isolation(self, tmp_path):
+        """Two CurriculumCallback instances share no win-window state."""
+        cb_a, _ = self._make_cb(tmp_path / "a", min_episodes=5, win_threshold=0.60)
+        cb_b, _ = self._make_cb(tmp_path / "b", min_episodes=5, win_threshold=0.60)
+
+        with patch("shutil.copy"):
+            self._push_episodes(cb_a, wins=5, total=5)  # 100 % → graduates
+
+        assert cb_a._phase == "selfplay"
+        assert cb_b._phase == "warmup"
+        assert len(cb_b._win_window) == 0
 
 
 # ── CurriculumOpponent ────────────────────────────────────────────────────────

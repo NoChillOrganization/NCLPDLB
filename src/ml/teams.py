@@ -432,7 +432,7 @@ EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 - Stone Edge
 - Crunch
-- Pursuit
+- Ice Punch
 - Earthquake
 
 Iron Treads @ Heavy-Duty Boots
@@ -2422,7 +2422,7 @@ IVs: 0 Spe
 - Precipice Blades
 - Fire Punch
 - Stone Edge
-- Rock Polish
+- Swords Dance
 
 Zamazenta-Crowned @ Rusted Shield
 Ability: Dauntless Shield
@@ -2651,7 +2651,7 @@ Ability: Toxic Chain
 Tera Type: Poison
 EVs: 252 HP / 4 Atk / 252 SpD
 Careful Nature
-- Hyper Drill
+- Poison Jab
 - Roost
 - Toxic
 - Knock Off
@@ -3197,7 +3197,7 @@ IVs: 0 Spe
 - Triple Arrows
 - Leaf Blade
 - Close Combat
-- Rapid Spin
+- Shadow Sneak
 """,
 
     # Team 3 — Floatzel Rain Offense
@@ -3309,7 +3309,7 @@ Tera Type: Poison
 EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 - Sludge Bomb
-- Recover
+- Pain Split
 - Stealth Rock
 - Toxic
 
@@ -3319,7 +3319,7 @@ Tera Type: Psychic
 EVs: 252 HP / 4 SpA / 252 SpD
 Careful Nature
 - Foul Play
-- Wish
+- Rest
 - Protect
 - Heal Bell
 
@@ -3381,7 +3381,7 @@ Ability: Hustle
 Tera Type: Ice
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
-- Freeze-Dry
+- Icy Wind
 - Ice Shard
 - Aerial Ace
 - Quick Attack
@@ -3436,7 +3436,7 @@ Ability: Hustle
 Tera Type: Ice
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
-- Freeze-Dry
+- Icy Wind
 - Ice Shard
 - Aerial Ace
 - Quick Attack
@@ -3586,7 +3586,7 @@ IVs: 0 Spe
 - Body Slam
 - Earthquake
 - Fire Punch
-- Whirlwind
+- Curse
 
 Magnemite @ Eviolite
 Ability: Magnet Pull
@@ -3708,7 +3708,7 @@ EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Electro Drift
 - Draco Meteor
-- Overheat
+- Dazzling Gleam
 - Protect
 
 Incineroar @ Sitrus Berry
@@ -3961,13 +3961,13 @@ Timid Nature
 
     # Team 2 — Togekiss Tailwind Offense
     """\
-Whimsicott @ Leftovers
-Ability: Prankster
-Tera Type: Fairy
+Jumpluff @ Leftovers
+Ability: Infiltrator
+Tera Type: Grass
 EVs: 252 HP / 4 SpA / 252 Spe
 Timid Nature
 - Tailwind
-- Moonblast
+- Sleep Powder
 - Encore
 - Protect
 
@@ -4023,15 +4023,15 @@ IVs: 0 Spe
 - Night Shade
 """,
 
-    # Team 3 — Whimsicott + Sylveon Fairy Offense
+    # Team 3 — Jumpluff + Sylveon Fairy Offense
     """\
-Whimsicott @ Focus Sash
-Ability: Prankster
-Tera Type: Fairy
+Jumpluff @ Focus Sash
+Ability: Infiltrator
+Tera Type: Grass
 EVs: 252 HP / 4 SpA / 252 Spe
 Timid Nature
 - Tailwind
-- Moonblast
+- Sleep Powder
 - Encore
 - Protect
 
