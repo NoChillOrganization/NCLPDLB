@@ -17,7 +17,7 @@ Usage:
     from src.ml.replay_parser import parse_replay_file, parse_replay_json
 
     record = parse_replay_json(json.load(open("data/replays/gen9ou/abc123.json")))
-    print(record.winner, record.turns)
+    # record.winner → "p1" | "p2"; record.total_turns → int
 """
 from __future__ import annotations
 
