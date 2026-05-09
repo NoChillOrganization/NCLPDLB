@@ -474,7 +474,14 @@ class CurriculumCallback(BaseCallback):
         self._check_policy_collapse()
 
         if self._phase == "warmup":
-            if self._should_graduate():
+            if self.num_timesteps >= self.n_max_epoch0_steps:
+                win_rate = sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
+                log.warning(
+                    "forced graduation after %d steps — win rate %.2f%% below threshold",
+                    self.num_timesteps, win_rate * 100,
+                )
+                self._graduate()
+            elif self._should_graduate():
                 self._graduate()
         else:  # selfplay
             if self.num_timesteps - self._last_swap >= self.swap_every:
