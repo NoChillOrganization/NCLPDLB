@@ -311,11 +311,10 @@ class TestCurriculumCallback:
     def test_graduates_at_threshold(self, tmp_path):
         """70 % wins with 70 % threshold → graduates to selfplay."""
         cb, opponent = self._make_cb(tmp_path, min_episodes=10, win_threshold=0.70)
-        with patch("shutil.copy"):
-            self._push_episodes(cb, wins=7, total=10)  # exactly 70 %
+        self._push_episodes(cb, wins=7, total=10)  # exactly 70 %
 
         assert cb._phase == "selfplay"
-        cb.model.save.assert_called_once()
+        assert cb.model.save.call_count == 2  # numbered zip + latest.zip
         opponent.load_policy.assert_called_once()
 
     def test_graduate_sets_last_swap(self, tmp_path):
