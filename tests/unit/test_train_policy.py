@@ -163,12 +163,11 @@ class TestSelfPlayCallback:
     def test_save_and_swap_calls_model_save(self, tmp_path):
         cb, _ = self._make_callback(tmp_path)
 
-        with patch("shutil.copy"):
-            cb._save_and_swap()
+        cb._save_and_swap()
 
-        cb.model.save.assert_called_once()
-        saved_path = cb.model.save.call_args[0][0]
-        assert "swap_0001.zip" in saved_path
+        assert cb.model.save.call_count == 2  # numbered zip + latest.zip
+        first_save = cb.model.save.call_args_list[0][0][0]
+        assert "swap_0001.zip" in first_save
 
     def test_save_and_swap_calls_opponent_load(self, tmp_path):
         cb, opponent = self._make_callback(tmp_path)
