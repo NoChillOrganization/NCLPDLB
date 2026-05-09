@@ -16,6 +16,7 @@ import pytest
 
 from src.ml.train_policy import (
     DOUBLES_FORMATS,
+    N_MAX_EPOCH0_STEPS,
     PPO_HYPERPARAMS,
     CurriculumCallback,
     SelfPlayCallback,
