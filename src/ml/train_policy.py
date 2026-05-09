@@ -337,6 +337,7 @@ class CurriculumCallback(BaseCallback):
         min_episodes: int = 500,
         mean_type_eff_threshold: float = 1.2,
         min_type_eff_samples: int = 200,
+        n_max_epoch0_steps: int = N_MAX_EPOCH0_STEPS,
         verbose: int = 0,
     ) -> None:
         super().__init__(verbose=verbose)
@@ -347,6 +348,7 @@ class CurriculumCallback(BaseCallback):
         self.min_episodes             = min_episodes
         self.mean_type_eff_threshold  = mean_type_eff_threshold
         self.min_type_eff_samples     = min_type_eff_samples
+        self.n_max_epoch0_steps       = n_max_epoch0_steps
 
         self._phase           = "warmup"
         self._win_window: deque      = deque(maxlen=min_episodes)
