@@ -827,6 +827,19 @@ def train(  # pragma: no cover
             tensorboard_log=str(log_dir),
             **transformer_kwargs,
         )
+    elif pretrain:
+        # BC warm-start: fresh PPO model with elevated-then-annealed ent_coef
+        ent_schedule = make_bc_ent_coef_schedule(total_timesteps)
+        pretrain_hyperparams = {**PPO_HYPERPARAMS, "ent_coef": ent_schedule}
+        model = PPO(
+            "MlpPolicy",
+            vec_env,
+            tensorboard_log=str(log_dir),
+            **pretrain_hyperparams,
+        )
+        log.info(f"[train] Loading BC pretrain weights from {pretrain}")
+        _load_pretrain_weights(model, pretrain)
+        log.info("[train] ent_coef schedule: 0.05 (0–100k) → anneal → 0.01 (200k+)")
     else:
         model = PPO(
             "MlpPolicy",
