@@ -43,8 +43,6 @@ import numpy as np
 
 log = logging.getLogger(__name__)
 
-log = logging.getLogger(__name__)
-
 # ── Dependency guards ─────────────────────────────────────────────────────────
 
 try:  # pragma: no cover
