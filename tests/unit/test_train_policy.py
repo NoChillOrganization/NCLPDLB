@@ -22,6 +22,8 @@ from src.ml.train_policy import (
     SelfPlayCallback,
     _check_showdown_server,
     _check_showdown_server_if_local,
+    _load_pretrain_weights,
+    make_bc_ent_coef_schedule,
 )
 
 
