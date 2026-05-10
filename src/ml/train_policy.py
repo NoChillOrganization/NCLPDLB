@@ -689,6 +689,8 @@ def train(  # pragma: no cover
         results_dir: Directory where the final dated model is saved.
                      Defaults to src/ml/models/results/.
         resume: Path to a saved checkpoint to resume training from.
+        pretrain: Path to a BC actor checkpoint (.pt) to warm-start the policy.
+                  Mutually exclusive with ``resume``.
         team_format: If set, load teams from FORMAT_TEAMS[team_format] and use
                      a RotatingTeambuilder (for formats that require custom teams).
         server:      Connection mode — "localhost", "showdown", or "browser".
@@ -696,6 +698,8 @@ def train(  # pragma: no cover
 
     Returns the path to the final saved model zip.
     """
+    if resume and pretrain:
+        raise ValueError("--pretrain and --resume are mutually exclusive")
     # Delegate browser mode entirely to the Playwright trainer
     if server == MODE_BROWSER:
         from src.ml.browser_trainer import train_browser
