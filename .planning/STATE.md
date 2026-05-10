@@ -19,9 +19,9 @@ progress:
 
 ## Current Position
 
-**Status:** Milestone complete
+**Status:** All three phases complete
 
-**Next action:** Run `/gsd:plan-phase 1` in a fresh session to generate the Phase 01 implementation plan.
+**Next action:** None — milestone v1.0 fully delivered (2026-05-09).
 
 ---
 
