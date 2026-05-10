@@ -170,7 +170,6 @@ class TestBuildObsFromSnapshot:
 
     def test_opponent_hp_from_damage(self):
         """Damage event for p2a sets opponent hp slot."""
-        from src.ml.battle_env import N_MOVES, MOVE_FEATS
         events = [BattleEvent(kind="damage", slot="p2a", hp_after=0.25)]
         snap = _snap(events=events)
         obs = build_obs_from_snapshot(snap)
