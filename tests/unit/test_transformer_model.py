@@ -6,13 +6,13 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from src.ml.transformer_model import (
+from src.ml.transformer_model import (  # noqa: E402
     BattleTransformer,
     build_default_model,
     save_model,
     load_model,
 )
-from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9
+from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9  # noqa: E402
 
 
 @pytest.fixture
