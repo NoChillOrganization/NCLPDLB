@@ -186,6 +186,11 @@ SHOWDOWN_EOF
           if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
             ARGS="$ARGS --meta-path ${COMPETITIVE_DATA_DIR}"
           fi
+          BC_CKPT="data/ml/bc/${TRAIN_FORMAT}/bc_actor.pt"
+          if [ -f "${BC_CKPT}" ]; then
+            ARGS="$ARGS --pretrain ${BC_CKPT}"
+            echo "BC warm-start enabled: ${BC_CKPT}"
+          fi
 
           # Send SIGINT (KeyboardInterrupt in Python) 3 min before the GitHub
           # step timeout fires SIGKILL. This lets train_policy.py save the model
