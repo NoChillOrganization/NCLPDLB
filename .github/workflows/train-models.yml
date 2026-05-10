@@ -96,6 +96,31 @@ for fmt, meta in list(data.items())[:5]:
             echo "No format_meta.json generated — training proceeds without meta context"
           fi
 
+      - name: Behavioral Cloning pre-training
+        shell: bash
+        env:
+          TRAIN_FORMAT: ${{ matrix.config.format }}
+        run: |
+          # Skip if no replays are available for this format.
+          REPLAY_DIR="data/replays/${TRAIN_FORMAT}"
+          BC_OUTPUT="data/ml/bc/${TRAIN_FORMAT}/bc_actor.pt"
+
+          # Scrape replays for this format (non-fatal: runner may lack credentials)
+          python -m src.ml.replay_scraper --format "${TRAIN_FORMAT}" \
+            || echo "Replay scraping skipped — credentials or network unavailable"
+
+          if [ -z "$(find "${REPLAY_DIR}" -maxdepth 1 -name '*.json' 2>/dev/null | head -1)" ]; then
+            echo "No replay JSON files found in ${REPLAY_DIR} — skipping BC pre-training"
+            exit 0
+          fi
+
+          echo "Running BC pre-training for ${TRAIN_FORMAT} ..."
+          mkdir -p "$(dirname "${BC_OUTPUT}")"
+          python -m src.ml.pretrain "${REPLAY_DIR}" \
+            --format "${TRAIN_FORMAT}" \
+            --output "${BC_OUTPUT}"
+          echo "BC actor weights saved to ${BC_OUTPUT}"
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
