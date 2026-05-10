@@ -671,6 +671,7 @@ def train(  # pragma: no cover
     save_dir: Path,
     results_dir: Path | None = None,
     resume: str | None = None,
+    pretrain: str | None = None,
     team_format: str | None = None,
     server: str = MODE_LOCALHOST,
     save_replays: str | None = None,
