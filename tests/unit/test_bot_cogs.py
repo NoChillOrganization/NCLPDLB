@@ -2106,7 +2106,12 @@ async def test_admin_pull_models_defers_and_creates_task():
     cog = AdminCog(bot)
     interaction = make_interaction()
 
-    with patch("asyncio.create_task") as mock_create_task:
+    def _consume(coro):
+        # Close the coroutine so it does not raise a "never awaited" warning.
+        coro.close()
+        return MagicMock()
+
+    with patch("asyncio.create_task", side_effect=_consume) as mock_create_task:
         await cog.admin_pull_models.callback(cog, interaction, format=None, release=None)
 
     interaction.response.defer.assert_awaited_once_with(thinking=True, ephemeral=True)
@@ -2115,7 +2120,6 @@ async def test_admin_pull_models_defers_and_creates_task():
 
 async def test_admin_pull_models_format_autocomplete_filters():
     """Lines 326-327: autocomplete filters TRAINING_MAP by current prefix."""
-    from src.ml.train_all import TRAINING_MAP
     bot = MagicMock()
     cog = AdminCog(bot)
     interaction = make_interaction()

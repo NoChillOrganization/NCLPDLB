@@ -740,7 +740,7 @@ async def test_start_draft_persists_to_sqlite(draft_svc):
     with patch("src.services.draft_service.sheets"), \
          patch("src.services.draft_service._db_save_draft") as mock_save:
         mock_save.return_value = None
-        draft = await draft_svc.create_draft("guildDB", "p1", DraftFormat.SNAKE)
+        await draft_svc.create_draft("guildDB", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildDB", "p1")
         await draft_svc.add_player("guildDB", "p2")
         await draft_svc.start_draft("guildDB", "p1")

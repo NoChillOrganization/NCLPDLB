@@ -78,10 +78,14 @@ def main() -> None:
     args = ap.parse_args()
 
     # Inject credentials into env vars if passed as args
-    if args.user1: os.environ["SHOWDOWN_TRAIN_USER1"] = args.user1
-    if args.pass1: os.environ["SHOWDOWN_TRAIN_PASS1"] = args.pass1
-    if args.user2: os.environ["SHOWDOWN_TRAIN_USER2"] = args.user2
-    if args.pass2: os.environ["SHOWDOWN_TRAIN_PASS2"] = args.pass2
+    if args.user1:
+        os.environ["SHOWDOWN_TRAIN_USER1"] = args.user1
+    if args.pass1:
+        os.environ["SHOWDOWN_TRAIN_PASS1"] = args.pass1
+    if args.user2:
+        os.environ["SHOWDOWN_TRAIN_USER2"] = args.user2
+    if args.pass2:
+        os.environ["SHOWDOWN_TRAIN_PASS2"] = args.pass2
 
     # Validate credentials are available
     required = ["SHOWDOWN_TRAIN_USER1", "SHOWDOWN_TRAIN_PASS1",
