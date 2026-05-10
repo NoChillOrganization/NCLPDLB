@@ -1009,6 +1009,16 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
         help="Resume training from a saved checkpoint",
     )
     ap.add_argument(
+        "--pretrain",
+        default=None,
+        metavar="BC_ACTOR.pt",
+        help=(
+            "Warm-start PPO from a BC actor checkpoint (.pt file saved by pretrain.py). "
+            "Loads actor-only keys (mlp_extractor.*, action_net.*) and resets step counter. "
+            "Mutually exclusive with --resume."
+        ),
+    )
+    ap.add_argument(
         "--eval-only",
         default=None,
         metavar="MODEL.zip",
