@@ -58,6 +58,7 @@ pandas>=3.0.2
 # torch>=2.2.0  (uncomment after installing torch for your platform/CUDA version)
 stable-baselines3>=2.2.0   # PPO/DQN for battle policy RL
 tensorboard>=2.20.0         # training metrics visualisation
+imitation>=0.7.0            # behavioral cloning pre-training (BC pre-trainer)
 
 # Pokemon Showdown battle environment (RL training)
 # poke-env connects to a local Showdown server for self-play
