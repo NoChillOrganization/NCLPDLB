@@ -212,6 +212,79 @@ PPO_HYPERPARAMS: dict[str, Any] = {
     "verbose"            : 1,
 }
 
+# ── BC pre-training helpers ────────────────────────────────────────────────────
+
+# ent_coef schedule when --pretrain is used:
+#   Steps 0–100k:    0.05 (higher entropy → more exploration after BC init)
+#   Steps 100k–200k: linear anneal 0.05 → 0.01
+#   Steps 200k+:     hold at 0.01
+#
+# SB3 passes `remaining_progress` to an ent_coef callable, where
+#   remaining_progress = 1.0 at the very start, 0.0 at total_timesteps.
+# We need total_timesteps to convert back to absolute step counts, so
+# `make_bc_ent_coef_schedule` closes over that value.
+
+_BC_ENT_HIGH   = 0.05
+_BC_ENT_LOW    = 0.01
+_BC_ENT_STEPS1 = 100_000   # hold high until this many steps
+_BC_ENT_STEPS2 = 200_000   # finish anneal by this many steps
+
+
+def make_bc_ent_coef_schedule(total_timesteps: int):
+    """
+    Return an ent_coef callable suitable for PPO's ``ent_coef`` parameter.
+
+    SB3 calls ``ent_coef(remaining_progress)`` at each update, where
+    ``remaining_progress`` decreases from 1.0 (start) to 0.0 (end).
+
+    Schedule:
+        0 – 100k steps  : 0.05
+        100k – 200k     : linear anneal 0.05 → 0.01
+        200k+           : 0.01
+    """
+    def _schedule(remaining_progress: float) -> float:
+        step = (1.0 - remaining_progress) * total_timesteps
+        if step <= _BC_ENT_STEPS1:
+            return _BC_ENT_HIGH
+        if step >= _BC_ENT_STEPS2:
+            return _BC_ENT_LOW
+        frac = (step - _BC_ENT_STEPS1) / (_BC_ENT_STEPS2 - _BC_ENT_STEPS1)
+        return _BC_ENT_HIGH + frac * (_BC_ENT_LOW - _BC_ENT_HIGH)
+
+    return _schedule
+
+
+def _load_pretrain_weights(model: Any, checkpoint_path: str | Path) -> None:
+    """
+    Load actor-only weights from a BC checkpoint into a PPO model in-place.
+
+    The checkpoint produced by ``pretrain.py`` contains only keys that do NOT
+    start with ``value_net`` or ``mlp_extractor.value_net`` — i.e. the shared
+    trunk (``mlp_extractor.policy_net.*``) and the action head (``action_net.*``).
+
+    Any key present in the checkpoint but absent from the policy state dict is
+    silently skipped (forward-compatibility).
+    """
+    try:
+        import torch
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError("torch is required for --pretrain weight loading") from exc
+
+    checkpoint_path = Path(checkpoint_path)
+    state = torch.load(checkpoint_path, map_location="cpu")
+    policy_sd = model.policy.state_dict()
+    loaded_keys: list[str] = []
+    for k, v in state.items():
+        if k in policy_sd:
+            policy_sd[k] = v
+            loaded_keys.append(k)
+    model.policy.load_state_dict(policy_sd)
+    log.info(
+        "Loaded %d pretrained actor keys from %s",
+        len(loaded_keys),
+        checkpoint_path,
+    )
+
 
 # ── Transformer feature extractor ─────────────────────────────────────────────
 
