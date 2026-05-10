@@ -884,7 +884,7 @@ def train(  # pragma: no cover
         model.learn(
             total_timesteps=total_timesteps,
             callback=[checkpoint_cb, curriculum_cb],
-            reset_num_timesteps=(resume is None),
+            reset_num_timesteps=(resume is None),  # pretrain also resets (it's not resume)
             tb_log_name=f"ppo_{fmt}",
         )
     except KeyboardInterrupt:
