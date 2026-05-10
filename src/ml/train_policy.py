@@ -1092,6 +1092,8 @@ if __name__ == "__main__":  # pragma: no cover
             n_battles=args.eval_battles,
         )
     else:
+        if args.resume and args.pretrain:
+            raise ValueError("--pretrain and --resume are mutually exclusive")
         train(
             fmt=args.format,
             total_timesteps=args.timesteps,
@@ -1099,6 +1101,7 @@ if __name__ == "__main__":  # pragma: no cover
             save_dir=Path(args.save_dir),
             results_dir=Path(args.results_dir),
             resume=args.resume,
+            pretrain=args.pretrain,
             team_format=args.team_format,
             server=args.server,
             save_replays=args.save_replays,
