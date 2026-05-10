@@ -30,8 +30,8 @@ progress:
 | Phase | Status | Notes |
 |-------|--------|-------|
 | 01 — Obs Expansion | ✅ complete | Verified 100% test passing |
-| 02 — Curriculum | ⬜ pending | Ready for implementation |
-| 03 — BC Pretrain | ⬜ pending | Blocked on Phase 02; needs research-phase before planning |
+| 02 — Curriculum | ✅ complete | MaxBasePowerPlayer + WinRateTracker + force-graduation; 73 tests pass |
+| 03 — BC Pretrain | ✅ complete | pretrain.py + --pretrain flag + ent_coef schedule; 116 tests pass |
 
 ---
 
