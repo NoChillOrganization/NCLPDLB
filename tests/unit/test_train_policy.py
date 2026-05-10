@@ -758,3 +758,230 @@ class TestCurriculumCallbackTypeEff:
         cb.locals = {"infos": [], "actions": ["not-an-int"]}
         cb._on_step()  # must not raise
         assert cb._action_total == 0
+
+
+# ── Phase 03: BC pretrain integration ────────────────────────────────────────
+
+class TestPretrainResumeMutex:
+    """--pretrain and --resume are mutually exclusive."""
+
+    def test_both_flags_raise_value_error(self, tmp_path):
+        """train() raises ValueError when both resume and pretrain are supplied."""
+        import src.ml.train_policy as tp
+
+        # Patch away all the heavy dependencies so we get to the mutex check fast
+        with patch("src.ml.train_policy.POKE_ENV_AVAILABLE", False), \
+             patch("src.ml.train_policy.SB3_OK", False), \
+             patch("src.ml.train_policy._check_showdown_server_if_local"), \
+             patch("src.ml.train_policy._log_meta_context"):
+            with pytest.raises(ValueError, match="--pretrain and --resume are mutually exclusive"):
+                tp.train(
+                    fmt="gen9ou",
+                    total_timesteps=1000,
+                    swap_every=500,
+                    save_dir=tmp_path,
+                    resume=str(tmp_path / "model.zip"),
+                    pretrain=str(tmp_path / "bc_actor.pt"),
+                )
+
+    def test_resume_only_does_not_raise_mutex(self, tmp_path):
+        """Passing only --resume does not trigger the mutex guard."""
+        import src.ml.train_policy as tp
+
+        with patch("src.ml.train_policy.POKE_ENV_AVAILABLE", False), \
+             patch("src.ml.train_policy.SB3_OK", False), \
+             patch("src.ml.train_policy._check_showdown_server_if_local"), \
+             patch("src.ml.train_policy._log_meta_context"):
+            # Will raise RuntimeError about missing deps, NOT ValueError about mutex
+            with pytest.raises(RuntimeError):
+                tp.train(
+                    fmt="gen9ou",
+                    total_timesteps=1000,
+                    swap_every=500,
+                    save_dir=tmp_path,
+                    resume=str(tmp_path / "model.zip"),
+                    pretrain=None,
+                )
+
+    def test_pretrain_only_does_not_raise_mutex(self, tmp_path):
+        """Passing only --pretrain does not trigger the mutex guard."""
+        import src.ml.train_policy as tp
+
+        with patch("src.ml.train_policy.POKE_ENV_AVAILABLE", False), \
+             patch("src.ml.train_policy.SB3_OK", False), \
+             patch("src.ml.train_policy._check_showdown_server_if_local"), \
+             patch("src.ml.train_policy._log_meta_context"):
+            with pytest.raises(RuntimeError):
+                tp.train(
+                    fmt="gen9ou",
+                    total_timesteps=1000,
+                    swap_every=500,
+                    save_dir=tmp_path,
+                    resume=None,
+                    pretrain=str(tmp_path / "bc_actor.pt"),
+                )
+
+
+class TestPretrainWeightLoading:
+    """_load_pretrain_weights() correctly merges actor keys into a PPO policy."""
+
+    def test_loads_known_weights_into_policy(self, tmp_path):
+        """Weights saved in a .pt file are reflected in the policy state dict."""
+        torch = pytest.importorskip("torch")
+        from stable_baselines3 import PPO
+        from gymnasium.spaces import Box, Discrete
+        from gymnasium import Env as _GymEnv
+        import numpy as np
+
+        OBS_DIM = 48
+
+        class _DummyEnv(_GymEnv):
+            observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            action_space = Discrete(26)
+            def reset(self, **_kw): return np.zeros(OBS_DIM, dtype=np.float32), {}
+            def step(self, _a): return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
+
+        model = PPO("MlpPolicy", _DummyEnv())
+
+        # Build a fake checkpoint with only actor keys
+        policy_sd = model.policy.state_dict()
+        actor_keys = [k for k in policy_sd if not k.startswith("value_net")
+                      and not k.startswith("mlp_extractor.value_net")]
+        assert actor_keys, "No actor keys found — test setup error"
+
+        # Fill every actor tensor with a known constant (99.0) so we can detect the load
+        fake_ckpt = {k: torch.full_like(policy_sd[k], 99.0) for k in actor_keys}
+        ckpt_path = tmp_path / "bc_actor.pt"
+        torch.save(fake_ckpt, ckpt_path)
+
+        _load_pretrain_weights(model, ckpt_path)
+
+        # Every actor key should now be 99.0 in the policy
+        loaded_sd = model.policy.state_dict()
+        for k in actor_keys:
+            assert torch.all(loaded_sd[k] == 99.0), (
+                f"Key {k!r} was not updated by _load_pretrain_weights"
+            )
+
+    def test_unknown_keys_in_checkpoint_are_skipped(self, tmp_path):
+        """Extra keys in the checkpoint that aren't in the policy are silently ignored."""
+        torch = pytest.importorskip("torch")
+        from stable_baselines3 import PPO
+        from gymnasium.spaces import Box, Discrete
+        from gymnasium import Env as _GymEnv
+        import numpy as np
+
+        OBS_DIM = 48
+
+        class _DummyEnv(_GymEnv):
+            observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            action_space = Discrete(26)
+            def reset(self, **_kw): return np.zeros(OBS_DIM, dtype=np.float32), {}
+            def step(self, _a): return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
+
+        model = PPO("MlpPolicy", _DummyEnv())
+
+        # Checkpoint with a completely foreign key — should not raise
+        fake_ckpt = {"some.nonexistent.key": torch.tensor([1.0, 2.0])}
+        ckpt_path = tmp_path / "bc_actor_bad.pt"
+        torch.save(fake_ckpt, ckpt_path)
+
+        _load_pretrain_weights(model, ckpt_path)  # must not raise
+
+    def test_loaded_weights_differ_from_random_init(self, tmp_path):
+        """After loading all-zero weights, policy params differ from fresh random init."""
+        torch = pytest.importorskip("torch")
+        from stable_baselines3 import PPO
+        from gymnasium.spaces import Box, Discrete
+        from gymnasium import Env as _GymEnv
+        import numpy as np
+
+        OBS_DIM = 48
+
+        class _DummyEnv(_GymEnv):
+            observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            action_space = Discrete(26)
+            def reset(self, **_kw): return np.zeros(OBS_DIM, dtype=np.float32), {}
+            def step(self, _a): return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
+
+        model = PPO("MlpPolicy", _DummyEnv())
+        policy_sd = model.policy.state_dict()
+
+        # Pick the first actor weight tensor with >1 element (to avoid trivial bias=0 cases)
+        actor_key = next(
+            k for k in policy_sd
+            if not k.startswith("value_net")
+            and not k.startswith("mlp_extractor.value_net")
+            and policy_sd[k].numel() > 1
+        )
+        original_val = policy_sd[actor_key].clone()
+
+        # Save zeros for that key — guaranteed to differ from random init
+        fake_ckpt = {actor_key: torch.zeros_like(policy_sd[actor_key])}
+        ckpt_path = tmp_path / "bc_zeros.pt"
+        torch.save(fake_ckpt, ckpt_path)
+
+        _load_pretrain_weights(model, ckpt_path)
+
+        loaded_sd = model.policy.state_dict()
+        # Weights should now be zero, which is different from the random init
+        assert not torch.allclose(loaded_sd[actor_key], original_val), (
+            "Loaded weights should differ from random initialisation"
+        )
+        assert torch.all(loaded_sd[actor_key] == 0.0)
+
+
+class TestEntCoefSchedule:
+    """make_bc_ent_coef_schedule() produces the correct values at key step counts."""
+
+    def _schedule_at_step(self, step: int, total: int = 500_000) -> float:
+        """Helper: call the schedule as SB3 would for a given absolute step."""
+        sched = make_bc_ent_coef_schedule(total)
+        remaining = 1.0 - step / total
+        return sched(remaining)
+
+    def test_step_0_returns_high_ent(self):
+        """At step 0 ent_coef should be 0.05."""
+        assert self._schedule_at_step(0) == pytest.approx(0.05)
+
+    def test_step_50k_returns_high_ent(self):
+        """Within the first 100k steps ent_coef stays at 0.05."""
+        assert self._schedule_at_step(50_000) == pytest.approx(0.05)
+
+    def test_step_100k_returns_high_ent(self):
+        """Exactly at the 100k boundary ent_coef is still 0.05."""
+        assert self._schedule_at_step(100_000) == pytest.approx(0.05)
+
+    def test_step_150k_is_midpoint(self):
+        """At 150k (halfway through the anneal) ent_coef ≈ 0.03."""
+        val = self._schedule_at_step(150_000)
+        assert val == pytest.approx(0.03, abs=1e-6)
+
+    def test_step_200k_returns_low_ent(self):
+        """Exactly at 200k ent_coef should be 0.01."""
+        assert self._schedule_at_step(200_000) == pytest.approx(0.01)
+
+    def test_step_beyond_200k_holds_at_low_ent(self):
+        """Any step > 200k holds at 0.01."""
+        assert self._schedule_at_step(300_000) == pytest.approx(0.01)
+        assert self._schedule_at_step(500_000) == pytest.approx(0.01)
+
+    def test_schedule_is_monotonically_decreasing_during_anneal(self):
+        """Values during the 100k–200k anneal window must strictly decrease."""
+        total = 500_000
+        sched = make_bc_ent_coef_schedule(total)
+        steps = range(100_000, 200_001, 10_000)
+        values = [sched(1.0 - s / total) for s in steps]
+        for a, b in zip(values, values[1:]):
+            assert a >= b, f"Schedule not monotone: {a} < {b}"
+
+    def test_different_total_timesteps_scales_correctly(self):
+        """Schedule works for any total_timesteps value, not just 500k."""
+        # With total=1_000_000, 100k steps = 10 % of the way through
+        sched = make_bc_ent_coef_schedule(1_000_000)
+        # At step 0 (remaining=1.0) → high
+        assert sched(1.0) == pytest.approx(0.05)
+        # At step 200k (remaining=0.8) → low
+        assert sched(0.8) == pytest.approx(0.01)
+        # At step 150k (remaining=0.85) → midpoint of anneal
+        assert sched(0.85) == pytest.approx(0.03, abs=1e-6)
