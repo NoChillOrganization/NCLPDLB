@@ -441,9 +441,17 @@ class TestPretrain:
     def test_import_error_when_imitation_missing(self, tmp_path):
         """pretrain() raises ImportError when imitation is not installed."""
         from src.ml.pretrain import pretrain
-        # imitation not in sys.modules → ImportError re-raised with helpful message
-        with pytest.raises(ImportError, match="imitation"):
-            pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt")
+        # Force imitation's import to fail regardless of whether it's installed.
+        real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__import__
+
+        def _no_imitation(name, *args, **kwargs):
+            if name == "imitation" or name.startswith("imitation."):
+                raise ImportError(f"No module named {name!r}")
+            return real_import(name, *args, **kwargs)
+
+        with patch("builtins.__import__", side_effect=_no_imitation):
+            with pytest.raises(ImportError, match="imitation"):
+                pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt")
 
     def test_raises_value_error_when_no_records(self, tmp_path):
         """pretrain() raises ValueError when replay_dir contains no JSON files."""

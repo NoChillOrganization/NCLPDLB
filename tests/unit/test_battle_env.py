@@ -656,7 +656,8 @@ class TestBattleEnvActionSpace:
         from poke_env.environment.singles_env import SinglesEnv
         env = BattleEnv.__new__(BattleEnv)
         fake_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
-        env.observation_spaces = {"p1": fake_space}
+        # Bypass poke-env's __setattr__ hook which would dereference action_spaces.
+        object.__setattr__(env, "observation_spaces", {"p1": fake_space})
         with patch.object(SinglesEnv, "step", side_effect=AssertionError):
             obs, rew, done, trunc, info = env.step(0)
         assert done is True
@@ -693,7 +694,8 @@ class TestBattleDoubleEnvActionSpace:
         from poke_env.environment.doubles_env import DoublesEnv
         env = BattleDoubleEnv.__new__(BattleDoubleEnv)
         fake_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
-        env.observation_spaces = {"p1": fake_space}
+        # Bypass poke-env's __setattr__ hook which would dereference action_spaces.
+        object.__setattr__(env, "observation_spaces", {"p1": fake_space})
         with patch.object(DoublesEnv, "step", side_effect=AssertionError):
             obs, rew, done, trunc, info = env.step(0)
         assert done is True
