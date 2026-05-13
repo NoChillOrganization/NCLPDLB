@@ -54,15 +54,17 @@ scikit-learn>=1.8.0
 pandas>=3.0.2
 
 # Machine Learning — deep learning + RL
-# Install PyTorch separately per platform: https://pytorch.org/get-started/locally/
-# torch>=2.2.0  (uncomment after installing torch for your platform/CUDA version)
-stable-baselines3>=2.2.0   # PPO/DQN for battle policy RL
+# CI installs torch via: pip install torch --index-url https://download.pytorch.org/whl/cpu
+# Local install: pip install torch  (or see https://pytorch.org/get-started/locally/ for CUDA)
+# torch>=2.2.0  (uncomment only if you want pip to manage torch for you)
+stable-baselines3>=2.8.0   # PPO/DQN for battle policy RL
 tensorboard>=2.20.0         # training metrics visualisation
+imitation>=1.0.0            # behavioral cloning pre-training (BC pre-trainer)
 # imitation is NOT listed here — it requires gymnasium~=0.29 which conflicts with
 # poke-env's gymnasium>=1.0.0 requirement. Install separately in a dedicated venv:
 #   pip install "imitation>=0.7.0" "gymnasium~=0.29"
 
 # Pokemon Showdown battle environment (RL training)
 # poke-env connects to a local Showdown server for self-play
-poke-env==0.12.1
+poke-env==0.12.1            # pinned: 0.13+ has breaking API changes
 websockets>=16.0       # required by poke-env for Showdown WebSocket communication
