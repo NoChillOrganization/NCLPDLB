@@ -205,6 +205,7 @@ def step_verify() -> None:
   ── Next steps ───────────────────────────────────────────
   Install dependencies:
     pip install -r requirements.txt
+    pip install torch --index-url https://download.pytorch.org/whl/cpu
 
   Start the bot:
     python src/bot/main.py
