@@ -403,8 +403,8 @@ def _make_fake_record() -> BattleRecord:
 
 def _mock_deps():
     """
-    Inject fake imitation + stable_baselines3 into sys.modules so pretrain()
-    can be exercised without those packages installed.
+    Inject fake imitation + stable_baselines3 + torch into sys.modules so
+    pretrain() can be exercised without those packages installed.
     The mock PPO instance's policy.state_dict() returns a real dict of MagicMocks
     so the dict-comprehension in pretrain() iterates cleanly.
     """
@@ -424,6 +424,7 @@ def _mock_deps():
     fake_types_mod.Transitions = MagicMock()
     fake_sb3_mod = MagicMock()
     fake_sb3_mod.PPO = mock_ppo_class
+    fake_torch_mod = MagicMock()
 
     return patch.dict(sys.modules, {
         "imitation": MagicMock(),
@@ -432,6 +433,7 @@ def _mock_deps():
         "imitation.data": MagicMock(),
         "imitation.data.types": fake_types_mod,
         "stable_baselines3": fake_sb3_mod,
+        "torch": fake_torch_mod,
     })
 
 
