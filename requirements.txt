@@ -31,7 +31,7 @@ python-dotenv>=1.2.2
 # pathlib is built-in to Python 3.4+
 
 # Scheduling / Async Tasks
-apscheduler>=3.10.4
+apscheduler>=3.11.2
 
 # Date/Time
 python-dateutil>=2.9.0
