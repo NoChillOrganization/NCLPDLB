@@ -2,7 +2,7 @@
 # Cross-platform compatible (Windows, macOS, Linux)
 
 # Discord Bot
-discord.py>=2.3.2
+discord.py>=2.7.1
 
 # Google Sheets Integration
 gspread>=6.0.0
