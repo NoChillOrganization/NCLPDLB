@@ -34,7 +34,7 @@ python-dotenv>=1.2.2
 apscheduler>=3.11.2
 
 # Date/Time
-python-dateutil>=2.9.0
+python-dateutil>=2.9.0.post0
 
 # Testing
 pytest>=9.0.3
