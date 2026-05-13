@@ -290,7 +290,6 @@ def _infer_action(events: list[Any], perspective: str, team: list[str]) -> int:
     Defaults to action 6 (first move, no gimmick) when nothing more specific
     can be determined.
     """
-    active_slot = f"{perspective}a"
     has_tera    = False
 
     for evt in events:

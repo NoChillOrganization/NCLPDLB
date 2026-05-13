@@ -21,10 +21,10 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import runpy
-import threading
+import runpy  # noqa: E402
+import threading  # noqa: E402
 
-from src.ml.run_training import (
+from src.ml.run_training import (  # noqa: E402
     _apply_windows_event_loop_fix,
     _check_dependencies,
     _parse_args,
@@ -266,7 +266,6 @@ class TestMain:
     def test_main_handles_settings_exception(self):
         """If settings raises, credentials fall back to empty strings."""
         from contextlib import ExitStack
-        from unittest.mock import PropertyMock
         _, _, _, _, _, _, patches = _make_main_patches()
         # spec=[] → any attribute access raises AttributeError → caught by except
         mock_bad_settings = MagicMock(spec=[])

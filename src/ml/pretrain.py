@@ -130,7 +130,7 @@ def build_obs_from_snapshot(
     np.ndarray
         float32 array of shape (OBS_DIM,).
     """
-    from src.ml.battle_env import BOOST_DIM, MOVE_FEATS, N_MOVES, OBS_DIM, TEAM_SIZE
+    from src.ml.battle_env import MOVE_FEATS, N_MOVES, OBS_DIM, TEAM_SIZE
 
     obs = np.zeros(OBS_DIM, dtype=np.float32)
     idx = 0

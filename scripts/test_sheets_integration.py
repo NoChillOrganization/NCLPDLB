@@ -93,7 +93,8 @@ def main() -> None:
               setup.get("total_weeks", ""))
         check("current_week present", bool(setup.get("current_week")),
               setup.get("current_week", ""))
-        print(f"    Setup values: {", ".join(f'{k}={v!r}' for k, v in setup.items() if k != 'coaches')}")
+        setup_values = ", ".join(f'{k}={v!r}' for k, v in setup.items() if k != 'coaches')
+        print(f"    Setup values: {setup_values}")
         print(f"    Coaches ({len(setup.get('coaches', []))}): "
               f"{[c['name'] for c in setup.get('coaches', [])[:5]]}")
     except Exception as e:

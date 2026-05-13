@@ -170,7 +170,6 @@ class TestBuildObsFromSnapshot:
 
     def test_opponent_hp_from_damage(self):
         """Damage event for p2a sets opponent hp slot."""
-        from src.ml.battle_env import N_MOVES, MOVE_FEATS
         events = [BattleEvent(kind="damage", slot="p2a", hp_after=0.25)]
         snap = _snap(events=events)
         obs = build_obs_from_snapshot(snap)
@@ -404,8 +403,8 @@ def _make_fake_record() -> BattleRecord:
 
 def _mock_deps():
     """
-    Inject fake imitation + stable_baselines3 into sys.modules so pretrain()
-    can be exercised without those packages installed.
+    Inject fake imitation + stable_baselines3 + torch into sys.modules so
+    pretrain() can be exercised without those packages installed.
     The mock PPO instance's policy.state_dict() returns a real dict of MagicMocks
     so the dict-comprehension in pretrain() iterates cleanly.
     """
@@ -425,6 +424,7 @@ def _mock_deps():
     fake_types_mod.Transitions = MagicMock()
     fake_sb3_mod = MagicMock()
     fake_sb3_mod.PPO = mock_ppo_class
+    fake_torch_mod = MagicMock()
 
     return patch.dict(sys.modules, {
         "imitation": MagicMock(),
@@ -433,6 +433,7 @@ def _mock_deps():
         "imitation.data": MagicMock(),
         "imitation.data.types": fake_types_mod,
         "stable_baselines3": fake_sb3_mod,
+        "torch": fake_torch_mod,
     })
 
 
@@ -442,9 +443,17 @@ class TestPretrain:
     def test_import_error_when_imitation_missing(self, tmp_path):
         """pretrain() raises ImportError when imitation is not installed."""
         from src.ml.pretrain import pretrain
-        # imitation not in sys.modules → ImportError re-raised with helpful message
-        with pytest.raises(ImportError, match="imitation"):
-            pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt")
+        # Force imitation's import to fail regardless of whether it's installed.
+        real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__import__
+
+        def _no_imitation(name, *args, **kwargs):
+            if name == "imitation" or name.startswith("imitation."):
+                raise ImportError(f"No module named {name!r}")
+            return real_import(name, *args, **kwargs)
+
+        with patch("builtins.__import__", side_effect=_no_imitation):
+            with pytest.raises(ImportError, match="imitation"):
+                pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt")
 
     def test_raises_value_error_when_no_records(self, tmp_path):
         """pretrain() raises ValueError when replay_dir contains no JSON files."""

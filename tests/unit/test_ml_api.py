@@ -19,10 +19,10 @@ if str(PROJECT_ROOT) not in sys.path:
 pytest.importorskip("fastapi", reason="fastapi not installed")
 pytest.importorskip("starlette", reason="starlette not installed")
 
-from starlette.testclient import TestClient
+from starlette.testclient import TestClient  # noqa: E402
 
-import src.ml.api as api_module
-from src.ml.api import get_state, update_state, app
+import src.ml.api as api_module  # noqa: E402
+from src.ml.api import get_state, update_state, app  # noqa: E402
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
