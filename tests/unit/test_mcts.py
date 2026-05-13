@@ -1,20 +1,19 @@
 """
 Unit tests for src/ml/mcts.py — MCTSConfig, MCTSNode, MCTS, run_mcts, _build_legal_mask.
 """
-import math
 import pytest
 import numpy as np
 
 torch = pytest.importorskip("torch")
 
-from src.ml.mcts import (
+from src.ml.mcts import (  # noqa: E402
     MCTSConfig,
     MCTSNode,
     MCTS,
     run_mcts,
     _build_legal_mask,
 )
-from src.ml.battle_env import N_ACTIONS_GEN9, OBS_DIM
+from src.ml.battle_env import N_ACTIONS_GEN9, OBS_DIM  # noqa: E402
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -261,7 +260,6 @@ class TestBuildLegalMask:
         rather than being silently swallowed.
         """
         pytest.importorskip("poke_env")
-        import logging
         from unittest.mock import MagicMock, patch
         from poke_env.environment.singles_env import SinglesEnv
 
