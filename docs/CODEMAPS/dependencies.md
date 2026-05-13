@@ -16,7 +16,7 @@
 | Package | Purpose | Notes |
 |---------|---------|-------|
 | `stable-baselines3` | PPO training | `SB3_OK` guard throughout |
-| `poke-env ≥0.8.1` | Pokemon Showdown env | `POKE_ENV_AVAILABLE` guard |
+| `poke-env ==0.12.1` | Pokemon Showdown env | `POKE_ENV_AVAILABLE` guard; pinned — 0.13+ breaks API |
 | `torch` | Neural networks | BattleTransformer, MCTS inference |
 | `gymnasium` | RL environment wrapper | `battle_env.py` |
 
