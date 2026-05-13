@@ -22,7 +22,7 @@ beautifulsoup4>=4.14.3
 lxml>=6.1.0
 
 # Database
-aiosqlite>=0.20.0
+aiosqlite>=0.22.1
 
 # Environment Config
 python-dotenv>=1.2.2
