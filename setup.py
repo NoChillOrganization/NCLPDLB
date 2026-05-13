@@ -209,9 +209,6 @@ def step_verify() -> None:
   Start the bot:
     python src/bot/main.py
 
-  Start the web API (optional):
-    uvicorn src.api.app:app --host 0.0.0.0 --port 8000
-
   Run tests:
     pytest tests/
 
