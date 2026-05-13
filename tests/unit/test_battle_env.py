@@ -18,6 +18,7 @@ from src.ml.battle_env import (
     OBS_DIM,
     OBS_DIM_DOUBLES,
     MOVE_TYPE_EFF_OBS_IDXS,
+    N_ACTIONS_GEN9,
     _move_features,
     _pokemon_hp,
     build_observation,
@@ -652,12 +653,14 @@ class TestBattleEnvActionSpace:
 
     def test_step_assertion_error_returns_terminal(self):
         """step() catches AssertionError from poke-env and returns zero terminal step."""
-        from gymnasium.spaces import Box
+        from gymnasium.spaces import Box, Discrete
         from poke_env.environment.singles_env import SinglesEnv
         env = BattleEnv.__new__(BattleEnv)
         fake_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
-        # Bypass poke-env's __setattr__ hook which would dereference action_spaces.
-        object.__setattr__(env, "observation_spaces", {"p1": fake_space})
+        # poke-env's __setattr__ for observation_spaces reads self.action_spaces,
+        # so prime it before assigning observation_spaces.
+        env.action_spaces = {"p1": Discrete(N_ACTIONS_GEN9)}
+        env.observation_spaces = {"p1": fake_space}
         with patch.object(SinglesEnv, "step", side_effect=AssertionError):
             obs, rew, done, trunc, info = env.step(0)
         assert done is True
@@ -690,12 +693,14 @@ class TestBattleDoubleEnvActionSpace:
 
     def test_step_assertion_error_returns_terminal(self):
         """step() catches AssertionError and returns zero terminal step for doubles."""
-        from gymnasium.spaces import Box
+        from gymnasium.spaces import Box, Discrete
         from poke_env.environment.doubles_env import DoublesEnv
         env = BattleDoubleEnv.__new__(BattleDoubleEnv)
         fake_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
-        # Bypass poke-env's __setattr__ hook which would dereference action_spaces.
-        object.__setattr__(env, "observation_spaces", {"p1": fake_space})
+        # poke-env's __setattr__ for observation_spaces reads self.action_spaces,
+        # so prime it before assigning observation_spaces.
+        env.action_spaces = {"p1": Discrete(1)}
+        env.observation_spaces = {"p1": fake_space}
         with patch.object(DoublesEnv, "step", side_effect=AssertionError):
             obs, rew, done, trunc, info = env.step(0)
         assert done is True
