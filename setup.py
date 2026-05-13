@@ -68,7 +68,7 @@ def _write_env(values: dict[str, str]) -> None:
         # Start from .env.example if available
         template = ENV_EXAMPLE.read_text(encoding="utf-8") if ENV_EXAMPLE.exists() else ""
         lines = template.splitlines()
-        seen: set[str] = set()
+        seen = set()
         for i, line in enumerate(lines):
             stripped = line.strip()
             if stripped and not stripped.startswith("#") and "=" in stripped:
