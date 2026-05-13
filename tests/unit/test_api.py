@@ -3,8 +3,6 @@ Tests for src/ml/api.py — get_state, update_state, and all FastAPI routes.
 """
 from __future__ import annotations
 
-import importlib
-import sys
 from unittest.mock import patch
 
 import pytest
@@ -12,8 +10,8 @@ import pytest
 fastapi_tc = pytest.importorskip("fastapi.testclient")
 TestClient = fastapi_tc.TestClient
 
-import src.ml.api as api_module
-from src.ml.api import app, get_state, update_state
+import src.ml.api as api_module  # noqa: E402
+from src.ml.api import app, get_state, update_state  # noqa: E402
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

@@ -55,7 +55,26 @@ try:
 except ImportError:  # pragma: no cover
     TORCH_OK = False
     torch = None  # type: ignore
-    nn = None     # type: ignore
+
+    # Provide a minimal stub so module-level class definitions
+    # (`class X(nn.Module):`) do not crash at import time when torch is absent.
+    # Any actual instantiation still raises ImportError via the TORCH_OK guard
+    # in __init__().
+    class _NNStub:
+        class Module:
+            def __init__(self, *args: Any, **kwargs: Any) -> None:
+                raise ImportError(
+                    "PyTorch is required. Install it from "
+                    "https://pytorch.org/get-started/locally/"
+                )
+
+        def __getattr__(self, _name: str) -> Any:  # pragma: no cover
+            raise ImportError(
+                "PyTorch is required. Install it from "
+                "https://pytorch.org/get-started/locally/"
+            )
+
+    nn = _NNStub()  # type: ignore[assignment]
 
 from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9  # noqa: E402
 

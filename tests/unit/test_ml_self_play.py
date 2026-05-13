@@ -19,8 +19,8 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.ml.self_play import SharedStats, LadderLoop
-from src.ml.mcts import MCTSConfig
+from src.ml.self_play import SharedStats, LadderLoop  # noqa: E402
+from src.ml.mcts import MCTSConfig  # noqa: E402
 
 
 # ── SharedStats ───────────────────────────────────────────────────────────────
@@ -538,7 +538,7 @@ class TestMCTSPlayer:
         with patch("src.ml.battle_env.build_observation", return_value=obs), \
              patch("src.ml.self_play._build_legal_mask", return_value=legal_mask), \
              patch("src.ml.self_play.run_mcts", return_value=(0, mcts_stats)), \
-             patch.object(p, "_action_to_move", return_value="move_order") as mock_atm:
+             patch.object(p, "_action_to_move", return_value="move_order"):
             result = p.choose_move(battle)
 
         assert result == "move_order"

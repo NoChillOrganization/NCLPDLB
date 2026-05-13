@@ -57,7 +57,7 @@ import sys
 import time
 from pathlib import Path
 
-from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_SHOWDOWN
+from src.ml.showdown_modes import MODE_LOCALHOST, MODE_SHOWDOWN
 
 log = logging.getLogger(__name__)
 
