@@ -23,18 +23,25 @@ from src.services.draft_service import DraftService as _DraftService
 from src.services.elo_service import EloService as _EloService
 
 # ── Logging Setup ─────────────────────────────────────────────
-log_dir = settings.log_file.parent
-log_dir.mkdir(parents=True, exist_ok=True)
-
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper(), logging.INFO),
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(settings.log_file, encoding="utf-8"),
-    ],
-)
 log = logging.getLogger(__name__)
+
+
+def _setup_logging() -> None:
+    """Configure root logger with stream + file handlers.
+
+    Called from ``main()`` rather than at import time so that test suites
+    importing helpers from this module don't leak an open FileHandler.
+    """
+    log_dir = settings.log_file.parent
+    log_dir.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level.upper(), logging.INFO),
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(settings.log_file, encoding="utf-8"),
+        ],
+    )
 
 
 _SYNC_HASH_FILE = Path(__file__).parent.parent.parent / ".discord_sync_hash"
@@ -164,6 +171,7 @@ class DraftLeagueBot(commands.Bot):
 
 
 async def main() -> None:  # pragma: no cover
+    _setup_logging()
     creds = settings.google_sheets_credentials_file
     if not creds.exists():
         raise FileNotFoundError(
