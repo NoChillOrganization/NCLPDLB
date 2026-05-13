@@ -14,7 +14,7 @@ pydantic>=2.6.0
 pydantic-settings>=2.14.1
 
 # HTTP Client (async, cross-platform)
-aiohttp>=3.9.3
+aiohttp>=3.13.5
 httpx>=0.28.1
 
 # Data Scraping (Smogon)
@@ -46,7 +46,7 @@ aioresponses>=0.7.8  # Mock aiohttp requests
 
 # Code Quality
 ruff>=0.15.12
-mypy>=1.9.0
+mypy>=2.1.0
 
 # Machine Learning — data pipeline
 numpy>=1.26.0
