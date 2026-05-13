@@ -431,13 +431,17 @@ Configured via `CORS_ORIGINS` in `.env`. Default allows:
 
 ## Development
 
-Start the API server:
+Start the ML training dashboard (requires `pip install fastapi uvicorn`):
 
 ```bash
-uvicorn src.api.app:app --reload --host 0.0.0.0 --port 8000
+# Option A — via uvicorn directly
+uvicorn src.ml.api:app --host 0.0.0.0 --port 8080 --reload
+
+# Option B — via training runner (also starts self-play)
+python -m src.ml.run_training --port 8080
 ```
 
 Interactive API docs:
 
-- Swagger UI: <http://localhost:8000/docs>
-- ReDoc: <http://localhost:8000/redoc>
+- Swagger UI: <http://localhost:8080/docs>
+- ReDoc: <http://localhost:8080/redoc>
