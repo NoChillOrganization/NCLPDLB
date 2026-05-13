@@ -49,7 +49,7 @@ ruff>=0.15.12
 mypy>=2.1.0
 
 # Machine Learning — data pipeline
-numpy>=1.26.0
+numpy>=2.4.4
 scikit-learn>=1.8.0
 pandas>=3.0.2
 
