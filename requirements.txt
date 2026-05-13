@@ -14,7 +14,7 @@ pydantic>=2.6.0
 pydantic-settings>=2.14.1
 
 # HTTP Client (async, cross-platform)
-aiohttp>=3.9.3
+aiohttp>=3.13.5
 httpx>=0.28.1
 
 # Data Scraping (Smogon)
