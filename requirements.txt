@@ -25,7 +25,7 @@ lxml>=6.1.0
 aiosqlite>=0.20.0
 
 # Environment Config
-python-dotenv>=1.0.1
+python-dotenv>=1.2.2
 
 # Path Handling (cross-platform, stdlib)
 # pathlib is built-in to Python 3.4+
