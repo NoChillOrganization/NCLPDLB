@@ -83,15 +83,7 @@ jobs:
             || echo "Competitive data seeding skipped — COMPETITIVE_EXPORTS_DIR not set or files not found"
           if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
             echo "Meta data ready at ${COMPETITIVE_DATA_DIR}"
-            python -c "
-import json
-with open('${COMPETITIVE_DATA_DIR}/format_meta.json') as f:
-    data = json.load(f)
-print(f'  Formats indexed: {len(data)}')
-for fmt, meta in list(data.items())[:5]:
-    top = ', '.join(e[\"pokemon\"] for e in meta.get(\"top10_usage\", [])[:3])
-    print(f'  {fmt}: top usage = {top}')
-"
+            python -c "import json; d=json.load(open('${COMPETITIVE_DATA_DIR}/format_meta.json')); print(f'  Formats indexed: {len(d)}'); [print(f\"  {k}: top usage = {', '.join(e.get('pokemon', '') for e in v.get('top10_usage', [])[:3])}\") for k, v in list(d.items())[:5]]" || true
           else
             echo "No format_meta.json generated — training proceeds without meta context"
           fi
@@ -142,13 +134,13 @@ for fmt, meta in list(data.items())[:5]:
           fi
 
           # Write config (overwrite each time to guarantee correct settings)
-          cat > "$PS_DIR/config/config.js" << 'SHOWDOWN_EOF'
-exports.port = 8000;
-exports.bindaddress = '127.0.0.1';
-exports.workers = 1;
-exports.noipchecks = true;
-exports.nothrottle = true;
-SHOWDOWN_EOF
+          printf '%s\n' \
+            'exports.port = 8000;' \
+            "exports.bindaddress = '127.0.0.1';" \
+            'exports.workers = 1;' \
+            'exports.noipchecks = true;' \
+            'exports.nothrottle = true;' \
+            > "$PS_DIR/config/config.js"
 
           # Start server in background
           cd "$PS_DIR"
