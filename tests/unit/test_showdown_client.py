@@ -193,7 +193,7 @@ class TestShowdownConnection:
 
         async def _aiter_raises(self):
             raise wse.ConnectionClosed(None, None)
-            yield  # noqa: unreachable — makes it a generator
+            yield  # makes it a generator (unreachable after raise)
 
         fake_ws = MagicMock()
         fake_ws.__aiter__ = _aiter_raises
@@ -409,10 +409,15 @@ class TestShowdownClient:
         client.connection.connect.assert_awaited_once()
 
     async def test_connect_logs_warning_on_login_timeout(self, caplog):
-        import logging
         client = self._make()
-        # Don't set the login event — it will timeout
-        with patch("asyncio.wait_for", side_effect=asyncio.TimeoutError):
+
+        # Don't set the login event — it will timeout. Close the inner coroutine
+        # to avoid a "coroutine never awaited" warning.
+        async def _raise_timeout(coro, timeout):
+            coro.close()
+            raise asyncio.TimeoutError
+
+        with patch("asyncio.wait_for", side_effect=_raise_timeout):
             await client.connect(login_timeout=0.01)
         # Should complete without raising
 

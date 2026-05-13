@@ -383,8 +383,10 @@ async def test_on_command_error_does_not_raise():
 async def test_main_starts_bot_with_token():
     """main() creates a DraftLeagueBot and calls bot.start() with the discord token."""
     with patch("src.bot.main.DraftLeagueBot") as MockBot, \
+         patch("src.bot.main._setup_logging"), \
          patch("src.bot.main.settings") as mock_settings:
         mock_settings.discord_token = "fake-token"
+        mock_settings.google_sheets_credentials_file.exists.return_value = True
 
         # Bot acts as async context manager
         mock_bot_instance = MagicMock()
