@@ -60,17 +60,24 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: "pip"
+      - name: Set up Python virtualenv
+        shell: bash
+        run: |
+          # Self-hosted runner: system Python already installed.
+          # actions/setup-python fails here — it tries to mkdir /Users/runner
+          # which does not exist (runner runs as travisweisberg, not runner).
+          PYBIN=$(python3.12 -c "import sys; print(sys.executable)" 2>/dev/null \
+            || python3 -c "import sys; print(sys.executable)")
+          echo "Using Python: $PYBIN ($($PYBIN --version))"
+          $PYBIN -m venv .venv
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Install Python dependencies
         shell: bash
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+          # torch CPU wheel; pip disk cache persists on self-hosted runner between jobs
           pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: Seed competitive meta data
@@ -112,11 +119,6 @@ jobs:
             --format "${TRAIN_FORMAT}" \
             --output "${BC_OUTPUT}"
           echo "BC actor weights saved to ${BC_OUTPUT}"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "20"
 
       - name: Start local Showdown server
         shell: bash
