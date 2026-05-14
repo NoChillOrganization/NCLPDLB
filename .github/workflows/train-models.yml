@@ -69,7 +69,17 @@ jobs:
           PYBIN=$(python3.12 -c "import sys; print(sys.executable)" 2>/dev/null \
             || python3 -c "import sys; print(sys.executable)")
           echo "Using Python: $PYBIN ($($PYBIN --version))"
-          $PYBIN -m venv .venv
+          # On Debian/Ubuntu, python3.12-venv is a separate apt package.
+          # Install it if venv creation fails due to missing ensurepip.
+          if ! $PYBIN -m venv .venv 2>/dev/null; then
+            echo "venv failed — attempting to install python3-venv package"
+            if command -v apt-get >/dev/null 2>&1; then
+              sudo apt-get install -y python3.12-venv 2>/dev/null \
+                || sudo apt-get install -y python3-venv 2>/dev/null \
+                || true
+            fi
+            $PYBIN -m venv .venv
+          fi
           echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Install Python dependencies
@@ -117,7 +127,8 @@ jobs:
           mkdir -p "$(dirname "${BC_OUTPUT}")"
           python -m src.ml.pretrain "${REPLAY_DIR}" \
             --format "${TRAIN_FORMAT}" \
-            --output "${BC_OUTPUT}"
+            --output "${BC_OUTPUT}" \
+            || { echo "BC pre-training failed (imitation not installed or other error) — skipping warm-start"; exit 0; }
           echo "BC actor weights saved to ${BC_OUTPUT}"
 
       - name: Start local Showdown server
@@ -127,7 +138,11 @@ jobs:
 
           # Kill any leftover server from a previous job (jobs are sequential)
           pkill -f "node.*pokemon-showdown" 2>/dev/null || true
-          sleep 1
+          # Wait for port 8000 to be fully released before starting a new server
+          for i in $(seq 1 10); do
+            if ! lsof -ti:8000 >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
 
           # Clone once; reuse on subsequent jobs in the same run
           if [ ! -d "$PS_DIR/.git" ]; then
@@ -139,7 +154,7 @@ jobs:
           printf '%s\n' \
             'exports.port = 8000;' \
             "exports.bindaddress = '127.0.0.1';" \
-            'exports.workers = 1;' \
+            'exports.subprocesses = 1;' \
             'exports.noipchecks = true;' \
             'exports.nothrottle = true;' \
             > "$PS_DIR/config/config.js"
