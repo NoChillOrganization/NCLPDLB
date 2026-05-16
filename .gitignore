@@ -81,6 +81,18 @@ styles.css
 # ML model artifacts (large — use releases or cloud storage)
 src/ml/models/results/
 
+# GitHub Actions self-hosted runner (local binary — not tracked)
+actions-runner/
+runners/
+
+# Graphify output cache
+graphify-out/
+
+# Stray JSON snapshots
+*.json
+!package.json
+!package-lock.json
+
 # Misc
 *.bak
 *.tmp

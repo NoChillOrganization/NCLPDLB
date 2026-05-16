@@ -123,6 +123,11 @@ jobs:
             exit 0
           fi
 
+          # Skip if imitation not installed — avoids a Python traceback when
+          # replays exist but the package is absent (common on CI runners).
+          python -c "import imitation" 2>/dev/null \
+            || { echo "imitation not available — skipping BC pre-training for ${TRAIN_FORMAT}"; exit 0; }
+
           echo "Running BC pre-training for ${TRAIN_FORMAT} ..."
           mkdir -p "$(dirname "${BC_OUTPUT}")"
           python -m src.ml.pretrain "${REPLAY_DIR}" \

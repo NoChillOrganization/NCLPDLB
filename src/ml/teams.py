@@ -1617,32 +1617,32 @@ Careful Nature
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Gen 9 VGC 2026 Reg I  (one restricted legendary allowed, level 50 flat rules)
+# Gen 9 VGC 2026 Reg I  (2 restricted legendaries allowed per team; active Jan 2026+)
 # ─────────────────────────────────────────────────────────────────────────────
 
 GEN9VGC2026REGI = [
 
-    # Team 1 — Zacian restricted + Flutter Mane
+    # Team 1 — Calyrex-Shadow + Miraidon (Speed offense)
     """\
-Zacian-Crowned @ Rusted Sword
-Ability: Intrepid Sword
-Tera Type: Fairy
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Behemoth Blade
-- Play Rough
-- Wild Charge
-- Protect
-
-Flutter Mane @ Life Orb
-Ability: Protosynthesis
-Tera Type: Fairy
+Calyrex-Shadow @ Life Orb
+Ability: As One (Spectrier)
+Tera Type: Psychic
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-- Moonblast
+- Astral Barrage
+- Psyshock
 - Shadow Ball
 - Protect
-- Dazzling Gleam
+
+Miraidon @ Choice Specs
+Ability: Hadron Engine
+Tera Type: Electric
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Electro Drift
+- Draco Meteor
+- Overheat
+- Volt Switch
 
 Incineroar @ Sitrus Berry
 Ability: Intimidate
@@ -1660,18 +1660,18 @@ Tera Type: Grass
 EVs: 252 HP / 252 Atk / 4 Spe
 Adamant Nature
 - Grassy Glide
-- U-turn
 - Wood Hammer
+- U-turn
 - Fake Out
 
-Amoonguss @ Rocky Helmet
-Ability: Regenerator
-Tera Type: Grass
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-- Spore
-- Pollen Puff
-- Rage Powder
+Flutter Mane @ Booster Energy
+Ability: Protosynthesis
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Moonblast
+- Shadow Ball
+- Dazzling Gleam
 - Protect
 
 Landorus-Therian @ Choice Scarf
@@ -1684,9 +1684,83 @@ Jolly Nature
 - U-turn
 - Protect""",
 
-    # Team 2 — Kyogre restricted + Tailwind
+    # Team 2 — Calyrex-Ice + Miraidon (Trick Room + Electric)
     """\
-Kyogre @ Choice Specs
+Calyrex-Ice @ Weakness Policy
+Ability: As One (Glastrier)
+Tera Type: Ice
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+IVs: 0 Spe
+- Glacial Lance
+- High Horsepower
+- Close Combat
+- Protect
+
+Miraidon @ Choice Specs
+Ability: Hadron Engine
+Tera Type: Electric
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Electro Drift
+- Draco Meteor
+- Overheat
+- Volt Switch
+
+Hatterene @ Misty Seed
+Ability: Magic Bounce
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Mystical Fire
+- Trick Room
+- Healing Wish
+
+Incineroar @ Sitrus Berry
+Ability: Intimidate
+Tera Type: Fire
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Fake Out
+- Flare Blitz
+- Knock Off
+- Protect
+
+Rillaboom @ Assault Vest
+Ability: Grassy Surge
+Tera Type: Grass
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- U-turn
+- Fake Out
+
+Amoonguss @ Rocky Helmet
+Ability: Regenerator
+Tera Type: Grass
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Spore
+- Pollen Puff
+- Rage Powder
+- Protect""",
+
+    # Team 3 — Calyrex-Shadow + Kyogre (Rain offense)
+    """\
+Calyrex-Shadow @ Life Orb
+Ability: As One (Spectrier)
+Tera Type: Psychic
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Astral Barrage
+- Psyshock
+- Shadow Ball
+- Protect
+
+Kyogre @ Choice Scarf
 Ability: Drizzle
 Tera Type: Water
 EVs: 252 SpA / 4 SpD / 252 Spe
@@ -1716,15 +1790,57 @@ Jolly Nature
 - U-turn
 - Aqua Jet
 
+Incineroar @ Sitrus Berry
+Ability: Intimidate
+Tera Type: Fire
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Fake Out
+- Flare Blitz
+- Knock Off
+- Protect
+
 Rillaboom @ Assault Vest
 Ability: Grassy Surge
 Tera Type: Grass
 EVs: 252 HP / 252 Atk / 4 Spe
 Adamant Nature
 - Grassy Glide
-- U-turn
 - Wood Hammer
-- Fake Out
+- U-turn
+- Fake Out""",
+
+    # Team 4 — Calyrex-Shadow + Groudon (Sun offense)
+    """\
+Calyrex-Shadow @ Life Orb
+Ability: As One (Spectrier)
+Tera Type: Ghost
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Astral Barrage
+- Psyshock
+- Shadow Ball
+- Protect
+
+Groudon @ Earth Plate
+Ability: Drought
+Tera Type: Ground
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Precipice Blades
+- Fire Punch
+- Rock Slide
+- Protect
+
+Venusaur @ Focus Sash
+Ability: Chlorophyll
+Tera Type: Grass
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Solar Beam
+- Sludge Bomb
+- Sleep Powder
+- Protect
 
 Incineroar @ Sitrus Berry
 Ability: Intimidate
@@ -1734,6 +1850,16 @@ Careful Nature
 - Fake Out
 - Flare Blitz
 - Knock Off
+- Protect
+
+Flutter Mane @ Booster Energy
+Ability: Protosynthesis
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Moonblast
+- Shadow Ball
+- Dazzling Gleam
 - Protect
 
 Amoonguss @ Rocky Helmet
@@ -1746,8 +1872,18 @@ Calm Nature
 - Rage Powder
 - Protect""",
 
-    # Team 3 — Calyrex-Ice restricted + Trick Room
+    # Team 5 — Zacian-Crowned + Calyrex-Ice (Physical Trick Room)
     """\
+Zacian-Crowned @ Rusted Sword
+Ability: Intrepid Sword
+Tera Type: Fairy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Behemoth Blade
+- Play Rough
+- Wild Charge
+- Protect
+
 Calyrex-Ice @ Weakness Policy
 Ability: As One (Glastrier)
 Tera Type: Ice
@@ -1797,149 +1933,15 @@ Tera Type: Grass
 EVs: 252 HP / 252 Atk / 4 Spe
 Adamant Nature
 - Grassy Glide
-- U-turn
 - Wood Hammer
-- Fake Out
-
-Flutter Mane @ Life Orb
-Ability: Protosynthesis
-Tera Type: Fairy
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-- Moonblast
-- Shadow Ball
-- Protect
-- Dazzling Gleam""",
-
-    # Team 4 — Groudon restricted + Sun
-    """\
-Groudon @ Earth Plate
-Ability: Drought
-Tera Type: Ground
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-- Precipice Blades
-- Fire Punch
-- Rock Slide
-- Protect
-
-Venusaur @ Focus Sash
-Ability: Chlorophyll
-Tera Type: Grass
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-- Solar Beam
-- Sludge Bomb
-- Sleep Powder
-- Protect
-
-Incineroar @ Sitrus Berry
-Ability: Intimidate
-Tera Type: Fire
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Fake Out
-- Flare Blitz
-- Knock Off
-- Protect
-
-Flutter Mane @ Life Orb
-Ability: Protosynthesis
-Tera Type: Fairy
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-- Moonblast
-- Shadow Ball
-- Protect
-- Dazzling Gleam
-
-Urshifu-Rapid-Strike @ Choice Band
-Ability: Unseen Fist
-Tera Type: Water
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Surging Strikes
-- Close Combat
 - U-turn
-- Aqua Jet
-
-Amoonguss @ Rocky Helmet
-Ability: Regenerator
-Tera Type: Grass
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-- Spore
-- Pollen Puff
-- Rage Powder
-- Protect""",
-
-    # Team 5 — Calyrex-Shadow restricted + Tailwind Offense
-    """\
-Calyrex-Shadow @ Life Orb
-Ability: As One (Spectrier)
-Tera Type: Psychic
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-- Astral Barrage
-- Psyshock
-- Shadow Ball
-- Protect
-
-Tornadus @ Focus Sash
-Ability: Prankster
-Tera Type: Flying
-EVs: 252 HP / 4 SpA / 252 Spe
-Timid Nature
-- Tailwind
-- Rain Dance
-- Taunt
-- Hurricane
-
-Urshifu-Rapid-Strike @ Choice Band
-Ability: Unseen Fist
-Tera Type: Water
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Surging Strikes
-- Close Combat
-- U-turn
-- Aqua Jet
-
-Incineroar @ Sitrus Berry
-Ability: Intimidate
-Tera Type: Fire
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Fake Out
-- Flare Blitz
-- Knock Off
-- Protect
-
-Rillaboom @ Assault Vest
-Ability: Grassy Surge
-Tera Type: Grass
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-- Grassy Glide
-- U-turn
-- Wood Hammer
-- Fake Out
-
-Flutter Mane @ Choice Specs
-Ability: Protosynthesis
-Tera Type: Fairy
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-- Moonblast
-- Shadow Ball
-- Protect
-- Dazzling Gleam""",
+- Fake Out""",
 
 ]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Gen 9 VGC 2026 Reg F  (Flat Rules — no restricted legendaries allowed)
+# Gen 9 VGC 2026 Reg F  (1 restricted legendary allowed per team; expired Jan 2026)
 # ─────────────────────────────────────────────────────────────────────────────
 
 GEN9VGC2026REGF = [
