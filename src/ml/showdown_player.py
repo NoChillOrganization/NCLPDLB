@@ -371,6 +371,11 @@ def best_model_for_format(
     if final.exists():
         return final
 
+    # 2b. Legacy model layout: src/ml/models/results/model-{fmt}/final_model.zip
+    legacy_final = Path("src/ml/models/results") / f"model-{fmt}" / "final_model.zip"
+    if legacy_final.exists():
+        return legacy_final
+
     # 3. In-progress checkpoint
     latest = base / "latest.zip"
     if latest.exists():

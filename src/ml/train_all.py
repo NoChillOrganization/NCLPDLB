@@ -117,8 +117,14 @@ DEFAULT_RESULTS_DIR = "data/ml/results"
 
 
 def _model_done(spar_fmt: str, results_dir: Path) -> bool:
-    """Return True if a dated final model exists for this format in results_dir."""
-    return any(results_dir.glob(f"{spar_fmt}_*.zip"))
+    """Return True if a trained model exists for this format."""
+    if any(results_dir.glob(f"{spar_fmt}_*.zip")):
+        return True
+    if any((results_dir / spar_fmt).glob(f"{spar_fmt}_*.zip")):
+        return True
+    # Check legacy model layout: src/ml/models/results/model-{fmt}/final_model.zip
+    legacy = Path("src/ml/models/results") / f"model-{spar_fmt}" / "final_model.zip"
+    return legacy.exists()
 
 
 def _resume_checkpoint(spar_fmt: str, save_dir: Path) -> Path | None:
@@ -306,8 +312,8 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
     ap.add_argument(
         "--server",
         default=MODE_SHOWDOWN,
-        choices=[MODE_SHOWDOWN],
-        help="Showdown connection mode: showdown (wss://sim3.psim.us — requires 2 accounts)",
+        choices=[MODE_SHOWDOWN, MODE_LOCALHOST],
+        help="Showdown connection mode: showdown (wss://sim3.psim.us) or localhost (ws://localhost:8000)",
     )
     return ap.parse_args()
 

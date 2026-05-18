@@ -135,28 +135,45 @@ def _pick_move_from_obs(  # pragma: no cover
     policy: Any | None,
 ) -> None:
     """
-    Choose and click a move button.  Uses PPO policy if loaded; otherwise random.
+    Choose and click a move or switch button.
+
+    Decodes the 26-action space (same as BattleEnv):
+      0-5   → switch to bench slot
+      6-25  → move (with optional gimmick; gimmick ignored in DOM)
     """
-    move_btns = page.locator("button.move:not([disabled])")
-    n_moves = move_btns.count()
-    if n_moves == 0:
-        # Try switch or forfeit
-        switch_btns = page.locator("button.switch:not([disabled])")
-        if switch_btns.count():
-            switch_btns.first.click()
-        return
+    from src.ml.battle_env import N_ACTIONS_GEN9
+
+    move_btns   = page.locator("button.move:not([disabled])")
+    switch_btns = page.locator("button.switch:not([disabled])")
+    n_moves   = move_btns.count()
+    n_switches = switch_btns.count()
+
+    if n_moves == 0 and n_switches == 0:
+        return  # nothing clickable (waiting for opponent)
 
     if policy is not None:
         try:
             action, _ = policy.predict(obs.reshape(1, -1), deterministic=False)
-            idx = int(action[0]) % n_moves
+            action_idx = int(action[0])
         except Exception:
-            idx = 0
+            action_idx = 6  # default: first move
     else:
         import random
-        idx = random.randrange(n_moves)
+        action_idx = random.randrange(N_ACTIONS_GEN9)
 
-    move_btns.nth(idx).click()
+    if action_idx <= 5:
+        # Switch action — click bench slot if available, else fall through to move
+        if n_switches > 0:
+            switch_btns.nth(action_idx % n_switches).click()
+            return
+        # No bench available — fall through to move
+        action_idx = 6
+
+    # Move action: 6-9=move, 10-13=mega, 14-17=zmove, 18-21=dyna, 22-25=tera
+    # DOM doesn't expose gimmick toggles reliably — map to base move slot (0-3)
+    move_slot = (action_idx - 6) % 4
+    if n_moves > 0:
+        move_btns.nth(move_slot % n_moves).click()
 
 
 def _wait_for_turn_or_end(page: Any, timeout: float = 60.0) -> str:  # pragma: no cover
@@ -222,7 +239,7 @@ def train_browser(  # pragma: no cover
         SB3_OK = False
 
     from src.ml.showdown_modes import account_configs_for_mode, MODE_BROWSER
-    from src.ml.battle_env import OBS_DIM
+    from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9
     from src.ml.train_policy import DEFAULT_SAVE_DIR, DEFAULT_RESULTS_DIR, PPO_HYPERPARAMS
 
     _save_dir    = save_dir    or Path(DEFAULT_SAVE_DIR)
@@ -252,7 +269,7 @@ def train_browser(  # pragma: no cover
         observation_space = spaces.Box(
             low=-1.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32
         )
-        action_space = spaces.Discrete(4)  # 4 moves (simplified)
+        action_space = spaces.Discrete(N_ACTIONS_GEN9)
 
         def reset(self, **kwargs):
             return np.zeros(OBS_DIM, dtype=np.float32), {}
