@@ -4095,6 +4095,589 @@ GEN9VGC2026REGFBO3 = GEN9VGC2026REGF
 GEN9VGC2026REGIBO3 = GEN9VGC2026REGI
 
 # ─────────────────────────────────────────────────────────────────────────────
+# VGC 2025 — Regulation G/H/I (restricted legendaries allowed, one per team)
+# ─────────────────────────────────────────────────────────────────────────────
+
+GEN9VGC2025REGG = [
+    # Team 1 — Calyrex-Ice + Trick Room
+    """\
+Calyrex-Ice @ Assault Vest
+Ability: As One (Glastrier)
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Glacial Lance
+- High Horsepower
+- Endeavor
+- Trick Room
+
+Incineroar @ Sitrus Berry
+Ability: Intimidate
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Fake Out
+- Parting Shot
+- Flare Blitz
+- Protect
+
+Rillaboom @ Choice Band
+Ability: Grassy Surge
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+- U-turn
+
+Urshifu-Rapid-Strike @ Focus Sash
+Ability: Unseen Fist
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Surging Strikes
+- Close Combat
+- Aqua Jet
+- Detect
+
+Tornadus @ Covert Cloak
+Ability: Prankster
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+- Tailwind
+- Bleakwind Storm
+- Rain Dance
+- Protect
+
+Grimmsnarl @ Light Clay
+Ability: Prankster
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Light Screen
+- Reflect
+- Parting Shot
+- Fake Out
+""",
+    # Team 2 — Koraidon + Ogerpon-Wellspring
+    """\
+Koraidon @ Clear Amulet
+Ability: Orichalcum Pulse
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Collision Course
+- Flame Charge
+- Drain Punch
+- Protect
+
+Ogerpon-Wellspring @ Wellspring Mask
+Ability: Water Absorb
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Ivy Cudgel
+- Horn Leech
+- Follow Me
+- Protect
+
+Incineroar @ Sitrus Berry
+Ability: Intimidate
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Fake Out
+- Parting Shot
+- Flare Blitz
+- Protect
+
+Flutter Mane @ Booster Energy
+Ability: Protosynthesis
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Moonblast
+- Shadow Ball
+- Dazzling Gleam
+- Protect
+
+Iron Hands @ Assault Vest
+Ability: Quark Drive
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Fake Out
+- Close Combat
+- Wild Charge
+- Heavy Slam
+
+Tornadus @ Rocky Helmet
+Ability: Prankster
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+- Tailwind
+- Bleakwind Storm
+- Taunt
+- Protect
+""",
+    # Team 3 — Miraidon + Electric terrain
+    """\
+Miraidon @ Booster Energy
+Ability: Hadron Engine
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Electro Drift
+- Dazzling Gleam
+- Volt Switch
+- Protect
+
+Flutter Mane @ Life Orb
+Ability: Protosynthesis
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Moonblast
+- Shadow Ball
+- Mystical Fire
+- Protect
+
+Incineroar @ Sitrus Berry
+Ability: Intimidate
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Fake Out
+- Parting Shot
+- Flare Blitz
+- Protect
+
+Iron Hands @ Assault Vest
+Ability: Quark Drive
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Fake Out
+- Close Combat
+- Wild Charge
+- Heavy Slam
+
+Rillaboom @ Choice Band
+Ability: Grassy Surge
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+- U-turn
+
+Amoonguss @ Rocky Helmet
+Ability: Regenerator
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Spore
+- Rage Powder
+- Pollen Puff
+- Protect
+""",
+    # Team 4 — Zacian-Crowned + screens
+    """\
+Zacian-Crowned @ Rusted Sword
+Ability: Intrepid Sword
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Behemoth Blade
+- Play Rough
+- Close Combat
+- Protect
+
+Grimmsnarl @ Light Clay
+Ability: Prankster
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Light Screen
+- Reflect
+- Parting Shot
+- Fake Out
+
+Incineroar @ Sitrus Berry
+Ability: Intimidate
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Fake Out
+- Parting Shot
+- Flare Blitz
+- Protect
+
+Iron Hands @ Assault Vest
+Ability: Quark Drive
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Fake Out
+- Close Combat
+- Wild Charge
+- Heavy Slam
+
+Rillaboom @ Choice Band
+Ability: Grassy Surge
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+- U-turn
+
+Amoonguss @ Rocky Helmet
+Ability: Regenerator
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Spore
+- Rage Powder
+- Pollen Puff
+- Protect
+""",
+    # Team 5 — Kyogre + rain
+    """\
+Kyogre @ Choice Scarf
+Ability: Drizzle
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Water Spout
+- Origin Pulse
+- Thunder
+- Ice Beam
+
+Incineroar @ Sitrus Berry
+Ability: Intimidate
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Fake Out
+- Parting Shot
+- Flare Blitz
+- Protect
+
+Urshifu-Rapid-Strike @ Focus Sash
+Ability: Unseen Fist
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Surging Strikes
+- Close Combat
+- Aqua Jet
+- Detect
+
+Flutter Mane @ Life Orb
+Ability: Protosynthesis
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Moonblast
+- Shadow Ball
+- Mystical Fire
+- Protect
+
+Iron Hands @ Assault Vest
+Ability: Quark Drive
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Fake Out
+- Close Combat
+- Wild Charge
+- Thunder Punch
+
+Rillaboom @ Assault Vest
+Ability: Grassy Surge
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- High Horsepower
+- Fake Out
+""",
+]
+
+# Reg H and Reg I share the same restricted pool and archetypes as Reg G
+GEN9VGC2025REGH = GEN9VGC2025REGG
+GEN9VGC2025REGI = GEN9VGC2025REGG
+
+# BO3 aliases
+GEN9VGC2025REGGBO3 = GEN9VGC2025REGG
+GEN9VGC2025REGHBO3 = GEN9VGC2025REGH
+GEN9VGC2025REGIBO3 = GEN9VGC2025REGI
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Doubles NU
+# ─────────────────────────────────────────────────────────────────────────────
+
+GEN9DOUBLESNU = [
+    # Team 1 — Trick Room
+    """\
+Farigiraf @ Sitrus Berry
+Ability: Armor Tail
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Trick Room
+- Psychic
+- Hyper Voice
+- Protect
+
+Polteageist @ Life Orb
+Ability: Weak Armor
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shell Smash
+- Shadow Ball
+- Mystical Fire
+- Protect
+
+Mabosstiff @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Crunch
+- Play Rough
+- Sucker Punch
+- Facade
+
+Klawf @ Assault Vest
+Ability: Anger Shell
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Rock Slide
+- X-Scissor
+- Facade
+- Protect
+
+Brambleghast @ Choice Scarf
+Ability: Wind Rider
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shadow Ball
+- Energy Ball
+- Leaf Blade
+- Will-O-Wisp
+
+Greedent @ Sitrus Berry
+Ability: Gluttony
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Body Slam
+- Bullet Seed
+- Crunch
+- Protect
+""",
+    # Team 2 — Speed control
+    """\
+Flamigo @ Choice Band
+Ability: Scrappy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Close Combat
+- Brave Bird
+- Acrobatics
+- U-turn
+
+Cyclizar @ Choice Scarf
+Ability: Regenerator
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Dragon Claw
+- High Horsepower
+- Knock Off
+- Rapid Spin
+
+Grafaiai @ Focus Sash
+Ability: Poison Touch
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Sucker Punch
+- Gunk Shot
+- Knock Off
+- Parting Shot
+
+Lokix @ Life Orb
+Ability: Tinted Lens
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- First Impression
+- Leech Life
+- Night Slash
+- Knock Off
+
+Maushold @ Sitrus Berry
+Ability: Friend Guard
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Population Bomb
+- Follow Me
+- Helping Hand
+- Protect
+
+Dachsbun @ Sitrus Berry
+Ability: Well-Baked Body
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Play Rough
+- Crunch
+- Helping Hand
+- Protect
+""",
+    # Team 3 — Balanced offense
+    """\
+Mabosstiff @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Crunch
+- Play Rough
+- Sucker Punch
+- Facade
+
+Farigiraf @ Assault Vest
+Ability: Cud Chew
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Hyper Voice
+- Psychic
+- Shadow Ball
+- Body Slam
+
+Lokix @ Choice Scarf
+Ability: Tinted Lens
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- First Impression
+- Leech Life
+- Night Slash
+- Sucker Punch
+
+Klawf @ Assault Vest
+Ability: Shell Armor
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Rock Slide
+- X-Scissor
+- Facade
+- Protect
+
+Flamigo @ Life Orb
+Ability: Scrappy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Close Combat
+- Brave Bird
+- Acrobatics
+- U-turn
+
+Polteageist @ Focus Sash
+Ability: Cursed Body
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shadow Ball
+- Mystical Fire
+- Energy Ball
+- Will-O-Wisp
+""",
+    # Team 4 — Grassy terrain + wind
+    """\
+Arboliva @ Leftovers
+Ability: Seed Sower
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Petal Blizzard
+- Earth Power
+- Energy Ball
+- Protect
+
+Brambleghast @ Life Orb
+Ability: Wind Rider
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shadow Ball
+- Energy Ball
+- Leaf Blade
+- Protect
+
+Grafaiai @ Black Sludge
+Ability: Poison Touch
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Sucker Punch
+- Gunk Shot
+- Knock Off
+- Parting Shot
+
+Dachsbun @ Sitrus Berry
+Ability: Well-Baked Body
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Play Rough
+- Crunch
+- Helping Hand
+- Protect
+
+Cyclizar @ Choice Scarf
+Ability: Regenerator
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Dragon Claw
+- High Horsepower
+- Knock Off
+- Rapid Spin
+
+Maushold @ Sitrus Berry
+Ability: Friend Guard
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Population Bomb
+- Follow Me
+- Helping Hand
+- Protect
+""",
+    # Team 5 — Bulky offense
+    """\
+Wigglytuff @ Sitrus Berry
+Ability: Competitive
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Dazzling Gleam
+- Hyper Voice
+- Helping Hand
+- Protect
+
+Mabosstiff @ Sitrus Berry
+Ability: Intimidate
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Crunch
+- Sucker Punch
+- Parting Shot
+- Protect
+
+Klawf @ Choice Band
+Ability: Anger Shell
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Rock Slide
+- X-Scissor
+- Facade
+- Stomping Tantrum
+
+Flamigo @ Choice Scarf
+Ability: Scrappy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Close Combat
+- Brave Bird
+- Acrobatics
+- U-turn
+
+Polteageist @ Life Orb
+Ability: Weak Armor
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shell Smash
+- Shadow Ball
+- Mystical Fire
+- Protect
+
+Farigiraf @ Assault Vest
+Ability: Armor Tail
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Hyper Voice
+- Psychic
+- Shadow Ball
+- Body Slam
+""",
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Format → team list mapping
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -4115,6 +4698,13 @@ FORMAT_TEAMS: dict[str, list[str]] = {
     "gen9lc"               : GEN9LC,
     "gen9doublesubers"     : GEN9DOUBLESUBERS,
     "gen9doublesuu"        : GEN9DOUBLESUU,
+    "gen9doublesnu"        : GEN9DOUBLESNU,
+    "gen9vgc2025regg"      : GEN9VGC2025REGG,
+    "gen9vgc2025regh"      : GEN9VGC2025REGH,
+    "gen9vgc2025regi"      : GEN9VGC2025REGI,
+    "gen9vgc2025reggbo3"   : GEN9VGC2025REGGBO3,
+    "gen9vgc2025reghbo3"   : GEN9VGC2025REGHBO3,
+    "gen9vgc2025regibo3"   : GEN9VGC2025REGIBO3,
     "gen9vgc2026regfbo3"   : GEN9VGC2026REGFBO3,
     "gen9vgc2026regibo3"   : GEN9VGC2026REGIBO3,
 }
