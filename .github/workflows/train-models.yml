@@ -193,6 +193,11 @@ jobs:
           TRAIN_TEAM_FORMAT: ${{ matrix.config.team_format }}
           TRAIN_TIMEOUT_MINUTES: ${{ matrix.config.train_timeout }}
         run: |
+          if [ -d "data/ml/${TRAIN_FORMAT}" ]; then
+            echo "Skipping ${TRAIN_FORMAT} — data/ml/${TRAIN_FORMAT} already exists"
+            exit 0
+          fi
+
           ARGS="--format $TRAIN_FORMAT --timesteps $TRAIN_TIMESTEPS --save-dir data/ml/policy --server localhost"
           if [ -n "$TRAIN_TEAM_FORMAT" ]; then
             ARGS="$ARGS --team-format $TRAIN_TEAM_FORMAT"
@@ -228,6 +233,9 @@ jobs:
             echo "Training exited with code ${EXIT}"
             exit ${EXIT}
           fi
+
+          mkdir -p "data/ml/${TRAIN_FORMAT}"
+          echo "Created data/ml/${TRAIN_FORMAT} — future runs will skip this format"
 
       - name: Verify model artifact exists
         if: always()
