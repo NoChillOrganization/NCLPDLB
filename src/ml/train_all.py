@@ -122,9 +122,7 @@ def _model_done(spar_fmt: str, results_dir: Path) -> bool:
         return True
     if any((results_dir / spar_fmt).glob(f"{spar_fmt}_*.zip")):
         return True
-    # Check legacy model layout: src/ml/models/results/model-{fmt}/final_model.zip
-    legacy = Path("src/ml/models/results") / f"model-{spar_fmt}" / "final_model.zip"
-    return legacy.exists()
+    return False
 
 
 def _resume_checkpoint(spar_fmt: str, save_dir: Path) -> Path | None:

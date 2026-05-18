@@ -346,6 +346,7 @@ def best_model_for_format(
     fmt: str,
     save_dir: str = "data/ml/policy",
     results_dir: str = "data/ml/results",
+    legacy_dir: str = "src/ml/models/results",
 ) -> Path | None:
     """
     Return the path to the best available model for a given format.
@@ -371,8 +372,8 @@ def best_model_for_format(
     if final.exists():
         return final
 
-    # 2b. Legacy model layout: src/ml/models/results/model-{fmt}/final_model.zip
-    legacy_final = Path("src/ml/models/results") / f"model-{fmt}" / "final_model.zip"
+    # 2b. Legacy model layout: {legacy_dir}/model-{fmt}/final_model.zip
+    legacy_final = Path(legacy_dir) / f"model-{fmt}" / "final_model.zip"
     if legacy_final.exists():
         return legacy_final
 
