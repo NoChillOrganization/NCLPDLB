@@ -50,6 +50,7 @@ class TestBestModelForFormat:
             "gen9ou",
             save_dir=str(tmp_path / "policy"),
             results_dir=str(tmp_path / "results"),
+            legacy_dir=str(tmp_path / "legacy"),
         )
         assert result is None
 
@@ -122,6 +123,7 @@ class TestBestModelForFormat:
             fmt,
             save_dir=str(tmp_path / "policy"),
             results_dir=str(tmp_path / "results"),
+            legacy_dir=str(tmp_path / "legacy"),
         )
         assert result is not None
         assert result.name == "latest.zip"
@@ -137,6 +139,7 @@ class TestBestModelForFormat:
             fmt,
             save_dir=str(tmp_path / "policy"),
             results_dir=str(tmp_path / "results"),
+            legacy_dir=str(tmp_path / "legacy"),
         )
         assert result is not None
         assert "ppo_ckpt_2000" in result.name
