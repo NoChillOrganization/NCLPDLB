@@ -2,7 +2,7 @@
 # Cross-platform compatible (Windows, macOS, Linux)
 
 # Build tooling (pinned to avoid CVE-2025-47273 path traversal in PackageIndex)
-setuptools>=78.1.1
+setuptools>=82.0.1
 
 # Discord Bot
 discord.py>=2.7.1
