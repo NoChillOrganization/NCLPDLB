@@ -68,15 +68,15 @@
 
 ## Traceability
 
-| REQ-ID   | Phase | Notes |
-|----------|-------|-------|
-| BRWS-01  | TBD   | —     |
-| BRWS-02  | TBD   | —     |
-| BRWS-03  | TBD   | —     |
-| BRWS-04  | TBD   | —     |
-| MCTS-01  | TBD   | —     |
-| MCTS-02  | TBD   | —     |
-| MCTS-03  | TBD   | —     |
-| SPAR-01  | TBD   | —     |
-| SPAR-02  | TBD   | —     |
-| SPAR-03  | TBD   | —     |
+| REQ-ID  | Phase | Status  |
+|---------|-------|---------|
+| BRWS-01 | Phase 04 | Pending |
+| BRWS-02 | Phase 04 | Pending |
+| BRWS-03 | Phase 04 | Pending |
+| BRWS-04 | Phase 04 | Pending |
+| MCTS-01 | Phase 05 | Pending |
+| MCTS-02 | Phase 05 | Pending |
+| MCTS-03 | Phase 05 | Pending |
+| SPAR-01 | Phase 06 | Pending |
+| SPAR-02 | Phase 06 | Pending |
+| SPAR-03 | Phase 06 | Pending |
