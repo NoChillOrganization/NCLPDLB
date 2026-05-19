@@ -1,5 +1,0 @@
-# pip-compile constraints — pins heavy packages to eliminate backtracking
-# Used by pyproject.toml [tool.pip-compile] constraint setting.
-# Keep in sync with installed versions (pip show torch gymnasium).
-torch==2.12.0
-gymnasium==1.2.3

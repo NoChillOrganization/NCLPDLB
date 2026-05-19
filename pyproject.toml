@@ -1,4 +1,0 @@
-[tool.pip-compile]
-# Pin heavy packages via constraints.txt so the backtracking resolver
-# doesn't exhaust GitHub's 1h30m job timeout scanning hundreds of torch versions.
-constraint = ["constraints.txt"]
