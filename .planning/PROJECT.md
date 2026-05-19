@@ -1,17 +1,27 @@
-# NCLPDLB ML Knowledge Injection
+# NCLPDLB ML Full Integration
 
 ## What This Is
 
-A reinforcement learning Pokemon battle bot (poke-env + stable-baselines3 PPO) that currently
-learns purely through self-play. This milestone injects three forms of domain knowledge to
-accelerate learning across 22 competitive formats: type effectiveness awareness in the
-observation space, a stronger curriculum opponent, and imitation learning pre-training
-from human Showdown replays.
+A reinforcement learning Pokemon battle bot (poke-env + stable-baselines3 PPO) with domain
+knowledge injection (type effectiveness, curriculum opponent, BC pre-training). This milestone
+wires the existing transformer/MCTS infrastructure into a complete training + inference
+pipeline: browser-based self-play against pokemonshowdown.com and MCTS-powered /spar.
 
 ## Core Value
 
-The bot must learn to make type-effective, strategically sound decisions far faster than
-pure self-play allows — reducing steps needed to surpass random baseline from ~200k to ~50k.
+The bot must be fully playable via /spar using the strongest available inference engine
+(transformer + MCTS), trainable without a local Showdown server, and ready for real league use.
+
+## Current Milestone: v1.1 Full ML Integration
+
+**Goal:** Wire transformer/MCTS infrastructure into complete training + inference pipeline.
+
+**Target features:**
+- Browser-based self-play training via Playwright (no local server required)
+- Discord command to trigger browser training sessions
+- MCTSPlayer (self_play.py) tested and wired into training pipeline
+- Transformer trains via MCTS self-play
+- /spar uses transformer+MCTS at inference; falls back to PPO if no transformer model
 
 ## Requirements
 
@@ -23,15 +33,14 @@ pure self-play allows — reducing steps needed to surpass random baseline from 
 - ✓ Feature extractor for offline datasets (feature_extractor.py) — existing
 - ✓ Multi-format training runner (train_all.py, 22 formats) — existing
 
-### Active
+### Active (v1.1)
 
-- [ ] Type effectiveness features added to observation space (battle_env.py)
-- [ ] OBS_DIM updated from 44 to 48 (singles) and OBS_DIM_DOUBLES from 72 to 76
-- [ ] MaxDamagePlayer curriculum: initial steps vs max-damage opponent before self-play
-- [ ] Imitation learning pre-trainer (new src/ml/pretrain.py)
-- [ ] BC policy trained from Showdown replays initializes PPO starting weights
-- [ ] train_policy.py --pretrain flag to load BC checkpoint
-- [ ] GitHub Actions workflow updated to scrape replays + pretrain before RL
+- [ ] browser_trainer.py: full Playwright self-play loop updating PPO weights (no local server)
+- [ ] Discord command triggers browser training session
+- [ ] self_play.py MCTSPlayer tested and wired into training pipeline
+- [ ] Transformer model trains via MCTS self-play
+- [ ] showdown_player.py use_mcts=True path fully wired (transformer+MCTS inference)
+- [ ] /spar uses transformer+MCTS when model exists; falls back to PPO
 
 ### Out of Scope
 
@@ -69,10 +78,30 @@ because random play doesn't pressure the agent to learn defensive timing or type
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Add 4 type-effectiveness floats (one per move slot) | Minimal obs expansion, directly encodes most important battle mechanic | — Pending |
-| Use MaxBasePowerPlayer as curriculum opponent | Built into poke-env, zero external deps | — Pending |
-| BC pre-training from replays initializes PPO | Replay data already scraped; BC is supervised so fast to train | — Pending |
-| Keep BC as optional --pretrain flag | Backward compatible, lets existing workflows continue | — Pending |
+| Add 4 type-effectiveness floats (one per move slot) | Minimal obs expansion, directly encodes most important battle mechanic | ✓ Delivered v1.0 |
+| Use MaxBasePowerPlayer as curriculum opponent | Built into poke-env, zero external deps | ✓ Delivered v1.0 |
+| BC pre-training from replays initializes PPO | Replay data already scraped; BC is supervised so fast to train | ✓ Delivered v1.0 |
+| Keep BC as optional --pretrain flag | Backward compatible, lets existing workflows continue | ✓ Delivered v1.0 |
+| OBS_DIM 44→48 (not 54) | Validate 4-float expansion before adding STAB + speed tier | ✓ Delivered v1.0 |
+| Browser training before MCTS integration | No local server is the bigger unblock; transformer already tested | v1.1 decision |
+| Transformer+MCTS in /spar falls back to PPO | Backward-compatible; users without transformer model unaffected | v1.1 decision |
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
 
 ---
-*Last updated: 2026-03-17 after initialization*
+*Last updated: 2026-05-19 — milestone v1.1 started*
