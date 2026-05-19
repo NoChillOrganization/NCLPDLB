@@ -1,41 +1,32 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: completed
-last_updated: "2026-03-19T21:02:14.287Z"
+milestone: v1.1
+milestone_name: Full ML Integration
+status: planning
+last_updated: "2026-05-19T17:28:00.000Z"
 progress:
-  total_phases: 1
+  total_phases: 0
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
 ---
 
-# Project State — NCLPDLB ML Knowledge Injection
+# Project State — NCLPDLB Full ML Integration
 
-*Last updated: 2026-03-17*
+*Last updated: 2026-05-19*
 
 ---
 
 ## Current Position
 
-**Status:** All three phases complete
-
-**Next action:** None — milestone v1.0 fully delivered (2026-05-09).
-
----
-
-## Phase Status
-
-| Phase | Status | Notes |
-|-------|--------|-------|
-| 01 — Obs Expansion | ✅ complete | Verified 100% test passing |
-| 02 — Curriculum | ✅ complete | MaxBasePowerPlayer + WinRateTracker + force-graduation; 73 tests pass |
-| 03 — BC Pretrain | ✅ complete | pretrain.py + --pretrain flag + ent_coef schedule; 116 tests pass |
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-19 — Milestone v1.1 started
 
 ---
 
-## Key Decisions Made
+## Key Decisions Carried Forward
 
 | Decision | Rationale |
 |----------|-----------|
@@ -46,12 +37,14 @@ progress:
 | `imitation` library for BC | Official SB3-endorsed library; provides BC class compatible with ActorCriticPolicy |
 | Actor-only BC weight transfer | Value head has no BC signal; partial state dict with actor keys only |
 | ent_coef=0.05 for first 100k steps after BC | Prevents entropy collapse; SB3 default 0.01 insufficient |
+| Browser training before MCTS integration | No local server is the bigger unblock; transformer already tested |
+| Transformer+MCTS in /spar falls back to PPO | Backward-compatible; users without transformer model unaffected |
 
 ---
 
 ## Repo Location
 
-- Local clone: `/tmp/NCLPDLB`
+- Local clone: `/home/vboxuser/Documents/No Chill Draft League Bot/NCLPDLB`
 - Remote: `NoChillModeOnline/NCLPDLB`
 - Branch: `master` (push directly)
 
@@ -63,7 +56,7 @@ None currently.
 
 ---
 
-## Recent Commits
+## Session Continuity
 
-- `b9b0092` — chore: initialize GSD project for ML knowledge injection milestone (PROJECT.md, config.json)
-- (research files committed separately)
+Last session: 2026-05-19
+Stopped at: Milestone v1.1 started, proceeding to define requirements and roadmap
