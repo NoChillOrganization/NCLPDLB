@@ -72,4 +72,4 @@ tensorboard>=2.20.0         # training metrics visualisation
 poke-env==0.12.1            # pinned: 0.13+ has breaking API changes
 websockets>=16.0       # required by poke-env for Showdown WebSocket communication
 fastapi>=0.136.1       # ML training API server (src/ml/api.py, run_training.py)
-uvicorn>=0.20.0        # ASGI server for FastAPI ML API
+uvicorn>=0.47.0        # ASGI server for FastAPI ML API
