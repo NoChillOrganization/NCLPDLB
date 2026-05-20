@@ -880,6 +880,7 @@ def train(  # pragma: no cover
         log.info("Make sure Pokemon Showdown server is running on ws://localhost:8000")
     log.info("Press Ctrl+C to stop training early.")
 
+    _train_exc: BaseException | None = None
     try:
         model.learn(
             total_timesteps=total_timesteps,
@@ -889,9 +890,13 @@ def train(  # pragma: no cover
         )
     except KeyboardInterrupt:
         log.info("Training interrupted by user.")
+    except Exception as exc:
+        log.warning(f"[train] Training error: {exc}; saving checkpoint before raising.")
+        _train_exc = exc
 
     # ── Save final model ────────────────────────────────────────────
     # Primary: save_dir/fmt/final_model.zip (CI + resume checkpoint)
+    # Saved even on unexpected exception so CI artifact upload always has a file.
     final_path = fmt_save_dir / "final_model.zip"
     model.save(str(final_path))
     log.info(f"\nFinal model saved to {final_path}")
@@ -903,6 +908,9 @@ def train(  # pragma: no cover
     dated_path = _results_dir / f"{fmt}_{_date.today()}.zip"
     model.save(str(dated_path))
     log.info(f"Dated model saved to {dated_path}")
+
+    if _train_exc is not None:
+        raise _train_exc
 
     return final_path
 
