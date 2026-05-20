@@ -22,8 +22,6 @@ pokemon_draft.db
 
 # ML model artifacts and training data
 src/ml/models/*.pt
-data/ml/
-data/replays/
 
 # Logs
 logs/
@@ -93,6 +91,8 @@ graphify-out/
 !package.json
 !package-lock.json
 !.planning/HANDOFF.json
+!data/ml/**/*.json
+!data/replays/**/*.json
 
 # Misc
 *.bak
