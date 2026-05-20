@@ -82,11 +82,15 @@ class TestAccountConfigsForMode:
         assert acc1 is None
         assert acc2 is None
 
-    def test_browser_returns_none_pair(self):
+    def test_browser_raises_without_env_vars(self):
+        import os
+        from unittest.mock import patch
         from src.ml.showdown_modes import account_configs_for_mode
-        acc1, acc2 = account_configs_for_mode("browser")
-        assert acc1 is None
-        assert acc2 is None
+        blank = {k: "" for k in ("SHOWDOWN_TRAIN_USER1", "SHOWDOWN_TRAIN_PASS1",
+                                  "SHOWDOWN_TRAIN_USER2", "SHOWDOWN_TRAIN_PASS2")}
+        with patch.dict(os.environ, blank):
+            with pytest.raises(ValueError, match="SHOWDOWN_TRAIN_USER1"):
+                account_configs_for_mode("browser")
 
     def test_showdown_mode_with_all_env_vars_returns_account_configs(self):
         pytest.importorskip("poke_env")

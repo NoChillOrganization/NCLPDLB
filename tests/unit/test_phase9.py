@@ -113,18 +113,20 @@ def test_team_import_txt_parse():
 
 def test_format_autocomplete():
     """
-    TEAM-02: SUPPORTED_FORMATS contains exactly 18 format entries covering
-    9 Smogon Gen 9 tiers, 8 VGC Reg A-H regulations, and Draft League.
+    TEAM-02: SUPPORTED_FORMATS contains exactly 20 format entries covering
+    9 Smogon Gen 9 tiers, 8 VGC regulations, 2 Champions VGC formats, and Draft League.
     """
-    assert len(SUPPORTED_FORMATS) == 18, (
-        f"Expected 18 formats, got {len(SUPPORTED_FORMATS)}: {list(SUPPORTED_FORMATS.keys())}"
+    assert len(SUPPORTED_FORMATS) == 20, (
+        f"Expected 20 formats, got {len(SUPPORTED_FORMATS)}: {list(SUPPORTED_FORMATS.keys())}"
     )
     # Verify presence of key categories
     smogon = [k for k in SUPPORTED_FORMATS if k.startswith("gen9") and "vgc" not in k]
-    vgc = [k for k in SUPPORTED_FORMATS if "vgc" in k]
+    vgc = [k for k in SUPPORTED_FORMATS if "vgc" in k and "champions" not in k]
+    champions = [k for k in SUPPORTED_FORMATS if "champions" in k]
     draft = [k for k in SUPPORTED_FORMATS if k == "draftleague"]
     assert len(smogon) == 9, f"Expected 9 Smogon formats, got {len(smogon)}"
     assert len(vgc) == 8, f"Expected 8 VGC formats, got {len(vgc)}"
+    assert len(champions) == 2, f"Expected 2 Champions formats, got {len(champions)}"
     assert len(draft) == 1, "Expected draftleague key"
 
 
