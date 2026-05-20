@@ -66,7 +66,7 @@ class Settings(BaseSettings):
 
     # Smogon / VGC
     smogon_strategy_url: str = "https://www.smogon.com/dex"
-    vgc_format: str = "reg-h"
+    vgc_format: str = "reg-i"  # Reg I active until May 28 2026; Reg M-A (Champions) takes over May 29 2026
 
     # ELO
     elo_k_factor: int = 32
