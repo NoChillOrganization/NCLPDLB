@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 SHOWDOWN_URL   = "https://play.pokemonshowdown.com"
 DEFAULT_SAVE_DIR    = "data/ml/policy"
-DEFAULT_RESULTS_DIR = "src/ml/models/results"
+DEFAULT_RESULTS_DIR = "data/ml/results"
 
 
 # ── DOM helpers ───────────────────────────────────────────────────────────────
@@ -196,6 +196,33 @@ def _wait_for_turn_or_end(page: Any, timeout: float = 60.0) -> str:  # pragma: n
     return "timeout"
 
 
+class _ReplayEnv:
+    """Replays (obs, reward, done) transitions from browser self-play for SB3 learn()."""
+
+    def __init__(self, transitions: list) -> None:
+        from gymnasium import spaces
+        from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9
+        self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+        self.action_space = spaces.Discrete(N_ACTIONS_GEN9)
+        self._transitions = list(transitions)
+        self._idx = 0
+        self._obs_dim = OBS_DIM
+
+    def reset(self, **kwargs):
+        self._idx = 0
+        return np.zeros(self._obs_dim, dtype=np.float32), {}
+
+    def step(self, action):
+        if self._idx < len(self._transitions):
+            obs, reward, done = self._transitions[self._idx]
+            self._idx += 1
+        else:
+            obs = np.zeros(self._obs_dim, dtype=np.float32)
+            reward = 0.0
+            done = True
+        return obs, reward, done, False, {}
+
+
 # ── Main training loop ────────────────────────────────────────────────────────
 
 def train_browser(  # pragma: no cover
@@ -298,6 +325,7 @@ def train_browser(  # pragma: no cover
     swap_every = 50_000
     last_swap = 0
     swap_count = 0
+    all_transitions: list[tuple] = []
 
     log.info(
         f"[browser_trainer] Starting browser training: {fmt}, "
@@ -330,6 +358,7 @@ def train_browser(  # pragma: no cover
 
                 # ── Battle loop ───────────────────────────────────────
                 rewards: list[float] = []
+                transitions: list[tuple] = []
                 while True:
                     state = _wait_for_turn_or_end(page1)
                     if state == "end":
@@ -343,6 +372,7 @@ def train_browser(  # pragma: no cover
                             pass
                         reward = 1.0 if "win" in result_text else -1.0
                         rewards.append(reward)
+                        transitions.append((build_observation_from_dom(page1), reward, True))
                         break
                     if state == "timeout":
                         log.warning("[browser_trainer] Turn timed out, moving on")
@@ -352,6 +382,7 @@ def train_browser(  # pragma: no cover
                     # Extract observation and choose action
                     obs = build_observation_from_dom(page1)
                     _pick_move_from_obs(page1, obs, policy)
+                    transitions.append((obs.copy(), 0.0, False))
                     steps += 1
 
                     if progress_cb:
@@ -369,6 +400,7 @@ def train_browser(  # pragma: no cover
                     f"[browser_trainer] Battle done at step {steps:,}/"
                     f"{total_timesteps:,}, reward={sum(rewards):.1f}"
                 )
+                all_transitions.extend(transitions)
 
                 # ── Periodic checkpoint ───────────────────────────────
                 if policy is not None and SB3_OK and steps - last_swap >= swap_every:
@@ -380,6 +412,14 @@ def train_browser(  # pragma: no cover
                     shutil.copy(str(ckpt_path), str(latest_path))
                     last_swap = steps
                     log.info(f"[browser_trainer] Checkpoint saved: {ckpt_path.name}")
+                    if all_transitions:
+                        from stable_baselines3.common.vec_env import DummyVecEnv
+                        n_trans = len(all_transitions)
+                        replay_env = DummyVecEnv([lambda t=all_transitions: _ReplayEnv(t)])
+                        policy.set_env(replay_env)
+                        policy.learn(total_timesteps=n_trans, reset_num_timesteps=False)
+                        all_transitions.clear()
+                        log.info(f"[browser_trainer] Policy updated from {n_trans} transitions")
 
                 # Brief pause between battles
                 time.sleep(2)
@@ -395,6 +435,14 @@ def train_browser(  # pragma: no cover
             browser2.close()
 
     # ── Save final model ──────────────────────────────────────────────────────
+    if policy is not None and SB3_OK and all_transitions:
+        from stable_baselines3.common.vec_env import DummyVecEnv
+        n_trans = len(all_transitions)
+        replay_env = DummyVecEnv([lambda t=all_transitions: _ReplayEnv(t)])
+        policy.set_env(replay_env)
+        policy.learn(total_timesteps=n_trans, reset_num_timesteps=False)
+        all_transitions.clear()
+        log.info(f"[browser_trainer] Policy updated from {n_trans} final transitions")
     final_path = _results_dir / f"{fmt}_{start_date}.zip"
     if policy is not None and SB3_OK:
         policy.save(str(final_path))
