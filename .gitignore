@@ -92,6 +92,7 @@ graphify-out/
 *.json
 !package.json
 !package-lock.json
+!.planning/HANDOFF.json
 
 # Misc
 *.bak
