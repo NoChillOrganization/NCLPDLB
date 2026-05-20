@@ -48,7 +48,7 @@ def account_configs_for_mode(mode: str) -> tuple:
     For showdown: reads SHOWDOWN_TRAIN_USER1/2 + SHOWDOWN_TRAIN_PASS1/2 from env.
     """
     import os
-    if mode == MODE_SHOWDOWN:
+    if mode in (MODE_SHOWDOWN, MODE_BROWSER):
         from poke_env.ps_client.account_configuration import AccountConfiguration
         u1 = os.environ.get("SHOWDOWN_TRAIN_USER1", "")
         p1 = os.environ.get("SHOWDOWN_TRAIN_PASS1", "")
@@ -56,7 +56,7 @@ def account_configs_for_mode(mode: str) -> tuple:
         p2 = os.environ.get("SHOWDOWN_TRAIN_PASS2", "")
         if not all([u1, p1, u2, p2]):
             raise ValueError(
-                "Public Showdown training requires 4 env vars: "
+                "Browser/Showdown training requires 4 env vars: "
                 "SHOWDOWN_TRAIN_USER1, SHOWDOWN_TRAIN_PASS1, "
                 "SHOWDOWN_TRAIN_USER2, SHOWDOWN_TRAIN_PASS2"
             )
