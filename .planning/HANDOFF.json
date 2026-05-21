@@ -1,12 +1,12 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-20T03:50:13+00:00",
+  "timestamp": "2026-05-21T23:43:56Z",
   "phase": "04",
-  "phase_name": "Browser Training",
+  "phase_name": "Browser Training (complete) — ad-hoc CI fix applied this session",
   "phase_dir": ".planning/phases/04-browser-training",
-  "plan": 2,
-  "task": 1,
-  "total_tasks": 1,
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
   "status": "paused",
   "completed_tasks": [
     {
@@ -20,11 +20,24 @@
       "name": "04-02: Unit tests for browser_trainer.py fixed functions",
       "status": "done",
       "commit": "5d7dae9"
+    },
+    {
+      "id": 3,
+      "name": "ad-hoc: Fix dependency-submission.yml CI timeout",
+      "status": "done",
+      "commit": "uncommitted — .github/workflows/dependency-submission.yml modified",
+      "detail": "Removed torch (200 MB) + full requirements install. Now parses requirements.txt directly. Timeout 45 min → 5 min."
     }
   ],
   "remaining_tasks": [],
   "blockers": [],
-  "human_actions_pending": [],
+  "human_actions_pending": [
+    {
+      "action": "Commit and push .github/workflows/dependency-submission.yml",
+      "context": "Fix is on disk but not committed. Push to trigger CI and verify new workflow completes in <5 min.",
+      "blocking": false
+    }
+  ],
   "decisions": [
     {
       "decision": "_ReplayEnv placed at module level (not inside train_browser())",
@@ -32,17 +45,25 @@
       "phase": "04"
     },
     {
-      "decision": "DEFAULT_RESULTS_DIR kept as module-level constant with correct value 'data/ml/results'",
-      "rationale": "test_showdown_player.py::TestBrowserTrainerImport::test_constants_defined imports it — removing it caused a regression; plan acceptance criteria 'grep returns 0' conflicted with existing test",
+      "decision": "DEFAULT_RESULTS_DIR kept as module-level constant",
+      "rationale": "test_showdown_player.py imports it; plan acceptance criteria conflicted with existing test",
       "phase": "04"
     },
     {
-      "decision": "_ReplayEnv uses lazy imports in __init__ (not class-level attributes)",
-      "rationale": "Avoids loading gymnasium and battle_env at module import time; keeps browser_trainer importable without heavy deps in test environments",
+      "decision": "_ReplayEnv uses lazy imports in __init__",
+      "rationale": "Avoids loading gymnasium and battle_env at module import time",
       "phase": "04"
+    },
+    {
+      "decision": "Parse requirements.txt directly for dependency submission (no pip install)",
+      "rationale": "torch+playwright+poke-env install caused 45-90 min CI timeout. Direct parse is seconds.",
+      "phase": "ad-hoc"
     }
   ],
-  "uncommitted_files": [],
-  "next_action": "Run /gsd:plan-phase 5 to plan Phase 05: MCTSPlayer + Transformer Training",
-  "context_notes": "Phase 04 fully complete — both plans executed, all tests green (14 new + 94 existing), all committed. Phase 05 (MCTSPlayer + transformer training, requirements MCTS-01/02/03) is next per ROADMAP dependency chain. No blockers. Clean state."
+  "uncommitted_files": [
+    ".github/workflows/dependency-submission.yml",
+    ".planning/STATE.md"
+  ],
+  "next_action": "Commit the CI fix, then run /gsd:plan-phase 5 to plan Phase 05: MCTSPlayer + Transformer Training",
+  "context_notes": "Phase 04 fully complete (both plans done, all tests green). This session: diagnosed GitHub Actions dependency-submission workflow timing out (image: actions-run-summary.png), rewrote workflow to parse requirements.txt directly instead of installing all packages. Unrelated to Phase 05. Next phase: MCTS-01/02/03 per ROADMAP."
 }

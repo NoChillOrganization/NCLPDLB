@@ -8,13 +8,10 @@ on:
 permissions:
   contents: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   dependency-submission:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 5
 
     steps:
       - name: Checkout repository
@@ -26,15 +23,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: "pip"
-
-      - name: Install PyTorch (CPU, prevents large PyPI CUDA download)
-        run: pip install "torch>=2.2.0" --index-url https://download.pytorch.org/whl/cpu
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
 
       - name: Submit dependency snapshot to GitHub Dependency API
         env:
@@ -45,35 +33,41 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           python3 - <<'PYEOF'
-          import subprocess, json, datetime, os, re, urllib.request, urllib.error, sys
+          import json, datetime, os, re, urllib.request, urllib.error, sys
 
-          # Build the direct-dependency name set from requirements.txt so transitive
-          # packages are correctly labeled "indirect" in the snapshot.
-          direct_names: set[str] = set()
-          with open("requirements.txt") as _f:
-              for _line in _f:
-                  _line = _line.strip()
-                  if not _line or _line.startswith("#"):
-                      continue
-                  _name = re.split(r"[><=!;\[\s]", _line)[0].lower().replace("_", "-")
-                  if _name:
-                      direct_names.add(_name)
-
-          packages = json.loads(
-              subprocess.run(["pip", "list", "--format=json"],
-                             capture_output=True, text=True, check=True).stdout
-          )
-
+          # Parse requirements.txt directly — no package installation needed.
+          # This avoids downloading torch (200 MB+) and other heavy packages
+          # solely to call `pip list`.
           resolved = {}
-          for pkg in packages:
-              name_lower = pkg["name"].lower().replace("_", "-")
-              purl = f"pkg:pypi/{name_lower}@{pkg['version']}"
-              resolved[name_lower] = {
-                  "package_url": purl,
-                  "relationship": "direct" if name_lower in direct_names else "indirect",
-                  "scope": "runtime",
-                  "dependencies": [],
-              }
+          with open("requirements.txt") as f:
+              for line in f:
+                  line = line.strip()
+                  if not line or line.startswith("#"):
+                      continue
+                  # Strip inline comments
+                  line = line.split("#")[0].strip()
+                  if not line:
+                      continue
+                  # Parse: name[extras] op version ; markers
+                  m = re.match(r'^([A-Za-z0-9][A-Za-z0-9._-]*)(\[.*?\])?\s*([><=!~^,\s\S]*)?$', line)
+                  if not m:
+                      continue
+                  name = m.group(1).lower().replace("_", "-")
+                  version_spec = (m.group(3) or "").strip()
+                  # Extract the first version number from >=X, ==X, ~=X, pinned ==X
+                  ver_m = re.search(r'[><=~!]{1,2}\s*(\d[\d.]*)', version_spec)
+                  version = ver_m.group(1) if ver_m else "0"
+                  purl = f"pkg:pypi/{name}@{version}"
+                  resolved[name] = {
+                      "package_url": purl,
+                      "relationship": "direct",
+                      "scope": "runtime",
+                      "dependencies": [],
+                  }
+
+          if not resolved:
+              print("No packages parsed from requirements.txt — nothing to submit.", file=sys.stderr)
+              sys.exit(1)
 
           snapshot = {
               "version": 0,
@@ -86,7 +80,10 @@ jobs:
               "detector": {
                   "name": "pip-direct-snapshot",
                   "version": "1.0.0",
-                  "url": f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ['REPO']}/.github/workflows/dependency-submission.yml",
+                  "url": (
+                      f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/"
+                      f"{os.environ['REPO']}/.github/workflows/dependency-submission.yml"
+                  ),
               },
               "scanned": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
               "manifests": {
@@ -116,7 +113,8 @@ jobs:
           try:
               with urllib.request.urlopen(req) as resp:
                   body = json.loads(resp.read())
-                  print(f"Snapshot submitted (HTTP {resp.status}): id={body.get('id')}")
+                  print(f"Snapshot submitted (HTTP {resp.status}): id={body.get('id')}, "
+                        f"{len(resolved)} packages")
           except urllib.error.HTTPError as exc:
               print(f"HTTP {exc.code}: {exc.read().decode()}", file=sys.stderr)
               sys.exit(1)
