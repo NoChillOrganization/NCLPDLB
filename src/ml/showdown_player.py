@@ -344,7 +344,7 @@ def _get_opponent_name(battle: AbstractBattle) -> str:
 
 def best_model_for_format(
     fmt: str,
-    save_dir: str = "data/ml/policy",
+    save_dir: str | None = None,
     results_dir: str = "data/ml/results",
     legacy_dir: str = "src/ml/models/results",
 ) -> Path | None:
@@ -357,6 +357,9 @@ def best_model_for_format(
       3. latest.zip in save_dir  (in-progress checkpoint)
       4. Newest ppo_ckpt_*.zip in save_dir
     """
+    if save_dir is None:
+        from src.config import settings
+        save_dir = settings.ml_policy_dir
     # 1. Dated final models — check per-format subdir first, then flat root
     subdir_results = sorted((Path(results_dir) / fmt).glob(f"{fmt}_*.zip"))
     if subdir_results:

@@ -34,6 +34,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
@@ -45,7 +47,7 @@ jobs:
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
-          upload: true
+          upload: true  # requires GitHub Advanced Security (free for public repos, paid for private)
           output: results/
 
       - name: Upload SARIF artifact

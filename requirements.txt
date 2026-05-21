@@ -33,9 +33,6 @@ python-dotenv>=1.2.2
 # Path Handling (cross-platform, stdlib)
 # pathlib is built-in to Python 3.4+
 
-# Scheduling / Async Tasks
-apscheduler>=3.11.2
-
 # Date/Time
 python-dateutil>=2.9.0.post0
 
@@ -61,11 +58,12 @@ pandas>=3.0.3
 # Local install: pip install torch  (or see https://pytorch.org/get-started/locally/ for CUDA)
 torch>=2.2.0
 stable-baselines3>=2.8.0   # PPO/DQN for battle policy RL
-playwright>=1.52.0          # Headless browser automation for browser training
+playwright>=1.52.0          # Headless browser automation; run `playwright install chromium` after pip install
 tensorboard>=2.20.0         # training metrics visualisation
 # imitation is NOT listed here: poke-env==0.12.1 requires gymnasium>=1.0.0 while
 # imitation>=1.0.0 requires gymnasium~=0.29 — they cannot coexist in one environment.
-# Install manually for local BC pre-training: pip install imitation
+# For local BC pre-training use a separate venv:
+#   pip install "imitation>=1.0.0" "gymnasium~=0.29" "stable-baselines3>=1.7"
 # (BC pre-training in CI is skipped when no replay JSON files are present.)
 
 # Pokemon Showdown battle environment (RL training)

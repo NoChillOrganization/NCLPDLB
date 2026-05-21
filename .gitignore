@@ -86,6 +86,12 @@ runners/
 # Graphify output cache
 graphify-out/
 
+# ML training artifacts (large binaries — use releases or cloud storage)
+# Keep JSON files (vocab, metrics, matchup_metrics) but ignore .npy/.zip/.pt
+data/ml/**
+!data/ml/**/
+!data/ml/**/*.json
+
 # Stray JSON snapshots
 *.json
 !package.json

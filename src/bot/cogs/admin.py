@@ -11,6 +11,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from src.config import settings
 from src.ml.showdown_modes import MODE_LOCALHOST
 from src.ml.train_all import TRAINING_MAP
 from src.services.draft_service import DraftService
@@ -440,7 +441,7 @@ async def _run_training(
     )
 
     project_root = Path(__file__).parents[3]
-    save_dir = project_root / "data" / "ml" / "policy"
+    save_dir = project_root / settings.ml_policy_dir
 
     # ── 0. Whitelist validation ─────────────────────────────────────
     if fmt not in TRAINING_MAP:
@@ -620,7 +621,7 @@ async def _run_training_all(
     from src.ml.training_doctor import parse_timestep_progress, preflight_check
 
     project_root = Path(__file__).parents[3]
-    save_dir = project_root / "data" / "ml" / "policy"
+    save_dir = project_root / settings.ml_policy_dir
 
     results_dir = project_root / "data" / "ml" / "results"
     formats_to_run = [
@@ -870,7 +871,6 @@ async def _pull_models(
 ) -> None:
     """Background task: download trained model zips from a GitHub Release."""
     import httpx
-    from src.config import settings
 
     repo = settings.github_repo
     headers: dict[str, str] = {
@@ -881,7 +881,7 @@ async def _pull_models(
         headers["Authorization"] = f"Bearer {settings.github_token}"
 
     project_root = Path(__file__).parents[3]
-    policy_dir = project_root / "data" / "ml" / "policy"
+    policy_dir = project_root / settings.ml_policy_dir
     formats_to_download = [fmt] if fmt else list(TRAINING_MAP.keys())
 
     try:
