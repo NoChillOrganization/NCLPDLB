@@ -67,19 +67,43 @@ jobs:
           # actions/setup-python fails here — it tries to mkdir /Users/runner
           # which does not exist (runner runs as travisweisberg, not runner).
           PYBIN=$(python3.12 -c "import sys; print(sys.executable)" 2>/dev/null \
-            || python3 -c "import sys; print(sys.executable)")
-          echo "Using Python: $PYBIN ($($PYBIN --version 2>&1))"
-          # On Debian/Ubuntu, python3.12-venv is a separate apt package.
-          # Install it if venv creation fails due to missing ensurepip.
-          if ! $PYBIN -m venv .venv; then
-            echo "venv failed — attempting to install python3-venv package"
-            if command -v apt-get >/dev/null 2>&1; then
-              DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3.12-venv \
-                || DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3-venv \
-                || true
-            fi
-            $PYBIN -m venv .venv
+            || python3 -c "import sys; print(sys.executable)" 2>/dev/null)
+          if [ -z "$PYBIN" ]; then
+            echo "ERROR: python3.12 not found — install it on the self-hosted runner"
+            exit 1
           fi
+
+          PY_VER=$($PYBIN -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          echo "Using Python: $PYBIN (${PY_VER})"
+          if [[ "$PY_VER" != "3.12" ]]; then
+            echo "ERROR: Python 3.12 required, found ${PY_VER} — install python3.12 on the runner"
+            exit 1
+          fi
+
+          # Reuse existing .venv if built with Python 3.12 — pip/torch cache on
+          # self-hosted runner persists between jobs; avoids redundant reinstalls
+          # across the 24 sequential matrix jobs.
+          VENV_OK=false
+          if [ -x .venv/bin/python ]; then
+            VENV_PY=$(.venv/bin/python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "")
+            [ "$VENV_PY" = "3.12" ] && VENV_OK=true
+          fi
+
+          if [ "$VENV_OK" != "true" ]; then
+            echo "Creating .venv with Python ${PY_VER}..."
+            # On Debian/Ubuntu, python3.12-venv is a separate apt package.
+            # Install it if venv creation fails due to missing ensurepip.
+            if ! $PYBIN -m venv .venv; then
+              echo "venv failed — attempting to install python3.12-venv"
+              if command -v apt-get >/dev/null 2>&1; then
+                DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3.12-venv \
+                  || DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3-venv \
+                  || true
+              fi
+              $PYBIN -m venv .venv
+            fi
+          fi
+
           echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Install Python dependencies
