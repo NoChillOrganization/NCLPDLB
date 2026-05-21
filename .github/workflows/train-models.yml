@@ -1,0 +1,324 @@
+name: Train ML Models
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  # Directory where competitive meta data (CSVs + format_meta.json) is staged.
+  # Passed to train_policy.py via --meta-path to log usage context per format.
+  COMPETITIVE_DATA_DIR: data/competitive
+
+jobs:
+  train:
+    runs-on: self-hosted
+    timeout-minutes: 280
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        config:
+          # ── Singles ──────────────────────────────────────────────────────────
+          - { format: gen9randombattle,        team_format: "",                  timesteps: 500000, train_timeout: 160 }
+          - { format: gen9ou,                  team_format: gen9ou,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9nationaldex,         team_format: gen9nationaldex,     timesteps: 500000, train_timeout: 160 }
+          - { format: gen9monotype,            team_format: gen9monotype,        timesteps: 500000, train_timeout: 160 }
+          - { format: gen9anythinggoes,        team_format: gen9anythinggoes,    timesteps: 500000, train_timeout: 160 }
+          - { format: gen9ubers,               team_format: gen9ubers,           timesteps: 500000, train_timeout: 160 }
+          - { format: gen9uu,                  team_format: gen9uu,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9ru,                  team_format: gen9ru,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9nu,                  team_format: gen9nu,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9pu,                  team_format: gen9pu,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9zu,                  team_format: gen9zu,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9lc,                  team_format: gen9lc,              timesteps: 500000, train_timeout: 160 }
+          # ── Doubles ──────────────────────────────────────────────────────────
+          - { format: gen9doublesou,           team_format: gen9doublesou,       timesteps: 300000, train_timeout: 230 }
+          - { format: gen9randomdoublesbattle, team_format: "",                  timesteps: 300000, train_timeout: 230 }
+          - { format: gen9doublesubers,        team_format: gen9doublesubers,    timesteps: 300000, train_timeout: 230 }
+          - { format: gen9doublesuu,           team_format: gen9doublesuu,       timesteps: 300000, train_timeout: 230 }
+          # ── VGC — current active regulation (Reg I, Jan 5 2026+) ─────────────
+          # Reg I is the live tournament format; given full singles-tier budget.
+          # April 2026 usage leaders: Incineroar 41.9%, Calyrex-Shadow 29.3%,
+          #   Calyrex-Ice 23.8%, Miraidon 23.5%, Flutter Mane 21.3%, Rillaboom 21.2%
+          - { format: gen9vgc2026regi,         team_format: gen9vgc2026regi,     timesteps: 500000, train_timeout: 250 }
+          - { format: gen9vgc2026regibo3,      team_format: gen9vgc2026regibo3,  timesteps: 500000, train_timeout: 250 }
+          # ── VGC — expired regulations (lower budget; kept for /spar coverage) ─
+          - { format: gen9vgc2026regf,         team_format: gen9vgc2026regf,     timesteps: 300000, train_timeout: 230 }
+          - { format: gen9vgc2026regfbo3,      team_format: gen9vgc2026regfbo3,  timesteps: 300000, train_timeout: 230 }
+          # ── Champions formats ─────────────────────────────────────────────────
+          - { format: gen9championsou,              team_format: "",                  timesteps: 500000, train_timeout: 160 }
+          - { format: gen9championsbssregma,        team_format: "",                  timesteps: 500000, train_timeout: 160 }
+          - { format: gen9championsvgc2026regma,    team_format: "",                  timesteps: 300000, train_timeout: 230 }
+          - { format: gen9championsvgc2026regmabo3, team_format: "",                  timesteps: 300000, train_timeout: 230 }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python virtualenv
+        shell: bash
+        run: |
+          # Self-hosted runner: system Python already installed.
+          # actions/setup-python fails here — it tries to mkdir /Users/runner
+          # which does not exist (runner runs as travisweisberg, not runner).
+          PYBIN=$(python3.12 -c "import sys; print(sys.executable)" 2>/dev/null \
+            || python3 -c "import sys; print(sys.executable)")
+          echo "Using Python: $PYBIN ($($PYBIN --version))"
+          # On Debian/Ubuntu, python3.12-venv is a separate apt package.
+          # Install it if venv creation fails due to missing ensurepip.
+          if ! $PYBIN -m venv .venv 2>/dev/null; then
+            echo "venv failed — attempting to install python3-venv package"
+            if command -v apt-get >/dev/null 2>&1; then
+              sudo apt-get install -y python3.12-venv 2>/dev/null \
+                || sudo apt-get install -y python3-venv 2>/dev/null \
+                || true
+            fi
+            $PYBIN -m venv .venv
+          fi
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Install Python dependencies
+        shell: bash
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          # torch CPU wheel; pip disk cache persists on self-hosted runner between jobs
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Seed competitive meta data
+        shell: bash
+        run: |
+          # Copy Gen 9 competitive CSVs/JSON from the local Showdown exports
+          # directory and build data/competitive/format_meta.json.
+          # Non-fatal: missing exports on a remote runner just skips the meta log.
+          python scripts/prepare_competitive_data.py \
+            || echo "Competitive data seeding skipped — COMPETITIVE_EXPORTS_DIR not set or files not found"
+          if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
+            echo "Meta data ready at ${COMPETITIVE_DATA_DIR}"
+            python -c "import json; d=json.load(open('${COMPETITIVE_DATA_DIR}/format_meta.json')); print(f'  Formats indexed: {len(d)}'); [print(f\"  {k}: top usage = {', '.join(e.get('pokemon', '') for e in v.get('top10_usage', [])[:3])}\") for k, v in list(d.items())[:5]]" || true
+          else
+            echo "No format_meta.json generated — training proceeds without meta context"
+          fi
+
+      - name: Behavioral Cloning pre-training
+        shell: bash
+        env:
+          TRAIN_FORMAT: ${{ matrix.config.format }}
+        run: |
+          # Skip if no replays are available for this format.
+          REPLAY_DIR="data/replays/${TRAIN_FORMAT}"
+          BC_OUTPUT="data/ml/bc/${TRAIN_FORMAT}/bc_actor.pt"
+
+          # Scrape replays for this format (non-fatal: runner may lack credentials)
+          python -m src.ml.replay_scraper --format "${TRAIN_FORMAT}" \
+            || echo "Replay scraping skipped — credentials or network unavailable"
+
+          if [ -z "$(find "${REPLAY_DIR}" -maxdepth 1 -name '*.json' 2>/dev/null | head -1)" ]; then
+            echo "No replay JSON files found in ${REPLAY_DIR} — skipping BC pre-training"
+            exit 0
+          fi
+
+          # Skip if imitation not installed — avoids a Python traceback when
+          # replays exist but the package is absent (common on CI runners).
+          python -c "import imitation" 2>/dev/null \
+            || { echo "imitation not available — skipping BC pre-training for ${TRAIN_FORMAT}"; exit 0; }
+
+          echo "Running BC pre-training for ${TRAIN_FORMAT} ..."
+          mkdir -p "$(dirname "${BC_OUTPUT}")"
+          python -m src.ml.pretrain "${REPLAY_DIR}" \
+            --format "${TRAIN_FORMAT}" \
+            --output "${BC_OUTPUT}" \
+            || { echo "BC pre-training failed (imitation not installed or other error) — skipping warm-start"; exit 0; }
+          echo "BC actor weights saved to ${BC_OUTPUT}"
+
+      - name: Start local Showdown server
+        shell: bash
+        run: |
+          PS_DIR="$HOME/pokemon-showdown"
+
+          # Kill any leftover server from a previous job (jobs are sequential)
+          pkill -f "node.*pokemon-showdown" 2>/dev/null || true
+          # Wait for port 8000 to be fully released before starting a new server
+          for i in $(seq 1 10); do
+            if ! lsof -ti:8000 >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+
+          # Clone once; reuse on subsequent jobs in the same run
+          if [ ! -d "$PS_DIR/.git" ]; then
+            git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
+            cd "$PS_DIR" && npm install --ignore-scripts
+          fi
+
+          # Write config (overwrite each time to guarantee correct settings)
+          printf '%s\n' \
+            'exports.port = 8000;' \
+            "exports.bindaddress = '127.0.0.1';" \
+            'exports.subprocesses = 1;' \
+            'exports.noipchecks = true;' \
+            'exports.nothrottle = true;' \
+            > "$PS_DIR/config/config.js"
+
+          # Start server in background
+          cd "$PS_DIR"
+          node pokemon-showdown start --no-security > /tmp/showdown.log 2>&1 &
+
+          # Wait up to 60 s for the server to accept connections
+          echo "Waiting for Showdown server on port 8000..."
+          for i in $(seq 1 30); do
+            sleep 2
+            if curl -sf --max-time 2 http://localhost:8000 >/dev/null 2>&1; then
+              echo "Showdown server ready (attempt ${i})"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Showdown server failed to start after 60 s:"
+              cat /tmp/showdown.log
+              exit 1
+            fi
+          done
+
+      - name: Train ${{ matrix.config.format }}
+        timeout-minutes: ${{ matrix.config.train_timeout }}
+        shell: bash
+        env:
+          PYTHONUNBUFFERED: "1"
+          TRAIN_FORMAT: ${{ matrix.config.format }}
+          TRAIN_TIMESTEPS: ${{ matrix.config.timesteps }}
+          TRAIN_TEAM_FORMAT: ${{ matrix.config.team_format }}
+          TRAIN_TIMEOUT_MINUTES: ${{ matrix.config.train_timeout }}
+        run: |
+          if [ -d "data/ml/${TRAIN_FORMAT}" ]; then
+            echo "Skipping ${TRAIN_FORMAT} — data/ml/${TRAIN_FORMAT} already exists"
+            exit 0
+          fi
+
+          ARGS="--format $TRAIN_FORMAT --timesteps $TRAIN_TIMESTEPS --save-dir data/ml/policy --server localhost"
+          if [ -n "$TRAIN_TEAM_FORMAT" ]; then
+            ARGS="$ARGS --team-format $TRAIN_TEAM_FORMAT"
+          fi
+          if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
+            ARGS="$ARGS --meta-path ${COMPETITIVE_DATA_DIR}"
+          fi
+          BC_CKPT="data/ml/bc/${TRAIN_FORMAT}/bc_actor.pt"
+          if [ -f "${BC_CKPT}" ]; then
+            ARGS="$ARGS --pretrain ${BC_CKPT}"
+            echo "BC warm-start enabled: ${BC_CKPT}"
+          fi
+
+          # Send SIGINT (KeyboardInterrupt in Python) 3 min before the GitHub
+          # step timeout fires SIGKILL. This lets train_policy.py save the model
+          # before the process is force-killed.
+          # Uses a background sleep+kill timer instead of GNU `timeout --signal`
+          # so the step works on macOS self-hosted runners without coreutils.
+          GRACE_SECS=$(( (TRAIN_TIMEOUT_MINUTES - 3) * 60 ))
+
+          python -m src.ml.train_policy $ARGS &
+          TRAIN_PID=$!
+          { sleep ${GRACE_SECS} && kill -INT ${TRAIN_PID} 2>/dev/null; } &
+          TIMER_PID=$!
+
+          wait ${TRAIN_PID}
+          EXIT=$?
+          kill ${TIMER_PID} 2>/dev/null; wait ${TIMER_PID} 2>/dev/null || true
+
+          if [ ${EXIT} -eq 130 ]; then
+            echo "Training timed out after ${GRACE_SECS}s — final_model.zip should have been saved."
+          elif [ ${EXIT} -ne 0 ]; then
+            echo "Training exited with code ${EXIT}"
+            exit ${EXIT}
+          fi
+
+          mkdir -p "data/ml/${TRAIN_FORMAT}"
+          echo "Created data/ml/${TRAIN_FORMAT} — future runs will skip this format"
+
+      - name: Verify model artifact exists
+        if: always()
+        shell: bash
+        env:
+          TRAIN_FORMAT: ${{ matrix.config.format }}
+        run: |
+          MODEL_PATH="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
+          if [ -f "$MODEL_PATH" ]; then
+            SIZE=$(stat -c%s "$MODEL_PATH" 2>/dev/null || stat -f%z "$MODEL_PATH")
+            echo "✅ Model saved: $MODEL_PATH (${SIZE} bytes)"
+          else
+            echo "⚠️  final_model.zip not found at $MODEL_PATH — artifact will be empty"
+            ls -la "data/ml/policy/${TRAIN_FORMAT}/" 2>/dev/null || echo "Directory does not exist"
+          fi
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: model-${{ matrix.config.format }}
+          path: data/ml/policy/${{ matrix.config.format }}/final_model.zip
+          if-no-files-found: warn
+          retention-days: 90
+
+  package:
+    needs: train
+    runs-on: ubuntu-latest
+    if: always()
+    timeout-minutes: 15
+
+    permissions:
+      actions: write
+      contents: write
+
+    steps:
+      - name: Download all models
+        uses: actions/download-artifact@v7
+        with:
+          pattern: model-*
+          path: all-models
+
+      - name: List models
+        shell: bash
+        run: |
+          mkdir -p all-models
+          find all-models -name "*.zip" | sort
+          COUNT=$(find all-models -name "*.zip" | wc -l)
+          echo "Found ${COUNT} model(s)"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::warning::All training jobs produced zero models — check individual job logs for errors."
+          fi
+
+      - name: Rename models for release
+        shell: bash
+        run: |
+          mkdir -p all-models release-models
+          # Each artifact downloads to all-models/model-{format}/final_model.zip
+          # Strip the "model-" prefix to recover the format name.
+          find all-models -name "final_model.zip" | while IFS= read -r f; do
+            artifact_dir=$(basename "$(dirname "$f")")
+            format="${artifact_dir#model-}"
+            cp "$f" "release-models/${format}_final_model.zip"
+            echo "  Packaged: ${format}_final_model.zip"
+          done
+          echo "Release assets:"
+          ls release-models/ 2>/dev/null || echo "(none)"
+
+      - name: Publish models as GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_NUMBER: ${{ github.run_number }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          TAG="ml-models-r${RUN_NUMBER}"
+          if ls release-models/*.zip 1>/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --repo "$REPO" \
+              --title "ML Models — run #${RUN_NUMBER}" \
+              --notes "Trained PPO models from run #${RUN_NUMBER}. Use /admin-pull-models in Discord to install, or place zips in data/ml/policy/<format>/final_model.zip manually." \
+              release-models/*.zip
+            echo "Release created: $TAG"
+          else
+            echo "No model zips found — skipping release creation."
+          fi

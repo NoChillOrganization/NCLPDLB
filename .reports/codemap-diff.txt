@@ -1,0 +1,41 @@
+Codemap Generation Report — 2026-04-17
+======================================
+
+Status: Initial generation (no prior codemaps existed)
+
+Files Added This Session (NCLP-001 through NCLP-007)
+-----------------------------------------------------
+src/data/db.py                    NEW — async aiosqlite persistence layer
+                                       (active_drafts + elo_ratings tables)
+
+Files Modified This Session
+---------------------------
+src/services/draft_service.py     NCLP-001: asyncio.get_running_loop() fix
+                                  NCLP-002: SQLite write-through for draft state
+src/services/elo_service.py       NCLP-006: SQLite write-through for ELO ratings
+src/bot/main.py                   NCLP-002/006: startup restore (init_db, restore_*)
+src/ml/mcts.py                    NCLP-003: narrow except + warning for unexpected errors
+src/ml/training_players.py        NCLP-007: stub raises ImportError on instantiation
+src/ml/train_policy.py            NCLP-004: BattleTransformerExtractor + --use-transformer
+src/ml/showdown_player.py         NCLP-005: MCTS path in choose_move
+
+Architecture Changes
+--------------------
+- Persistence model expanded: SQLite now serves as a write-through cache for
+  both active draft state and ELO ratings. Google Sheets remains primary DB.
+- Bot startup now has a 3-step initialization sequence (init_db → restore_drafts
+  → restore_elo) before accepting commands.
+- ML inference now supports optional MCTS path (off by default) alongside PPO.
+- PPO training can optionally use BattleTransformer as feature extractor.
+
+New Test Coverage
+-----------------
+tests/unit/test_draft_service.py  3 new SQLite round-trip tests
+tests/unit/test_elo.py            2 new SQLite write-through tests
+tests/unit/test_mcts.py           1 new warning-emission test (NCLP-003)
+tests/unit/test_training_players.py  1 new stub ImportError test (NCLP-007)
+
+Test Suite Status (post-session)
+---------------------------------
+1335 passed | 4 pre-existing failures (TestSelfPlayCallback, TestCurriculumCallback
+in test_train_policy.py — broken before this session) | 3 skipped

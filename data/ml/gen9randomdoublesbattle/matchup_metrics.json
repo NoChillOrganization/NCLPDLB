@@ -1,0 +1,10 @@
+{
+  "format": "gen9randomdoublesbattle",
+  "n_samples": 640,
+  "accuracy": 0.528125,
+  "accuracy_std": 0.010597390598633231,
+  "roc_auc": 0.5361289139826896,
+  "roc_auc_std": 0.019810747997008497,
+  "log_loss": 0.7170409299546779,
+  "vocab_size": 543
+}
