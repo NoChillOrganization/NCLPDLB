@@ -83,6 +83,13 @@ except ImportError:  # pragma: no cover
 from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER  # noqa: E402
 from src.ml.showdown_modes import server_config_for_mode, account_configs_for_mode  # noqa: E402
 
+try:
+    from src.data.sheets import learning_sheets as _learning_sheets
+    _SHEETS_OK = True
+except Exception:  # pragma: no cover
+    _learning_sheets = None  # type: ignore
+    _SHEETS_OK = False
+
 from src.ml.battle_env import (  # noqa: E402
     POKE_ENV_AVAILABLE,
     BattleDoubleEnv,
@@ -405,6 +412,7 @@ class CurriculumCallback(BaseCallback):
         self,
         opponent_player,
         save_dir: Path,
+        fmt: str = "",
         swap_every: int = DEFAULT_SWAP_EVERY,
         win_threshold: float = 0.70,
         min_episodes: int = 500,
@@ -416,6 +424,7 @@ class CurriculumCallback(BaseCallback):
         super().__init__(verbose=verbose)
         self.opponent_player          = opponent_player
         self.save_dir                 = save_dir
+        self.fmt                      = fmt
         self.swap_every               = swap_every
         self.win_threshold            = win_threshold
         self.min_episodes             = min_episodes
@@ -508,8 +517,8 @@ class CurriculumCallback(BaseCallback):
         self.opponent_player.load_policy(latest)
         self._phase     = "selfplay"
         self._last_swap = self.num_timesteps
+        win_rate = sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
         if self.verbose:
-            win_rate = sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
             mean_eff = (
                 sum(self._type_eff_window) / len(self._type_eff_window)
                 if self._type_eff_window else float("nan")
@@ -519,6 +528,17 @@ class CurriculumCallback(BaseCallback):
                 "(win-rate=%.1f%%, mean_type_eff=%.3f)",
                 self.num_timesteps, win_rate * 100, mean_eff,
             )
+        if _SHEETS_OK and _learning_sheets:
+            _learning_sheets.save_training_run({
+                "format":        self.fmt,
+                "phase":         "graduated",
+                "checkpoint":    ckpt.name,
+                "training_step": self.num_timesteps,
+                "win_rate":      f"{win_rate:.4f}",
+                "episodes":      len(self._win_window),
+                "mean_reward":   "",
+                "notes":         "warmup → self-play",
+            })
 
     def _save_and_swap(self) -> None:
         """Save a self-play checkpoint and reload into the opponent."""
@@ -528,11 +548,23 @@ class CurriculumCallback(BaseCallback):
         self.model.save(str(ckpt))
         self.model.save(str(latest))
         self.opponent_player.load_policy(latest)
+        win_rate = sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
         if self.verbose:
             log.info(
                 f"[Curriculum] Swap #{self._swap_count} at step "
                 f"{self.num_timesteps}: saved {ckpt.name}"
             )
+        if _SHEETS_OK and _learning_sheets:
+            _learning_sheets.save_training_run({
+                "format":        self.fmt,
+                "phase":         "selfplay",
+                "checkpoint":    ckpt.name,
+                "training_step": self.num_timesteps,
+                "win_rate":      f"{win_rate:.4f}",
+                "episodes":      len(self._win_window),
+                "mean_reward":   "",
+                "notes":         f"swap #{self._swap_count}",
+            })
 
     # ── main hook ─────────────────────────────────────────────────
 
@@ -857,6 +889,7 @@ def train(  # pragma: no cover
     curriculum_cb = CurriculumCallback(
         opponent_player=opponent,
         save_dir=fmt_save_dir,
+        fmt=fmt,
         swap_every=swap_every,
         verbose=1,
     )
@@ -900,6 +933,21 @@ def train(  # pragma: no cover
     final_path = fmt_save_dir / "final_model.zip"
     model.save(str(final_path))
     log.info(f"\nFinal model saved to {final_path}")
+    if _SHEETS_OK and _learning_sheets:
+        final_win_rate = (
+            sum(curriculum_cb._win_window) / len(curriculum_cb._win_window)
+            if curriculum_cb._win_window else 0.0
+        )
+        _learning_sheets.save_training_run({
+            "format":        fmt,
+            "phase":         "final",
+            "checkpoint":    final_path.name,
+            "training_step": curriculum_cb.num_timesteps,
+            "win_rate":      f"{final_win_rate:.4f}",
+            "episodes":      len(curriculum_cb._win_window),
+            "mean_reward":   "",
+            "notes":         f"training complete — {total_timesteps:,} steps",
+        })
 
     # Dated copy in results_dir so _model_done() can detect completion
     _results_dir = results_dir if results_dir is not None else Path(DEFAULT_RESULTS_DIR)

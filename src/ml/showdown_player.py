@@ -299,13 +299,17 @@ class BotChallenger:
                     result = self._format_result(battle, replay_url=replay_url)
                     if SHEETS_AVAILABLE:
                         learning_sheets.save_replay_url({
-                            "format":     self.fmt,
-                            "battle_id":  battle.battle_tag,
-                            "bot":        self.username,
-                            "opponent":   _get_opponent_name(battle),
-                            "winner":     result["winner"],
-                            "turns":      result["turns"],
-                            "replay_url": replay_url or "",
+                            "format":        self.fmt,
+                            "battle_id":     battle.battle_tag,
+                            "bot":           self.username,
+                            "opponent":      _get_opponent_name(battle),
+                            "opponent_type": "human",
+                            "winner":        result["winner"],
+                            "turns":         result["turns"],
+                            "ko_count":      _count_fainted(battle),
+                            "checkpoint":    self.model_path.name,
+                            "training_step": "",
+                            "replay_url":    replay_url or "",
                         })
                     return result
 
@@ -338,6 +342,16 @@ def _get_opponent_name(battle: AbstractBattle) -> str:
         return battle.opponent_username or "Unknown"
     except Exception:
         return "Unknown"
+
+
+def _count_fainted(battle: AbstractBattle) -> int:
+    """Count total fainted pokemon across both sides."""
+    try:
+        opp = sum(1 for p in battle.opponent_team.values() if p.fainted)
+        own = sum(1 for p in battle.team.values() if p.fainted)
+        return opp + own
+    except Exception:
+        return 0
 
 
 # ── Model selector ────────────────────────────────────────────────────────────

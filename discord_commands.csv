@@ -47,4 +47,5 @@ Sheet (Admin),/sheet-setup,"View or edit the league Setup tab (name, format, sea
 Sheet (Admin),/sheet-player,Update a player's team name / pool / logo in the spreadsheet,(none — opens modal form),Manage Server,Useful for correcting registrations or pool assignments
 Sheet (Admin),/sheet-pokedex,Sync all local Pokemon data to the Pokedex tab (slow — up to 1000 rows),(none),Manage Server,One-time seed operation; takes ~10s for all Gen 1-9 data
 Sheet (Admin),/sheet-playoff,Add a playoff match result to the Playoffs tab,(none — opens modal form),Manage Server,Tracks bracket results separate from regular season
+ML,/ml-stats,Show ML training stats per format — battles logged / win rate / latest checkpoint,"refresh (bool optional — default False: use cache, True: re-fetch from sheet)",Any Member,Data sourced from ML learning spreadsheet; cache warmed on bot startup
 Misc,/help,Show all available bot commands grouped by category,(none),Any Player,Reads discord_commands.csv at call time — always reflects current command list
