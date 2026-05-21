@@ -68,6 +68,9 @@ python -m venv .venv
 
 # Build standalone .exe
 cd src/bot && pyinstaller NCLPDLB.spec
+
+# Force Discord command re-sync without restarting the bot
+.venv/Scripts/python scripts/sync_commands.py
 ```
 
 ## Gotchas
@@ -167,12 +170,13 @@ Optional:
 - `BOT_NAME`, `BOT_STATUS` — display name and activity text (defaults: "DraftBot", "Pokemon Draft League")
 - `SHOWDOWN_USERNAME`, `SHOWDOWN_PASSWORD` — required for `/spar`
 - `ML_LEARNING_SPREADSHEET_ID` — separate sheet for replay URL logging
-- `DATABASE_URL` — SQLite path (default: `pokemon_draft.db` in project root)
+- `DATABASE_URL` — SQLAlchemy URL (default: `sqlite+aiosqlite:///./pokemon_draft.db`)
 - `LOG_LEVEL`, `LOG_FILE` — logging verbosity and output path
 
 ### Testing
 
 Tests live in `tests/unit/`, `tests/integration/`, `tests/e2e/`, and `tests/performance/`.
+Shared test data lives in `tests/fixtures/`.
 `pytest.ini` sets `asyncio_mode = auto` and default coverage across `src/`.
 Performance tests (`tests/performance/locustfile.py`) are excluded from normal runs.
 The `conftest.py` at root and `tests/conftest.py` provide shared fixtures.
