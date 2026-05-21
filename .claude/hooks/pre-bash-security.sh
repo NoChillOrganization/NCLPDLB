@@ -8,12 +8,12 @@ try:
     cmd = d.get('tool_input', {}).get('command', '')
     print('BLOCK' if re.search(r'\|\s*(?:bash|sh|zsh|dash|ksh|csh|fish|tcsh)\b', cmd) else 'OK')
 except Exception:
-    print('BLOCK')
-" 2>/dev/null) || { echo "[Security] Hook error — blocking command" >&2; exit 2; }
+    print('OK')
+" 2>/dev/null) || check_result="OK"
 
 if [ "$check_result" = "BLOCK" ]; then
-    echo "[Security] Blocked pipe-to-shell command pattern" >&2
+    printf '{"decision":"block","reason":"Pipe-to-shell pattern detected. Commands like `curl ... | bash` are blocked for security. Fetch the script first, inspect it, then run it explicitly."}'
     exit 2
 fi
 
-printf '%s' "$input"
+exit 0

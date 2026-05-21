@@ -306,14 +306,20 @@ The bot connects to a spreadsheet with 17 tabs:
 See [.env.example](.env.example) for all variables. Key ones:
 
 ```env
-DISCORD_TOKEN=         # Bot token from Discord Developer Portal
-DISCORD_CLIENT_ID=     # Application ID
-DISCORD_GUILD_ID=      # Test server ID (for instant slash command sync)
-BOT_NAME=DraftBot      # Display name in embeds and logs
+DISCORD_TOKEN=                   # Bot token from Discord Developer Portal
+DISCORD_CLIENT_ID=               # Application ID
+DISCORD_GUILD_ID=                # Test server ID (for instant slash command sync)
+SYNC_COMMANDS_ON_STARTUP=false   # Force global sync on startup (slow — dev only)
+BOT_NAME=DraftBot                # Display name in embeds and logs
 BOT_STATUS=Pokemon Draft League
 
 GOOGLE_SHEETS_CREDENTIALS_FILE=credentials.json
 GOOGLE_SHEETS_SPREADSHEET_ID=your_spreadsheet_id
+ML_LEARNING_SPREADSHEET_ID=      # Separate sheet for storing replay URLs (optional)
+
+# GitHub — required for /admin-pull-models to download trained models from Releases
+GITHUB_TOKEN=                    # PAT (optional for public repos)
+GITHUB_REPO=NoChillModeOnline/NCLPDLB
 
 # Showdown — used for /spar and ladder training
 SHOWDOWN_USERNAME=YourBotAccount

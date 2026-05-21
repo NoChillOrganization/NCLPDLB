@@ -19,11 +19,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
-      - name: Set up Python 3.13
+      - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: "3.12"
           cache: "pip"
 
       - name: Install PyTorch (CPU, prevents large PyPI CUDA download)
@@ -43,7 +45,19 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           python3 - <<'PYEOF'
-          import subprocess, json, datetime, os, urllib.request, urllib.error, sys
+          import subprocess, json, datetime, os, re, urllib.request, urllib.error, sys
+
+          # Build the direct-dependency name set from requirements.txt so transitive
+          # packages are correctly labeled "indirect" in the snapshot.
+          direct_names: set[str] = set()
+          with open("requirements.txt") as _f:
+              for _line in _f:
+                  _line = _line.strip()
+                  if not _line or _line.startswith("#"):
+                      continue
+                  _name = re.split(r"[><=!;\[\s]", _line)[0].lower().replace("_", "-")
+                  if _name:
+                      direct_names.add(_name)
 
           packages = json.loads(
               subprocess.run(["pip", "list", "--format=json"],
@@ -56,7 +70,7 @@ jobs:
               purl = f"pkg:pypi/{name_lower}@{pkg['version']}"
               resolved[name_lower] = {
                   "package_url": purl,
-                  "relationship": "direct",
+                  "relationship": "direct" if name_lower in direct_names else "indirect",
                   "scope": "runtime",
                   "dependencies": [],
               }
@@ -72,7 +86,7 @@ jobs:
               "detector": {
                   "name": "pip-direct-snapshot",
                   "version": "1.0.0",
-                  "url": "https://github.com/NoChillModeOnline/NCLPDLB/.github/workflows/dependency-submission.yml",
+                  "url": f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ['REPO']}/.github/workflows/dependency-submission.yml",
               },
               "scanned": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
               "manifests": {

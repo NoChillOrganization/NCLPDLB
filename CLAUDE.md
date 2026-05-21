@@ -10,13 +10,24 @@ Project notes, issues, and documentation live in the **No Chill Draft League Vau
 
 ## Tech Stack
 
-- **Python 3.11+** with `discord.py 2.x` (slash commands via `app_commands`)
+- **Python 3.12** (CI target; 3.11+ supported locally) with `discord.py 2.x` (slash commands via `app_commands`)
 - **Pydantic v2** for all data models; `pydantic-settings` for config from `.env`
 - **gspread** (sync, run in executor) for Google Sheets; **aiosqlite** for local SQLite
 - **stable-baselines3 (PPO)** + **poke-env** for the RL battle agent (`/spar`)
 - **PyInstaller** for producing the standalone `.exe` (spec: `src/bot/NCLPDLB.spec`)
 
 ## Commands
+
+```bash
+# First-time setup
+python -m venv .venv
+.venv/Scripts/pip install -r requirements.txt          # Windows
+.venv/bin/pip install -r requirements.txt              # macOS/Linux
+# torch must be installed separately (CPU wheel — avoids large CUDA download):
+.venv/Scripts/pip install torch --index-url https://download.pytorch.org/whl/cpu
+# playwright requires browser binaries after pip install:
+.venv/Scripts/python -m playwright install chromium
+```
 
 ```bash
 # Virtual environment (project uses .venv)
@@ -35,8 +46,10 @@ Project notes, issues, and documentation live in the **No Chill Draft League Vau
 # Run tests with coverage (default — see pytest.ini)
 .venv/Scripts/python -m pytest tests/ --ignore=tests/performance
 
-# Lint
+# Lint / format / type-check
 .venv/Scripts/python -m ruff check src/ tests/
+.venv/Scripts/python -m ruff format src/ tests/   # auto-format
+.venv/Scripts/python -m mypy src/                 # type-check
 
 # Seed Pokemon data (one-time setup — fetches 1,025 mons from PokéAPI)
 .venv/Scripts/python scripts/seed_pokemon_data.py
@@ -44,12 +57,27 @@ Project notes, issues, and documentation live in the **No Chill Draft League Vau
 # Set up Google Sheets (one-time — creates all 17 tabs)
 .venv/Scripts/python scripts/setup_google_sheet.py
 
+# Prepare competitive meta data (Showdown CSV exports → data/competitive/format_meta.json)
+.venv/Scripts/python scripts/prepare_competitive_data.py
+
 # Train ML policy (all formats, ~8-12 hours; requires local Showdown server)
 .venv/Scripts/python src/ml/train_all.py
 
 # Build standalone .exe
 cd src/bot && pyinstaller NCLPDLB.spec
 ```
+
+## Gotchas
+
+**`torch` installs from a custom index.** `pip install -r requirements.txt` alone will pull torch from PyPI (wrong wheel or missing on some platforms). Always install separately: `pip install torch --index-url https://download.pytorch.org/whl/cpu`
+
+**`playwright` needs browser binaries.** After pip install run: `python -m playwright install chromium`
+
+**BC pre-training (`imitation`) requires a separate venv.** `imitation` conflicts with `poke-env==0.12.1` over gymnasium versions. For local BC pre-training: `pip install "imitation>=1.0.0" "gymnasium~=0.29" "stable-baselines3>=1.7"`
+
+**`actions-runner/` at repo root is the self-hosted CI runner installation.** Do not edit files inside it; they are runner binaries and config, not project source.
+
+**Draft state is not persisted across bot restarts.** In-progress drafts live only in `_active_drafts` in memory — a restart loses them. See Key Design Decisions below.
 
 ## Architecture
 
@@ -84,6 +112,11 @@ src/
     train_policy.py      — PPO training loop for a single format
     train_all.py         — Trains all formats sequentially
     train_matchup.py     — Matchup metric training
+    trainer.py           — High-level training orchestrator (wraps train_policy.py)
+    self_play.py         — Async self-play loop for continuous improvement
+    pretrain.py          — Behavioural Cloning pre-training using imitation library
+    run_training.py      — FastAPI + uvicorn server to trigger/monitor training via HTTP
+    api.py               — FastAPI app exposing training status endpoints (used by run_training.py)
     showdown_player.py   — poke-env player that uses the trained PPO model for /spar
     replay_parser.py     — Parses Showdown replay JSON
     replay_scraper.py    — Scrapes replay URLs from Showdown
