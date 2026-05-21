@@ -60,6 +60,9 @@ python -m venv .venv
 # Prepare competitive meta data (Showdown CSV exports → data/competitive/format_meta.json)
 .venv/Scripts/python scripts/prepare_competitive_data.py
 
+# Set up ML learning spreadsheet tabs (one-time — creates Replays, Training Runs, per-format tabs)
+.venv/Scripts/python scripts/setup_ml_sheet.py
+
 # Train ML policy (all formats, ~8-12 hours; requires local Showdown server)
 .venv/Scripts/python src/ml/train_all.py
 
@@ -88,8 +91,11 @@ src/
   config.py              — Settings singleton (pydantic-settings, reads .env)
   data/
     models.py            — All Pydantic models (Pokemon, Draft, DraftPick, etc.)
+    db.py                — Async SQLite layer (aiosqlite); active_drafts + elo_ratings tables
     pokeapi.py           — PokéAPI client + in-memory pokemon_db cache
     sheets.py            — Google Sheets data layer (Tab constants, cell-specific writes)
+                           LearningSheets singleton: writes replays + training runs, reads win
+                           rate / checkpoint stats for /ml-stats
     showdown.py          — Showdown format/tier fetching
     smogon.py            — Smogon tier scraping
   services/
@@ -104,9 +110,12 @@ src/
   bot/
     main.py              — DraftLeagueBot (commands.Bot subclass), cog loader,
                            hash-gated command sync (avoids rate limits)
-    cogs/                — One cog per command group (draft, team, league, admin, stats, sheet, misc)
+    cogs/                — One cog per command group (draft, team, league, admin, stats, sheet,
+                           misc, ml)
     views/               — discord.py UI views (draft_view, team_view, team_import_view)
     constants.py         — Shared embed colours, emoji, strings
+    hooks/
+      hook-pydantic.py   — PyInstaller hook; suppresses pydantic V1 compat warning on Python 3.14+
   ml/
     battle_env.py        — Gymnasium wrapper (observation + action space defined here)
     train_policy.py      — PPO training loop for a single format
