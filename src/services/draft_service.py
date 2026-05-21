@@ -271,7 +271,7 @@ class DraftService:
             is_tera_captain=is_tera_captain,
         )
         draft.picks.append(pick)
-        sheets.save_pick(pick.model_dump())
+        sheets.save_pick(pick.model_dump(mode="json"))
 
         # Advance pick pointer
         self._advance_pick(draft)

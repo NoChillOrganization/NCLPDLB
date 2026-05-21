@@ -385,7 +385,8 @@ async def test_main_starts_bot_with_token():
     with patch("src.bot.main.DraftLeagueBot") as MockBot, \
          patch("src.bot.main._setup_logging"), \
          patch("src.bot.main.settings") as mock_settings:
-        mock_settings.discord_token = "fake-token"
+        from pydantic import SecretStr
+        mock_settings.discord_token = SecretStr("fake-token")
         mock_settings.google_sheets_credentials_file.exists.return_value = True
 
         # Bot acts as async context manager

@@ -175,7 +175,7 @@ def main(
     try:
         from src.config import settings
         username = settings.showdown_username
-        password = settings.showdown_password
+        password = settings.showdown_password.get_secret_value()
     except Exception as exc:
         log.warning("Could not load settings: %s — credentials will be empty", exc)
         username = password = ""

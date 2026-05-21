@@ -877,8 +877,8 @@ async def _pull_models(
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    if settings.github_token:
-        headers["Authorization"] = f"Bearer {settings.github_token}"
+    if settings.github_token.get_secret_value():
+        headers["Authorization"] = f"Bearer {settings.github_token.get_secret_value()}"
 
     project_root = Path(__file__).parents[3]
     policy_dir = project_root / settings.ml_policy_dir

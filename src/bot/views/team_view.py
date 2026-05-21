@@ -25,7 +25,7 @@ class TeamEmbedView(discord.ui.View):
 
         lines = []
         for i, p in enumerate(self.roster.pokemon, 1):
-            tier_badge = f"[{p.showdown_tier}]"
+            tier_badge = f"[{p.showdown_tier.value}]"
             lines.append(f"`{i}.` **{p.name}** {tier_badge} — {p.type_string}")
 
         embed.description = "\n".join(lines)

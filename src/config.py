@@ -5,7 +5,7 @@ Cross-platform: uses pathlib for all file paths.
 import re
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Project root — works on Windows, macOS, Linux
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     )
 
     # Discord
-    discord_token: str
+    discord_token: SecretStr
     discord_client_id: str
     discord_guild_id: str | None = None
     bot_name: str = "DraftBot"           # Display name shown in presence and embeds
@@ -52,10 +52,10 @@ class Settings(BaseSettings):
 
     # Showdown bot account — used by /spar and ladder training
     showdown_username: str = ""
-    showdown_password: str = ""
+    showdown_password: SecretStr = SecretStr("")
 
     # GitHub — used by /admin-pull-models to download trained models from releases
-    github_token: str = ""          # Personal access token (optional for public repos)
+    github_token: SecretStr = SecretStr("")   # Personal access token (optional for public repos)
     github_repo: str = "NoChillModeOnline/NCLPDLB"
 
     # ML policy models directory

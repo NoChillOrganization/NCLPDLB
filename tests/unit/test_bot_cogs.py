@@ -2,6 +2,8 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from pydantic import SecretStr
+
 import discord
 
 from src.bot.cogs.team import decode_attachment_bytes
@@ -1170,7 +1172,7 @@ async def test_pull_models_latest_release_fetched_by_id():
 
     with patch("httpx.AsyncClient", return_value=mock_client), \
          patch.object(settings, "github_repo", "owner/repo", create=True), \
-         patch.object(settings, "github_token", None, create=True), \
+         patch.object(settings, "github_token", SecretStr(""), create=True), \
          patch("pathlib.Path.mkdir"):
         await _pull_models(interaction, fmt=None, release_tag=None)
 
@@ -1209,7 +1211,7 @@ async def test_pull_models_download_exception_recorded():
 
     with patch("httpx.AsyncClient", return_value=mock_client), \
          patch.object(settings, "github_repo", "owner/repo", create=True), \
-         patch.object(settings, "github_token", None, create=True), \
+         patch.object(settings, "github_token", SecretStr(""), create=True), \
          patch("pathlib.Path.mkdir"):
         await _pull_models(interaction, fmt=fmt, release_tag=None)
 
