@@ -238,13 +238,15 @@ jobs:
           # Send SIGINT (KeyboardInterrupt in Python) 3 min before the GitHub
           # step timeout fires SIGKILL. This lets train_policy.py save the model
           # before the process is force-killed.
-          # Uses a background sleep+kill timer instead of GNU `timeout --signal`
-          # so the step works on macOS self-hosted runners without coreutils.
+          # Uses Python to deliver the signal — os.kill(pid, SIGINT) uses
+          # CTRL_C_EVENT on Windows (which Python handles as KeyboardInterrupt),
+          # whereas bash kill -INT cannot reliably reach a background Windows
+          # process. Falls back to shell kill for Linux/macOS runners.
           GRACE_SECS=$(( (TRAIN_TIMEOUT_MINUTES - 3) * 60 ))
 
           python -m src.ml.train_policy $ARGS &
           TRAIN_PID=$!
-          { sleep ${GRACE_SECS} && kill -INT ${TRAIN_PID} 2>/dev/null; } &
+          { sleep ${GRACE_SECS} && python -c "import os,signal; os.kill(${TRAIN_PID},signal.SIGINT)" 2>/dev/null || kill -INT ${TRAIN_PID} 2>/dev/null; } &
           TIMER_PID=$!
 
           wait ${TRAIN_PID}
@@ -272,8 +274,9 @@ jobs:
             SIZE=$(stat -c%s "$MODEL_PATH" 2>/dev/null || stat -f%z "$MODEL_PATH")
             echo "✅ Model saved: $MODEL_PATH (${SIZE} bytes)"
           else
-            echo "⚠️  final_model.zip not found at $MODEL_PATH — artifact will be empty"
+            echo "⚠️  final_model.zip not found at $MODEL_PATH"
             ls -la "data/ml/policy/${TRAIN_FORMAT}/" 2>/dev/null || echo "Directory does not exist"
+            exit 1
           fi
 
       - name: Upload model artifact
@@ -282,7 +285,8 @@ jobs:
         with:
           name: model-${{ matrix.config.format }}
           path: data/ml/policy/${{ matrix.config.format }}/final_model.zip
-          if-no-files-found: warn
+          if-no-files-found: error
+          overwrite: true
           retention-days: 90
 
   package:
