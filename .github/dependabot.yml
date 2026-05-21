@@ -1,0 +1,44 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+    reviewers:
+      - "NoChillModeOnline"
+    assignees:
+      - "NoChillModeOnline"
+    # poke-env, stable-baselines3, and torch are tightly coupled with specific
+    # gym/numpy versions used by the RL training pipeline.
+    # Only allow patch updates automatically; minor/major require manual review.
+    # Note: poke-env is hard-pinned (==0.12.1) so patch PRs (e.g., 0.12.2) will
+    # still be raised — review and test against poke-env's API before merging.
+    ignore:
+      - dependency-name: "poke-env"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "stable-baselines3"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # torch is installed via --index-url https://download.pytorch.org/whl/cpu in CI.
+      # Block minor/major auto-PRs to keep the requirements.txt constraint in sync
+      # with the CPU-wheel channel used by dependency-submission and train-models.
+      - dependency-name: "torch"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
+    reviewers:
+      - "NoChillModeOnline"
+    assignees:
+      - "NoChillModeOnline"
