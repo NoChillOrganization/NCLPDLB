@@ -68,14 +68,14 @@ jobs:
           # which does not exist (runner runs as travisweisberg, not runner).
           PYBIN=$(python3.12 -c "import sys; print(sys.executable)" 2>/dev/null \
             || python3 -c "import sys; print(sys.executable)")
-          echo "Using Python: $PYBIN ($($PYBIN --version))"
+          echo "Using Python: $PYBIN ($($PYBIN --version 2>&1))"
           # On Debian/Ubuntu, python3.12-venv is a separate apt package.
           # Install it if venv creation fails due to missing ensurepip.
-          if ! $PYBIN -m venv .venv 2>/dev/null; then
+          if ! $PYBIN -m venv .venv; then
             echo "venv failed — attempting to install python3-venv package"
             if command -v apt-get >/dev/null 2>&1; then
-              sudo apt-get install -y python3.12-venv 2>/dev/null \
-                || sudo apt-get install -y python3-venv 2>/dev/null \
+              DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3.12-venv \
+                || DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3-venv \
                 || true
             fi
             $PYBIN -m venv .venv
