@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import uuid
 from enum import Enum
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 # ── Enums ─────────────────────────────────────────────────────
 
@@ -78,6 +79,8 @@ class ShowdownTier(str, Enum):
 # ── Pokemon Model ─────────────────────────────────────────────
 
 class PokemonStats(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     hp: int = 0
     atk: int = 0
     def_: int = Field(0, alias="def")
@@ -85,28 +88,27 @@ class PokemonStats(BaseModel):
     spd: int = 0
     spe: int = 0
 
+    @computed_field
     @property
     def total(self) -> int:
         return self.hp + self.atk + self.def_ + self.spa + self.spd + self.spe
 
-    model_config = {"populate_by_name": True}
-
 
 class Pokemon(BaseModel):
-    national_dex: int
+    national_dex: int = Field(ge=1)
     name: str
     name_normalized: str = ""   # Lowercase, no special chars (for lookup)
     types: list[str]
     base_stats: PokemonStats
     abilities: list[str] = []
     hidden_ability: str | None = None
-    generation: int
+    generation: int = Field(ge=1)
     is_legendary: bool = False
     is_mythical: bool = False
     is_paradox: bool = False
 
     # Competitive data
-    showdown_tier: str = ShowdownTier.UNTIERED
+    showdown_tier: ShowdownTier = ShowdownTier.UNTIERED
     vgc_legal: bool = False
     vgc_season: str = ""
 
@@ -116,7 +118,7 @@ class Pokemon(BaseModel):
     })
 
     # Draft data
-    tier_points: int = 1        # Points cost in tiered draft
+    tier_points: int = Field(default=1, ge=1)
     smogon_strategy: str = ""   # Role description
     sprite_url: str = ""        # Animated GIF — Showdown ani/{name}.gif
     sprite_url_shiny: str = ""  # Shiny animated GIF — Showdown ani-shiny/{name}.gif
@@ -124,12 +126,14 @@ class Pokemon(BaseModel):
 
     def model_post_init(self, __context: object) -> None:
         if not self.name_normalized:
-            object.__setattr__(self, "name_normalized", self.name.lower().replace(" ", "-").replace("'", "").replace(".", ""))
+            self.name_normalized = self.name.lower().replace(" ", "-").replace("'", "").replace(".", "")
 
+    @computed_field
     @property
     def type_string(self) -> str:
         return " / ".join(t.capitalize() for t in self.types)
 
+    @computed_field
     @property
     def speed_tier(self) -> str:
         spe = self.base_stats.spe
@@ -153,14 +157,22 @@ class DraftPick(BaseModel):
     draft_id: str
     player_id: str
     pokemon_name: str
-    round: int
-    pick_number: int
-    game_format: str = GameFormat.SHOWDOWN
+    round: int = Field(ge=1)
+    pick_number: int = Field(ge=1)
+    game_format: GameFormat = GameFormat.SHOWDOWN
     pool: str = "A"                    # Pool A or B
     team_name: str = ""
     tera_type: str = ""                # Tera type assigned at pick time (SV)
     is_tera_captain: bool = False      # Whether this Pokemon is a Tera Captain
     timestamp: str = ""
+
+    @model_validator(mode="after")
+    def check_tera_consistency(self) -> DraftPick:
+        if self.is_tera_captain and not self.tera_type:
+            raise ValueError("tera_type required when is_tera_captain=True")
+        if not self.is_tera_captain and self.tera_type:
+            raise ValueError("tera_type must be empty when is_tera_captain=False")
+        return self
 
 
 class DraftBan(BaseModel):
@@ -181,22 +193,22 @@ class Draft(BaseModel):
     commissioner_id: str
     format: DraftFormat = DraftFormat.SNAKE
     status: DraftStatus = DraftStatus.SETUP
-    total_rounds: int = 6
-    timer_seconds: int = 60
+    total_rounds: int = Field(default=6, ge=1)
+    timer_seconds: int = Field(default=60, ge=0)
     tier_mode: bool = False
-    max_players: int = MAX_PLAYERS_PER_DRAFT
-    game_format: str = GameFormat.SHOWDOWN    # showdown or console (sv/swsh/etc.)
+    max_players: int = Field(default=MAX_PLAYERS_PER_DRAFT, ge=2, le=MAX_PLAYERS_PER_DRAFT)
+    game_format: GameFormat = GameFormat.SHOWDOWN
     pool: str = "A"                           # Pool A or B
     team_names: dict[str, str] = {}           # player_id -> team name
     team_logos: dict[str, str] = {}           # player_id -> logo URL (Discord CDN)
 
     # Tera Captain rules (SV format)
-    tera_captains_per_team: int = 0           # 0 = disabled; typically 1-2
-    tera_types_per_captain: int = 1           # How many tera types each captain gets
+    tera_captains_per_team: int = Field(default=0, ge=0)
+    tera_types_per_captain: int = Field(default=1, ge=1)
 
     player_order: list[str] = []      # Discord user IDs in pick order
-    current_round: int = 1
-    current_pick_index: int = 0       # Index in player_order
+    current_round: int = Field(default=1, ge=1)
+    current_pick_index: int = Field(default=0, ge=0)
     picks: list[DraftPick] = []
     bans: list[DraftBan] = []
     budget: dict[str, int] = {}                 # Auction: player_id -> remaining budget
@@ -204,10 +216,20 @@ class Draft(BaseModel):
     nomination_bids: dict[str, dict[str, int]] = {}  # Auction: nomination_id -> {player_id: amount}
     created_at: str = ""
 
+    @model_validator(mode="after")
+    def check_format_consistency(self) -> Draft:
+        if self.format == DraftFormat.AUCTION and self.budget and self.status != DraftStatus.SETUP:
+            pass  # budget is valid in auction drafts
+        if self.tera_captains_per_team > 0 and self.game_format != GameFormat.SV:
+            raise ValueError("tera_captains_per_team > 0 requires game_format='sv'")
+        return self
+
+    @computed_field
     @property
     def player_count(self) -> int:
         return len(self.player_order)
 
+    @computed_field
     @property
     def total_picks(self) -> int:
         return len(self.picks)
@@ -256,7 +278,7 @@ class MatchResult(BaseModel):
     player1_id: str
     player2_id: str
     winner_id: str
-    game_format: str = GameFormat.SHOWDOWN
+    game_format: GameFormat = GameFormat.SHOWDOWN
     replay_url: str = ""
     video_url: str = ""
     timestamp: str = ""
@@ -266,11 +288,12 @@ class PlayerElo(BaseModel):
     player_id: str
     guild_id: str
     display_name: str = ""
-    elo: int = 1000
-    wins: int = 0
-    losses: int = 0
+    elo: int = Field(default=1000, ge=0)
+    wins: int = Field(default=0, ge=0)
+    losses: int = Field(default=0, ge=0)
     streak: int = 0
 
+    @computed_field
     @property
     def win_rate(self) -> float:
         total = self.wins + self.losses
@@ -286,5 +309,5 @@ class Trade(BaseModel):
     to_player: str
     pokemon_given: str
     pokemon_received: str
-    status: str = "pending"   # pending | accepted | declined | cancelled
+    status: Literal["pending", "accepted", "declined", "cancelled"] = "pending"
     timestamp: str = ""

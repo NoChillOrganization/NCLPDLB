@@ -83,6 +83,7 @@ COGS = [
     "src.bot.cogs.stats",
     "src.bot.cogs.sheet",    # Google Sheets management commands
     "src.bot.cogs.misc",     # /help and utility commands
+    "src.bot.cogs.ml",       # ML training stats
 ]
 
 intents = discord.Intents.default()
@@ -181,7 +182,7 @@ async def main() -> None:  # pragma: no cover
         )
     bot = DraftLeagueBot()
     async with bot:
-        await bot.start(settings.discord_token)
+        await bot.start(settings.discord_token.get_secret_value())
 
 
 if __name__ == "__main__":  # pragma: no cover
