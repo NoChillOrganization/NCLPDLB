@@ -25,7 +25,6 @@ SUPPORTED_FORMATS: dict[str, str] = {
     "gen9vgc2025regh": "VGC 2025 Reg H",
     "gen9vgc2025regi": "VGC 2025 Reg I",
     # VGC Gen 9 Regulations — 2026 season
-    "gen9vgc2026regf": "VGC 2026 Reg F",
     "gen9vgc2026regi": "VGC 2026 Reg I",
     # Pokémon Champions VGC — 2026 season (active May 29 2026+)
     "gen9championsvgc2026regma":   "Champions VGC 2026 Reg M-A",

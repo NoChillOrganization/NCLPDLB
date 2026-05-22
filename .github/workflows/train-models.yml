@@ -45,9 +45,6 @@ jobs:
           #   Calyrex-Ice 23.8%, Miraidon 23.5%, Flutter Mane 21.3%, Rillaboom 21.2%
           - { format: gen9vgc2026regi,         team_format: gen9vgc2026regi,     timesteps: 500000, train_timeout: 250 }
           - { format: gen9vgc2026regibo3,      team_format: gen9vgc2026regibo3,  timesteps: 500000, train_timeout: 250 }
-          # ── VGC — expired regulations (lower budget; kept for /spar coverage) ─
-          - { format: gen9vgc2026regf,         team_format: gen9vgc2026regf,     timesteps: 300000, train_timeout: 230 }
-          - { format: gen9vgc2026regfbo3,      team_format: gen9vgc2026regfbo3,  timesteps: 300000, train_timeout: 230 }
           # ── Champions formats ─────────────────────────────────────────────────
           - { format: gen9championsou,              team_format: "",                  timesteps: 500000, train_timeout: 160 }
           - { format: gen9championsbssregma,        team_format: "",                  timesteps: 500000, train_timeout: 160 }
