@@ -10,6 +10,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from src.data.pokeapi import pokemon_db
+from src.ml.train_all import TRAINING_MAP
 from src.services.analytics_service import AnalyticsService
 from src.services.battle_sim import BattleSimService
 from src.services.elo_service import EloService
@@ -19,49 +20,8 @@ log = logging.getLogger(__name__)
 
 REPLAY_DOMAIN = "replay.pokemonshowdown.com"
 
-# ── Supported spar formats (must have a trained model) ────────────────────────
-SPAR_FORMATS = [
-    # Random Battle
-    "gen9randombattle",
-    "gen9monorandom",
-    "gen9randomdoublesbattle",
-    "gen7randombattle",
-    "gen6randombattle",
-    # Smogon Singles
-    "gen9ou",
-    "gen9ubers",
-    "gen9uu",
-    "gen9ru",
-    "gen9nu",
-    "gen9pu",
-    "gen9zu",
-    "gen9lc",
-    "gen9monotype",
-    "gen9nationaldex",
-    "gen9anythinggoes",
-    # Smogon Doubles
-    "gen9doublesou",
-    "gen9doublesubers",
-    "gen9doublesuu",
-    "gen9doublesnu",
-    # VGC 2025
-    "gen9vgc2025regg",
-    "gen9vgc2025regh",
-    "gen9vgc2025regi",
-    "gen9vgc2025reggbo3",
-    "gen9vgc2025reghbo3",
-    "gen9vgc2025regibo3",
-    # VGC 2026
-    "gen9vgc2026regf",
-    "gen9vgc2026regi",
-    "gen9vgc2026regfbo3",
-    "gen9vgc2026regibo3",
-    # Champions
-    "gen9championsou",
-    "gen9championsbssregma",
-    "gen9championsvgc2026regma",
-    "gen9championsvgc2026regmabo3",
-]
+# Derived from TRAINING_MAP — single source of truth with train-models.yml.
+SPAR_FORMATS = [fmt for fmt, (train_fmt, _) in TRAINING_MAP.items() if train_fmt is not None]
 
 _FORMAT_DISPLAY = {
     # Random Battle
@@ -95,9 +55,7 @@ _FORMAT_DISPLAY = {
     "gen9vgc2025reghbo3"     : "VGC 2025 Reg H (Bo3)",
     "gen9vgc2025regibo3"     : "VGC 2025 Reg I (Bo3)",
     # VGC 2026
-    "gen9vgc2026regf"             : "VGC 2026 Reg F",
     "gen9vgc2026regi"             : "VGC 2026 Reg I",
-    "gen9vgc2026regfbo3"          : "VGC 2026 Reg F (Bo3)",
     "gen9vgc2026regibo3"          : "VGC 2026 Reg I (Bo3)",
     # Champions
     "gen9championsou"             : "Champions OU",
