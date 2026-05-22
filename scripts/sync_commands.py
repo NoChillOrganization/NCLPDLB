@@ -23,7 +23,7 @@ async def main() -> None:
     bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
     async with bot:
-        await bot.login(settings.discord_token)
+        await bot.login(settings.discord_token.get_secret_value())
 
         for cog in COGS:
             try:
@@ -34,12 +34,20 @@ async def main() -> None:
 
         if settings.discord_guild_id:
             guild = discord.Object(id=int(settings.discord_guild_id))
+
+            # Sync guild commands first, then clear any previously registered
+            # global commands so they don't show alongside the guild-scoped
+            # ones (causes duplicate entries in Discord).
             bot.tree.copy_global_to(guild=guild)
             synced = await bot.tree.sync(guild=guild)
-            print(f"\n✅ Synced {len(synced)} command(s) to guild {settings.discord_guild_id}")
+
+            bot.tree.clear_commands(guild=None)
+            await bot.tree.sync()
+            print("  Cleared global commands.")
+            print(f"\nOK Synced {len(synced)} command(s) to guild {settings.discord_guild_id}")
         else:
             synced = await bot.tree.sync()
-            print(f"\n✅ Synced {len(synced)} command(s) globally (may take up to 1 hour)")
+            print(f"\nOK Synced {len(synced)} command(s) globally (may take up to 1 hour)")
 
         print("Done.")
 
