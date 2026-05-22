@@ -60,8 +60,6 @@ FORMAT_USAGE_MAP: dict[str, str] = {
     "gen9doublesuu":       "vgc_regulation_i_usage.csv",
     "gen9vgc2026regi":     "vgc_regulation_i_usage.csv",
     "gen9vgc2026regibo3":  "vgc_regulation_i_usage.csv",
-    "gen9vgc2026regf":     "vgc_regulation_i_usage.csv",
-    "gen9vgc2026regfbo3":  "vgc_regulation_i_usage.csv",
 }
 
 
@@ -147,8 +145,7 @@ def build_format_configs() -> None:
         col = next(iter(_read_csv(path)[0])) if _read_csv(path) else None
         if col:
             pokemon_list = [r[col] for r in _read_csv(path)]
-            for fmt in ("gen9vgc2026regi", "gen9vgc2026regibo3",
-                        "gen9vgc2026regf", "gen9vgc2026regfbo3"):
+            for fmt in ("gen9vgc2026regi", "gen9vgc2026regibo3"):
                 if fmt in config:
                     config[fmt][key] = pokemon_list
 

@@ -1,18 +1,15 @@
 """
-Sequential training runner for all SPAR_FORMATS.
+Sequential training runner — mirrors the train-models.yml CI matrix exactly.
 
 Trains a PPO policy for each configured format, one at a time.
 Skips any format that already has a final_model.zip.
 Formats that require custom teams use RotatingTeambuilder via --team-format.
 Doubles formats use BattleDoubleEnv automatically (detected in train_policy.py).
 
-Format → Training format mapping
+Format → Training format mapping  (22 formats; matches CI train-models.yml)
 ──────────────────────────────────
   gen9randombattle        → gen9randombattle        (direct, no teams)
-  gen9monorandom          → gen9monorandom          (direct, no teams)
   gen9randomdoublesbattle → gen9randomdoublesbattle (direct, no teams, doubles)
-  gen7randombattle        → gen7randombattle        (direct, no teams)
-  gen6randombattle        → gen6randombattle        (direct, no teams)
   gen9ou                  → gen9ou                  (direct, RotatingTeambuilder)
   gen9ubers               → gen9ubers               (direct, RotatingTeambuilder)
   gen9uu                  → gen9uu                  (direct, RotatingTeambuilder)
@@ -27,17 +24,12 @@ Format → Training format mapping
   gen9doublesou           → gen9doublesou           (direct, RotatingTeambuilder, doubles)
   gen9doublesubers        → gen9doublesubers        (direct, RotatingTeambuilder, doubles)
   gen9doublesuu           → gen9doublesuu           (direct, RotatingTeambuilder, doubles)
-  gen9doublesnu           → gen9doublesnu           (direct, RotatingTeambuilder, doubles)
-  gen9vgc2025regg         → gen9vgc2025regg         (direct, RotatingTeambuilder, doubles)
-  gen9vgc2025regh         → gen9vgc2025regh         (direct, RotatingTeambuilder, doubles)
-  gen9vgc2025regi         → gen9vgc2025regi         (direct, RotatingTeambuilder, doubles)
-  gen9vgc2025reggbo3      → gen9vgc2025reggbo3      (direct, RotatingTeambuilder, doubles)
-  gen9vgc2025reghbo3      → gen9vgc2025reghbo3      (direct, RotatingTeambuilder, doubles)
-  gen9vgc2025regibo3      → gen9vgc2025regibo3      (direct, RotatingTeambuilder, doubles)
-  gen9vgc2026regf         → gen9vgc2026regf         (direct, RotatingTeambuilder, doubles)
   gen9vgc2026regi         → gen9vgc2026regi         (direct, RotatingTeambuilder, doubles)
-  gen9vgc2026regfbo3      → gen9vgc2026regfbo3      (direct, RotatingTeambuilder, doubles)
   gen9vgc2026regibo3      → gen9vgc2026regibo3      (direct, RotatingTeambuilder, doubles)
+  gen9championsou         → gen9championsou         (direct, no teams)
+  gen9championsbssregma   → gen9championsbssregma   (direct, no teams)
+  gen9championsvgc2026regma    → gen9championsvgc2026regma    (direct, no teams, doubles)
+  gen9championsvgc2026regmabo3 → gen9championsvgc2026regmabo3 (direct, no teams, doubles)
 
 Usage
 ─────
@@ -66,10 +58,7 @@ log = logging.getLogger(__name__)
 TRAINING_MAP: dict[str, tuple[str | None, str | None]] = {
     # Random Battle (no teams needed)
     "gen9randombattle"       : ("gen9randombattle",       None),
-    "gen9monorandom"         : ("gen9monorandom",         None),
     "gen9randomdoublesbattle": ("gen9randomdoublesbattle", None),
-    "gen7randombattle"       : ("gen7randombattle",       None),
-    "gen6randombattle"       : ("gen6randombattle",       None),
     # Smogon Singles
     "gen9ou"                 : ("gen9ou",                 "gen9ou"),
     "gen9ubers"              : ("gen9ubers",              "gen9ubers"),
@@ -86,19 +75,14 @@ TRAINING_MAP: dict[str, tuple[str | None, str | None]] = {
     "gen9doublesou"          : ("gen9doublesou",          "gen9doublesou"),
     "gen9doublesubers"       : ("gen9doublesubers",       "gen9doublesubers"),
     "gen9doublesuu"          : ("gen9doublesuu",          "gen9doublesuu"),
-    "gen9doublesnu"          : ("gen9doublesnu",          "gen9doublesnu"),
-    # VGC 2025
-    "gen9vgc2025regg"        : ("gen9vgc2025regg",        "gen9vgc2025regg"),
-    "gen9vgc2025regh"        : ("gen9vgc2025regh",        "gen9vgc2025regh"),
-    "gen9vgc2025regi"        : ("gen9vgc2025regi",        "gen9vgc2025regi"),
-    "gen9vgc2025reggbo3"     : ("gen9vgc2025reggbo3",     "gen9vgc2025regg"),
-    "gen9vgc2025reghbo3"     : ("gen9vgc2025reghbo3",     "gen9vgc2025regh"),
-    "gen9vgc2025regibo3"     : ("gen9vgc2025regibo3",     "gen9vgc2025regi"),
-    # VGC 2026
-    "gen9vgc2026regf"        : ("gen9vgc2026regf",        "gen9vgc2026regf"),
-    "gen9vgc2026regi"        : ("gen9vgc2026regi",        "gen9vgc2026regi"),
-    "gen9vgc2026regfbo3"     : ("gen9vgc2026regfbo3",     "gen9vgc2026regf"),
-    "gen9vgc2026regibo3"     : ("gen9vgc2026regibo3",     "gen9vgc2026regi"),
+    # VGC 2026 — active regulation (Reg I) + Bo3 variant
+    "gen9vgc2026regi"             : ("gen9vgc2026regi",             "gen9vgc2026regi"),
+    "gen9vgc2026regibo3"          : ("gen9vgc2026regibo3",          "gen9vgc2026regi"),
+    # Champions
+    "gen9championsou"             : ("gen9championsou",             None),
+    "gen9championsbssregma"       : ("gen9championsbssregma",       None),
+    "gen9championsvgc2026regma"   : ("gen9championsvgc2026regma",   None),
+    "gen9championsvgc2026regmabo3": ("gen9championsvgc2026regmabo3", None),
 }
 
 DEFAULT_TIMESTEPS   = 500_000

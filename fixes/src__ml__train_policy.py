@@ -120,9 +120,7 @@ DOUBLES_FORMATS = {
     "gen9vgc2025reghbo3",
     "gen9vgc2025regibo3",
     # VGC 2026
-    "gen9vgc2026regf",
     "gen9vgc2026regi",
-    "gen9vgc2026regfbo3",
     "gen9vgc2026regibo3",
 }
 
@@ -131,7 +129,6 @@ DOUBLES_FORMATS = {
 # using the base single-battle format while keeping artifact paths intact.
 TRAINING_FORMAT_ALIASES: dict[str, str] = {
     "gen9vgc2026regibo3": "gen9vgc2026regi",
-    "gen9vgc2026regfbo3": "gen9vgc2026regf",
 }
 
 PPO_HYPERPARAMS: dict[str, Any] = {

@@ -52,9 +52,7 @@ SPAR_FORMATS = [
     "gen9vgc2025reghbo3",
     "gen9vgc2025regibo3",
     # VGC 2026
-    "gen9vgc2026regf",
     "gen9vgc2026regi",
-    "gen9vgc2026regfbo3",
     "gen9vgc2026regibo3",
     # Champions
     "gen9championsou",
@@ -95,9 +93,7 @@ _FORMAT_DISPLAY = {
     "gen9vgc2025reghbo3"     : "VGC 2025 Reg H (Bo3)",
     "gen9vgc2025regibo3"     : "VGC 2025 Reg I (Bo3)",
     # VGC 2026
-    "gen9vgc2026regf"             : "VGC 2026 Reg F",
     "gen9vgc2026regi"             : "VGC 2026 Reg I",
-    "gen9vgc2026regfbo3"          : "VGC 2026 Reg F (Bo3)",
     "gen9vgc2026regibo3"          : "VGC 2026 Reg I (Bo3)",
     # Champions
     "gen9championsou"             : "Champions OU",

@@ -58,8 +58,7 @@ SPAR_FORMATS = [
     "gen9doublesou", "gen9doublesubers", "gen9doublesuu", "gen9doublesnu",
     "gen9vgc2025regg", "gen9vgc2025regh", "gen9vgc2025regi",
     "gen9vgc2025reggbo3", "gen9vgc2025reghbo3", "gen9vgc2025regibo3",
-    "gen9vgc2026regf", "gen9vgc2026regi",
-    "gen9vgc2026regfbo3", "gen9vgc2026regibo3",
+    "gen9vgc2026regi", "gen9vgc2026regibo3",
     "gen9championsou", "gen9championsbssregma",
     "gen9championsvgc2026regma", "gen9championsvgc2026regmabo3",
 ]
