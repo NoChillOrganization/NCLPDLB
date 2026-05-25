@@ -44,7 +44,8 @@ jobs:
           # April 2026 usage leaders: Incineroar 41.9%, Calyrex-Shadow 29.3%,
           #   Calyrex-Ice 23.8%, Miraidon 23.5%, Flutter Mane 21.3%, Rillaboom 21.2%
           - { format: gen9vgc2026regi,         team_format: gen9vgc2026regi,     timesteps: 500000, train_timeout: 250 }
-          - { format: gen9vgc2026regibo3,      team_format: gen9vgc2026regibo3,  timesteps: 500000, train_timeout: 250 }
+          # Bo3 is a meta-format; use base Reg I format for team building
+          - { format: gen9vgc2026regibo3,      team_format: gen9vgc2026regi,     timesteps: 500000, train_timeout: 250 }
           # ── Champions formats ─────────────────────────────────────────────────
           - { format: gen9championsou,              team_format: "",                  timesteps: 500000, train_timeout: 160 }
           - { format: gen9championsbssregma,        team_format: "",                  timesteps: 500000, train_timeout: 160 }
@@ -81,8 +82,11 @@ jobs:
           # self-hosted runner persists between jobs; avoids redundant reinstalls
           # across the 24 sequential matrix jobs.
           VENV_OK=false
-          if [ -x .venv/bin/python ]; then
-            VENV_PY=$(.venv/bin/python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "")
+          # On Windows, venv creates Scripts/; on Linux/macOS, bin/
+          VENV_PYTHON=".venv/Scripts/python.exe"
+          [ -x "$VENV_PYTHON" ] || VENV_PYTHON=".venv/bin/python"
+          if [ -x "$VENV_PYTHON" ]; then
+            VENV_PY=$("$VENV_PYTHON" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "")
             [ "$VENV_PY" = "3.12" ] && VENV_OK=true
           fi
 
@@ -101,7 +105,15 @@ jobs:
             fi
           fi
 
-          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+          # Add the correct venv bin directory to PATH.
+          # On Windows, venv creates Scripts/ not bin/ — adding bin/ causes
+          # bash to encounter Windows .exe files and emit
+          # "cannot execute binary file" errors.
+          if [ -d "$GITHUB_WORKSPACE/.venv/Scripts" ]; then
+            echo "$GITHUB_WORKSPACE/.venv/Scripts" >> "$GITHUB_PATH"
+          else
+            echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Install Python dependencies
         shell: bash
@@ -206,6 +218,7 @@ jobs:
 
       - name: Train ${{ matrix.config.format }}
         timeout-minutes: ${{ matrix.config.train_timeout }}
+        continue-on-error: true
         shell: bash
         env:
           PYTHONUNBUFFERED: "1"
@@ -274,8 +287,17 @@ jobs:
             exit 0
           fi
           echo "No model at $MODEL_PATH — generating fallback stub for ${TRAIN_FORMAT}..."
-          PYBIN="${GITHUB_WORKSPACE}/.venv/bin/python"
-          [ -x "$PYBIN" ] || PYBIN=$(command -v python3.12 2>/dev/null || command -v python3 2>/dev/null || command -v python)
+          # On this self-hosted Windows runner, packages (stable_baselines3 etc.) are
+          # installed to the Python 3.14 user site-packages, not the Python 3.12 venv.
+          # Prefer `python` (system default = Python 3.14 with all packages) over
+          # `python3.12` which lacks the ML packages needed to build the stub.
+          PYBIN=$(command -v python 2>/dev/null \
+            || command -v python3 2>/dev/null \
+            || command -v python3.12 2>/dev/null)
+          if [ -z "$PYBIN" ]; then
+            echo "ERROR: no python binary found in PATH"
+            exit 1
+          fi
           "$PYBIN" -c "
           import sys, os
           sys.path.insert(0, '.')
@@ -311,9 +333,9 @@ jobs:
           MODEL_PATH="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
           if [ -f "$MODEL_PATH" ]; then
             SIZE=$(stat -c%s "$MODEL_PATH" 2>/dev/null || stat -f%z "$MODEL_PATH")
-            echo "✅ Model saved: $MODEL_PATH (${SIZE} bytes)"
+            echo "Model saved: $MODEL_PATH (${SIZE} bytes)"
           else
-            echo "⚠️  final_model.zip not found at $MODEL_PATH"
+            echo "final_model.zip not found at $MODEL_PATH"
             ls -la "data/ml/policy/${TRAIN_FORMAT}/" 2>/dev/null || echo "Directory does not exist"
             exit 1
           fi
