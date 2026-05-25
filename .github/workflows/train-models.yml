@@ -15,7 +15,7 @@ env:
 jobs:
   train:
     runs-on: self-hosted
-    timeout-minutes: 280
+    timeout-minutes: 310
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
 
@@ -109,7 +109,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           # torch CPU wheel; pip disk cache persists on self-hosted runner between jobs
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install "torch>=2.8.0" --index-url https://download.pytorch.org/whl/cpu
 
       - name: Seed competitive meta data
         shell: bash
@@ -330,7 +330,7 @@ for k, v in list(d.items())[:5]:
           fi
 
       - name: Upload model artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: model-${{ matrix.config.format }}
@@ -351,7 +351,7 @@ for k, v in list(d.items())[:5]:
 
     steps:
       - name: Download all models
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           pattern: model-*
           path: all-models
