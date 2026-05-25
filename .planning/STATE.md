@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: Phase 04 fully executed; no further plans in this phase
-stopped_at: context exhaustion at 75% (2026-05-21)
-last_updated: "2026-05-21T23:42:09.784Z"
-last_activity: 2026-05-20 — 04-01 (3 bug fixes + playwright dep) and 04-02 (14 unit tests) committed
+status: Phase 04 fully executed; competitive data pipeline hardened
+stopped_at: ""
+last_updated: "2026-05-25T21:00:00.000Z"
+last_activity: 2026-05-25 — hardened prepare_competitive_data.py; added 10 per-tier Smogon CSVs (SPWA v3 schema, all URLs verified live)
 progress:
   total_phases: 6
   completed_phases: 1
@@ -63,5 +63,5 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-05-21T23:42:09.779Z
-Stopped at: context exhaustion at 75% (2026-05-21)
+Last session: 2026-05-25T19:50:31.832Z
+Stopped at: context exhaustion at 75% (2026-05-25)
