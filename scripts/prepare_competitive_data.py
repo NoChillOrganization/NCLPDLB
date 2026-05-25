@@ -20,14 +20,19 @@ import csv
 import json
 import os
 import re
+import sys
 import urllib.request
 from pathlib import Path
 
+# Ensure Unicode output works on Windows CI runners (cp1252 codepage → UTF-8).
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-EXPORTS_DIR = Path(
-    os.getenv("COMPETITIVE_EXPORTS_DIR",
-              Path.home() / "Documents" / "Showdown Exports")
-)
+
+_exports_env = os.getenv("COMPETITIVE_EXPORTS_DIR")
+EXPORTS_DIR: Path | None = Path(_exports_env) if _exports_env else None
 DEST_DIR = Path("data/competitive")
 
 # All files we want available during training
@@ -47,15 +52,26 @@ SOURCE_FILES = [
     "limitless_vgc_usage.csv",
 ]
 
-# Per-tier Smogon stats URLs (April 2026, 1630 Elo for OU, 1500 for others)
-TIER_STATS_URLS: dict[str, str] = {
-    "ou":    "https://www.smogon.com/stats/2026-04/gen9ou-1630.txt",
-    "ubers": "https://www.smogon.com/stats/2026-04/gen9ubers-1500.txt",
-    "uu":    "https://www.smogon.com/stats/2026-04/gen9uu-1500.txt",
-    "ru":    "https://www.smogon.com/stats/2026-04/gen9ru-1500.txt",
-    "nu":    "https://www.smogon.com/stats/2026-04/gen9nu-1500.txt",
-    "pu":    "https://www.smogon.com/stats/2026-04/gen9pu-1500.txt",
-    "lc":    "https://www.smogon.com/stats/2026-04/gen9lc-1500.txt",
+# Per-tier Smogon stats URLs.  Try most recent month first; fall back one month.
+# Use 1500 Elo uniformly — 1630 cut is often absent for newer months.
+_STATS_MONTH_PRIMARY = "2026-04"
+_STATS_MONTH_FALLBACK = "2026-03"
+
+def _tier_url(tier: str, month: str, elo: int = 1500) -> str:
+    return f"https://www.smogon.com/stats/{month}/gen9{tier}-{elo}.txt"
+
+TIER_STATS_URLS: dict[str, list[str]] = {
+    # OU uses 1695 high-ladder cut (1630 no longer published by Smogon)
+    "ou": [
+        _tier_url("ou", _STATS_MONTH_PRIMARY, 1695),
+        _tier_url("ou", _STATS_MONTH_FALLBACK, 1695),
+        _tier_url("ou", _STATS_MONTH_PRIMARY, 1500),
+        _tier_url("ou", _STATS_MONTH_FALLBACK, 1500),
+    ],
+    **{
+        tier: [_tier_url(tier, _STATS_MONTH_PRIMARY), _tier_url(tier, _STATS_MONTH_FALLBACK)]
+        for tier in ("ubers", "uu", "ru", "nu", "pu", "zu", "lc")
+    },
 }
 
 # Map Showdown format ID → tier key (into TIER_STATS_URLS) or local CSV name
@@ -66,7 +82,7 @@ FORMAT_TIER_MAP: dict[str, str] = {
     "gen9ru":             "ru",
     "gen9nu":             "nu",
     "gen9pu":             "pu",
-    "gen9zu":             "pu",       # no ZU stats file; closest is PU
+    "gen9zu":             "zu",       # ZU now has its own stats file
     "gen9lc":             "lc",
     "gen9nationaldex":    "ou",       # no separate file; OU is best proxy
     "gen9monotype":       "ou",
@@ -88,16 +104,24 @@ def _fetch_smogon_stats(tier: str) -> list[dict]:
     if tier in _tier_cache:
         return _tier_cache[tier]
 
-    url = TIER_STATS_URLS.get(tier)
-    if not url:
+    urls = TIER_STATS_URLS.get(tier, [])
+    if not urls:
+        _tier_cache[tier] = []
         return []
 
-    try:
-        print(f"  [FETCH] {tier} <- {url}")
-        with urllib.request.urlopen(url, timeout=15) as resp:
-            text = resp.read().decode("utf-8")
-    except Exception as exc:
-        print(f"  [WARN]  Failed to fetch {tier} stats: {exc}")
+    text: str | None = None
+    for url in urls:
+        try:
+            print(f"  [FETCH] {tier} <- {url}")
+            with urllib.request.urlopen(url, timeout=15) as resp:
+                text = resp.read().decode("utf-8")
+            break
+        except Exception as exc:
+            print(f"  [WARN]  {tier} {url} failed: {exc}")
+
+    if text is None:
+        print(f"  [WARN]  No stats available for tier '{tier}' — skipping", file=sys.stderr)
+        _tier_cache[tier] = []
         return []
 
     # Table rows look like:  | 1    | Great Tusk          |  25.12345%| ...
@@ -119,19 +143,38 @@ def _fetch_smogon_stats(tier: str) -> list[dict]:
 
 
 def copy_source_files() -> int:
-    """Copy raw export files; return count of files actually copied."""
-    DEST_DIR.mkdir(parents=True, exist_ok=True)
+    """Copy export files from EXPORTS_DIR into DEST_DIR; return count present in DEST_DIR."""
+    try:
+        DEST_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        print(f"  [ERROR] Cannot create dest dir {DEST_DIR}: {exc}", file=sys.stderr)
+        return 0
+
+    if EXPORTS_DIR is None:
+        present = sum(1 for f in SOURCE_FILES if (DEST_DIR / f).exists())
+        print(f"  [SKIP] COMPETITIVE_EXPORTS_DIR not set — {present}/{len(SOURCE_FILES)} files already in {DEST_DIR}")
+        return present
+
+    import shutil
+
     copied = 0
+    already = 0
     for fname in SOURCE_FILES:
+        dest = DEST_DIR / fname
+        if dest.exists():
+            already += 1
+            continue
         src = EXPORTS_DIR / fname
         if src.exists():
-            import shutil
-            shutil.copy2(src, DEST_DIR / fname)
+            shutil.copy2(src, dest)
             print(f"  [OK]  {fname}")
             copied += 1
         else:
-            print(f"  [MISSING]  {fname}  (not found in {EXPORTS_DIR})")
-    return copied
+            print(f"  [MISSING]  {fname}  (not in {EXPORTS_DIR})")
+
+    if already:
+        print(f"  [SKIP] {already} files already present in {DEST_DIR}")
+    return copied + already
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -210,13 +253,38 @@ def build_format_configs() -> None:
                 if vgc_fmt in config:
                     config[vgc_fmt][key] = pokemon_list
 
+    # Sanity-check: warn if multiple non-alias formats share identical top-3.
+    # (Indicates URL 404s or tier-cache collision — not a genuine data divergence.)
+    top3_by_fmt = {
+        fmt: tuple(e["pokemon"] for e in v.get("top10_usage", [])[:3])
+        for fmt, v in config.items()
+        if v.get("stats_tier") not in ("vgc",)
+    }
+    top3_seen: dict[tuple, list[str]] = {}
+    for fmt, top3 in top3_by_fmt.items():
+        top3_seen.setdefault(top3, []).append(fmt)
+    for top3, fmts in top3_seen.items():
+        # Only warn when genuinely different tiers share identical top-3
+        tiers = {FORMAT_TIER_MAP.get(f) for f in fmts}
+        if len(tiers) > 1 and len(fmts) > 2:
+            print(
+                f"  [WARN] {len(fmts)} formats share identical top-3 {list(top3)}: {fmts}\n"
+                f"         Check that Smogon stats URLs resolve for each tier.",
+                file=sys.stderr,
+            )
+
     out = DEST_DIR / "format_meta.json"
-    out.write_text(json.dumps(config, indent=2), encoding="utf-8")
+    try:
+        out.write_text(json.dumps(config, indent=2), encoding="utf-8")
+    except OSError as exc:
+        print(f"  [ERROR] Failed to write {out}: {exc}", file=sys.stderr)
+        sys.exit(1)
     print(f"\n  -> format_meta.json written ({len(config)} formats)")
 
 
 def main() -> None:
-    print(f"[prepare_competitive_data] Source: {EXPORTS_DIR}")
+    src_label = str(EXPORTS_DIR) if EXPORTS_DIR else "(not set — using files already in dest)"
+    print(f"[prepare_competitive_data] Source: {src_label}")
     print(f"[prepare_competitive_data] Dest  : {DEST_DIR}\n")
 
     copied = copy_source_files()

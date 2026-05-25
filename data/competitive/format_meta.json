@@ -3,595 +3,496 @@
     "top10_usage": [
       {
         "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
+        "usage_pct": "34.30805%"
       },
       {
         "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
+        "usage_pct": "26.43967%"
+      },
+      {
+        "pokemon": "Kingambit",
+        "usage_pct": "24.75576%"
       },
       {
         "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
+        "usage_pct": "24.68178%"
       },
       {
         "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
+        "usage_pct": "23.34374%"
       },
       {
         "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
+        "usage_pct": "17.47820%"
       },
       {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
+        "pokemon": "Kyurem",
+        "usage_pct": "16.05913%"
       },
       {
         "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "usage_pct": "15.81212%"
+      },
+      {
+        "pokemon": "Raging Bolt",
+        "usage_pct": "15.77690%"
+      },
+      {
+        "pokemon": "Hatterene",
+        "usage_pct": "15.53850%"
       }
-    ]
+    ],
+    "stats_tier": "ou"
   },
   "gen9ubers": {
     "top10_usage": [
       {
-        "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
+        "pokemon": "Koraidon",
+        "usage_pct": "48.40236%"
+      },
+      {
+        "pokemon": "Zacian-Crowned",
+        "usage_pct": "35.72974%"
+      },
+      {
+        "pokemon": "Kyogre",
+        "usage_pct": "29.51325%"
+      },
+      {
+        "pokemon": "Arceus",
+        "usage_pct": "18.62303%"
+      },
+      {
+        "pokemon": "Ho-Oh",
+        "usage_pct": "17.22635%"
+      },
+      {
+        "pokemon": "Eternatus",
+        "usage_pct": "16.73442%"
+      },
+      {
+        "pokemon": "Necrozma-Dusk-Mane",
+        "usage_pct": "15.85624%"
+      },
+      {
+        "pokemon": "Flutter Mane",
+        "usage_pct": "13.78222%"
+      },
+      {
+        "pokemon": "Lunala",
+        "usage_pct": "13.37905%"
       },
       {
         "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "usage_pct": "10.86723%"
       }
-    ]
+    ],
+    "stats_tier": "ubers"
   },
   "gen9uu": {
     "top10_usage": [
       {
-        "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
+        "pokemon": "Latios",
+        "usage_pct": "21.50036%"
       },
       {
-        "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
+        "pokemon": "Excadrill",
+        "usage_pct": "21.45065%"
       },
       {
-        "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
+        "pokemon": "Scizor",
+        "usage_pct": "18.95877%"
       },
       {
-        "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
+        "pokemon": "Arcanine-Hisui",
+        "usage_pct": "17.25928%"
       },
       {
-        "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
+        "pokemon": "Weavile",
+        "usage_pct": "16.06403%"
       },
       {
-        "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
+        "pokemon": "Lokix",
+        "usage_pct": "16.06188%"
       },
       {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
+        "pokemon": "Thundurus-Therian",
+        "usage_pct": "15.20113%"
       },
       {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
+        "pokemon": "Donphan",
+        "usage_pct": "14.67748%"
       },
       {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
+        "pokemon": "Greninja",
+        "usage_pct": "14.57476%"
       },
       {
-        "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "pokemon": "Skarmory",
+        "usage_pct": "14.48497%"
       }
-    ]
+    ],
+    "stats_tier": "uu"
   },
   "gen9ru": {
     "top10_usage": [
       {
-        "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
+        "pokemon": "Bisharp",
+        "usage_pct": "19.81759%"
       },
       {
-        "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
+        "pokemon": "Noivern",
+        "usage_pct": "19.42356%"
       },
       {
-        "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
+        "pokemon": "Krookodile",
+        "usage_pct": "18.61449%"
       },
       {
-        "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
+        "pokemon": "Kleavor",
+        "usage_pct": "16.88639%"
       },
       {
-        "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
+        "pokemon": "Mimikyu",
+        "usage_pct": "16.40219%"
       },
       {
-        "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
+        "pokemon": "Chesnaught",
+        "usage_pct": "16.34988%"
       },
       {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
+        "pokemon": "Armarouge",
+        "usage_pct": "15.09932%"
       },
       {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
+        "pokemon": "Cyclizar",
+        "usage_pct": "14.37626%"
       },
       {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
+        "pokemon": "Entei",
+        "usage_pct": "13.79845%"
       },
       {
-        "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "pokemon": "Gengar",
+        "usage_pct": "13.31071%"
       }
-    ]
+    ],
+    "stats_tier": "ru"
   },
   "gen9nu": {
     "top10_usage": [
       {
-        "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
+        "pokemon": "Duraludon",
+        "usage_pct": "21.28156%"
       },
       {
-        "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
+        "pokemon": "Flygon",
+        "usage_pct": "20.77877%"
       },
       {
-        "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
+        "pokemon": "Incineroar",
+        "usage_pct": "19.01077%"
       },
       {
-        "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
+        "pokemon": "Chandelure",
+        "usage_pct": "15.96283%"
       },
       {
-        "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
+        "pokemon": "Swampert",
+        "usage_pct": "15.92649%"
       },
       {
-        "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
+        "pokemon": "Munkidori",
+        "usage_pct": "15.71064%"
       },
       {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
+        "pokemon": "Tsareena",
+        "usage_pct": "14.69947%"
       },
       {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
+        "pokemon": "Vaporeon",
+        "usage_pct": "14.46322%"
       },
       {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
+        "pokemon": "Cinccino",
+        "usage_pct": "12.49538%"
       },
       {
-        "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "pokemon": "Flamigo",
+        "usage_pct": "11.88952%"
       }
-    ]
+    ],
+    "stats_tier": "nu"
   },
   "gen9pu": {
     "top10_usage": [
       {
-        "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
+        "pokemon": "Rhydon",
+        "usage_pct": "19.33628%"
       },
       {
-        "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
+        "pokemon": "Milotic",
+        "usage_pct": "16.65141%"
       },
       {
-        "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
+        "pokemon": "Ambipom",
+        "usage_pct": "16.54179%"
       },
       {
-        "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
+        "pokemon": "Florges",
+        "usage_pct": "15.29522%"
       },
       {
-        "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
+        "pokemon": "Scrafty",
+        "usage_pct": "15.14261%"
       },
       {
-        "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
+        "pokemon": "Salazzle",
+        "usage_pct": "14.99849%"
       },
       {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
+        "pokemon": "Sandslash-Alola",
+        "usage_pct": "14.83879%"
       },
       {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
+        "pokemon": "Hoopa",
+        "usage_pct": "14.63938%"
       },
       {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
+        "pokemon": "Galvantula",
+        "usage_pct": "14.19093%"
       },
       {
-        "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "pokemon": "Heracross",
+        "usage_pct": "13.84205%"
       }
-    ]
+    ],
+    "stats_tier": "pu"
   },
   "gen9zu": {
     "top10_usage": [
       {
-        "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
+        "pokemon": "Mesprit",
+        "usage_pct": "33.61915%"
       },
       {
-        "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
+        "pokemon": "Hitmontop",
+        "usage_pct": "25.39918%"
       },
       {
-        "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
+        "pokemon": "Skuntank",
+        "usage_pct": "21.33798%"
       },
       {
-        "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
+        "pokemon": "Jolteon",
+        "usage_pct": "19.18893%"
       },
       {
-        "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
+        "pokemon": "Whimsicott",
+        "usage_pct": "18.34385%"
       },
       {
-        "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
+        "pokemon": "Sandslash",
+        "usage_pct": "17.00354%"
       },
       {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
+        "pokemon": "Basculin",
+        "usage_pct": "14.47026%"
       },
       {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
+        "pokemon": "Charizard",
+        "usage_pct": "14.45966%"
       },
       {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
+        "pokemon": "Venusaur",
+        "usage_pct": "14.20458%"
       },
       {
-        "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "pokemon": "Clawitzer",
+        "usage_pct": "13.83335%"
       }
-    ]
+    ],
+    "stats_tier": "zu"
   },
   "gen9lc": {
     "top10_usage": [
       {
-        "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
+        "pokemon": "Mienfoo",
+        "usage_pct": "64.09389%"
       },
       {
-        "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
+        "pokemon": "Vullaby",
+        "usage_pct": "52.29114%"
       },
       {
-        "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
+        "pokemon": "Foongus",
+        "usage_pct": "30.60622%"
       },
       {
-        "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
+        "pokemon": "Mudbray",
+        "usage_pct": "27.48949%"
       },
       {
-        "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
+        "pokemon": "Glimmet",
+        "usage_pct": "21.09179%"
       },
       {
-        "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
+        "pokemon": "Chinchou",
+        "usage_pct": "19.20318%"
       },
       {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
+        "pokemon": "Elekid",
+        "usage_pct": "18.10477%"
       },
       {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
+        "pokemon": "Tinkatink",
+        "usage_pct": "17.13101%"
       },
       {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
+        "pokemon": "Toedscool",
+        "usage_pct": "16.06617%"
       },
       {
-        "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "pokemon": "Sandshrew-Alola",
+        "usage_pct": "16.05449%"
       }
-    ]
+    ],
+    "stats_tier": "lc"
   },
   "gen9nationaldex": {
     "top10_usage": [
       {
         "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
+        "usage_pct": "34.30805%"
       },
       {
         "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
+        "usage_pct": "26.43967%"
+      },
+      {
+        "pokemon": "Kingambit",
+        "usage_pct": "24.75576%"
       },
       {
         "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
+        "usage_pct": "24.68178%"
       },
       {
         "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
+        "usage_pct": "23.34374%"
       },
       {
         "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
+        "usage_pct": "17.47820%"
       },
       {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
+        "pokemon": "Kyurem",
+        "usage_pct": "16.05913%"
       },
       {
         "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "usage_pct": "15.81212%"
+      },
+      {
+        "pokemon": "Raging Bolt",
+        "usage_pct": "15.77690%"
+      },
+      {
+        "pokemon": "Hatterene",
+        "usage_pct": "15.53850%"
       }
-    ]
+    ],
+    "stats_tier": "ou"
   },
   "gen9monotype": {
     "top10_usage": [
       {
         "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
+        "usage_pct": "34.30805%"
       },
       {
         "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
+        "usage_pct": "26.43967%"
+      },
+      {
+        "pokemon": "Kingambit",
+        "usage_pct": "24.75576%"
       },
       {
         "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
+        "usage_pct": "24.68178%"
       },
       {
         "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
+        "usage_pct": "23.34374%"
       },
       {
         "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
+        "usage_pct": "17.47820%"
       },
       {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
+        "pokemon": "Kyurem",
+        "usage_pct": "16.05913%"
       },
       {
         "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "usage_pct": "15.81212%"
+      },
+      {
+        "pokemon": "Raging Bolt",
+        "usage_pct": "15.77690%"
+      },
+      {
+        "pokemon": "Hatterene",
+        "usage_pct": "15.53850%"
       }
-    ]
+    ],
+    "stats_tier": "ou"
   },
   "gen9anythinggoes": {
     "top10_usage": [
       {
-        "pokemon": "Great Tusk",
-        "usage_pct": "35.26",
-        "tier": "OU"
+        "pokemon": "Koraidon",
+        "usage_pct": "48.40236%"
+      },
+      {
+        "pokemon": "Zacian-Crowned",
+        "usage_pct": "35.72974%"
+      },
+      {
+        "pokemon": "Kyogre",
+        "usage_pct": "29.51325%"
+      },
+      {
+        "pokemon": "Arceus",
+        "usage_pct": "18.62303%"
+      },
+      {
+        "pokemon": "Ho-Oh",
+        "usage_pct": "17.22635%"
+      },
+      {
+        "pokemon": "Eternatus",
+        "usage_pct": "16.73442%"
+      },
+      {
+        "pokemon": "Necrozma-Dusk-Mane",
+        "usage_pct": "15.85624%"
+      },
+      {
+        "pokemon": "Flutter Mane",
+        "usage_pct": "13.78222%"
+      },
+      {
+        "pokemon": "Lunala",
+        "usage_pct": "13.37905%"
       },
       {
         "pokemon": "Kingambit",
-        "usage_pct": "24.69",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Gholdengo",
-        "usage_pct": "22.27",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Dragonite",
-        "usage_pct": "20.99",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Zamazenta",
-        "usage_pct": "20.08",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Ogerpon-Wellspring",
-        "usage_pct": "17.85",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Iron Valiant",
-        "usage_pct": "17.07",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Raging Bolt",
-        "usage_pct": "15.06",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Dragapult",
-        "usage_pct": "14.89",
-        "tier": "OU"
-      },
-      {
-        "pokemon": "Ting-Lu",
-        "usage_pct": "14.81",
-        "tier": "OU"
+        "usage_pct": "10.86723%"
       }
-    ]
+    ],
+    "stats_tier": "ubers"
   },
   "gen9doublesou": {
     "top10_usage": [
@@ -655,7 +556,8 @@
         "win_pct": "53.18",
         "role": "Restricted Physical Wall/Attacker"
       }
-    ]
+    ],
+    "stats_tier": "vgc"
   },
   "gen9doublesubers": {
     "top10_usage": [
@@ -719,7 +621,8 @@
         "win_pct": "53.18",
         "role": "Restricted Physical Wall/Attacker"
       }
-    ]
+    ],
+    "stats_tier": "vgc"
   },
   "gen9doublesuu": {
     "top10_usage": [
@@ -783,7 +686,8 @@
         "win_pct": "53.18",
         "role": "Restricted Physical Wall/Attacker"
       }
-    ]
+    ],
+    "stats_tier": "vgc"
   },
   "gen9vgc2026regi": {
     "top10_usage": [
@@ -848,6 +752,7 @@
         "role": "Restricted Physical Wall/Attacker"
       }
     ],
+    "stats_tier": "vgc",
     "banned_mythicals": [
       "Mew",
       "Celebi",
@@ -974,6 +879,7 @@
         "role": "Restricted Physical Wall/Attacker"
       }
     ],
+    "stats_tier": "vgc",
     "banned_mythicals": [
       "Mew",
       "Celebi",
