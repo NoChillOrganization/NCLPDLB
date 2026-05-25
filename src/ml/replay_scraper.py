@@ -24,7 +24,7 @@ from typing import Any
 
 import aiohttp
 
-from src.config import PROJECT_ROOT
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 log = logging.getLogger(__name__)
 
