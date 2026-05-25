@@ -113,15 +113,26 @@ jobs:
 
       - name: Seed competitive meta data
         shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: "1"
         run: |
           # Copy Gen 9 competitive CSVs/JSON from the local Showdown exports
           # directory and build data/competitive/format_meta.json.
-          # Non-fatal: missing exports on a remote runner just skips the meta log.
+          # Non-fatal: script fetches live Smogon stats when local exports are absent.
           python scripts/prepare_competitive_data.py \
-            || echo "Competitive data seeding skipped — COMPETITIVE_EXPORTS_DIR not set or files not found"
+            || echo "Competitive data seeding failed — check logs above"
           if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
             echo "Meta data ready at ${COMPETITIVE_DATA_DIR}"
-            python -c "import json; d=json.load(open('${COMPETITIVE_DATA_DIR}/format_meta.json')); print(f'  Formats indexed: {len(d)}'); [print(f\"  {k}: top usage = {', '.join(e.get('pokemon', '') for e in v.get('top10_usage', [])[:3])}\") for k, v in list(d.items())[:5]]" || true
+            python -u -c "
+import json, sys
+sys.stdout.reconfigure(encoding='utf-8', errors='replace') if hasattr(sys.stdout,'reconfigure') else None
+d = json.load(open('${COMPETITIVE_DATA_DIR}/format_meta.json', encoding='utf-8'))
+print(f'  Formats indexed: {len(d)}')
+for k, v in list(d.items())[:5]:
+    top3 = ', '.join(e.get('pokemon','') for e in v.get('top10_usage',[])[:3])
+    print(f'  {k} ({v.get(\"stats_tier\",\"?\")}): top usage = {top3}')
+" || true
           else
             echo "No format_meta.json generated — training proceeds without meta context"
           fi
