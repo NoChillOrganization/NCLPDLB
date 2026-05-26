@@ -53,7 +53,7 @@ SOURCE_FILES = [
 ]
 
 # Per-tier Smogon stats URLs.  Try most recent month first; fall back one month.
-# Use 1500 Elo uniformly — 1630 cut is often absent for newer months.
+# 1760 is the highest available cut for most tiers; OU uses 1695 (no 1760 exists).
 _STATS_MONTH_PRIMARY = "2026-04"
 _STATS_MONTH_FALLBACK = "2026-03"
 
@@ -61,20 +61,28 @@ def _tier_url(tier: str, month: str, elo: int = 1500) -> str:
     return f"https://www.smogon.com/stats/{month}/gen9{tier}-{elo}.txt"
 
 TIER_STATS_URLS: dict[str, list[str]] = {
-    # OU uses 1695 high-ladder cut (1630 no longer published by Smogon)
+    # OU: no 1760 file exists; 1695 is the highest available cut
     "ou": [
         _tier_url("ou", _STATS_MONTH_PRIMARY, 1695),
         _tier_url("ou", _STATS_MONTH_FALLBACK, 1695),
         _tier_url("ou", _STATS_MONTH_PRIMARY, 1500),
         _tier_url("ou", _STATS_MONTH_FALLBACK, 1500),
     ],
+    # All other tiers: prefer 1760 for tier-accurate data (avoids OU-mon bleed at 1500)
     **{
-        tier: [_tier_url(tier, _STATS_MONTH_PRIMARY), _tier_url(tier, _STATS_MONTH_FALLBACK)]
-        for tier in ("ubers", "uu", "ru", "nu", "pu", "zu", "lc")
+        tier: [
+            _tier_url(tier, _STATS_MONTH_PRIMARY, 1760),
+            _tier_url(tier, _STATS_MONTH_FALLBACK, 1760),
+            _tier_url(tier, _STATS_MONTH_PRIMARY, 1630),
+            _tier_url(tier, _STATS_MONTH_FALLBACK, 1630),
+            _tier_url(tier, _STATS_MONTH_PRIMARY),
+            _tier_url(tier, _STATS_MONTH_FALLBACK),
+        ]
+        for tier in ("ubers", "uu", "ru", "nu", "pu", "zu", "lc", "bssregi")
     },
 }
 
-# Map Showdown format ID → tier key (into TIER_STATS_URLS) or local CSV name
+# Map Showdown format ID -> tier key (into TIER_STATS_URLS) or local CSV name
 FORMAT_TIER_MAP: dict[str, str] = {
     "gen9ou":             "ou",
     "gen9ubers":          "ubers",
@@ -82,11 +90,16 @@ FORMAT_TIER_MAP: dict[str, str] = {
     "gen9ru":             "ru",
     "gen9nu":             "nu",
     "gen9pu":             "pu",
-    "gen9zu":             "zu",       # ZU now has its own stats file
+    "gen9zu":             "zu",
     "gen9lc":             "lc",
     "gen9nationaldex":    "ou",       # no separate file; OU is best proxy
     "gen9monotype":       "ou",
     "gen9anythinggoes":   "ubers",
+    # Champions formats
+    "gen9championsou":              "ou",
+    "gen9championsbssregma":        "bssregi",
+    "gen9championsvgc2026regma":    "vgc",
+    "gen9championsvgc2026regmabo3": "vgc",
     # VGC formats: use local CSV when present, no live URL available
     "gen9doublesou":      "vgc",
     "gen9doublesubers":   "vgc",
@@ -120,7 +133,7 @@ def _fetch_smogon_stats(tier: str) -> list[dict]:
             print(f"  [WARN]  {tier} {url} failed: {exc}")
 
     if text is None:
-        print(f"  [WARN]  No stats available for tier '{tier}' — skipping", file=sys.stderr)
+        print(f"  [WARN]  No stats available for tier '{tier}' - skipping", file=sys.stderr)
         _tier_cache[tier] = []
         return []
 
@@ -152,7 +165,7 @@ def copy_source_files() -> int:
 
     if EXPORTS_DIR is None:
         present = sum(1 for f in SOURCE_FILES if (DEST_DIR / f).exists())
-        print(f"  [SKIP] COMPETITIVE_EXPORTS_DIR not set — {present}/{len(SOURCE_FILES)} files already in {DEST_DIR}")
+        print(f"  [SKIP] COMPETITIVE_EXPORTS_DIR not set - {present}/{len(SOURCE_FILES)} files already in {DEST_DIR}")
         return present
 
     import shutil
@@ -283,7 +296,7 @@ def build_format_configs() -> None:
 
 
 def main() -> None:
-    src_label = str(EXPORTS_DIR) if EXPORTS_DIR else "(not set — using files already in dest)"
+    src_label = str(EXPORTS_DIR) if EXPORTS_DIR else "(not set - using files already in dest)"
     print(f"[prepare_competitive_data] Source: {src_label}")
     print(f"[prepare_competitive_data] Dest  : {DEST_DIR}\n")
 
