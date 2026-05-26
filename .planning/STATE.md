@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: Phase 04 fully executed; competitive data pipeline hardened
+status: Phase 04 fully executed; CI fixed; SPWA v3 CSV suite complete
 stopped_at: ""
-last_updated: "2026-05-25T21:00:00.000Z"
-last_activity: 2026-05-25 — hardened prepare_competitive_data.py; added 10 per-tier Smogon CSVs (SPWA v3 schema, all URLs verified live)
+last_updated: "2026-05-25T22:30:00.000Z"
+last_activity: 2026-05-25 — fixed 3 Dependabot torch CVEs; fixed train-models.yml (nonexistent action versions, YAML syntax error, torch pin); regenerated SPWA v3 VGC/circuit CSVs (6 files, all verified live)
 progress:
   total_phases: 6
   completed_phases: 1
