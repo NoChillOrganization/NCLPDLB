@@ -1,2 +1,2 @@
-Format ID,Format Name,Live Server Filename,Base Stats Directory,Moveset Folder URL,Lead Data URL,Semantic Dex Reference,Interactive Tool URL
-gen9vgc2026regi,VGC 2026 Regulation I,gen9vgc2026regi-1760.txt,https://www.smogon.com/stats/2026-04/,https://www.smogon.com/stats/2026-04/moveset/,https://www.smogon.com/stats/2026-04/leads/,https://www.smogon.com/dex/sv/formats/vgc/,https://munchstats.com/
+Format ID,Format Name,Live Server Filename,Base Stats Directory,Moveset Folder URL,Pikalytics Dashboard URL,Limitless Aggregator URL,Live Results Portal URL
+gen9vgc2026regi,VGC 2026 Regulation I (Ladder),gen9vgc2026regi-1760.txt,https://www.smogon.com/stats/2026-04/,https://www.smogon.com/stats/2026-04/moveset/,https://pikalytics.com/pokedex/gen9vgc2026regulationi,https://lab.limitlesstcg.com/pokemon,https://www.pokemon.com/us/play-pokemon/pokemon-events/championship-series/
