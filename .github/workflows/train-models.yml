@@ -124,15 +124,7 @@ jobs:
             || echo "Competitive data seeding failed — check logs above"
           if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
             echo "Meta data ready at ${COMPETITIVE_DATA_DIR}"
-            python -u -c "
-import json, sys
-sys.stdout.reconfigure(encoding='utf-8', errors='replace') if hasattr(sys.stdout,'reconfigure') else None
-d = json.load(open('${COMPETITIVE_DATA_DIR}/format_meta.json', encoding='utf-8'))
-print(f'  Formats indexed: {len(d)}')
-for k, v in list(d.items())[:5]:
-    top3 = ', '.join(e.get('pokemon','') for e in v.get('top10_usage',[])[:3])
-    print(f'  {k} ({v.get(\"stats_tier\",\"?\")}): top usage = {top3}')
-" || true
+            python -c "import json; d=json.load(open('${COMPETITIVE_DATA_DIR}/format_meta.json', encoding='utf-8')); print(f'  Formats indexed: {len(d)}'); [print(f\"  {k} ({v.get('stats_tier','?')}): top usage = {', '.join(e.get('pokemon','') for e in v.get('top10_usage',[])[:3])}\") for k, v in list(d.items())[:5]]" || true
           else
             echo "No format_meta.json generated — training proceeds without meta context"
           fi
