@@ -43,7 +43,7 @@ aioresponses>=0.7.8  # Mock aiohttp requests
 locust>=2.0.0  # Load testing (tests/performance/locustfile.py)
 
 # Code Quality
-ruff>=0.15.13
+ruff>=0.15.14
 mypy>=2.1.0
 
 # Machine Learning — data pipeline
