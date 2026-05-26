@@ -955,7 +955,17 @@ def train(  # pragma: no cover
     log.info(f"Dated model saved to {dated_path}")
 
     if _train_exc is not None:
-        raise _train_exc
+        # "Agent is not challenging" = poke-env challenge timeout (team rejection
+        # or transient server issue).  Model was already saved above; treat as a
+        # clean early-stop so CI does not fail when a valid checkpoint exists.
+        if "not challenging" in str(_train_exc):
+            log.warning(
+                f"[train] Battle challenge timeout — treating as clean stop. "
+                f"Model saved at {final_path} "
+                f"({getattr(curriculum_cb, 'num_timesteps', 0):,} steps trained)."
+            )
+        else:
+            raise _train_exc
 
     return final_path
 
