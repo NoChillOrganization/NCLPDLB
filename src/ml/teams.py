@@ -2338,7 +2338,7 @@ Careful Nature
 - Poison Jab
 - Roost
 - Toxic
-- Knock Off
+- Taunt
 """,
 
 ]
@@ -2912,7 +2912,7 @@ Tera Type: Normal
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 - Fake Out
-- Body Slam
+- Knock Off
 - Double Hit
 - Low Sweep
 
@@ -2923,7 +2923,7 @@ EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 - Nuzzle
 - Volt Switch
-- Stealth Rock
+- Thunderbolt
 - Super Fang
 
 Wigglytuff @ Leftovers
@@ -2994,7 +2994,7 @@ EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 - Sludge Bomb
 - Pain Split
-- Stealth Rock
+- Yawn
 - Toxic
 
 Oranguru @ Leftovers
@@ -3005,7 +3005,7 @@ Careful Nature
 - Foul Play
 - Rest
 - Protect
-- Heal Bell
+- Sleep Talk
 
 Granbull @ Assault Vest
 Ability: Intimidate
@@ -3320,16 +3320,16 @@ Timid Nature
 - Spikes
 - Ice Shard
 
-Magby @ Life Orb
-Ability: Vital Spirit
+Litleo @ Life Orb
+Ability: Unnerve
 Level: 5
 Tera Type: Fire
 EVs: 236 SpA / 36 SpD / 236 Spe
 Timid Nature
 - Fire Blast
+- Hyper Voice
 - Psychic
-- Cross Chop
-- Thunder Punch
+- Superpower
 
 Pawniard @ Eviolite
 Ability: Defiant
