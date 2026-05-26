@@ -40,10 +40,10 @@ pytest-cov>=7.1.0
 pytest-mock>=3.15.1
 respx>=0.23.1  # Mock httpx requests
 aioresponses>=0.7.8  # Mock aiohttp requests
-locust>=2.0.0  # Load testing (tests/performance/locustfile.py)
+locust>=2.44.0  # Load testing (tests/performance/locustfile.py)
 
 # Code Quality
-ruff>=0.15.13
+ruff>=0.15.14
 mypy>=2.1.0
 
 # Machine Learning — data pipeline
@@ -68,5 +68,5 @@ tensorboard>=2.20.0         # training metrics visualisation
 # poke-env connects to a local Showdown server for self-play
 poke-env==0.12.1            # pinned: 0.13+ has breaking API changes
 websockets>=16.0       # required by poke-env for Showdown WebSocket communication
-fastapi>=0.136.1       # ML training API server (src/ml/api.py, run_training.py)
-uvicorn>=0.48.0        # ASGI server for FastAPI ML API
+fastapi>=0.136.3       # ML training API server (src/ml/api.py, run_training.py)
+uvicorn>=0.47.0        # ASGI server for FastAPI ML API
