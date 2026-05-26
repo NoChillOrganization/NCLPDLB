@@ -48,43 +48,43 @@
     "top10_usage": [
       {
         "pokemon": "Koraidon",
-        "usage_pct": "48.40236%"
+        "usage_pct": "81.13032%"
       },
       {
         "pokemon": "Zacian-Crowned",
-        "usage_pct": "35.72974%"
+        "usage_pct": "43.50836%"
       },
       {
         "pokemon": "Kyogre",
-        "usage_pct": "29.51325%"
-      },
-      {
-        "pokemon": "Arceus",
-        "usage_pct": "18.62303%"
-      },
-      {
-        "pokemon": "Ho-Oh",
-        "usage_pct": "17.22635%"
-      },
-      {
-        "pokemon": "Eternatus",
-        "usage_pct": "16.73442%"
-      },
-      {
-        "pokemon": "Necrozma-Dusk-Mane",
-        "usage_pct": "15.85624%"
-      },
-      {
-        "pokemon": "Flutter Mane",
-        "usage_pct": "13.78222%"
+        "usage_pct": "42.49170%"
       },
       {
         "pokemon": "Lunala",
-        "usage_pct": "13.37905%"
+        "usage_pct": "31.31970%"
       },
       {
-        "pokemon": "Kingambit",
-        "usage_pct": "10.86723%"
+        "pokemon": "Arceus",
+        "usage_pct": "31.00101%"
+      },
+      {
+        "pokemon": "Necrozma-Dusk-Mane",
+        "usage_pct": "30.49906%"
+      },
+      {
+        "pokemon": "Ho-Oh",
+        "usage_pct": "30.14560%"
+      },
+      {
+        "pokemon": "Eternatus",
+        "usage_pct": "25.31024%"
+      },
+      {
+        "pokemon": "Arceus-Fairy",
+        "usage_pct": "15.41635%"
+      },
+      {
+        "pokemon": "Hatterene",
+        "usage_pct": "14.37667%"
       }
     ],
     "stats_tier": "ubers"
@@ -93,43 +93,43 @@
     "top10_usage": [
       {
         "pokemon": "Latios",
-        "usage_pct": "21.50036%"
+        "usage_pct": "28.80588%"
       },
       {
         "pokemon": "Excadrill",
-        "usage_pct": "21.45065%"
+        "usage_pct": "24.27317%"
       },
       {
-        "pokemon": "Scizor",
-        "usage_pct": "18.95877%"
-      },
-      {
-        "pokemon": "Arcanine-Hisui",
-        "usage_pct": "17.25928%"
+        "pokemon": "Mandibuzz",
+        "usage_pct": "22.92904%"
       },
       {
         "pokemon": "Weavile",
-        "usage_pct": "16.06403%"
-      },
-      {
-        "pokemon": "Lokix",
-        "usage_pct": "16.06188%"
-      },
-      {
-        "pokemon": "Thundurus-Therian",
-        "usage_pct": "15.20113%"
-      },
-      {
-        "pokemon": "Donphan",
-        "usage_pct": "14.67748%"
-      },
-      {
-        "pokemon": "Greninja",
-        "usage_pct": "14.57476%"
+        "usage_pct": "21.44674%"
       },
       {
         "pokemon": "Skarmory",
-        "usage_pct": "14.48497%"
+        "usage_pct": "19.94671%"
+      },
+      {
+        "pokemon": "Tinkaton",
+        "usage_pct": "18.34727%"
+      },
+      {
+        "pokemon": "Lokix",
+        "usage_pct": "17.77840%"
+      },
+      {
+        "pokemon": "Donphan",
+        "usage_pct": "17.64729%"
+      },
+      {
+        "pokemon": "Keldeo",
+        "usage_pct": "16.22873%"
+      },
+      {
+        "pokemon": "Arcanine-Hisui",
+        "usage_pct": "15.47582%"
       }
     ],
     "stats_tier": "uu"
@@ -137,44 +137,44 @@
   "gen9ru": {
     "top10_usage": [
       {
-        "pokemon": "Bisharp",
-        "usage_pct": "19.81759%"
-      },
-      {
         "pokemon": "Noivern",
-        "usage_pct": "19.42356%"
+        "usage_pct": "25.22438%"
       },
       {
-        "pokemon": "Krookodile",
-        "usage_pct": "18.61449%"
-      },
-      {
-        "pokemon": "Kleavor",
-        "usage_pct": "16.88639%"
-      },
-      {
-        "pokemon": "Mimikyu",
-        "usage_pct": "16.40219%"
-      },
-      {
-        "pokemon": "Chesnaught",
-        "usage_pct": "16.34988%"
-      },
-      {
-        "pokemon": "Armarouge",
-        "usage_pct": "15.09932%"
-      },
-      {
-        "pokemon": "Cyclizar",
-        "usage_pct": "14.37626%"
+        "pokemon": "Bisharp",
+        "usage_pct": "21.22410%"
       },
       {
         "pokemon": "Entei",
-        "usage_pct": "13.79845%"
+        "usage_pct": "19.88257%"
       },
       {
-        "pokemon": "Gengar",
-        "usage_pct": "13.31071%"
+        "pokemon": "Chesnaught",
+        "usage_pct": "19.67216%"
+      },
+      {
+        "pokemon": "Slowbro",
+        "usage_pct": "19.10685%"
+      },
+      {
+        "pokemon": "Krookodile",
+        "usage_pct": "18.91082%"
+      },
+      {
+        "pokemon": "Armarouge",
+        "usage_pct": "17.84426%"
+      },
+      {
+        "pokemon": "Cyclizar",
+        "usage_pct": "17.13694%"
+      },
+      {
+        "pokemon": "Mimikyu",
+        "usage_pct": "16.08681%"
+      },
+      {
+        "pokemon": "Kleavor",
+        "usage_pct": "14.36767%"
       }
     ],
     "stats_tier": "ru"
@@ -182,44 +182,44 @@
   "gen9nu": {
     "top10_usage": [
       {
+        "pokemon": "Munkidori",
+        "usage_pct": "28.71132%"
+      },
+      {
         "pokemon": "Duraludon",
-        "usage_pct": "21.28156%"
+        "usage_pct": "28.42522%"
       },
       {
         "pokemon": "Flygon",
-        "usage_pct": "20.77877%"
+        "usage_pct": "25.74463%"
       },
       {
         "pokemon": "Incineroar",
-        "usage_pct": "19.01077%"
-      },
-      {
-        "pokemon": "Chandelure",
-        "usage_pct": "15.96283%"
-      },
-      {
-        "pokemon": "Swampert",
-        "usage_pct": "15.92649%"
-      },
-      {
-        "pokemon": "Munkidori",
-        "usage_pct": "15.71064%"
-      },
-      {
-        "pokemon": "Tsareena",
-        "usage_pct": "14.69947%"
-      },
-      {
-        "pokemon": "Vaporeon",
-        "usage_pct": "14.46322%"
-      },
-      {
-        "pokemon": "Cinccino",
-        "usage_pct": "12.49538%"
+        "usage_pct": "23.14966%"
       },
       {
         "pokemon": "Flamigo",
-        "usage_pct": "11.88952%"
+        "usage_pct": "21.79140%"
+      },
+      {
+        "pokemon": "Vaporeon",
+        "usage_pct": "21.02800%"
+      },
+      {
+        "pokemon": "Tauros-Paldea-Aqua",
+        "usage_pct": "17.72360%"
+      },
+      {
+        "pokemon": "Swampert",
+        "usage_pct": "16.98285%"
+      },
+      {
+        "pokemon": "Reuniclus",
+        "usage_pct": "16.13893%"
+      },
+      {
+        "pokemon": "Copperajah",
+        "usage_pct": "15.73574%"
       }
     ],
     "stats_tier": "nu"
@@ -228,43 +228,43 @@
     "top10_usage": [
       {
         "pokemon": "Rhydon",
-        "usage_pct": "19.33628%"
+        "usage_pct": "36.87737%"
       },
       {
-        "pokemon": "Milotic",
-        "usage_pct": "16.65141%"
-      },
-      {
-        "pokemon": "Ambipom",
-        "usage_pct": "16.54179%"
-      },
-      {
-        "pokemon": "Florges",
-        "usage_pct": "15.29522%"
-      },
-      {
-        "pokemon": "Scrafty",
-        "usage_pct": "15.14261%"
-      },
-      {
-        "pokemon": "Salazzle",
-        "usage_pct": "14.99849%"
+        "pokemon": "Slowbro-Galar",
+        "usage_pct": "25.29023%"
       },
       {
         "pokemon": "Sandslash-Alola",
-        "usage_pct": "14.83879%"
+        "usage_pct": "23.31587%"
       },
       {
-        "pokemon": "Hoopa",
-        "usage_pct": "14.63938%"
+        "pokemon": "Scrafty",
+        "usage_pct": "21.56723%"
       },
       {
-        "pokemon": "Galvantula",
-        "usage_pct": "14.19093%"
+        "pokemon": "Cramorant",
+        "usage_pct": "20.73830%"
+      },
+      {
+        "pokemon": "Salazzle",
+        "usage_pct": "19.17941%"
+      },
+      {
+        "pokemon": "Florges",
+        "usage_pct": "18.46274%"
       },
       {
         "pokemon": "Heracross",
-        "usage_pct": "13.84205%"
+        "usage_pct": "16.15554%"
+      },
+      {
+        "pokemon": "Mudsdale",
+        "usage_pct": "15.97139%"
+      },
+      {
+        "pokemon": "Rotom-Heat",
+        "usage_pct": "14.58664%"
       }
     ],
     "stats_tier": "pu"
@@ -273,43 +273,43 @@
     "top10_usage": [
       {
         "pokemon": "Mesprit",
-        "usage_pct": "33.61915%"
-      },
-      {
-        "pokemon": "Hitmontop",
-        "usage_pct": "25.39918%"
+        "usage_pct": "46.82366%"
       },
       {
         "pokemon": "Skuntank",
-        "usage_pct": "21.33798%"
-      },
-      {
-        "pokemon": "Jolteon",
-        "usage_pct": "19.18893%"
+        "usage_pct": "41.99484%"
       },
       {
         "pokemon": "Whimsicott",
-        "usage_pct": "18.34385%"
-      },
-      {
-        "pokemon": "Sandslash",
-        "usage_pct": "17.00354%"
-      },
-      {
-        "pokemon": "Basculin",
-        "usage_pct": "14.47026%"
-      },
-      {
-        "pokemon": "Charizard",
-        "usage_pct": "14.45966%"
+        "usage_pct": "25.22897%"
       },
       {
         "pokemon": "Venusaur",
-        "usage_pct": "14.20458%"
+        "usage_pct": "22.85969%"
       },
       {
-        "pokemon": "Clawitzer",
-        "usage_pct": "13.83335%"
+        "pokemon": "Basculin",
+        "usage_pct": "19.69790%"
+      },
+      {
+        "pokemon": "Charizard",
+        "usage_pct": "19.52224%"
+      },
+      {
+        "pokemon": "Jolteon",
+        "usage_pct": "18.80347%"
+      },
+      {
+        "pokemon": "Sandslash",
+        "usage_pct": "18.64880%"
+      },
+      {
+        "pokemon": "Lycanroc",
+        "usage_pct": "15.66003%"
+      },
+      {
+        "pokemon": "Whiscash",
+        "usage_pct": "14.80114%"
       }
     ],
     "stats_tier": "zu"
@@ -318,43 +318,43 @@
     "top10_usage": [
       {
         "pokemon": "Mienfoo",
-        "usage_pct": "64.09389%"
+        "usage_pct": "89.41580%"
       },
       {
         "pokemon": "Vullaby",
-        "usage_pct": "52.29114%"
+        "usage_pct": "66.46487%"
       },
       {
         "pokemon": "Foongus",
-        "usage_pct": "30.60622%"
-      },
-      {
-        "pokemon": "Mudbray",
-        "usage_pct": "27.48949%"
-      },
-      {
-        "pokemon": "Glimmet",
-        "usage_pct": "21.09179%"
-      },
-      {
-        "pokemon": "Chinchou",
-        "usage_pct": "19.20318%"
-      },
-      {
-        "pokemon": "Elekid",
-        "usage_pct": "18.10477%"
-      },
-      {
-        "pokemon": "Tinkatink",
-        "usage_pct": "17.13101%"
+        "usage_pct": "40.42166%"
       },
       {
         "pokemon": "Toedscool",
-        "usage_pct": "16.06617%"
+        "usage_pct": "30.14486%"
       },
       {
-        "pokemon": "Sandshrew-Alola",
-        "usage_pct": "16.05449%"
+        "pokemon": "Mudbray",
+        "usage_pct": "28.75968%"
+      },
+      {
+        "pokemon": "Mareanie",
+        "usage_pct": "28.75286%"
+      },
+      {
+        "pokemon": "Elekid",
+        "usage_pct": "24.50184%"
+      },
+      {
+        "pokemon": "Tinkatink",
+        "usage_pct": "23.67444%"
+      },
+      {
+        "pokemon": "Glimmet",
+        "usage_pct": "20.82891%"
+      },
+      {
+        "pokemon": "Chinchou",
+        "usage_pct": "20.11251%"
       }
     ],
     "stats_tier": "lc"
@@ -453,46 +453,266 @@
     "top10_usage": [
       {
         "pokemon": "Koraidon",
-        "usage_pct": "48.40236%"
+        "usage_pct": "81.13032%"
       },
       {
         "pokemon": "Zacian-Crowned",
-        "usage_pct": "35.72974%"
+        "usage_pct": "43.50836%"
       },
       {
         "pokemon": "Kyogre",
-        "usage_pct": "29.51325%"
-      },
-      {
-        "pokemon": "Arceus",
-        "usage_pct": "18.62303%"
-      },
-      {
-        "pokemon": "Ho-Oh",
-        "usage_pct": "17.22635%"
-      },
-      {
-        "pokemon": "Eternatus",
-        "usage_pct": "16.73442%"
-      },
-      {
-        "pokemon": "Necrozma-Dusk-Mane",
-        "usage_pct": "15.85624%"
-      },
-      {
-        "pokemon": "Flutter Mane",
-        "usage_pct": "13.78222%"
+        "usage_pct": "42.49170%"
       },
       {
         "pokemon": "Lunala",
-        "usage_pct": "13.37905%"
+        "usage_pct": "31.31970%"
       },
       {
-        "pokemon": "Kingambit",
-        "usage_pct": "10.86723%"
+        "pokemon": "Arceus",
+        "usage_pct": "31.00101%"
+      },
+      {
+        "pokemon": "Necrozma-Dusk-Mane",
+        "usage_pct": "30.49906%"
+      },
+      {
+        "pokemon": "Ho-Oh",
+        "usage_pct": "30.14560%"
+      },
+      {
+        "pokemon": "Eternatus",
+        "usage_pct": "25.31024%"
+      },
+      {
+        "pokemon": "Arceus-Fairy",
+        "usage_pct": "15.41635%"
+      },
+      {
+        "pokemon": "Hatterene",
+        "usage_pct": "14.37667%"
       }
     ],
     "stats_tier": "ubers"
+  },
+  "gen9championsou": {
+    "top10_usage": [
+      {
+        "pokemon": "Great Tusk",
+        "usage_pct": "34.30805%"
+      },
+      {
+        "pokemon": "Gholdengo",
+        "usage_pct": "26.43967%"
+      },
+      {
+        "pokemon": "Kingambit",
+        "usage_pct": "24.75576%"
+      },
+      {
+        "pokemon": "Dragonite",
+        "usage_pct": "24.68178%"
+      },
+      {
+        "pokemon": "Zamazenta",
+        "usage_pct": "23.34374%"
+      },
+      {
+        "pokemon": "Ogerpon-Wellspring",
+        "usage_pct": "17.47820%"
+      },
+      {
+        "pokemon": "Kyurem",
+        "usage_pct": "16.05913%"
+      },
+      {
+        "pokemon": "Ting-Lu",
+        "usage_pct": "15.81212%"
+      },
+      {
+        "pokemon": "Raging Bolt",
+        "usage_pct": "15.77690%"
+      },
+      {
+        "pokemon": "Hatterene",
+        "usage_pct": "15.53850%"
+      }
+    ],
+    "stats_tier": "ou"
+  },
+  "gen9championsbssregma": {
+    "top10_usage": [
+      {
+        "pokemon": "Koraidon",
+        "usage_pct": "44.91900%"
+      },
+      {
+        "pokemon": "Dondozo",
+        "usage_pct": "36.80423%"
+      },
+      {
+        "pokemon": "Ting-Lu",
+        "usage_pct": "34.40640%"
+      },
+      {
+        "pokemon": "Calyrex-Shadow",
+        "usage_pct": "32.18562%"
+      },
+      {
+        "pokemon": "Chien-Pao",
+        "usage_pct": "29.24874%"
+      },
+      {
+        "pokemon": "Gliscor",
+        "usage_pct": "26.26536%"
+      },
+      {
+        "pokemon": "Clodsire",
+        "usage_pct": "25.51475%"
+      },
+      {
+        "pokemon": "Flutter Mane",
+        "usage_pct": "25.51004%"
+      },
+      {
+        "pokemon": "Lunala",
+        "usage_pct": "24.99530%"
+      },
+      {
+        "pokemon": "Muk-Alola",
+        "usage_pct": "22.63710%"
+      }
+    ],
+    "stats_tier": "bssregi"
+  },
+  "gen9championsvgc2026regma": {
+    "top10_usage": [
+      {
+        "pokemon": "Incineroar",
+        "usage_pct": "41.9",
+        "win_pct": "50.21",
+        "role": "Intimidate / Fake Out Support"
+      },
+      {
+        "pokemon": "Calyrex-Shadow",
+        "usage_pct": "29.29",
+        "win_pct": "52.03",
+        "role": "Restricted Sweeper"
+      },
+      {
+        "pokemon": "Flutter Mane",
+        "usage_pct": "21.33",
+        "win_pct": "50.88",
+        "role": "Fast Special Attacker"
+      },
+      {
+        "pokemon": "Rillaboom",
+        "usage_pct": "21.23",
+        "win_pct": "51.42",
+        "role": "Grassy Terrain Setter / Priority"
+      },
+      {
+        "pokemon": "Koraidon",
+        "usage_pct": "20.42",
+        "win_pct": "51.67",
+        "role": "Restricted Physical Attacker"
+      },
+      {
+        "pokemon": "Calyrex-Ice",
+        "usage_pct": "23.75",
+        "win_pct": "53.04",
+        "role": "Restricted Trick Room Sweeper"
+      },
+      {
+        "pokemon": "Miraidon",
+        "usage_pct": "23.48",
+        "win_pct": "52.81",
+        "role": "Restricted Special Attacker"
+      },
+      {
+        "pokemon": "Amoonguss",
+        "usage_pct": "18.21",
+        "win_pct": "50.33",
+        "role": "Redirection / Spore Support"
+      },
+      {
+        "pokemon": "Kyogre",
+        "usage_pct": "18.24",
+        "win_pct": "51.07",
+        "role": "Restricted Rain Sweeper"
+      },
+      {
+        "pokemon": "Zamazenta",
+        "usage_pct": "17.64",
+        "win_pct": "53.18",
+        "role": "Restricted Physical Wall/Attacker"
+      }
+    ],
+    "stats_tier": "vgc"
+  },
+  "gen9championsvgc2026regmabo3": {
+    "top10_usage": [
+      {
+        "pokemon": "Incineroar",
+        "usage_pct": "41.9",
+        "win_pct": "50.21",
+        "role": "Intimidate / Fake Out Support"
+      },
+      {
+        "pokemon": "Calyrex-Shadow",
+        "usage_pct": "29.29",
+        "win_pct": "52.03",
+        "role": "Restricted Sweeper"
+      },
+      {
+        "pokemon": "Flutter Mane",
+        "usage_pct": "21.33",
+        "win_pct": "50.88",
+        "role": "Fast Special Attacker"
+      },
+      {
+        "pokemon": "Rillaboom",
+        "usage_pct": "21.23",
+        "win_pct": "51.42",
+        "role": "Grassy Terrain Setter / Priority"
+      },
+      {
+        "pokemon": "Koraidon",
+        "usage_pct": "20.42",
+        "win_pct": "51.67",
+        "role": "Restricted Physical Attacker"
+      },
+      {
+        "pokemon": "Calyrex-Ice",
+        "usage_pct": "23.75",
+        "win_pct": "53.04",
+        "role": "Restricted Trick Room Sweeper"
+      },
+      {
+        "pokemon": "Miraidon",
+        "usage_pct": "23.48",
+        "win_pct": "52.81",
+        "role": "Restricted Special Attacker"
+      },
+      {
+        "pokemon": "Amoonguss",
+        "usage_pct": "18.21",
+        "win_pct": "50.33",
+        "role": "Redirection / Spore Support"
+      },
+      {
+        "pokemon": "Kyogre",
+        "usage_pct": "18.24",
+        "win_pct": "51.07",
+        "role": "Restricted Rain Sweeper"
+      },
+      {
+        "pokemon": "Zamazenta",
+        "usage_pct": "17.64",
+        "win_pct": "53.18",
+        "role": "Restricted Physical Wall/Attacker"
+      }
+    ],
+    "stats_tier": "vgc"
   },
   "gen9doublesou": {
     "top10_usage": [
