@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: Phase 04 fully executed; CI fixed; SPWA v3 CSV suite complete
+status: Phase 04 fully executed; data pipeline hardened; all 22 training formats mapped
 stopped_at: ""
-last_updated: "2026-05-25T22:30:00.000Z"
-last_activity: 2026-05-25 — fixed 3 Dependabot torch CVEs; fixed train-models.yml (nonexistent action versions, YAML syntax error, torch pin); regenerated SPWA v3 VGC/circuit CSVs (6 files, all verified live)
+last_updated: "2026-05-26T03:30:00.000Z"
+last_activity: 2026-05-26 -- fixed Unicode cp1252 errors; bumped all tiers to 1760 Elo; added 4 Champions format mappings (bssregi tier); format_meta.json now covers 20 formats
 progress:
   total_phases: 6
   completed_phases: 1
@@ -63,5 +63,5 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-05-25T19:50:31.832Z
-Stopped at: context exhaustion at 75% (2026-05-25)
+Last session: 2026-05-26T03:15:10.968Z
+Stopped at: context exhaustion at 75% (2026-05-26)
