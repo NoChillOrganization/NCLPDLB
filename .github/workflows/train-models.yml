@@ -61,47 +61,70 @@ jobs:
         shell: bash
         run: |
           # Self-hosted runner: system Python already installed.
-          # actions/setup-python fails here — it tries to mkdir /Users/runner
-          # which does not exist (runner runs as travisweisberg, not runner).
+          # Try multiple names: python3.12/python3 are Linux/WSL names;
+          # python/python.exe reach Windows binaries via WSL PATH interop.
+          # '|| true' prevents bash -e from aborting when all candidates fail
+          # (Windows App Execution Alias stubs write to the console handle
+          # bypassing $() capture but still exit non-zero).
           PYBIN=$(python3.12 -c "import sys; print(sys.executable)" 2>/dev/null \
-            || python3 -c "import sys; print(sys.executable)" 2>/dev/null)
+            || python3.11 -c "import sys; print(sys.executable)" 2>/dev/null \
+            || python3 -c "import sys; print(sys.executable)" 2>/dev/null \
+            || python -c "import sys; print(sys.executable)" 2>/dev/null \
+            || python.exe -c "import sys; print(sys.executable)" 2>/dev/null \
+            || true)
+          # Strip Windows App Execution Alias junk that leaks onto stdout.
+          PYBIN=$(printf '%s' "$PYBIN" | grep -m1 -E '^(/|[A-Za-z]:[/\\])' || true)
+
           if [ -z "$PYBIN" ]; then
-            echo "ERROR: python3.12 not found — install it on the self-hosted runner"
+            if command -v apt-get >/dev/null 2>&1; then
+              echo "No Python found — installing via apt-get..."
+              DEBIAN_FRONTEND=noninteractive sudo apt-get update -qq
+              DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3 python3-venv python3-pip
+              PYBIN=$(python3 -c "import sys; print(sys.executable)" 2>/dev/null || true)
+            fi
+          fi
+          if [ -z "$PYBIN" ]; then
+            echo "ERROR: No Python interpreter found — install Python 3.11+ on the self-hosted runner"
             exit 1
           fi
 
-          PY_VER=$($PYBIN -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          PY_VER=$("$PYBIN" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
           echo "Using Python: $PYBIN (${PY_VER})"
-          if [[ "$PY_VER" != "3.12" ]]; then
-            echo "ERROR: Python 3.12 required, found ${PY_VER} — install python3.12 on the runner"
+          PY_MAJOR=${PY_VER%%.*}
+          PY_MINOR=${PY_VER##*.}
+          if [[ "$PY_MAJOR" -lt 3 || ( "$PY_MAJOR" -eq 3 && "$PY_MINOR" -lt 11 ) ]]; then
+            echo "ERROR: Python 3.11+ required, found ${PY_VER} — install Python 3.11+ on the runner"
             exit 1
           fi
 
-          # Reuse existing .venv if built with Python 3.12 — pip/torch cache on
-          # self-hosted runner persists between jobs; avoids redundant reinstalls
-          # across the 24 sequential matrix jobs.
+          # Reuse existing .venv if it matches the detected Python version.
+          # Check both bin/ (Linux/WSL venv) and Scripts/ (Windows venv).
+          # pip/torch cache on self-hosted runner persists between sequential jobs.
           VENV_OK=false
-          if [ -x .venv/bin/python ]; then
-            VENV_PY=$(.venv/bin/python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "")
-            [ "$VENV_PY" = "3.12" ] && VENV_OK=true
-          fi
+          for VENV_PY_BIN in .venv/bin/python ".venv/Scripts/python.exe" ".venv/Scripts/python"; do
+            if [ -x "$VENV_PY_BIN" ]; then
+              VENV_PY=$("$VENV_PY_BIN" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "")
+              if [ "$VENV_PY" = "$PY_VER" ]; then
+                VENV_OK=true
+                break
+              fi
+            fi
+          done
 
           if [ "$VENV_OK" != "true" ]; then
             echo "Creating .venv with Python ${PY_VER}..."
-            # On Debian/Ubuntu, python3.12-venv is a separate apt package.
-            # Install it if venv creation fails due to missing ensurepip.
-            if ! $PYBIN -m venv .venv; then
-              echo "venv failed — attempting to install python3.12-venv"
+            if ! "$PYBIN" -m venv .venv; then
+              echo "venv failed — attempting to install python3-venv"
               if command -v apt-get >/dev/null 2>&1; then
-                DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3.12-venv \
-                  || DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3-venv \
-                  || true
+                DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3-venv || true
               fi
-              $PYBIN -m venv .venv
+              "$PYBIN" -m venv .venv
             fi
           fi
 
-          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+          # Add whichever layout the venv created (bin/ on Linux, Scripts/ on Windows).
+          [ -d "$GITHUB_WORKSPACE/.venv/bin" ]     && echo "$GITHUB_WORKSPACE/.venv/bin"     >> "$GITHUB_PATH"
+          [ -d "$GITHUB_WORKSPACE/.venv/Scripts" ] && echo "$GITHUB_WORKSPACE/.venv/Scripts" >> "$GITHUB_PATH"
 
       - name: Install Python dependencies
         shell: bash
@@ -255,10 +278,22 @@ jobs:
           EXIT=$?
           kill ${TIMER_PID} 2>/dev/null; wait ${TIMER_PID} 2>/dev/null || true
 
-          if [ ${EXIT} -eq 130 ]; then
-            echo "Training timed out after ${GRACE_SECS}s — final_model.zip should have been saved."
-          elif [ ${EXIT} -ne 0 ]; then
-            echo "Training exited with code ${EXIT}"
+          MODEL_PATH="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
+          if [ -f "$MODEL_PATH" ]; then
+            SIZE=$(stat -c%s "$MODEL_PATH" 2>/dev/null || stat -f%z "$MODEL_PATH")
+            if [ "${EXIT}" -eq 0 ]; then
+              echo "Training completed cleanly (model ${SIZE} bytes)."
+            elif [ "${EXIT}" -eq 130 ]; then
+              echo "Training SIGINT'd after ${GRACE_SECS}s — final_model.zip saved (${SIZE} bytes)."
+            else
+              echo "Training exited ${EXIT} but final_model.zip exists (${SIZE} bytes) — treating as clean stop (poke_env post-save TimeoutError)."
+            fi
+            mkdir -p "data/ml/${TRAIN_FORMAT}"
+            exit 0
+          fi
+
+          if [ "${EXIT}" -ne 0 ]; then
+            echo "Training exited ${EXIT} and no model was saved."
             exit ${EXIT}
           fi
 
@@ -266,7 +301,7 @@ jobs:
           echo "Created data/ml/${TRAIN_FORMAT} — future runs will skip this format"
 
       - name: Generate fallback stub model
-        if: always()
+        if: success() || failure()
         shell: bash
         env:
           TRAIN_FORMAT: ${{ matrix.config.format }}
@@ -277,8 +312,13 @@ jobs:
             exit 0
           fi
           echo "No model at $MODEL_PATH — generating fallback stub for ${TRAIN_FORMAT}..."
-          PYBIN="${GITHUB_WORKSPACE}/.venv/bin/python"
-          [ -x "$PYBIN" ] || PYBIN=$(command -v python3.12 2>/dev/null || command -v python3 2>/dev/null || command -v python)
+          PYBIN=""
+          for _P in "${GITHUB_WORKSPACE}/.venv/bin/python" \
+                    "${GITHUB_WORKSPACE}/.venv/Scripts/python.exe" \
+                    "${GITHUB_WORKSPACE}/.venv/Scripts/python"; do
+            [ -x "$_P" ] && { PYBIN="$_P"; break; }
+          done
+          [ -n "$PYBIN" ] || PYBIN=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v python.exe 2>/dev/null)
           "$PYBIN" -c "
           import sys, os
           sys.path.insert(0, '.')
@@ -306,7 +346,7 @@ jobs:
           " && echo "Fallback stub ready" || { echo "Stub generation failed -- verify will fail"; exit 1; }
 
       - name: Verify model artifact exists
-        if: always()
+        if: success() || failure()
         shell: bash
         env:
           TRAIN_FORMAT: ${{ matrix.config.format }}
@@ -323,7 +363,7 @@ jobs:
 
       - name: Upload model artifact
         uses: actions/upload-artifact@v7
-        if: always()
+        if: success() || failure()
         with:
           name: model-${{ matrix.config.format }}
           path: data/ml/policy/${{ matrix.config.format }}/final_model.zip
@@ -382,13 +422,18 @@ jobs:
         shell: bash
         run: |
           TAG="ml-models-r${RUN_NUMBER}"
-          if ls release-models/*.zip 1>/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --repo "$REPO" \
-              --title "ML Models — run #${RUN_NUMBER}" \
-              --notes "Trained PPO models from run #${RUN_NUMBER}. Use /admin-pull-models in Discord to install, or place zips in data/ml/policy/<format>/final_model.zip manually." \
-              release-models/*.zip
-            echo "Release created: $TAG"
-          else
+          TITLE="ML Models — run #${RUN_NUMBER}"
+          NOTES="Trained PPO models from run #${RUN_NUMBER}. Use /admin-pull-models in Discord to install, or place zips in data/ml/policy/<format>/final_model.zip manually."
+
+          if ! ls release-models/*.zip 1>/dev/null 2>&1; then
             echo "No model zips found — skipping release creation."
+            exit 0
           fi
+
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo "Release $TAG exists — uploading assets with --clobber"
+            gh release upload "$TAG" --repo "$REPO" --clobber release-models/*.zip
+          else
+            gh release create "$TAG" --repo "$REPO" --title "$TITLE" --notes "$NOTES" release-models/*.zip
+          fi
+          echo "Release ready: $TAG"
