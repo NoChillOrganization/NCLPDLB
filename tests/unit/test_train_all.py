@@ -130,9 +130,9 @@ class TestTrainingMap:
         for fmt, (_, team_fmt) in TRAINING_MAP.items():
             assert team_fmt is None or isinstance(team_fmt, str)
 
-    def test_contains_gen7_and_gen6(self):
-        assert "gen7randombattle" in TRAINING_MAP
-        assert "gen6randombattle" in TRAINING_MAP
+    def test_contains_random_battle_formats(self):
+        assert "gen9randombattle" in TRAINING_MAP
+        assert "gen9randomdoublesbattle" in TRAINING_MAP
 
     def test_doubles_formats_present(self):
         assert "gen9doublesou" in TRAINING_MAP
