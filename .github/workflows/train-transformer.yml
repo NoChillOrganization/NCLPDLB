@@ -1,0 +1,131 @@
+name: Train Transformer (MCTS self-play)
+
+# Runs offline MCTS self-play training on a tiny smoke config to verify:
+#   - train_transformer.py completes without error
+#   - src/ml/models/transformer_checkpoint.pt is written
+#   - logs/transformer_training.log contains >= 2 epoch= lines
+# Uploads the checkpoint and log as build artifacts.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "src/ml/train_transformer.py"
+      - "src/ml/trainer.py"
+      - "src/ml/self_play.py"
+      - "src/ml/transformer_model.py"
+      - "src/ml/mcts.py"
+      - ".github/workflows/train-transformer.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "src/ml/train_transformer.py"
+      - "src/ml/trainer.py"
+      - "src/ml/self_play.py"
+      - "src/ml/transformer_model.py"
+      - "src/ml/mcts.py"
+      - ".github/workflows/train-transformer.yml"
+  workflow_dispatch:
+
+jobs:
+  train-transformer-smoke:
+    name: Transformer MCTS self-play smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Start local Showdown server
+        run: |
+          PS_DIR="$HOME/pokemon-showdown"
+          if [ ! -d "$PS_DIR/.git" ]; then
+            git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
+            cd "$PS_DIR" && npm install --ignore-scripts
+          fi
+          printf '%s\n' \
+            'exports.port = 8000;' \
+            "exports.bindaddress = '127.0.0.1';" \
+            'exports.subprocesses = 1;' \
+            'exports.noipchecks = true;' \
+            'exports.nothrottle = true;' \
+            > "$PS_DIR/config/config.js"
+          cd "$PS_DIR"
+          node pokemon-showdown start --no-security > /tmp/showdown.log 2>&1 &
+          echo "Waiting for Showdown server on port 8000..."
+          for i in $(seq 1 30); do
+            sleep 2
+            if curl -sf --max-time 2 http://localhost:8000 >/dev/null 2>&1; then
+              echo "Showdown server ready (attempt ${i})"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Showdown server failed to start after 60s:"
+              cat /tmp/showdown.log
+              exit 1
+            fi
+          done
+
+      - name: Run integration tests for train_transformer
+        run: pytest -m integration tests/integration/test_transformer_selfplay.py -v -o addopts=""
+
+      - name: Run MCTS self-play training (smoke config)
+        run: |
+          python -m src.ml.train_transformer \
+            --games 6 \
+            --epochs 3 \
+            --mcts-sims 8 \
+            --steps-per-epoch 2 \
+            --checkpoint-out src/ml/models/transformer_checkpoint.pt \
+            --log-file logs/transformer_training.log
+
+      - name: Verify checkpoint exists
+        run: |
+          if [ ! -f "src/ml/models/transformer_checkpoint.pt" ]; then
+            echo "ERROR: transformer_checkpoint.pt not found"
+            exit 1
+          fi
+          echo "Checkpoint size: $(wc -c < src/ml/models/transformer_checkpoint.pt) bytes"
+
+      - name: Verify log has >= 2 epoch lines
+        run: |
+          LOG="logs/transformer_training.log"
+          if [ ! -f "$LOG" ]; then
+            echo "ERROR: training log not found"
+            exit 1
+          fi
+          echo "--- Training log ---"
+          cat "$LOG"
+          echo "--- End of log ---"
+          EPOCH_LINES=$(grep -c "epoch=" "$LOG" || true)
+          echo "Epoch lines found: ${EPOCH_LINES}"
+          if [ "${EPOCH_LINES}" -lt 2 ]; then
+            echo "ERROR: expected >= 2 epoch= lines in training log, got ${EPOCH_LINES}"
+            exit 1
+          fi
+
+      - name: Upload checkpoint and log as artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: transformer-training-artifacts
+          path: |
+            src/ml/models/transformer_checkpoint.pt
+            logs/transformer_training.log
+          if-no-files-found: warn
+          retention-days: 7

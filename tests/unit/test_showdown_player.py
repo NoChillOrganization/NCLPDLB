@@ -15,8 +15,10 @@ from unittest.mock import MagicMock
 
 from src.ml.showdown_player import (
     BotChallenger,
+    DEFAULT_TRANSFORMER_CHECKPOINT,
     _get_opponent_name,
     best_model_for_format,
+    resolve_transformer_checkpoint,
 )
 
 
@@ -279,6 +281,62 @@ class TestBotChallengerFormatResult:
 
         result = challenger._format_result(battle)
         assert result["replay_url"] is None
+
+
+# ── resolve_transformer_checkpoint ───────────────────────────────────────────
+
+class TestResolveTransformerCheckpoint:
+    """
+    Tests for the pure checkpoint-resolver helper that drives /spar inference
+    mode selection (Phase 06 criterion 4): MCTS when checkpoint exists, PPO
+    fallback when it does not.  No poke-env or torch required.
+    """
+
+    def test_returns_none_when_default_path_absent(self):
+        """Default path missing → returns None → BotChallenger takes PPO path (ISS-005 AC4)."""
+        # DEFAULT_TRANSFORMER_CHECKPOINT almost certainly absent in CI / dev envs
+        # without a trained run; if by chance it exists, use an explicit missing path.
+        result = resolve_transformer_checkpoint("nonexistent_checkpoint_xyz.pt")
+        assert result is None
+
+    def test_returns_path_when_explicit_file_exists(self, tmp_path):
+        """Explicit path that exists → returns that Path (enables MCTS branch)."""
+        ckpt = tmp_path / "transformer_checkpoint.pt"
+        ckpt.write_bytes(b"")  # touch — content irrelevant for resolver
+        result = resolve_transformer_checkpoint(ckpt)
+        assert result == ckpt
+        assert isinstance(result, Path)
+
+    def test_returns_none_for_explicit_missing_path(self, tmp_path):
+        """Explicit path that doesn't exist → returns None (graceful miss)."""
+        result = resolve_transformer_checkpoint(tmp_path / "not_here.pt")
+        assert result is None
+
+    def test_default_checkpoint_constant_matches_train_transformer(self):
+        """DEFAULT_TRANSFORMER_CHECKPOINT path matches the value in train_transformer.py."""
+        from src.ml.train_transformer import DEFAULT_CHECKPOINT_OUT
+        # Compare as Path objects so Windows vs POSIX separator differences don't matter
+        assert DEFAULT_TRANSFORMER_CHECKPOINT == Path(DEFAULT_CHECKPOINT_OUT)
+
+    def test_returns_path_at_default_location_when_present(self, tmp_path, monkeypatch):
+        """When DEFAULT_TRANSFORMER_CHECKPOINT exists on disk, resolver returns it."""
+        # Patch the module-level constant so we don't need a real trained checkpoint
+        fake_ckpt = tmp_path / "transformer_checkpoint.pt"
+        fake_ckpt.write_bytes(b"")
+        monkeypatch.setattr(
+            "src.ml.showdown_player.DEFAULT_TRANSFORMER_CHECKPOINT", fake_ckpt
+        )
+        result = resolve_transformer_checkpoint()
+        assert result == fake_ckpt
+
+    def test_returns_none_when_default_location_absent(self, monkeypatch):
+        """When DEFAULT_TRANSFORMER_CHECKPOINT does not exist, resolver returns None."""
+        monkeypatch.setattr(
+            "src.ml.showdown_player.DEFAULT_TRANSFORMER_CHECKPOINT",
+            Path("this/path/does/not/exist.pt"),
+        )
+        result = resolve_transformer_checkpoint()
+        assert result is None
 
 
 # ── browser_trainer import sanity ─────────────────────────────────────────────

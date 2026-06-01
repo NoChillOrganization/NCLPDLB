@@ -1,0 +1,107 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  # ── Unit test matrix (no Showdown server required) ──────────────────────────
+  unit:
+    name: Unit tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Run unit tests (exclude integration)
+        run: pytest -m "not integration"
+
+      - name: Coverage gate — self_play.py ≥ 80%
+        # -o addopts="" clears the global --cov=src so --cov-fail-under scopes
+        # only to src.ml.self_play instead of the entire src package.
+        # Module-path notation (src.ml.self_play) works on both Windows and Linux.
+        run: >
+          pytest tests/unit/test_ml_self_play.py
+          -o addopts=""
+          --cov=src.ml.self_play
+          --cov-report=term-missing
+          --cov-fail-under=80
+
+  # ── Integration test (real local Showdown server) ───────────────────────────
+  integration:
+    name: Integration — MCTSPlayer vs RandomPlayer
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Start local Showdown server
+        # Adapted from .github/workflows/train-models.yml (the proven block).
+        run: |
+          PS_DIR="$HOME/pokemon-showdown"
+          if [ ! -d "$PS_DIR/.git" ]; then
+            git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
+            cd "$PS_DIR" && npm install --ignore-scripts
+          fi
+          # Write minimal config: port 8000, localhost only, single subprocess
+          printf '%s\n' \
+            'exports.port = 8000;' \
+            "exports.bindaddress = '127.0.0.1';" \
+            'exports.subprocesses = 1;' \
+            'exports.noipchecks = true;' \
+            'exports.nothrottle = true;' \
+            > "$PS_DIR/config/config.js"
+          cd "$PS_DIR"
+          node pokemon-showdown start --no-security > /tmp/showdown.log 2>&1 &
+          echo "Waiting for Showdown server on port 8000..."
+          for i in $(seq 1 30); do
+            sleep 2
+            if curl -sf --max-time 2 http://localhost:8000 >/dev/null 2>&1; then
+              echo "Showdown server ready (attempt ${i})"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Showdown server failed to start after 60s:"
+              cat /tmp/showdown.log
+              exit 1
+            fi
+          done
+
+      - name: Run integration tests
+        # Drop global --cov=src (no coverage report needed for integration job).
+        run: pytest -m integration -o addopts="-v --tb=short"

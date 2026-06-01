@@ -706,6 +706,8 @@ def train(  # pragma: no cover
     save_replays: str | None = None,
     use_transformer: bool = False,
     meta_path: str | None = None,
+    opponent_type: str = "curriculum",
+    opponent_checkpoint: str | None = None,
 ) -> Path:
     """
     Run PPO self-play training for the given Showdown format.
@@ -801,7 +803,35 @@ def train(  # pragma: no cover
     if team_builder is not None:
         opp_kwargs["team"] = team_builder
 
-    opponent = CurriculumOpponent(**opp_kwargs)
+    if opponent_type == "mcts":
+        if is_doubles:
+            raise ValueError(
+                "--opponent mcts is not supported for doubles formats. "
+                "MCTSPlayer uses a gen9-singles action space only."
+            )
+        from src.ml.self_play import MCTSPlayer
+        from src.ml.mcts import MCTSConfig
+        from src.ml.transformer_model import build_default_model, load_model
+        # Strip is_doubles — MCTSPlayer does not accept that kwarg
+        mcts_kwargs = {k: v for k, v in opp_kwargs.items() if k != "is_doubles"}
+        tmodel = (
+            load_model(opponent_checkpoint)
+            if opponent_checkpoint
+            else build_default_model()
+        )
+        opponent = MCTSPlayer(
+            model=tmodel,
+            mcts_config=MCTSConfig(),
+            replay_buffer=None,
+            stats=None,
+            **mcts_kwargs,
+        )
+        log.info(
+            "[train] Using MCTSPlayer as self-play opponent (checkpoint=%s)",
+            opponent_checkpoint,
+        )
+    else:
+        opponent = CurriculumOpponent(**opp_kwargs)
 
     # ── Build Gymnasium-compatible env via SingleAgentWrapper ───────
     # strict=False: invalid actions (e.g. tera when unavailable) fall back
@@ -1136,6 +1166,25 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
         help="Directory containing competitive meta data (format_meta.json). "
              "When set, usage leaders and archetypes are logged before training.",
     )
+    ap.add_argument(
+        "--opponent",
+        default="curriculum",
+        choices=["curriculum", "mcts"],
+        help=(
+            "Self-play opponent type: "
+            "'curriculum' (MaxBasePowerPlayer → frozen PPO checkpoint, default) or "
+            "'mcts' (BattleTransformer + MCTS tree search, singles formats only)"
+        ),
+    )
+    ap.add_argument(
+        "--opponent-checkpoint",
+        default=None,
+        metavar="TRANSFORMER.pt",
+        help=(
+            "Path to a BattleTransformer checkpoint (.pt) used when --opponent mcts. "
+            "Defaults to randomly-initialised weights when omitted."
+        ),
+    )
     return ap.parse_args()
 
 
@@ -1170,4 +1219,6 @@ if __name__ == "__main__":  # pragma: no cover
             save_replays=args.save_replays,
             use_transformer=args.use_transformer,
             meta_path=args.meta_path,
+            opponent_type=args.opponent,
+            opponent_checkpoint=args.opponent_checkpoint,
         )
