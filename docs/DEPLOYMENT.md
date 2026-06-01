@@ -166,7 +166,7 @@ so trained models appear on the host immediately — no file copying.
 cd /mnt/f/NCLPDLB
 python3 -m venv .venv-linux && source .venv-linux/bin/activate
 pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install stable-baselines3 poke-env
+pip install stable-baselines3 tensorboard poke-env
 ```
 
 ### Option 3: Cloud VM
@@ -182,7 +182,7 @@ run training, then `scp` `data/ml/policy/` back to the project root.
 python3 -m venv nclpdlb-venv
 source nclpdlb-venv/bin/activate
 pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install stable-baselines3 poke-env
+pip install stable-baselines3 tensorboard poke-env
 pip install -r requirements.txt
 ```
 
