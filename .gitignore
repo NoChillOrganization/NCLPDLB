@@ -42,6 +42,9 @@ logs/
 
 # Claude Code / tooling artifacts
 .claude/settings.local.json
+.claude/memory/
+.claude/sessions/
+.claude/state/
 .remember/
 
 # Discord bot runtime state
@@ -62,6 +65,8 @@ htmlcov/
 
 # Local Showdown server (large external dependency — not tracked)
 Pokemon Showdown/
+/pokemon-showdown/
+/pokemon-showdown-client/
 
 # macOS duplicate files (created by Finder copy)
 *\ 2.py
@@ -91,6 +96,8 @@ graphify-out/
 data/ml/**
 !data/ml/**/
 !data/ml/**/*.json
+# Re-ignore the policy/ tree entirely (trained model zips; regenerable from training)
+/data/ml/policy/
 
 # Stray JSON snapshots
 *.json
