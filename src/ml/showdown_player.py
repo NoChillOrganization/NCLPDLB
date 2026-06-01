@@ -71,6 +71,30 @@ except ImportError:  # pragma: no cover
 from src.ml.battle_env import N_ACTIONS_GEN9, POKE_ENV_AVAILABLE, build_observation  # noqa: E402
 from src.ml.showdown_modes import server_config_for_mode  # noqa: E402
 
+# ── Transformer checkpoint resolver ───────────────────────────────────────────
+
+# Default path produced by train_transformer.py (DEFAULT_CHECKPOINT_OUT).
+# Kept in sync so /spar auto-detects a freshly trained checkpoint with no code change.
+DEFAULT_TRANSFORMER_CHECKPOINT = Path("src/ml/models/transformer_checkpoint.pt")
+
+
+def resolve_transformer_checkpoint(path: str | Path | None = None) -> Path | None:
+    """Return the transformer checkpoint Path if it exists on disk, else None.
+
+    Pure helper (no torch / poke-env imports) so it is testable with ``tmp_path``
+    without any heavy dependencies — mirrors the pattern of ``best_model_for_format``.
+
+    This drives /spar inference-mode selection (Phase 06 criterion 4):
+    - File present  → MCTS inference via BattleTransformer + MCTS lookahead
+    - File absent   → PPO fallback (silent, no UX degradation)
+
+    Args:
+        path: Explicit checkpoint path; defaults to DEFAULT_TRANSFORMER_CHECKPOINT.
+    """
+    candidate = Path(path) if path else DEFAULT_TRANSFORMER_CHECKPOINT
+    return candidate if candidate.is_file() else None
+
+
 # ── Bot player ────────────────────────────────────────────────────────────────
 
 if POKE_ENV_AVAILABLE:
@@ -209,6 +233,19 @@ class BotChallenger:
 
     Manages a ShowdownBotPlayer, initiates or accepts a battle challenge,
     and returns a structured result dict when the battle finishes.
+
+    Inference-mode selection (Phase 06)
+    ------------------------------------
+    On construction, ``resolve_transformer_checkpoint(transformer_path)`` is called:
+
+    - If a checkpoint is found on disk → ``ShowdownBotPlayer`` is built with
+      ``use_mcts=True`` and the transformer loaded; battle decisions run through
+      MCTS lookahead backed by the BattleTransformer.
+    - If no checkpoint is present → PPO-only player is built (existing behaviour);
+      a log line is emitted so ops can see which mode is active.
+
+    No code change is required to switch modes — only the presence or absence of
+    ``transformer_checkpoint.pt`` on disk (Phase 06 criterion 4).
     """
 
     def __init__(  # pragma: no cover
@@ -218,6 +255,7 @@ class BotChallenger:
         username: str,
         password: str,
         server: str = "showdown",   # "showdown" | "localhost"
+        transformer_path: str | Path | None = None,
     ) -> None:
         if not POKE_ENV_AVAILABLE:
             raise ImportError("poke-env is required for live battles.")
@@ -229,12 +267,31 @@ class BotChallenger:
 
         server_cfg = server_config_for_mode(server)
 
-        self._player = ShowdownBotPlayer(
-            model_path=self.model_path,
-            battle_format=fmt,
-            server_configuration=server_cfg,
-            account_configuration=_make_account_config(username, password),
-        )
+        # Auto-detect transformer checkpoint → choose inference mode
+        ckpt = resolve_transformer_checkpoint(transformer_path)
+        if ckpt is not None:
+            log.info(
+                "[BotChallenger] Transformer checkpoint found at %s — using MCTS inference",
+                ckpt,
+            )
+            self._player = ShowdownBotPlayer(
+                model_path=self.model_path,
+                battle_format=fmt,
+                server_configuration=server_cfg,
+                account_configuration=_make_account_config(username, password),
+                use_mcts=True,
+                transformer_path=ckpt,
+            )
+        else:
+            log.info(
+                "[BotChallenger] No transformer checkpoint — /spar using PPO inference (fallback)"
+            )
+            self._player = ShowdownBotPlayer(
+                model_path=self.model_path,
+                battle_format=fmt,
+                server_configuration=server_cfg,
+                account_configuration=_make_account_config(username, password),
+            )
 
     # ── Public API ─────────────────────────────────────────────────────
 

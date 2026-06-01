@@ -1,7 +1,7 @@
 ---
 id: ISS-006
 title: ML training — provision x86 Linux environment
-status: open
+status: in-progress
 priority: medium
 phase: backlog
 labels: [ml, training, infra]
@@ -38,3 +38,20 @@ None — parallel to Phases 05-06
 ## Notes
 
 Training all 22 formats sequentially takes ~8-12 hours on adequate hardware.
+
+## Progress (2026-06-01)
+
+VirtualBox "Discord Bot" VM identified as the x86-64 Linux environment (Ubuntu 64-bit, 6 vCPU,
+20 GB RAM, already running). Shared folder `NCLPDLB → F:\NCLPDLB` maps the project directly
+into the guest — no file copying needed. NAT port-forward `host:2222 → guest:22` added live.
+
+**Pending (needs guest credentials):**
+- Step 1: verify `pip install torch stable-baselines3` in-guest (AC1)
+- Step 2: start Showdown server (`node pokemon-showdown start --no-security` on port 8000)
+- Step 3: run `python -m src.ml.train_transformer` → produces `transformer_checkpoint.pt` on share
+- Step 4: run `python -m src.ml.train_all` ≥1 format to completion (AC2/AC3)
+- Step 5: write/update `docs/DEPLOYMENT.md` + fix `STATUS.md` (AC4)
+
+See `docs/DEPLOYMENT.md` (in progress) for setup script.
+
+**To connect:** `ssh -p 2222 <user>@127.0.0.1` (sshd must be running in guest).

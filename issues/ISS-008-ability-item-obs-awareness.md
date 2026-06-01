@@ -1,7 +1,7 @@
 ---
 id: ISS-008
 title: Observation space — ability and item awareness
-status: open
+status: in-progress
 priority: low
 phase: backlog
 labels: [ml, obs-space]
@@ -33,3 +33,17 @@ From PROJECT.md Out of Scope: "Ability/item awareness in obs — follow-on miles
 ## Notes
 
 This is a significant scope increase. Requires cataloguing which abilities/items have battlefield-relevant effects (100+). Recommend separate milestone.
+
+## Progress (2026-06-01)
+
+Design doc written (AC1 ✓): `docs/design/ISS-008-ability-item-obs.md`.
+
+Specifies:
+- Effect-bucket encoding (not one-hot / full embedding) — 14 ability floats + 11 item floats = 25 new floats
+- OBS_DIM 53 → 78 (after ISS-007 lands)
+- Catalogued ability categories: speed boost, atk boost, regen, priority, absorb, entry effect, contact punish, conditional
+- Catalogued item categories: heal, choice lock, speed modifier, defensive, sash, offensive, status
+- Python helper sketch (`_ability_buckets`, `_item_buckets`) and lookup maps
+- Implementation checklist, doubles parity, gate conditions
+
+**Gate:** ISS-007 must be merged and a 53-dim baseline validated before this branch opens.

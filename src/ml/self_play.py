@@ -142,8 +142,8 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             self,
             model: Any,
             mcts_config: MCTSConfig,
-            replay_buffer: Any,   # ReplayBuffer — avoid circular import type hint
-            stats: SharedStats,
+            replay_buffer: Any = None,   # ReplayBuffer — optional (None when used as opponent)
+            stats: "SharedStats | None" = None,
             name: str = "AccountA",
             **kwargs: Any,
         ) -> None:
@@ -158,6 +158,10 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             self._turn_obs:   list[np.ndarray]       = []
             self._turn_acts:  list[int]               = []
             self._turn_probs: list[np.ndarray | None] = []
+
+        def load_policy(self, path: Any) -> None:
+            """No-op: MCTS opponent uses a fixed transformer; ignore PPO checkpoint swaps."""
+            log.debug("[MCTSPlayer] load_policy(%s) ignored — fixed MCTS opponent", path)
 
         def choose_move(self, battle: Any) -> Any:
             """Run MCTS and return the chosen order. Record experience."""
@@ -207,21 +211,27 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             else:
                 reward = 0.0
 
-            # Push entire game to replay buffer
-            try:
-                self._replay_buffer.add_game(
-                    self._turn_obs,
-                    self._turn_acts,
-                    self._turn_probs,
-                    reward,
-                )
-            except Exception as exc:
-                log.warning("[MCTSPlayer:%s] replay buffer push error: %s", self._name, exc)
+            # Push entire game to replay buffer (only when one is configured)
+            if self._replay_buffer is not None:
+                try:
+                    self._replay_buffer.add_game(
+                        self._turn_obs,
+                        self._turn_acts,
+                        self._turn_probs,
+                        reward,
+                    )
+                except Exception as exc:
+                    log.warning("[MCTSPlayer:%s] replay buffer push error: %s", self._name, exc)
 
-            log.debug(
-                "[MCTSPlayer:%s] game done — reward=%.1f turns=%d buffer=%d",
-                self._name, reward, len(self._turn_obs), len(self._replay_buffer),
-            )
+                log.debug(
+                    "[MCTSPlayer:%s] game done — reward=%.1f turns=%d buffer=%d",
+                    self._name, reward, len(self._turn_obs), len(self._replay_buffer),
+                )
+            else:
+                log.debug(
+                    "[MCTSPlayer:%s] game done (no buffer) — reward=%.1f turns=%d",
+                    self._name, reward, len(self._turn_obs),
+                )
 
             # Reset for next game
             self._turn_obs   = []

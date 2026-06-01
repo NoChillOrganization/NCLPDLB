@@ -1,7 +1,7 @@
 ---
 id: ISS-007
 title: Observation space — add STAB and speed tier features
-status: open
+status: in-progress
 priority: low
 phase: backlog
 labels: [ml, obs-space]
@@ -33,3 +33,16 @@ From PROJECT.md Key Decisions: "OBS_DIM 44→48 (not 54) — Validate 4-float ex
 ## Notes
 
 OBS_DIM changes invalidate saved checkpoints — this must be a planned milestone boundary, not an incremental change.
+
+## Progress (2026-06-01)
+
+Design doc written: `docs/design/ISS-007-obs-stab-speed-tier.md`.
+
+Specifies:
+- STAB flag per move slot: 4 floats at [48..51]
+- Relative speed tier: 1 float at [52]
+- OBS_DIM 48 → 53
+
+Implementation checklist, doubles parity, gate conditions, and full file list documented.
+Code on branch `feat/obs-dim-53-stab-speed` — **gated behind Phase 06 + CI run #41 completion**.
+Do not implement while 48-dim training (Actions run 26753447485) is in flight.
