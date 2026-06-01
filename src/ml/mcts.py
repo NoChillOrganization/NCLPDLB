@@ -414,7 +414,7 @@ def _build_legal_mask(battle: Any, n_actions: int) -> "torch.Tensor | None":
             except ValueError:
                 pass  # action is illegal — leave as True (expected poke-env signal)
             except Exception as _exc:
-                log.warning("Unexpected error checking action %d legality: %s", act, _exc)
+                log.debug("Unexpected error checking action %d legality: %s", act, _exc)
     except Exception:  # pragma: no cover
         # If poke-env not available, allow all actions
         mask.fill_(False)
