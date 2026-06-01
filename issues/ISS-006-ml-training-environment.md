@@ -1,7 +1,7 @@
 ---
 id: ISS-006
 title: ML training — provision x86 Linux environment
-status: in-progress
+status: done
 priority: medium
 phase: backlog
 labels: [ml, training, infra]
@@ -26,10 +26,14 @@ From STATUS.md: "PyTorch + stable-baselines3: Cannot install on ARM64 Windows na
 
 ## Acceptance Criteria
 
-- [ ] `pip install torch stable-baselines3` succeeds on target environment
-- [ ] `python -m src.ml.train_all` runs at least one format to completion
-- [ ] Models saved to `data/ml/policy/<format>/final_model.zip`
-- [ ] Document environment setup in `docs/DEPLOYMENT.md`
+- [x] `pip install torch stable-baselines3` succeeds on target environment
+      (torch 2.12.0+cpu, SB3 2.8.0 in `/home/vmboxguest/nclpdlb-venv` — 2026-06-01)
+- [x] `python -m src.ml.train_all` runs at least one format to completion
+      (gen9randombattle smoke run, 5k steps — 2026-06-01)
+- [x] Models saved to `data/ml/policy/<format>/final_model.zip`
+      (`data/ml/policy/gen9randombattle/final_model.zip` + dated copy in `data/ml/results/`)
+- [x] Document environment setup in `docs/DEPLOYMENT.md`
+      (Added *ML Training Environment* section — 2026-06-01)
 
 ## Dependencies
 
@@ -45,13 +49,13 @@ VirtualBox "Discord Bot" VM identified as the x86-64 Linux environment (Ubuntu 6
 20 GB RAM, already running). Shared folder `NCLPDLB → F:\NCLPDLB` maps the project directly
 into the guest — no file copying needed. NAT port-forward `host:2222 → guest:22` added live.
 
-**Pending (needs guest credentials):**
-- Step 1: verify `pip install torch stable-baselines3` in-guest (AC1)
-- Step 2: start Showdown server (`node pokemon-showdown start --no-security` on port 8000)
-- Step 3: run `python -m src.ml.train_transformer` → produces `transformer_checkpoint.pt` on share
-- Step 4: run `python -m src.ml.train_all` ≥1 format to completion (AC2/AC3)
-- Step 5: write/update `docs/DEPLOYMENT.md` + fix `STATUS.md` (AC4)
+**Completed (2026-06-01):**
+- [x] Step 1: torch 2.12.0+cpu + SB3 2.8.0 verified in `/home/vmboxguest/nclpdlb-venv` (AC1)
+- [x] Step 2: Showdown server running on `ws://localhost:8000` (node pokemon-showdown start --no-security)
+- [x] Step 3: `transformer_checkpoint.pt` already present at `src/ml/models/` (done prior session)
+- [x] Step 4: gen9randombattle smoke run (5k steps) → `final_model.zip` written (AC2/AC3)
+- [x] Step 5: `docs/DEPLOYMENT.md` ML Training section added; `STATUS.md` updated (AC4)
 
-See `docs/DEPLOYMENT.md` (in progress) for setup script.
-
-**To connect:** `ssh -p 2222 <user>@127.0.0.1` (sshd must be running in guest).
+**Full 500k run:** kicked off in background (VM PID 74506, `nohup`, `/tmp/train_all.log`).
+Monitor: `ssh -p 2222 vmboxguest@127.0.0.1 "tail -f /tmp/train_all.log"`
+When complete, `final_model.zip` will be overwritten with the production-quality model.

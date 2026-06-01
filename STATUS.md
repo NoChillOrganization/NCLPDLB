@@ -44,15 +44,18 @@
 
 ---
 
-## ⏸️ Blocked
+## ✅ ML Training Environment
 
-### ML Training
+### Environment
 
-- ⏸️ **PyTorch + stable-baselines3**: Cannot install on ARM64 Windows natively
-- ⏸️ **All 10 format training**: Requires a Linux or x86 environment
-- ⏸️ **Models**: None trained yet (requires ~8-12 hours once environment set up)
+- ✅ **PyTorch + stable-baselines3**: Resolved via VirtualBox x86-64 Ubuntu VM
+  (ARM64 Windows host → Linux guest via shared folder; no file copying needed)
+- ✅ **Showdown server**: Running on `ws://localhost:8000` inside the VM
+- ✅ **gen9randombattle model**: Smoke-trained to completion (2026-06-01);
+  `data/ml/policy/gen9randombattle/final_model.zip` present
+- 🔄 **Full 500k run**: In progress (PID 74506 in VM, nohup; monitor via `tail -f /tmp/train_all.log`)
 
-**Solution:** Run training on an x86 machine or a cloud VM with Python 3.11.
+See `docs/DEPLOYMENT.md` → *ML Training Environment* for full setup instructions.
 
 ---
 
