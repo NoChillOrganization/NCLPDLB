@@ -418,22 +418,31 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
           REPO: ${{ github.repository }}
         shell: bash
         run: |
-          TAG="ml-models-r${RUN_NUMBER}"
-          TITLE="ML Models — run #${RUN_NUMBER}"
-          NOTES="Trained PPO models from run #${RUN_NUMBER}. Use /admin-pull-models in Discord to install, or place zips in data/ml/policy/<format>/final_model.zip manually."
+          # Include run attempt in the tag so re-runs never collide with an existing
+          # immutable release (GitHub permanently reserves a tag once it backs an
+          # immutable release — it cannot be deleted or recreated even after deletion).
+          TAG="ml-models-r${RUN_NUMBER}-a${RUN_ATTEMPT}"
+          TITLE="ML Models — run #${RUN_NUMBER} (attempt ${RUN_ATTEMPT})"
+          NOTES="Trained PPO models from run #${RUN_NUMBER} (attempt ${RUN_ATTEMPT}). Use /admin-pull-models in Discord to install, or place zips in data/ml/policy/<format>/final_model.zip manually."
 
           if ! ls release-models/*.zip 1>/dev/null 2>&1; then
             echo "No model zips found — skipping release creation."
             exit 0
           fi
 
+          # Delete any pre-existing NON-immutable release at this exact tag (e.g. a
+          # partial prior run at the same attempt number). Immutable releases will
+          # reject the delete — the || true ensures we still attempt gh release create
+          # and surface the real error if the tag is truly blocked.
+          # Note: --cleanup-tag is intentionally omitted; the git tag of an immutable
+          # release cannot be deleted, and we don't need to since the tag is already unique.
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
-            echo "Release $TAG exists — uploading assets with --clobber"
-            gh release upload "$TAG" --repo "$REPO" --clobber release-models/*.zip
-          else
-            gh release create "$TAG" --repo "$REPO" --title "$TITLE" --notes "$NOTES" release-models/*.zip
+            echo "Release $TAG already exists — deleting before recreate"
+            gh release delete "$TAG" --repo "$REPO" --yes || true
           fi
+          gh release create "$TAG" --repo "$REPO" --title "$TITLE" --notes "$NOTES" release-models/*.zip
           echo "Release ready: $TAG"
