@@ -275,7 +275,9 @@ def train(
     try:
         for epoch in range(1, n_epochs + 1):
             train_metrics = trainer.train_epochs(train_buf, n_epochs=steps_per_epoch)
-            val_metrics = trainer.validation_loss(val_buf)
+            # Clamp val batch to available data so small training runs still validate.
+            val_bs = max(1, min(256, len(val_buf)))
+            val_metrics = trainer.validation_loss(val_buf, batch_size=val_bs) if val_bs > 0 else {}
 
             if not train_metrics or not val_metrics:
                 log.warning(
