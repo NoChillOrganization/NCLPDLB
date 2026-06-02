@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# post-commit hook — sync closed issue notes when issues.md is touched.
+#
+# Install (one-time, per clone):
+#   git config core.hooksPath scripts/hooks
+#
+# This hook is advisory: post-commit cannot stage into the current commit.
+# When new solutions are scaffolded it prints a reminder to commit them separately.
+
+set -euo pipefail
+
+# Only run when issues.md was part of the commit
+if ! git diff-tree --no-commit-id -r --name-only HEAD | grep -q "^issues\.md$"; then
+    exit 0
+fi
+
+echo "[post-commit] issues.md changed — running sync_closed_issues.py"
+python scripts/sync_closed_issues.py
