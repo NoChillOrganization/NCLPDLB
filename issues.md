@@ -57,10 +57,10 @@ Status transitions: `open` → `in-progress` → `done`. Move done rows to a **C
 
 ## Closed
 
-| ID | Title | Phase | Priority | Labels | Status |
-|----|-------|-------|----------|--------|--------|
-| [[ISS-001-mcts-unit-integration-tests\|ISS-001]] | MCTSPlayer — unit and integration tests | 05 | high | testing, ml | done |
-| [[ISS-002-mcts-wire-training-opponent\|ISS-002]] | MCTSPlayer — wire as training pipeline opponent | 05 | high | ml, training | done |
-| [[ISS-003-transformer-train-mcts-selfplay\|ISS-003]] | BattleTransformer — train to convergence via MCTS self-play | 05 | high | ml, training | done |
-| [[ISS-004-spar-wire-mcts-inference\|ISS-004]] | /spar — wire use_mcts=True inference path | 06 | high | bot, inference | done |
-| [[ISS-005-spar-fallback-ppo\|ISS-005]] | /spar — graceful PPO fallback | 06 | high | bot, inference | done |
+| ID                                                   | Title                                                       | Phase | Priority | Labels         | Status |
+| ---------------------------------------------------- | ----------------------------------------------------------- | ----- | -------- | -------------- | ------ |
+| [[ISS-001-mcts-unit-integration-tests\|ISS-001]]     | MCTSPlayer — unit and integration tests                     | 05    | high     | testing, ml    | done   |
+| [[ISS-002-mcts-wire-training-opponent\|ISS-002]]     | MCTSPlayer — wire as training pipeline opponent             | 05    | high     | ml, training   | done   |
+| [[ISS-003-transformer-train-mcts-selfplay\|ISS-003]] | BattleTransformer — train to convergence via MCTS self-play | 05    | high     | ml, training   | done   |
+| [[ISS-004-spar-wire-mcts-inference\|ISS-004]]        | /spar — wire use_mcts=True inference path                   | 06    | high     | bot, inference | done   |
+| [[ISS-005-spar-fallback-ppo\|ISS-005]]               | /spar — graceful PPO fallback                               | 06    | high     | bot, inference | done   |
