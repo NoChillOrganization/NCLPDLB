@@ -664,6 +664,7 @@ class TestBattleEnvCalcReward:
         battle = MagicMock()
         battle.won = won
         battle.lost = lost
+        battle.finished = False
         opp_team = {}
         for i in range(6):
             m = MagicMock()

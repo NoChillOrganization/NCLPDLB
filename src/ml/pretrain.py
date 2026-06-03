@@ -130,7 +130,7 @@ def build_obs_from_snapshot(
     np.ndarray
         float32 array of shape (OBS_DIM,).
     """
-    from src.ml.battle_env import MOVE_FEATS, N_MOVES, OBS_DIM, TEAM_SIZE
+    from src.ml.battle_env import MOVE_FEATS, N_MOVES, OBS_DIM, TEAM_SIZE, _stable_species_id
 
     obs = np.zeros(OBS_DIM, dtype=np.float32)
     idx = 0
@@ -168,7 +168,7 @@ def build_obs_from_snapshot(
     # ── Active Pokémon (29 dims) ───────────────────────────────────
     # Layout: species(1) + hp(1) + N_MOVES*MOVE_FEATS(20) + status(1) + boosts(6)
     if my_active:
-        obs[idx] = hash(my_active) % 10000 / 10000.0
+        obs[idx] = _stable_species_id(my_active)
         idx += 1
         obs[idx] = hp_by_slot.get(my_slot, 1.0)
         idx += 1
@@ -185,7 +185,7 @@ def build_obs_from_snapshot(
 
     # ── Opponent active (3 dims) ───────────────────────────────────
     if opp_active:
-        obs[idx] = hash(opp_active) % 10000 / 10000.0
+        obs[idx] = _stable_species_id(opp_active)
         idx += 1
         obs[idx] = hp_by_slot.get(opp_slot, 1.0)
         idx += 1
@@ -219,6 +219,23 @@ def build_obs_from_snapshot(
     idx += 1
     obs[idx] = min(snapshot.turn_number, 50) / 50.0
     idx += 1
+
+    # ── STAB flags [48..51] (4 dims) ──────────────────────────────
+    # Move type metadata not available from replay logs — zero-fill
+    idx += N_MOVES  # 4 dims
+
+    # ── Speed tier [52] (1 dim) ───────────────────────────────────
+    # Base stats not available from replay logs — default 0.5 (unknown)
+    obs[idx] = 0.5
+    idx += 1
+
+    # ── Ability buckets [53..66] (14 dims) ────────────────────────
+    # Ability info not available from replay logs — zero-fill (own 8 + opp 6)
+    idx += 14
+
+    # ── Item buckets [67..77] (11 dims) ───────────────────────────
+    # Item info not available from replay logs — zero-fill (own 7 + opp 4)
+    idx += 11
 
     assert idx == OBS_DIM, f"Obs dim mismatch: {idx} != {OBS_DIM}"
     return obs
@@ -409,7 +426,7 @@ def pretrain(
     dones    = np.zeros(len(obs_arr), dtype=bool)
     infos    = np.array([{}] * len(obs_arr))
 
-    obs_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+    obs_space = Box(low=-1.0, high=2.0, shape=(OBS_DIM,), dtype=np.float32)
     act_space = Discrete(N_ACTIONS_GEN9)
 
     transitions = Transitions(
