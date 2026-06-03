@@ -987,13 +987,27 @@ def train(  # pragma: no cover
     if _train_exc is not None:
         # "Agent is not challenging" = poke-env challenge timeout (team rejection
         # or transient server issue).  Model was already saved above; treat as a
-        # clean early-stop so CI does not fail when a valid checkpoint exists.
+        # clean early-stop ONLY when meaningful training occurred.  A 0-step or
+        # near-zero checkpoint is indistinguishable from an untrained stub and must
+        # not be published as a real model.
         if "not challenging" in str(_train_exc):
+            steps_done = getattr(curriculum_cb, "num_timesteps", 0)
+            # Floor: at least 1 % of requested timesteps, minimum 1 000 steps.
+            # Anything below signals the server rejected every challenge before
+            # training could start — raise so the CI job goes red.
+            min_steps = max(1_000, total_timesteps // 100)
             log.warning(
-                f"[train] Battle challenge timeout — treating as clean stop. "
-                f"Model saved at {final_path} "
-                f"({getattr(curriculum_cb, 'num_timesteps', 0):,} steps trained)."
+                f"[train] Battle challenge timeout — "
+                f"{steps_done:,} steps trained (floor: {min_steps:,}). "
+                f"Model saved at {final_path}."
             )
+            if steps_done < min_steps:
+                raise RuntimeError(
+                    f"[train] Aborting: only {steps_done:,} steps completed before "
+                    f"'Agent is not challenging' (floor={min_steps:,}). "
+                    f"The model at {final_path} is untrained. "
+                    f"Fix the Showdown server / team generation for '{fmt}' and retry."
+                ) from _train_exc
         else:
             raise _train_exc
 
