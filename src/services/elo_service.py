@@ -3,6 +3,7 @@ ELO Rating Service — Standard ELO with K=32, per-league ratings.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 
@@ -15,6 +16,8 @@ log = logging.getLogger(__name__)
 
 # In-memory ELO cache
 _elo_cache: dict[str, dict[str, PlayerElo]] = {}  # guild_id -> {player_id -> PlayerElo}
+# Per-guild locks to serialize concurrent record_match calls (M7)
+_elo_locks: dict[str, asyncio.Lock] = {}
 
 
 @dataclass
@@ -67,11 +70,11 @@ class EloService:
             display_name = player.display_name,
         )
 
-    def _get_player(self, guild_id: str, player_id: str) -> PlayerElo:
+    async def _get_player(self, guild_id: str, player_id: str) -> PlayerElo:
         guild_elo = _elo_cache.setdefault(guild_id, {})
         if player_id not in guild_elo:
             # Try loading from Standings tab
-            record = sheets.find_row(Tab.STANDINGS, "player_id", player_id)
+            record = await asyncio.to_thread(sheets.find_row, Tab.STANDINGS, "player_id", player_id)
             if record:
                 guild_elo[player_id] = PlayerElo(
                     player_id=player_id,
@@ -97,32 +100,39 @@ class EloService:
         winner_name: str = "",
         loser_name: str = "",
     ) -> EloMatchResult:
-        winner = self._get_player(guild_id, winner_id)
-        loser = self._get_player(guild_id, loser_id)
-        if winner_name:
-            winner.display_name = winner_name
-        if loser_name:
-            loser.display_name = loser_name
+        # M9: reject self-matches before any mutation
+        if winner_id == loser_id:
+            raise ValueError("Winner and loser cannot be the same player.")
 
-        exp_winner = expected_score(winner.elo, loser.elo)
-        exp_loser = expected_score(loser.elo, winner.elo)
+        # M7: serialize concurrent record_match calls per guild
+        lock = _elo_locks.setdefault(guild_id, asyncio.Lock())
+        async with lock:
+            winner = await self._get_player(guild_id, winner_id)
+            loser = await self._get_player(guild_id, loser_id)
+            if winner_name:
+                winner.display_name = winner_name
+            if loser_name:
+                loser.display_name = loser_name
 
-        old_winner_elo = winner.elo
-        old_loser_elo = loser.elo
+            exp_winner = expected_score(winner.elo, loser.elo)
+            exp_loser = expected_score(loser.elo, winner.elo)
 
-        winner.elo = new_rating(winner.elo, exp_winner, 1.0, settings.elo_k_factor)
-        loser.elo = new_rating(loser.elo, exp_loser, 0.0, settings.elo_k_factor)
-        winner.wins += 1
-        loser.losses += 1
+            old_winner_elo = winner.elo
+            old_loser_elo = loser.elo
 
-        # Persist to Sheets (sync via gspread)
-        self._save_player(winner)
-        self._save_player(loser)
+            winner.elo = new_rating(winner.elo, exp_winner, 1.0, settings.elo_k_factor)
+            loser.elo = new_rating(loser.elo, exp_loser, 0.0, settings.elo_k_factor)
+            winner.wins += 1
+            loser.losses += 1
 
-        # Persist to SQLite write-through cache — raise on failure so the
-        # caller knows the update was not durably stored.
-        await self._save_player_to_db(winner)
-        await self._save_player_to_db(loser)
+            # Persist to Sheets (off-loop via to_thread)
+            await self._save_player(winner)
+            await self._save_player(loser)
+
+            # Persist to SQLite write-through cache — raise on failure so the
+            # caller knows the update was not durably stored.
+            await self._save_player_to_db(winner)
+            await self._save_player_to_db(loser)
 
         log.info(
             f"Match recorded: {winner_id} ({old_winner_elo}→{winner.elo}) "
@@ -141,7 +151,7 @@ class EloService:
     async def get_standings(self, guild_id: str) -> list[PlayerElo]:
         guild_elo = _elo_cache.get(guild_id, {})
         if not guild_elo:
-            records = sheets.get_standings()
+            records = await asyncio.to_thread(sheets.get_standings)
             for r in records:
                 pid = str(r.get("player_id", ""))
                 if pid:
@@ -157,8 +167,8 @@ class EloService:
             _elo_cache[guild_id] = guild_elo
         return sorted(guild_elo.values(), key=lambda p: p.elo, reverse=True)
 
-    def _save_player(self, player: PlayerElo) -> None:
-        sheets.upsert_standing({
+    async def _save_player(self, player: PlayerElo) -> None:
+        await asyncio.to_thread(sheets.upsert_standing, {
             "player_id": player.player_id,
             "player_name": player.display_name,
             "elo": player.elo,

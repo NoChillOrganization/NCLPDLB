@@ -104,14 +104,15 @@ async def test_default_elo_is_configured_value():
     svc = EloService()
     with patch("src.services.elo_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = None
-        player = svc._get_player("guild4", "new_player")
+        player = await svc._get_player("guild4", "new_player")
 
     assert player.elo == settings.elo_default_rating
 
 
 # ── _get_player loads from sheets when record exists ──────────
 
-def test_get_player_loads_from_sheets():
+@pytest.mark.asyncio
+async def test_get_player_loads_from_sheets():
     import src.services.elo_service as elo_mod
     elo_mod._elo_cache.clear()
 
@@ -121,7 +122,7 @@ def test_get_player_loads_from_sheets():
             "player_id": "pS", "player_name": "Sheets Guy",
             "elo": 1200, "wins": 5, "losses": 2,
         }
-        player = svc._get_player("guild5", "pS")
+        player = await svc._get_player("guild5", "pS")
 
     assert player.elo == 1200
     assert player.wins == 5
@@ -149,13 +150,14 @@ async def test_get_standings_loads_from_sheets():
 
 # ── _save_player calls sheets.upsert_standing ─────────────────
 
-def test_save_player_calls_upsert():
+@pytest.mark.asyncio
+async def test_save_player_calls_upsert():
     from src.data.models import PlayerElo
     svc = EloService()
     player = PlayerElo(player_id="pX", guild_id="g1", display_name="Xavier", elo=1050, wins=4, losses=1)
 
     with patch("src.services.elo_service.sheets") as mock_sheets:
-        svc._save_player(player)
+        await svc._save_player(player)
 
     mock_sheets.upsert_standing.assert_called_once()
     call_args = mock_sheets.upsert_standing.call_args[0][0]

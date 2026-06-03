@@ -4,6 +4,7 @@ Stats Cog — Team analytics, battle simulation, ELO, Showdown replays, video up
 import asyncio
 import logging
 from pathlib import Path
+from src.bot.cogs.admin import _create_background_task
 
 import discord
 from discord import app_commands
@@ -389,7 +390,7 @@ class StatsCog(commands.Cog, name="Stats"):
         await interaction.followup.send(embed=embed_waiting)
 
         # Run the challenge in the background so Discord doesn't time out
-        asyncio.create_task(
+        _create_background_task(
             _run_spar_challenge(
                 interaction=interaction,
                 model_path=model_path,

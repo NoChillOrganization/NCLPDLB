@@ -314,7 +314,7 @@ class LadderLoop:
         self._player: Any = None
         self._games_since_train = 0
 
-    def _make_player(self) -> Any:
+    async def _make_player(self) -> Any:
         """Create (or return cached) MCTSPlayer connected to play.pokemonshowdown.com."""
         if not POKE_ENV_OK or not POKE_ENV_AVAILABLE:
             raise RuntimeError(
@@ -339,13 +339,13 @@ class LadderLoop:
                 username=self.username,
                 password=self.password,
             )
-            time.sleep(2.0)  # allow WebSocket handshake + auth to complete
+            await asyncio.sleep(2.0)  # allow WebSocket handshake + auth to complete
 
         return self._player
 
     async def run_game(self) -> dict:
         """Queue one ladder game and return updated stats snapshot."""
-        player = self._make_player()
+        player = await self._make_player()
 
         wins_before   = player.n_won_battles
         losses_before = player.n_lost_battles

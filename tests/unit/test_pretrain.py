@@ -138,15 +138,15 @@ class TestBuildObsFromSnapshot:
         assert obs.shape[0] > 0
 
     def test_turn_number_encoded_in_field(self):
-        """Turn 25 → field[-1] = 25/50 = 0.5."""
+        """Turn 25 → field[turn] = 25/50 = 0.5. Field starts at idx 44; turn is +3."""
         snap = _snap(turn=25)
         obs = build_obs_from_snapshot(snap)
-        assert obs[-1] == pytest.approx(0.5)
+        assert obs[47] == pytest.approx(0.5)
 
     def test_turn_capped_at_50(self):
         snap = _snap(turn=100)
         obs = build_obs_from_snapshot(snap)
-        assert obs[-1] == pytest.approx(1.0)
+        assert obs[47] == pytest.approx(1.0)
 
     def test_species_hash_non_zero_for_known_species(self):
         snap = _snap(p1_active="Garchomp")
@@ -207,14 +207,14 @@ class TestBuildObsFromSnapshot:
         assert obs[33] == pytest.approx(1.0)
 
     def test_field_zeros_except_turn(self):
-        """Weather, terrain, trick_room are always 0."""
+        """Weather, terrain, trick_room are always 0. Field sits at indices 44-47."""
         snap = _snap(turn=1)
         obs = build_obs_from_snapshot(snap)
-        # Field: [-4]=weather, [-3]=terrain, [-2]=trick_room, [-1]=turn
-        assert obs[-4] == pytest.approx(0.0)
-        assert obs[-3] == pytest.approx(0.0)
-        assert obs[-2] == pytest.approx(0.0)
-        assert obs[-1] == pytest.approx(1 / 50.0)
+        # Field: [44]=weather, [45]=terrain, [46]=trick_room, [47]=turn
+        assert obs[44] == pytest.approx(0.0)
+        assert obs[45] == pytest.approx(0.0)
+        assert obs[46] == pytest.approx(0.0)
+        assert obs[47] == pytest.approx(1 / 50.0)
 
     def test_event_with_empty_slot_is_skipped(self):
         """Event with no slot (slot='') triggers the 'if not slot: continue' branch."""

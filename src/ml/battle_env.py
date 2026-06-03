@@ -10,7 +10,9 @@ Observation space (float32 vector):
   Opponent:    species_id/10000, hp_pct, status_id/6
   Team HP:     6×hp_pct for each side
   Field:       weather_id/5, terrain_id/4, trick_room (0/1), turn/50
-  Total dims:  OBS_DIM = 48 — see MOVE_TYPE_EFF_OBS_IDXS for type_eff slot indices
+  STAB flags:  4 floats at [48..51], one per move slot (1.0 if move type ∈ active types)
+  Speed tier:  1 float  at [52], 0.0=slower / 0.5=unknown / 1.0=faster (base stats)
+  Total dims:  OBS_DIM = 78 — see MOVE_TYPE_EFF_OBS_IDXS for type_eff slot indices
 
 Action space (Discrete — gen9 = 26):
   0-5   → switch to team slot 0-5
@@ -25,6 +27,7 @@ See scripts/setup_showdown_server.md for setup instructions.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 from typing import Any
 
@@ -49,10 +52,17 @@ except ImportError:  # pragma: no cover
 
 log = logging.getLogger(__name__)
 
+
+def _stable_species_id(species: Any) -> float:
+    """Stable, cross-process species float in [0,1] using MD5 (not hash())."""
+    digest = hashlib.md5(str(species or "").encode()).digest()
+    return int.from_bytes(digest[:4], "big") / 0xFFFFFFFF
+
+
 # ── Observation constants ─────────────────────────────────────────────────────
-OBS_DIM = 48
+OBS_DIM = 78
 TEAM_SIZE = 6
-OBS_DIM_DOUBLES = 80
+OBS_DIM_DOUBLES = 140
 N_MOVES = 4
 MOVE_FEATS = 5    # base_power, accuracy, type_id, priority, effectiveness
 STATUS_DIM  = 1
@@ -63,8 +73,12 @@ FIELD_DIM   = 4
 # Opp active:    [species_id, hp, status]     = 3
 # My team HP:    6
 # Opp team HP:   6
-# Field:         4
-OBS_DIM = 29 + 3 + 6 + 6 + 4   # = 48
+# Field:         4  (weather, terrain, trick_room, turn)
+# STAB flags:    4  ([48..51], one per move slot)
+# Speed tier:    1  ([52], base-stat relative speed)
+# Ability buckets: 14  ([53..66], own 8 + opp 6)
+# Item buckets:   11  ([67..77], own 7 + opp 4)
+OBS_DIM = 29 + 3 + 6 + 6 + 4 + 4 + 1 + 14 + 11   # = 78
 
 # Obs-vector indices for the type-effectiveness feature, one per move slot.
 # Active-mon layout: [species(1), hp(1), slot0…slot3(5 feats each), …]
@@ -112,6 +126,52 @@ except Exception:  # pragma: no cover
     pass
 
 
+# ── Ability / item effect maps (ISS-008) ─────────────────────────────────────
+
+SPEED_BOOST_ABILITIES = frozenset({
+    "speedboost", "swiftswim", "chlorophyll", "sandrush", "slushrush", "surgesurfer",
+})
+ATK_BOOST_ABILITIES = frozenset({
+    "hugepower", "purepower", "guts", "hustle", "gorillatactics",
+})
+REGEN_ABILITIES = frozenset({"regenerator", "naturalcure", "shedskin"})
+PRIORITY_ABILITIES = frozenset({"prankster", "triage", "galewings"})
+CONTACT_PUNISH_ABILITIES = frozenset({
+    "roughskin", "ironbarbs", "flamebody", "static", "poisonpoint", "effectspore",
+})
+CONDITIONAL_BOOST_ABILITIES = frozenset({"unburden", "moxie", "beastboost"})
+
+# Intimidate → -1.0 (atk drop on opponent); Dauntless Shield / Intrepid Sword → +1.0
+ENTRY_EFFECT_ABILITIES: dict[str, float] = {
+    "intimidate": -1.0, "dauntlessshield": 1.0, "intrepidsword": 1.0,
+}
+
+# Absorption ability → absorbed type name (feeds into TYPE_IDS for the slot value)
+ABSORB_TYPE_ABILITIES: dict[str, str] = {
+    "voltabsorb": "electric", "motordrive": "electric", "lightningrod": "electric",
+    "waterabsorb": "water", "stormdrain": "water",
+    "flashfire": "fire",
+    "sapsipper": "grass",
+}
+
+CHOICE_ITEMS: dict[str, float] = {
+    "choiceband": 0.33, "choicespecs": 0.67, "choicescarf": 1.0,
+}
+HEAL_ITEMS: dict[str, float] = {
+    "leftovers": 0.0625, "blacksludge": 0.0625,
+}
+SPEED_ITEMS: dict[str, float] = {
+    "choicescarf": 1.5, "ironball": 0.5, "laggingtail": 0.5,
+}
+SASH_ITEMS = frozenset({"focussash"})
+OFFENCE_ITEMS: dict[str, float] = {
+    "lifeorb": 1.0, "expertbelt": 0.5,
+}
+STATUS_ITEMS: dict[str, float] = {
+    "lumberry": 1.0, "flameorb": -1.0, "toxicorb": -1.0,
+}
+DEFENSIVE_ITEMS = frozenset({"eviolite", "assaultvest", "rockyhelmet"})
+
 # ── Observation builder ───────────────────────────────────────────────────────
 
 def _move_features(move: "Move | None", target: "Pokemon | None" = None) -> list[float]:
@@ -142,6 +202,98 @@ def _pokemon_hp(mon: "Pokemon | None") -> float:
     return getattr(mon, "current_hp_fraction", 1.0) or 0.0
 
 
+def _stab_flag(move: "Move | None", mon: "Pokemon | None") -> float:
+    """1.0 if move shares a type with mon (STAB), 0.0 otherwise."""
+    if move is None or mon is None:
+        return 0.0
+    try:
+        move_type = str(getattr(move, "type", "")).lower().split(".")[-1]
+        mon_types = [str(t).lower().split(".")[-1] for t in (getattr(mon, "types", None) or [])]
+    except Exception:
+        return 0.0
+    return 1.0 if move_type in mon_types else 0.0
+
+
+def _speed_tier(active: "Pokemon | None", opp: "Pokemon | None") -> float:
+    """Base-stat speed comparison: 1.0=faster, 0.5=unknown/equal, 0.0=slower."""
+    if active is None or opp is None:
+        return 0.5
+    try:
+        my_spe  = int(getattr(active, "base_stats", {}).get("spe", 0) or 0)
+        opp_spe = int(getattr(opp,    "base_stats", {}).get("spe", 0) or 0)
+    except (TypeError, ValueError):
+        return 0.5
+    if my_spe > opp_spe:
+        return 1.0
+    if my_spe < opp_spe:
+        return 0.0
+    return 0.5
+
+
+def _norm(s: Any) -> str:
+    """Normalize ability/item string to lowercase, no spaces or hyphens."""
+    return str(s or "").lower().replace(" ", "").replace("-", "")
+
+
+def _ability_buckets(ability: Any, *, is_own: bool) -> list[float]:
+    """
+    Convert an ability string to effect-bucket floats.
+    Own (is_own=True):  8 floats [speed_boost, atk_boost, regen, priority,
+                                    absorb_type_id, entry_effect, contact_punish, conditional]
+    Opp (is_own=False): 6 floats [speed_boost, atk_boost, regen, priority,
+                                    absorb_type_id, contact_punish]
+    Unknown/None ability → all 0.0.
+    """
+    try:
+        a = _norm(ability)
+        absorb_type = ABSORB_TYPE_ABILITIES.get(a, "")
+        absorb_val = TYPE_IDS.get(absorb_type, 0) / 20.0
+        own_buckets = [
+            1.0 if a in SPEED_BOOST_ABILITIES else 0.0,
+            1.0 if a in ATK_BOOST_ABILITIES else 0.0,
+            1.0 if a in REGEN_ABILITIES else 0.0,
+            1.0 if a in PRIORITY_ABILITIES else 0.0,
+            absorb_val,
+            ENTRY_EFFECT_ABILITIES.get(a, 0.0),
+            1.0 if a in CONTACT_PUNISH_ABILITIES else 0.0,
+            1.0 if a in CONDITIONAL_BOOST_ABILITIES else 0.0,
+        ]
+        if is_own:
+            return own_buckets
+        # Opponent: omit entry_effect and conditional (less observable)
+        return [own_buckets[0], own_buckets[1], own_buckets[2],
+                own_buckets[3], own_buckets[4], own_buckets[6]]
+    except Exception:
+        return [0.0] * (8 if is_own else 6)
+
+
+def _item_buckets(item: Any, hp_frac: float, *, is_own: bool) -> list[float]:
+    """
+    Convert an item string + HP fraction to effect-bucket floats.
+    Own (is_own=True):  7 floats [heal, choice, speed_mod, defensive, sash, offence, status]
+    Opp (is_own=False): 4 floats [heal, choice, defensive, sash]
+    Unknown/None/consumed item → all 0.0.
+    """
+    try:
+        it = _norm(item)
+        sash_val = 1.0 if (it in SASH_ITEMS and hp_frac >= 1.0) else 0.0
+        own_buckets = [
+            HEAL_ITEMS.get(it, 0.0),
+            CHOICE_ITEMS.get(it, 0.0),
+            SPEED_ITEMS.get(it, 1.0) if it in SPEED_ITEMS else 1.0,
+            0.5 if it in DEFENSIVE_ITEMS else 0.0,
+            sash_val,
+            OFFENCE_ITEMS.get(it, 0.0),
+            STATUS_ITEMS.get(it, 0.0),
+        ]
+        if is_own:
+            return own_buckets
+        # Opponent: heal, choice, defensive, sash (speed/offence/status less observable)
+        return [own_buckets[0], own_buckets[1], own_buckets[3], own_buckets[4]]
+    except Exception:
+        return [0.0] * (7 if is_own else 4)
+
+
 def build_observation(battle: "AbstractBattle") -> np.ndarray:
     """
     Convert a poke-env AbstractBattle into a float32 observation vector of
@@ -153,7 +305,7 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     # ── Active Pokemon ─────────────────────────────────────────────
     active = battle.active_pokemon
     if active:
-        obs[idx] = hash(active.species) % 10000 / 10000.0
+        obs[idx] = _stable_species_id(active.species)
         idx += 1
         obs[idx] = _pokemon_hp(active)
         idx += 1
@@ -180,7 +332,7 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     # ── Opponent active ────────────────────────────────────────────
     opp = battle.opponent_active_pokemon
     if opp:
-        obs[idx] = hash(opp.species) % 10000 / 10000.0
+        obs[idx] = _stable_species_id(opp.species)
         idx += 1
         obs[idx] = _pokemon_hp(opp)
         idx += 1
@@ -230,9 +382,38 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     obs[idx] = min(getattr(battle, "turn", 0), 50) / 50.0
     idx += 1
 
+    # ── STAB flags [48..51] ────────────────────────────────────────
+    stab_moves = list(battle.available_moves) if hasattr(battle, "available_moves") else []
+    for i in range(N_MOVES):
+        move = stab_moves[i] if i < len(stab_moves) else None
+        obs[idx] = _stab_flag(move, active)
+        idx += 1
+
+    # ── Relative speed tier [52] ───────────────────────────────────
+    obs[idx] = _speed_tier(active, opp)
+    idx += 1
+
+    # ── Ability buckets [53..66] ───────────────────────────────────
+    active_ability = getattr(active, "ability", None)
+    opp_ability    = getattr(opp, "ability", None)
+    for val in _ability_buckets(active_ability, is_own=True):   # 8 floats
+        obs[idx] = val; idx += 1
+    for val in _ability_buckets(opp_ability, is_own=False):     # 6 floats
+        obs[idx] = val; idx += 1
+
+    # ── Item buckets [67..77] ──────────────────────────────────────
+    active_item  = getattr(active, "item", None)
+    opp_item     = getattr(opp, "item", None)
+    active_hp    = _pokemon_hp(active)
+    opp_hp       = _pokemon_hp(opp)
+    for val in _item_buckets(active_item, active_hp, is_own=True):   # 7 floats
+        obs[idx] = val; idx += 1
+    for val in _item_buckets(opp_item, opp_hp, is_own=False):        # 4 floats
+        obs[idx] = val; idx += 1
+
     # ── Final Dimension Verification ──────────────────────────────────
     assert idx == OBS_DIM, f"Observation dimension mismatch: {idx} != {OBS_DIM}"
-    
+
     return obs
 
 
@@ -268,12 +449,13 @@ if POKE_ENV_AVAILABLE:
             self._sb3_action_space = Discrete(N_ACTIONS_GEN9)
             # Override observation_spaces with our custom flat Box per agent
             # (poke-env's __setattr__ wraps these with action_mask).
-            obs_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            # low=-1.0/high=2.0: covers intimidate/flameorb (-1.0) and choicescarf speed (1.5)
+            obs_space = Box(low=-1.0, high=2.0, shape=(OBS_DIM,), dtype=np.float32)
             self.observation_spaces = {
                 agent: obs_space for agent in self.possible_agents
             }
-            # Track previous faint counts for shaped reward (keyed by id(battle))
-            self._prev_state: dict[int, dict[str, int]] = {}
+            # Track previous faint counts for shaped reward (keyed by battle_tag)
+            self._prev_state: dict[str, dict[str, int]] = {}
 
         @property
         def action_space(self):
@@ -326,7 +508,7 @@ if POKE_ENV_AVAILABLE:
               +0.3  per opponent faint (delta since last step)
               -0.3  per own faint (delta since last step)
             """
-            bid = id(battle)
+            bid = getattr(battle, "battle_tag", id(battle))
             prev = self._prev_state.get(bid, {"opp_fainted": 0, "own_fainted": 0})
 
             curr_opp_fainted = sum(1 for p in battle.opponent_team.values() if p.fainted)
@@ -341,10 +523,13 @@ if POKE_ENV_AVAILABLE:
             reward += 0.3 * (curr_opp_fainted - prev["opp_fainted"])
             reward -= 0.3 * (curr_own_fainted - prev["own_fainted"])
 
-            self._prev_state[bid] = {
-                "opp_fainted": curr_opp_fainted,
-                "own_fainted": curr_own_fainted,
-            }
+            if battle.finished:
+                self._prev_state.pop(bid, None)
+            else:
+                self._prev_state[bid] = {
+                    "opp_fainted": curr_opp_fainted,
+                    "own_fainted": curr_own_fainted,
+                }
             return reward
 
 else:  # pragma: no cover
@@ -368,7 +553,13 @@ else:  # pragma: no cover
 # My team HP:   6
 # Opp team HP:  6
 # Field:        4  (weather, terrain, trick_room, turn)
-OBS_DIM_DOUBLES = 29 + 29 + 3 + 3 + 6 + 6 + 4   # = 80
+# STAB+speed 1: 5   (4 STAB flags + 1 speed tier for active mon 1)
+# STAB+speed 2: 5   (4 STAB flags + 1 speed tier for active mon 2)
+# Abil+item 1: 15   (own ability 8 + own item 7)
+# Abil+item 2: 15   (own ability 8 + own item 7)
+# Opp abil 1:  10   (opp ability 6 + opp item 4)
+# Opp abil 2:  10   (opp ability 6 + opp item 4)
+OBS_DIM_DOUBLES = 29 + 29 + 3 + 3 + 6 + 6 + 4 + 5 + 5 + 15 + 15 + 10 + 10   # = 140
 
 
 def build_doubles_observation(battle: Any) -> np.ndarray:
@@ -387,7 +578,7 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
     for slot in range(2):
         active = active_list[slot] if slot < len(active_list) else None
         if active:
-            obs[idx] = hash(active.species) % 10000 / 10000.0
+            obs[idx] = _stable_species_id(active.species)
             idx += 1
             obs[idx] = _pokemon_hp(active)
             idx += 1
@@ -415,7 +606,7 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
     for slot in range(2):
         opp = opp_list[slot] if slot < len(opp_list) else None
         if opp:
-            obs[idx] = hash(opp.species) % 10000 / 10000.0
+            obs[idx] = _stable_species_id(opp.species)
             idx += 1
             obs[idx] = _pokemon_hp(opp)
             idx += 1
@@ -463,9 +654,41 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
     obs[idx] = min(getattr(battle, "turn", 0), 50) / 50.0
     idx += 1
 
+    # ── STAB flags + speed tier per active slot ────────────────────
+    opp_list_full = getattr(battle, "opponent_active_pokemon", [None, None]) or [None, None]
+    if not isinstance(opp_list_full, (list, tuple)):
+        opp_list_full = [opp_list_full, None]
+    for slot in range(2):
+        slot_active = active_list[slot] if slot < len(active_list) else None
+        slot_opp    = opp_list_full[slot] if slot < len(opp_list_full) else None
+        slot_moves  = list(getattr(battle, "available_moves", [[]])[slot]
+                           if slot < len(getattr(battle, "available_moves", []))
+                           else [])
+        for i in range(N_MOVES):
+            move = slot_moves[i] if i < len(slot_moves) else None
+            obs[idx] = _stab_flag(move, slot_active)
+            idx += 1
+        obs[idx] = _speed_tier(slot_active, slot_opp)
+        idx += 1
+
+    # ── Ability + item buckets per active slot ─────────────────────
+    for slot in range(2):
+        slot_active = active_list[slot] if slot < len(active_list) else None
+        slot_opp    = opp_list_full[slot] if slot < len(opp_list_full) else None
+        slot_hp     = _pokemon_hp(slot_active)
+        slot_opp_hp = _pokemon_hp(slot_opp)
+        for val in _ability_buckets(getattr(slot_active, "ability", None), is_own=True):  # 8
+            obs[idx] = val; idx += 1
+        for val in _item_buckets(getattr(slot_active, "item", None), slot_hp, is_own=True):  # 7
+            obs[idx] = val; idx += 1
+        for val in _ability_buckets(getattr(slot_opp, "ability", None), is_own=False):  # 6
+            obs[idx] = val; idx += 1
+        for val in _item_buckets(getattr(slot_opp, "item", None), slot_opp_hp, is_own=False):  # 4
+            obs[idx] = val; idx += 1
+
     # ── Final Dimension Verification ──────────────────────────────────
     assert idx == OBS_DIM_DOUBLES, f"Doubles observation dimension mismatch: {idx} != {OBS_DIM_DOUBLES}"
-    
+
     return obs
 
 
@@ -499,11 +722,12 @@ if POKE_ENV_AVAILABLE:
             self._sb3_action_space = self.action_spaces[first_agent]
             # Override observation_spaces with our custom flat Box per agent
             # (poke-env's __setattr__ wraps these with action_mask).
-            obs_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
+            # low=-1.0/high=2.0: covers intimidate/flameorb (-1.0) and choicescarf speed (1.5)
+            obs_space = Box(low=-1.0, high=2.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
             self.observation_spaces = {
                 agent: obs_space for agent in self.possible_agents
             }
-            self._prev_state: dict[int, dict[str, int]] = {}
+            self._prev_state: dict[str, dict[str, int]] = {}
 
         @property
         def action_space(self):
@@ -541,7 +765,7 @@ if POKE_ENV_AVAILABLE:
               +0.3  per opponent faint (delta since last step)
               -0.3  per own faint (delta since last step)
             """
-            bid = id(battle)
+            bid = getattr(battle, "battle_tag", id(battle))
             prev = self._prev_state.get(bid, {"opp_fainted": 0, "own_fainted": 0})
 
             curr_opp_fainted = sum(1 for p in battle.opponent_team.values() if p.fainted)
@@ -556,10 +780,13 @@ if POKE_ENV_AVAILABLE:
             reward += 0.3 * (curr_opp_fainted - prev["opp_fainted"])
             reward -= 0.3 * (curr_own_fainted - prev["own_fainted"])
 
-            self._prev_state[bid] = {
-                "opp_fainted": curr_opp_fainted,
-                "own_fainted": curr_own_fainted,
-            }
+            if battle.finished:
+                self._prev_state.pop(bid, None)
+            else:
+                self._prev_state[bid] = {
+                    "opp_fainted": curr_opp_fainted,
+                    "own_fainted": curr_own_fainted,
+                }
             return reward
 
 else:  # pragma: no cover
