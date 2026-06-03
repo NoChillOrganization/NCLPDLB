@@ -3,7 +3,7 @@ Unit tests for DraftService — snake, auction, ban, admin ops.
 Run: pytest tests/unit/test_draft_service.py -v
 """
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.data.models import DraftFormat, DraftStatus
 from src.services.draft_service import DraftService
@@ -569,7 +569,8 @@ async def test_timer_fires_and_starts_next_player_timer(draft_svc):
     async def cb(gid, pid):
         callback_players.append(pid)
 
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.sheets"), \
+         patch("src.services.draft_service._db_save_draft", new_callable=AsyncMock):
         # timer_seconds=0 → asyncio.sleep(0) fires instantly (real yield, no mocking needed)
         draft = await draft_svc.create_draft("gChain", "p1", DraftFormat.SNAKE, timer_seconds=0)
         await draft_svc.add_player("gChain", "p1")
@@ -577,13 +578,13 @@ async def test_timer_fires_and_starts_next_player_timer(draft_svc):
         await draft_svc.add_player("gChain", "p3")
         draft.status = DraftStatus.ACTIVE
 
-    draft_svc._start_timer("gChain", draft, cb)
-    # Mutate timer_seconds to 1 AFTER creating the task but BEFORE it runs.
-    # The task closure uses draft.timer_seconds for sleep (0 → instant),
-    # but active.timer_seconds for the restart guard (1 → line 293 fires).
-    draft.timer_seconds = 1
-    for _ in range(10):
-        await asyncio.sleep(0)
+        draft_svc._start_timer("gChain", draft, cb)
+        # Mutate timer_seconds to 1 AFTER creating the task but BEFORE it runs.
+        # The task closure uses draft.timer_seconds for sleep (0 → instant),
+        # but active.timer_seconds for the restart guard (1 → line 293 fires).
+        draft.timer_seconds = 1
+        for _ in range(10):
+            await asyncio.sleep(0)
 
     # p1 should have been skipped and line 293 should have restarted timer for p2
     assert "p1" in callback_players

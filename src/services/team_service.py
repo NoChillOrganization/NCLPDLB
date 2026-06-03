@@ -3,6 +3,7 @@ Team Service — Roster management, trades, Showdown import/export, console lega
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 import uuid
@@ -67,7 +68,7 @@ class TeamService:
         if key in _roster_cache:
             return _roster_cache[key]
 
-        record = sheets.find_row(Tab.TEAM_TEMPLATE, "player_id", player_id)
+        record = await asyncio.to_thread(sheets.find_row, Tab.TEAM_TEMPLATE, "player_id", player_id)
         if not record or str(record.get("guild_id")) != guild_id:
             return None
 
@@ -114,7 +115,7 @@ class TeamService:
         slots = [
             (p.name, getattr(p, "tera_type", "")) for p in roster.pokemon
         ]
-        sheets.upsert_team_page({
+        await asyncio.to_thread(sheets.upsert_team_page, {
             "player_id": player_id,
             "player_name": player_name,
             "team_name": team_name,
@@ -158,7 +159,7 @@ class TeamService:
             pokemon_received=request_mon.name,
             status="pending",
         )
-        sheets.save_transaction({
+        await asyncio.to_thread(sheets.save_transaction, {
             "transaction_id": trade.trade_id,
             "league_id": guild_id,   # stored so accept/decline can locate rosters
             "type": "trade",
@@ -174,7 +175,7 @@ class TeamService:
         return TradeResult(success=True, trade_id=trade.trade_id)
 
     async def accept_trade(self, player_id: str, trade_id: str) -> TradeResult:
-        record = sheets.find_row(Tab.TRANSACTIONS, "transaction_id", trade_id)
+        record = await asyncio.to_thread(sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id)
         if not record:
             return TradeResult(success=False, error="Trade not found.")
         if str(record.get("to_player_id")) != player_id:
@@ -202,11 +203,11 @@ class TeamService:
 
         # Mark accepted in sheets
         record["status"] = "accepted"
-        sheets.save_transaction(record)
+        await asyncio.to_thread(sheets.save_transaction, record)
         return TradeResult(success=True, summary=f"Trade complete! {given} ↔ {received}")
 
     async def decline_trade(self, player_id: str, trade_id: str) -> TradeResult:
-        record = sheets.find_row(Tab.TRANSACTIONS, "transaction_id", trade_id)
+        record = await asyncio.to_thread(sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id)
         if not record:
             return TradeResult(success=False, error="Trade not found.")
         if str(record.get("to_player_id")) != player_id:
@@ -214,7 +215,7 @@ class TeamService:
         if record.get("status") != "pending":
             return TradeResult(success=False, error="Trade is no longer pending.")
         record["status"] = "declined"
-        sheets.save_transaction(record)
+        await asyncio.to_thread(sheets.save_transaction, record)
         return TradeResult(success=True, summary="Trade declined.")
 
     async def import_showdown(

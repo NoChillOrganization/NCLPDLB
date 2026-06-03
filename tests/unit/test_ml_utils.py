@@ -12,16 +12,34 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import re
 import sys
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def _resp_cm(payload=None, status=200):
+    """Async context manager mock yielding an aiohttp-like response."""
+    resp = MagicMock()
+    resp.status = status
+    resp.json = AsyncMock(return_value=payload)
+    ctx = MagicMock()
+    ctx.__aenter__ = AsyncMock(return_value=resp)
+    ctx.__aexit__ = AsyncMock(return_value=False)
+    return ctx
+
+
+def _exc_cm(exc):
+    """Async context manager mock that raises exc on __aenter__."""
+    ctx = MagicMock()
+    ctx.__aenter__ = AsyncMock(side_effect=exc)
+    ctx.__aexit__ = AsyncMock(return_value=False)
+    return ctx
 
 
 # ── showdown_modes ─────────────────────────────────────────────────────────────
@@ -418,9 +436,7 @@ class TestFetchSearchPage:
 
     def test_returns_list_of_replay_metas_on_success(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
+        from src.ml.replay_scraper import ReplayScraper
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
         page_data = [
@@ -432,10 +448,9 @@ class TestFetchSearchPage:
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                mock.get(re.compile(re.escape(SEARCH_URL) + '.*'), payload=page_data)
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_search_page(session, page=1)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_resp_cm(payload=page_data))
+                return await scraper._fetch_search_page(session, page=1)
 
         result = asyncio.run(run())
         assert len(result) == 2
@@ -444,64 +459,52 @@ class TestFetchSearchPage:
 
     def test_returns_empty_list_on_non_200_status(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
+        from src.ml.replay_scraper import ReplayScraper
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), status=503)
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_search_page(session, page=1)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_resp_cm(status=503))
+                return await scraper._fetch_search_page(session, page=1)
 
         result = asyncio.run(run())
         assert result == []
 
     def test_returns_empty_list_on_exception(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
+        from src.ml.replay_scraper import ReplayScraper
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), exception=aiohttp.ClientError("network error"))
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_search_page(session, page=1)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_exc_cm(aiohttp.ClientError("network error")))
+                return await scraper._fetch_search_page(session, page=1)
 
         result = asyncio.run(run())
         assert result == []
 
     def test_returns_empty_list_when_response_is_not_list(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
+        from src.ml.replay_scraper import ReplayScraper
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                # API returns a dict instead of a list
-                mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload={"error": "not found"})
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_search_page(session, page=1)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_resp_cm(payload={"error": "not found"}))
+                return await scraper._fetch_search_page(session, page=1)
 
         result = asyncio.run(run())
         assert result == []
 
     def test_filters_by_min_rating(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
+        from src.ml.replay_scraper import ReplayScraper
 
         scraper = ReplayScraper(format="gen9ou", min_rating=1700, output_dir=tmp_path)
         page_data = [
@@ -511,10 +514,9 @@ class TestFetchSearchPage:
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=page_data)
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_search_page(session, page=1)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_resp_cm(payload=page_data))
+                return await scraper._fetch_search_page(session, page=1)
 
         result = asyncio.run(run())
         assert len(result) == 1
@@ -543,69 +545,56 @@ class TestFetchReplay:
 
     def test_returns_false_on_non_200_status(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
+        from src.ml.replay_scraper import ReplayScraper, ReplayMeta
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
         meta = ReplayMeta({"id": "gen9ou-404", "rating": 1600})
-        url = REPLAY_URL.format(id=meta.id)
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                mock.get(url, status=404)
-                semaphore = asyncio.Semaphore(5)
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_replay(session, meta, semaphore)
+            semaphore = asyncio.Semaphore(5)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_resp_cm(status=404))
+                return await scraper._fetch_replay(session, meta, semaphore)
 
         result = asyncio.run(run())
         assert result is False
 
     def test_returns_false_on_exception(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
+        from src.ml.replay_scraper import ReplayScraper, ReplayMeta
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
         meta = ReplayMeta({"id": "gen9ou-err", "rating": 1600})
-        url = REPLAY_URL.format(id=meta.id)
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                mock.get(url, exception=aiohttp.ClientError("fail"))
-                semaphore = asyncio.Semaphore(5)
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_replay(session, meta, semaphore)
+            semaphore = asyncio.Semaphore(5)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_exc_cm(aiohttp.ClientError("fail")))
+                return await scraper._fetch_replay(session, meta, semaphore)
 
         result = asyncio.run(run())
         assert result is False
 
     def test_success_writes_json_file_and_returns_true(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
+        from src.ml.replay_scraper import ReplayScraper, ReplayMeta
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
         meta = ReplayMeta({"id": "gen9ou-new", "rating": 1700, "format": "gen9ou"})
-        url = REPLAY_URL.format(id=meta.id)
         replay_json = {"id": "gen9ou-new", "log": "|start\n|turn|1\n|win|Alice"}
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                mock.get(url, payload=replay_json)
-                semaphore = asyncio.Semaphore(5)
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_replay(session, meta, semaphore)
+            semaphore = asyncio.Semaphore(5)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_resp_cm(payload=replay_json))
+                return await scraper._fetch_replay(session, meta, semaphore)
 
         result = asyncio.run(run())
         assert result is True
 
-        # File should exist on disk
         saved_path = tmp_path / "gen9ou" / "gen9ou-new.json"
         assert saved_path.exists()
         saved_data = json.loads(saved_path.read_text(encoding="utf-8"))
@@ -615,21 +604,17 @@ class TestFetchReplay:
 
     def test_success_adds_id_to_seen_set(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
+        from src.ml.replay_scraper import ReplayScraper, ReplayMeta
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
         meta = ReplayMeta({"id": "gen9ou-track", "rating": 1700})
-        url = REPLAY_URL.format(id=meta.id)
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                mock.get(url, payload={"id": "gen9ou-track", "log": ""})
-                semaphore = asyncio.Semaphore(5)
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_replay(session, meta, semaphore)
+            semaphore = asyncio.Semaphore(5)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_resp_cm(payload={"id": "gen9ou-track", "log": ""}))
+                return await scraper._fetch_replay(session, meta, semaphore)
 
         asyncio.run(run())
         assert "gen9ou-track" in scraper._seen
@@ -637,23 +622,19 @@ class TestFetchReplay:
     def test_success_sets_default_format_and_rating(self, tmp_path):
         """setdefault calls on data dict are covered — format/rating filled in if absent."""
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, ReplayMeta, REPLAY_URL
+        from src.ml.replay_scraper import ReplayScraper, ReplayMeta
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
         meta = ReplayMeta({"id": "gen9ou-noformat", "rating": 1800})
-        url = REPLAY_URL.format(id=meta.id)
         # Response JSON intentionally lacks "format" and "rating"
         replay_json = {"id": "gen9ou-noformat", "log": ""}
 
         async def run():
             import aiohttp
-            with aioresponses() as mock:
-                mock.get(url, payload=replay_json)
-                semaphore = asyncio.Semaphore(5)
-                async with aiohttp.ClientSession() as session:
-                    return await scraper._fetch_replay(session, meta, semaphore)
+            semaphore = asyncio.Semaphore(5)
+            async with aiohttp.ClientSession() as session:
+                session.get = MagicMock(return_value=_resp_cm(payload=replay_json))
+                return await scraper._fetch_replay(session, meta, semaphore)
 
         asyncio.run(run())
         saved = json.loads(
@@ -668,21 +649,21 @@ class TestScrape:
 
     def test_scrape_downloads_new_replays_and_returns_count(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, SEARCH_URL, REPLAY_URL
+        import aiohttp
+        from src.ml.replay_scraper import ReplayScraper
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
         search_page = [{"id": "gen9ou-s1", "rating": 1600, "format": "gen9ou"}]
         replay_data = {"id": "gen9ou-s1", "log": ""}
-        replay_url = REPLAY_URL.format(id="gen9ou-s1")
+
+        responses = [
+            _resp_cm(payload=search_page),  # search page 1
+            _resp_cm(payload=replay_data),  # replay download
+            _resp_cm(payload=[]),           # search page 2 → stops
+        ]
 
         async def run():
-            with aioresponses() as mock:
-                # Page 1 returns one result; page 2 returns empty (stops early)
-                mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=search_page)
-                mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=[])
-                mock.get(replay_url, payload=replay_data)
+            with patch.object(aiohttp.ClientSession, "get", side_effect=responses):
                 return await scraper.scrape(pages=5)
 
         count = asyncio.run(run())
@@ -690,19 +671,20 @@ class TestScrape:
 
     def test_scrape_skips_page_of_already_seen_metas(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
+        import aiohttp
+        from src.ml.replay_scraper import ReplayScraper
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
-        # Pre-mark the replay as seen
         scraper._seen.add("gen9ou-seen")
         search_page = [{"id": "gen9ou-seen", "rating": 1600}]
 
+        responses = [
+            _resp_cm(payload=search_page),  # page 1: all already seen
+            _resp_cm(payload=[]),           # page 2: empty → stops
+        ]
+
         async def run():
-            with aioresponses() as mock:
-                mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=search_page)
-                mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=[])  # second page — stops early
+            with patch.object(aiohttp.ClientSession, "get", side_effect=responses):
                 return await scraper.scrape(pages=5)
 
         count = asyncio.run(run())
@@ -710,16 +692,15 @@ class TestScrape:
 
     def test_scrape_stops_early_on_empty_page(self, tmp_path):
         pytest.importorskip("aiohttp")
-        pytest.importorskip("aioresponses")
-        from aioresponses import aioresponses
-        from src.ml.replay_scraper import ReplayScraper, SEARCH_URL
+        import aiohttp
+        from src.ml.replay_scraper import ReplayScraper
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
 
+        responses = [_resp_cm(payload=[])]  # page 1 empty → stops immediately
+
         async def run():
-            with aioresponses() as mock:
-                # First page empty — should stop immediately
-                mock.get(re.compile(re.escape(SEARCH_URL) + ".*"), payload=[])
+            with patch.object(aiohttp.ClientSession, "get", side_effect=responses):
                 return await scraper.scrape(pages=10)
 
         count = asyncio.run(run())

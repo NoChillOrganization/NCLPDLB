@@ -215,23 +215,26 @@ class TestLadderLoopInit:
 
 
 class TestLadderLoopMakePlayer:
-    def test_raises_runtime_error_when_no_username(self):
+    @pytest.mark.asyncio
+    async def test_raises_runtime_error_when_no_username(self):
         loop = _make_loop(username="")
         with pytest.raises(RuntimeError, match="Showdown account is required"):
-            loop._make_player()
+            await loop._make_player()
 
-    def test_raises_runtime_error_when_poke_env_unavailable(self):
+    @pytest.mark.asyncio
+    async def test_raises_runtime_error_when_poke_env_unavailable(self):
         loop = _make_loop(username="Bot")
         with patch("src.ml.self_play.POKE_ENV_OK", False), \
              patch("src.ml.self_play.POKE_ENV_AVAILABLE", False):
             with pytest.raises(RuntimeError, match="poke-env is required"):
-                loop._make_player()
+                await loop._make_player()
 
-    def test_returns_cached_player_on_second_call(self):
+    @pytest.mark.asyncio
+    async def test_returns_cached_player_on_second_call(self):
         loop = _make_loop()
         mock_player = MagicMock()
         loop._player = mock_player  # pre-set cached player
-        result = loop._make_player()
+        result = await loop._make_player()
         assert result is mock_player
 
 
@@ -333,7 +336,8 @@ class TestSelfPlayLoopAlias:
 # ── LadderLoop._make_player (new-player path) ──────────────────────────────────
 
 class TestMakePlayerCreatesNew:
-    def test_creates_mcts_player_and_caches_it(self):
+    @pytest.mark.asyncio
+    async def test_creates_mcts_player_and_caches_it(self):
         """When _player is None and credentials present, creates MCTSPlayer."""
         loop = _make_loop(username="Bot", password="pw")
 
@@ -343,21 +347,22 @@ class TestMakePlayerCreatesNew:
         with patch("src.ml.self_play.POKE_ENV_OK", True), \
              patch("src.ml.self_play.POKE_ENV_AVAILABLE", True), \
              patch("src.ml.self_play.MCTSPlayer", mock_player_cls), \
-             patch("time.sleep"):
-            result = loop._make_player()
+             patch("asyncio.sleep", new_callable=AsyncMock):
+            result = await loop._make_player()
 
         assert result is mock_player
         assert loop._player is mock_player
         mock_player_cls.assert_called_once()
 
-    def test_second_call_returns_cached_player_without_recreating(self):
+    @pytest.mark.asyncio
+    async def test_second_call_returns_cached_player_without_recreating(self):
         loop = _make_loop()
         cached = MagicMock()
         loop._player = cached
 
         with patch("src.ml.self_play.POKE_ENV_OK", True), \
              patch("src.ml.self_play.POKE_ENV_AVAILABLE", True):
-            result = loop._make_player()
+            result = await loop._make_player()
 
         assert result is cached
 
@@ -376,7 +381,7 @@ class TestRunGame:
             player.n_lost_battles += losses_delta
 
         player.ladder = _fake_ladder
-        loop._make_player = MagicMock(return_value=player)
+        loop._make_player = AsyncMock(return_value=player)
         return loop
 
     @pytest.mark.asyncio

@@ -18,6 +18,22 @@ from src.services.draft_service import DraftService
 
 log = logging.getLogger(__name__)
 
+# Retain strong references to fire-and-forget tasks so GC cannot cancel them (M8)
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _create_background_task(coro) -> asyncio.Task:
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+    task.add_done_callback(_log_task_exception)
+    return task
+
+
+def _log_task_exception(task: asyncio.Task) -> None:
+    if not task.cancelled() and task.exception() is not None:
+        log.error("Background task raised an exception: %s", task.exception(), exc_info=task.exception())
+
 
 def is_commissioner():
     """Check decorator: user must be league commissioner or have Manage Guild."""
@@ -241,7 +257,7 @@ class AdminCog(commands.Cog, name="Admin"):
             except Exception:
                 pass
 
-        asyncio.create_task(
+        _create_background_task(
             _run_training(interaction, format, timesteps, force, channel_msg=status_msg, server="showdown")
         )
 
@@ -300,7 +316,7 @@ class AdminCog(commands.Cog, name="Admin"):
             except Exception:
                 pass
 
-        asyncio.create_task(
+        _create_background_task(
             _run_training_all(
                 interaction, timesteps, force=not skip_existing,
                 channel_msg=status_msg, server="showdown",
@@ -324,7 +340,7 @@ class AdminCog(commands.Cog, name="Admin"):
         release: str | None = None,
     ) -> None:
         await interaction.response.defer(thinking=True, ephemeral=True)
-        asyncio.create_task(
+        _create_background_task(
             _pull_models(interaction, fmt=format, release_tag=release)
         )
 

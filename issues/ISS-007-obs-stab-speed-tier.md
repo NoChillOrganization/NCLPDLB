@@ -46,3 +46,19 @@ Specifies:
 Implementation checklist, doubles parity, gate conditions, and full file list documented.
 Code on branch `feat/obs-dim-53-stab-speed` — **gated behind Phase 06 + CI run #41 completion**.
 Do not implement while 48-dim training (Actions run 26753447485) is in flight.
+
+## Progress (2026-06-02)
+
+Gate conditions cleared: ISS-004/005 closed, 22-format 500k training run complete (ISS-006).
+
+**Implementation complete on `feat/obs-dim-53-stab-speed`:**
+- [x] `_stab_flag()` helper added — returns 1.0 if move type ∈ active mon's types
+- [x] `_speed_tier()` helper added — base-stat comparison: 1.0=faster, 0.5=unknown, 0.0=slower
+- [x] `build_observation()` extended: floats appended at [48..52]
+- [x] `OBS_DIM = 48 → 53` (literal + computed form both updated)
+- [x] `OBS_DIM_DOUBLES = 80 → 90` (STAB+speed for 2 active slots, 5 floats each)
+- [x] `build_doubles_observation()` extended with per-slot STAB+speed trailing section
+- [x] `tests/unit/test_battle_env.py`: literal `== 48` updated; turn/terrain tests fixed to
+      explicit indices (47 / 45); 12 new unit tests for `_stab_flag`, `_speed_tier`, new obs slots
+- [x] 113 tests pass, 0 failures
+- [ ] Dispatch fresh training run with OBS_DIM=53 (next milestone)

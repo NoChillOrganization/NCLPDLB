@@ -1,6 +1,7 @@
 """
 League Cog — League management, schedules, multi-server support.
 """
+import asyncio
 import uuid
 
 import discord
@@ -38,7 +39,7 @@ class LeagueCog(commands.Cog, name="League"):
             "commissioner_id": str(interaction.user.id),
             "commissioner_name": interaction.user.display_name,
         }
-        sheets.save_league_setup(league_data)
+        await asyncio.to_thread(sheets.save_league_setup, league_data)
         embed = discord.Embed(
             title=f"League '{name}' Created!",
             description=(
@@ -60,7 +61,7 @@ class LeagueCog(commands.Cog, name="League"):
         pool: str | None = None,
     ) -> None:
         await interaction.response.defer()
-        rows = sheets.read_all(Tab.SCHEDULE)
+        rows = await asyncio.to_thread(sheets.read_all, Tab.SCHEDULE)
         if week is not None:
             rows = [r for r in rows if str(r.get("week", "")) == str(week)]
         if pool:
@@ -105,7 +106,7 @@ class LeagueCog(commands.Cog, name="League"):
         )
 
         # Persist match to Sheets
-        sheets.save_match_stats({
+        await asyncio.to_thread(sheets.save_match_stats, {
             "match_id": str(uuid.uuid4())[:8],
             "league_id": str(interaction.guild_id),
             "winner_id": str(winner.id),

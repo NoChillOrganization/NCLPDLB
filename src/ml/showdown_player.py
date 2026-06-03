@@ -144,8 +144,16 @@ if POKE_ENV_AVAILABLE:
                     "stable-baselines3 is required. "
                     "Run: pip install stable-baselines3>=2.2.0"
                 )
-            self._policy = PPO.load(str(path))
-            log.info(f"[ShowdownBotPlayer] Policy loaded from {path}")
+            from src.ml.battle_env import OBS_DIM
+            policy = PPO.load(str(path))
+            loaded_dim = policy.observation_space.shape[0] if policy.observation_space.shape else None
+            if loaded_dim != OBS_DIM:
+                raise ValueError(
+                    f"Model obs dim mismatch: model has {loaded_dim}, env expects {OBS_DIM}. "
+                    f"Retrain with the current observation space before loading."
+                )
+            self._policy = policy
+            log.info(f"[ShowdownBotPlayer] Policy loaded from {path} (obs_dim={OBS_DIM})")
 
         def _load_transformer(self, path: str | Path) -> None:  # pragma: no cover
             """Load a BattleTransformer checkpoint (.pt) for MCTS inference."""
@@ -189,6 +197,10 @@ if POKE_ENV_AVAILABLE:
                 action, _ = self._policy.predict(obs, deterministic=True)
                 action_id = int(action[0])
                 return self._action_to_move(action_id, battle)
+            except (ValueError, RuntimeError) as exc:
+                # Hard errors (shape mismatch, etc.) — re-raise so the caller sees them
+                log.error(f"[ShowdownBotPlayer] Policy predict failed: {exc}")
+                raise
             except Exception as exc:
                 log.warning(f"[ShowdownBotPlayer] Policy error: {exc} — falling back to random")
                 return self.choose_random_move(battle)
