@@ -51,9 +51,10 @@
 - ✅ **PyTorch + stable-baselines3**: Resolved via VirtualBox x86-64 Ubuntu VM
   (ARM64 Windows host → Linux guest via shared folder; no file copying needed)
 - ✅ **Showdown server**: Running on `ws://localhost:8000` inside the VM
-- ✅ **gen9randombattle model**: Smoke-trained to completion (2026-06-01);
-  `data/ml/policy/gen9randombattle/final_model.zip` present
-- 🔄 **Full 500k run**: In progress (PID 74506 in VM, nohup; monitor via `tail -f /tmp/train_all.log`)
+- ✅ **All 22 formats trained**: Full 500k run completed 2026-06-03; 20/22 formats trained to
+  completion, 2 champion VGC formats saved 0-step checkpoints (poke_env auth issue with local
+  Showdown server for Champions ladder formats — see ISS-006-SOLUTION.md)
+- ✅ **Models**: `data/ml/policy/<format>/final_model.zip` present for all 22 formats
 
 See `docs/DEPLOYMENT.md` → *ML Training Environment* for full setup instructions.
 
@@ -87,7 +88,7 @@ pip install torch stable-baselines3
 python -m src.ml.train_all
 ```
 
-This trains all 10 formats sequentially:
+This trains all 22 formats sequentially:
 
 - gen9randombattle (500k steps)
 - gen9ou (500k steps)
