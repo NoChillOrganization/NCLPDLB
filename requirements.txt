@@ -42,7 +42,7 @@ respx>=0.23.1  # Mock httpx requests
 locust>=2.44.0  # Load testing (tests/performance/locustfile.py)
 
 # Code Quality
-ruff>=0.15.14
+ruff>=0.15.15
 mypy>=2.1.0
 
 # Machine Learning — data pipeline
