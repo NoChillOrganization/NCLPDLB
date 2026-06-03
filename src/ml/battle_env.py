@@ -10,7 +10,9 @@ Observation space (float32 vector):
   Opponent:    species_id/10000, hp_pct, status_id/6
   Team HP:     6×hp_pct for each side
   Field:       weather_id/5, terrain_id/4, trick_room (0/1), turn/50
-  Total dims:  OBS_DIM = 48 — see MOVE_TYPE_EFF_OBS_IDXS for type_eff slot indices
+  STAB flags:  4 floats at [48..51], one per move slot (1.0 if move type ∈ active types)
+  Speed tier:  1 float  at [52], 0.0=slower / 0.5=unknown / 1.0=faster (base stats)
+  Total dims:  OBS_DIM = 53 — see MOVE_TYPE_EFF_OBS_IDXS for type_eff slot indices
 
 Action space (Discrete — gen9 = 26):
   0-5   → switch to team slot 0-5
@@ -50,9 +52,9 @@ except ImportError:  # pragma: no cover
 log = logging.getLogger(__name__)
 
 # ── Observation constants ─────────────────────────────────────────────────────
-OBS_DIM = 48
+OBS_DIM = 53
 TEAM_SIZE = 6
-OBS_DIM_DOUBLES = 80
+OBS_DIM_DOUBLES = 90
 N_MOVES = 4
 MOVE_FEATS = 5    # base_power, accuracy, type_id, priority, effectiveness
 STATUS_DIM  = 1
@@ -63,8 +65,10 @@ FIELD_DIM   = 4
 # Opp active:    [species_id, hp, status]     = 3
 # My team HP:    6
 # Opp team HP:   6
-# Field:         4
-OBS_DIM = 29 + 3 + 6 + 6 + 4   # = 48
+# Field:         4  (weather, terrain, trick_room, turn)
+# STAB flags:    4  ([48..51], one per move slot)
+# Speed tier:    1  ([52], base-stat relative speed)
+OBS_DIM = 29 + 3 + 6 + 6 + 4 + 4 + 1   # = 53
 
 # Obs-vector indices for the type-effectiveness feature, one per move slot.
 # Active-mon layout: [species(1), hp(1), slot0…slot3(5 feats each), …]
@@ -140,6 +144,34 @@ def _pokemon_hp(mon: "Pokemon | None") -> float:
     if mon is None or mon.fainted:
         return 0.0
     return getattr(mon, "current_hp_fraction", 1.0) or 0.0
+
+
+def _stab_flag(move: "Move | None", mon: "Pokemon | None") -> float:
+    """1.0 if move shares a type with mon (STAB), 0.0 otherwise."""
+    if move is None or mon is None:
+        return 0.0
+    try:
+        move_type = str(getattr(move, "type", "")).lower().split(".")[-1]
+        mon_types = [str(t).lower().split(".")[-1] for t in (getattr(mon, "types", None) or [])]
+    except Exception:
+        return 0.0
+    return 1.0 if move_type in mon_types else 0.0
+
+
+def _speed_tier(active: "Pokemon | None", opp: "Pokemon | None") -> float:
+    """Base-stat speed comparison: 1.0=faster, 0.5=unknown/equal, 0.0=slower."""
+    if active is None or opp is None:
+        return 0.5
+    try:
+        my_spe  = int(getattr(active, "base_stats", {}).get("spe", 0) or 0)
+        opp_spe = int(getattr(opp,    "base_stats", {}).get("spe", 0) or 0)
+    except (TypeError, ValueError):
+        return 0.5
+    if my_spe > opp_spe:
+        return 1.0
+    if my_spe < opp_spe:
+        return 0.0
+    return 0.5
 
 
 def build_observation(battle: "AbstractBattle") -> np.ndarray:
@@ -230,9 +262,20 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     obs[idx] = min(getattr(battle, "turn", 0), 50) / 50.0
     idx += 1
 
+    # ── STAB flags [48..51] ────────────────────────────────────────
+    stab_moves = list(battle.available_moves) if hasattr(battle, "available_moves") else []
+    for i in range(N_MOVES):
+        move = stab_moves[i] if i < len(stab_moves) else None
+        obs[idx] = _stab_flag(move, active)
+        idx += 1
+
+    # ── Relative speed tier [52] ───────────────────────────────────
+    obs[idx] = _speed_tier(active, opp)
+    idx += 1
+
     # ── Final Dimension Verification ──────────────────────────────────
     assert idx == OBS_DIM, f"Observation dimension mismatch: {idx} != {OBS_DIM}"
-    
+
     return obs
 
 
@@ -368,7 +411,9 @@ else:  # pragma: no cover
 # My team HP:   6
 # Opp team HP:  6
 # Field:        4  (weather, terrain, trick_room, turn)
-OBS_DIM_DOUBLES = 29 + 29 + 3 + 3 + 6 + 6 + 4   # = 80
+# STAB+speed 1: 5  (4 STAB flags + 1 speed tier for active mon 1)
+# STAB+speed 2: 5  (4 STAB flags + 1 speed tier for active mon 2)
+OBS_DIM_DOUBLES = 29 + 29 + 3 + 3 + 6 + 6 + 4 + 5 + 5   # = 90
 
 
 def build_doubles_observation(battle: Any) -> np.ndarray:
@@ -463,9 +508,26 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
     obs[idx] = min(getattr(battle, "turn", 0), 50) / 50.0
     idx += 1
 
+    # ── STAB flags + speed tier per active slot ────────────────────
+    opp_list_full = getattr(battle, "opponent_active_pokemon", [None, None]) or [None, None]
+    if not isinstance(opp_list_full, (list, tuple)):
+        opp_list_full = [opp_list_full, None]
+    for slot in range(2):
+        slot_active = active_list[slot] if slot < len(active_list) else None
+        slot_opp    = opp_list_full[slot] if slot < len(opp_list_full) else None
+        slot_moves  = list(getattr(battle, "available_moves", [[]])[slot]
+                           if slot < len(getattr(battle, "available_moves", []))
+                           else [])
+        for i in range(N_MOVES):
+            move = slot_moves[i] if i < len(slot_moves) else None
+            obs[idx] = _stab_flag(move, slot_active)
+            idx += 1
+        obs[idx] = _speed_tier(slot_active, slot_opp)
+        idx += 1
+
     # ── Final Dimension Verification ──────────────────────────────────
     assert idx == OBS_DIM_DOUBLES, f"Doubles observation dimension mismatch: {idx} != {OBS_DIM_DOUBLES}"
-    
+
     return obs
 
 

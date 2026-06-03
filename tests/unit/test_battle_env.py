@@ -21,6 +21,8 @@ from src.ml.battle_env import (
     N_ACTIONS_GEN9,
     _move_features,
     _pokemon_hp,
+    _stab_flag,
+    _speed_tier,
     build_observation,
     build_doubles_observation,
     BattleEnv,
@@ -198,6 +200,74 @@ class TestPokemonHp:
         assert _pokemon_hp(mon) == 0.0
 
 
+# ── _stab_flag ────────────────────────────────────────────────────────────────
+
+class TestStabFlag:
+    def _make_move(self, type_str: str):
+        m = MagicMock()
+        m.type = MagicMock()
+        m.type.__str__ = lambda s: type_str
+        return m
+
+    def _make_mon(self, types: list[str]):
+        mon = MagicMock()
+        type_mocks = []
+        for t in types:
+            tm = MagicMock()
+            tm.__str__ = lambda s, t=t: t
+            type_mocks.append(tm)
+        mon.types = type_mocks
+        return mon
+
+    def test_none_move_returns_zero(self):
+        assert _stab_flag(None, self._make_mon(["fire"])) == 0.0
+
+    def test_none_mon_returns_zero(self):
+        assert _stab_flag(self._make_move("fire"), None) == 0.0
+
+    def test_stab_match(self):
+        assert _stab_flag(self._make_move("fire"), self._make_mon(["fire", "flying"])) == 1.0
+
+    def test_no_stab(self):
+        assert _stab_flag(self._make_move("water"), self._make_mon(["fire", "flying"])) == 0.0
+
+    def test_dual_type_second_slot_stab(self):
+        assert _stab_flag(self._make_move("flying"), self._make_mon(["fire", "flying"])) == 1.0
+
+
+# ── _speed_tier ───────────────────────────────────────────────────────────────
+
+class TestSpeedTier:
+    def _make_mon_with_speed(self, spe: int):
+        mon = MagicMock()
+        mon.base_stats = {"spe": spe}
+        return mon
+
+    def test_none_active_returns_half(self):
+        assert _speed_tier(None, self._make_mon_with_speed(100)) == 0.5
+
+    def test_none_opp_returns_half(self):
+        assert _speed_tier(self._make_mon_with_speed(100), None) == 0.5
+
+    def test_faster(self):
+        assert _speed_tier(self._make_mon_with_speed(120), self._make_mon_with_speed(80)) == 1.0
+
+    def test_slower(self):
+        assert _speed_tier(self._make_mon_with_speed(60), self._make_mon_with_speed(100)) == 0.0
+
+    def test_equal_returns_half(self):
+        assert _speed_tier(self._make_mon_with_speed(95), self._make_mon_with_speed(95)) == 0.5
+
+    def test_both_zero_returns_half(self):
+        assert _speed_tier(self._make_mon_with_speed(0), self._make_mon_with_speed(0)) == 0.5
+
+    def test_invalid_type_returns_half(self):
+        # MagicMock base_stats should trigger the TypeError guard
+        fast = MagicMock()  # base_stats.get("spe") will return MagicMock, int() raises TypeError
+        slow = MagicMock()
+        assert _speed_tier(fast, slow) == 0.5
+
+
 # ── build_observation ─────────────────────────────────────────────────────────
 
 def _make_mock_battle(n_moves=4, n_team=6, n_opp_team=6, turn=10,
@@ -268,12 +338,12 @@ class TestBuildObservation:
         assert obs.shape == (OBS_DIM,)
         assert obs.dtype == np.float32
 
-    def test_obs_shape_is_48(self):
-        """Obs vector for singles battles must be exactly 48 dimensions."""
+    def test_obs_shape_is_53(self):
+        """Obs vector for singles battles must be exactly 53 dimensions (ISS-007)."""
         battle = _make_mock_battle()
         obs = build_observation(battle)
-        assert obs.shape == (48,)
-        assert OBS_DIM == 48
+        assert obs.shape == (53,)
+        assert OBS_DIM == 53
 
     def test_all_values_in_expected_range(self):
         """Most obs values lie in [0, 1]; type_eff slots may be in [-1, 1]."""
@@ -305,19 +375,19 @@ class TestBuildObservation:
     def test_turn_normalized(self):
         battle = _make_mock_battle(turn=25)
         obs = build_observation(battle)
-        # Turn is at last index
-        assert obs[OBS_DIM - 1] == pytest.approx(0.5)
+        # Turn is at fixed index 47 (field block, before STAB/speed tail)
+        assert obs[47] == pytest.approx(0.5)
 
     def test_turn_capped_at_100(self):
         battle = _make_mock_battle(turn=200)
         obs = build_observation(battle)
-        assert obs[OBS_DIM - 1] == pytest.approx(1.0)
+        assert obs[47] == pytest.approx(1.0)
 
     def test_zero_turn(self):
         battle = _make_mock_battle(turn=0)
         obs = build_observation(battle)
-        # Turn is at last index
-        assert obs[OBS_DIM - 1] == pytest.approx(0.0)
+        # Turn is at fixed index 47 (field block, before STAB/speed tail)
+        assert obs[47] == pytest.approx(0.0)
 
     def test_trick_room_effect_imported(self):
         """Force the trick_room try-block to execute with a non-empty fields dict."""
@@ -334,8 +404,27 @@ class TestBuildObservation:
         battle.fields = {Field.ELECTRIC_TERRAIN: 1}
         obs = build_observation(battle)
         assert obs.shape == (OBS_DIM,)
-        # terrain slot should be non-zero (ELECTRIC_TERRAIN id / 4.0)
-        assert obs[OBS_DIM - 3] > 0.0
+        # terrain is at fixed index 45 (field block, before STAB/speed tail)
+        assert obs[45] > 0.0
+
+    def test_stab_flags_present_in_obs(self):
+        """STAB flag slots [48..51] exist and are 0.0 for mock moves (no type match)."""
+        battle = _make_mock_battle()
+        obs = build_observation(battle)
+        for i in range(48, 52):
+            assert obs[i] in (0.0, 1.0), f"obs[{i}] not a valid STAB flag: {obs[i]}"
+
+    def test_speed_tier_in_obs(self):
+        """Speed tier slot [52] exists and is 0.0, 0.5, or 1.0."""
+        battle = _make_mock_battle()
+        obs = build_observation(battle)
+        assert obs[52] in (0.0, 0.5, 1.0)
+
+    def test_speed_tier_unknown_for_mock(self):
+        """Mock mons have no base_stats → speed tier defaults to 0.5."""
+        battle = _make_mock_battle()
+        obs = build_observation(battle)
+        assert obs[52] == pytest.approx(0.5)
 
 
 # ── build_doubles_observation ─────────────────────────────────────────────────
