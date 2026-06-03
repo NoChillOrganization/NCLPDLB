@@ -23,6 +23,8 @@ from src.ml.battle_env import (
     _pokemon_hp,
     _stab_flag,
     _speed_tier,
+    _ability_buckets,
+    _item_buckets,
     build_observation,
     build_doubles_observation,
     BattleEnv,
@@ -268,6 +270,87 @@ class TestSpeedTier:
         assert _speed_tier(fast, slow) == 0.5
 
 
+# ── _ability_buckets ──────────────────────────────────────────────────────────
+
+class TestAbilityBuckets:
+    def test_none_ability_own_all_zero(self):
+        assert _ability_buckets(None, is_own=True) == [0.0] * 8
+
+    def test_none_ability_opp_all_zero(self):
+        assert _ability_buckets(None, is_own=False) == [0.0] * 6
+
+    def test_own_length(self):
+        assert len(_ability_buckets("speedboost", is_own=True)) == 8
+
+    def test_opp_length(self):
+        assert len(_ability_buckets("speedboost", is_own=False)) == 6
+
+    def test_speed_boost(self):
+        buckets = _ability_buckets("speedboost", is_own=True)
+        assert buckets[0] == 1.0  # speed_boost slot
+
+    def test_intimidate_entry_effect(self):
+        buckets = _ability_buckets("intimidate", is_own=True)
+        assert buckets[5] == pytest.approx(-1.0)  # entry_effect slot
+
+    def test_dauntless_shield_entry_effect(self):
+        buckets = _ability_buckets("dauntlessshield", is_own=True)
+        assert buckets[5] == pytest.approx(1.0)
+
+    def test_absorb_type_volt_absorb(self):
+        buckets = _ability_buckets("voltabsorb", is_own=True)
+        assert buckets[4] > 0.0  # absorb_type_id for electric
+
+    def test_regenerator_regen(self):
+        assert _ability_buckets("regenerator", is_own=True)[2] == 1.0
+
+    def test_normalization_spaces(self):
+        assert _ability_buckets("Speed Boost", is_own=True)[0] == 1.0
+
+    def test_unknown_ability_all_zero(self):
+        assert _ability_buckets("unknown", is_own=True) == [0.0] * 8
+
+
+# ── _item_buckets ─────────────────────────────────────────────────────────────
+
+class TestItemBuckets:
+    def test_none_item_own_all_zero(self):
+        result = _item_buckets(None, 1.0, is_own=True)
+        assert result == [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]  # speed_mod defaults to 1.0
+
+    def test_own_length(self):
+        assert len(_item_buckets("leftovers", 1.0, is_own=True)) == 7
+
+    def test_opp_length(self):
+        assert len(_item_buckets("leftovers", 1.0, is_own=False)) == 4
+
+    def test_leftovers_heal(self):
+        buckets = _item_buckets("leftovers", 1.0, is_own=True)
+        assert buckets[0] == pytest.approx(0.0625)
+
+    def test_choice_scarf(self):
+        buckets = _item_buckets("choicescarf", 1.0, is_own=True)
+        assert buckets[1] == pytest.approx(1.0)   # choice slot
+        assert buckets[2] == pytest.approx(1.5)   # speed_mod slot
+
+    def test_focus_sash_at_full_hp(self):
+        buckets = _item_buckets("focussash", 1.0, is_own=True)
+        assert buckets[4] == pytest.approx(1.0)
+
+    def test_focus_sash_below_full_hp(self):
+        buckets = _item_buckets("focussash", 0.9, is_own=True)
+        assert buckets[4] == pytest.approx(0.0)
+
+    def test_life_orb_offence(self):
+        assert _item_buckets("lifeorb", 1.0, is_own=True)[5] == pytest.approx(1.0)
+
+    def test_lum_berry_status(self):
+        assert _item_buckets("lumberry", 1.0, is_own=True)[6] == pytest.approx(1.0)
+
+    def test_flame_orb_status_negative(self):
+        assert _item_buckets("flameorb", 1.0, is_own=True)[6] == pytest.approx(-1.0)
+
+
 # ── build_observation ─────────────────────────────────────────────────────────
 
 def _make_mock_battle(n_moves=4, n_team=6, n_opp_team=6, turn=10,
@@ -338,12 +421,12 @@ class TestBuildObservation:
         assert obs.shape == (OBS_DIM,)
         assert obs.dtype == np.float32
 
-    def test_obs_shape_is_53(self):
-        """Obs vector for singles battles must be exactly 53 dimensions (ISS-007)."""
+    def test_obs_shape_is_78(self):
+        """Obs vector for singles battles must be exactly 78 dimensions (ISS-008)."""
         battle = _make_mock_battle()
         obs = build_observation(battle)
-        assert obs.shape == (53,)
-        assert OBS_DIM == 53
+        assert obs.shape == (78,)
+        assert OBS_DIM == 78
 
     def test_all_values_in_expected_range(self):
         """Most obs values lie in [0, 1]; type_eff slots may be in [-1, 1]."""
@@ -425,6 +508,20 @@ class TestBuildObservation:
         battle = _make_mock_battle()
         obs = build_observation(battle)
         assert obs[52] == pytest.approx(0.5)
+
+    def test_ability_slots_present(self):
+        """Ability bucket slots [53..66] are populated (all 0.0 for mock mons)."""
+        battle = _make_mock_battle()
+        obs = build_observation(battle)
+        for i in range(53, 67):
+            assert -1.0 <= obs[i] <= 1.0, f"obs[{i}] out of range: {obs[i]}"
+
+    def test_item_slots_present(self):
+        """Item bucket slots [67..77] are populated (all 0.0 for mock mons except speed_mod=1.0)."""
+        battle = _make_mock_battle()
+        obs = build_observation(battle)
+        for i in range(67, 78):
+            assert -1.0 <= obs[i] <= 1.5, f"obs[{i}] out of range: {obs[i]}"
 
 
 # ── build_doubles_observation ─────────────────────────────────────────────────

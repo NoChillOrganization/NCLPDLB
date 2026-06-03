@@ -55,10 +55,10 @@
   completion, 2 champion VGC formats saved 0-step checkpoints (poke_env auth issue with local
   Showdown server for Champions ladder formats — see ISS-006-SOLUTION.md)
 - ✅ **Models**: `data/ml/policy/<format>/final_model.zip` present for all 22 formats
-- ⚠️ **Checkpoint break (ISS-007)**: `OBS_DIM` changed 48 → 53 on branch
-  `feat/obs-dim-53-stab-speed`. Existing 48-dim `final_model.zip` and
-  `transformer_checkpoint.pt` are **incompatible** with the new observation space.
-  A fresh training run is required after this branch merges.
+- ⚠️ **Checkpoint break (ISS-007 + ISS-008)**: `OBS_DIM` changed 48 → 78 across branches
+  `feat/obs-dim-53-stab-speed` (STAB+speed, +5) and `feat/obs-ability-item` (ability+item, +25).
+  Existing 48-dim and 53-dim `final_model.zip` / `transformer_checkpoint.pt` are **incompatible**
+  with the new observation space. One fresh 78-dim training run covers both expansions.
 
 See `docs/DEPLOYMENT.md` → *ML Training Environment* for full setup instructions.
 
