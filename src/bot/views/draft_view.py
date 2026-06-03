@@ -168,11 +168,18 @@ class BanSelect(discord.ui.Select):
         super().__init__(placeholder="Choose a Pokemon to ban...", options=options)
 
     async def callback(self, interaction: discord.Interaction) -> None:
+        user_id = str(interaction.user.id)
+        # C4: only draft participants may ban
+        if user_id not in self.draft.player_order:
+            await interaction.response.send_message(
+                "❌ Only draft participants can ban Pokémon.", ephemeral=True
+            )
+            return
         from src.services.draft_service import DraftService
         svc = DraftService()
         result = await svc.ban_pokemon(
             guild_id=self.draft.guild_id,
-            player_id=str(interaction.user.id),
+            player_id=user_id,
             pokemon_name=self.values[0],
         )
         if result.success:

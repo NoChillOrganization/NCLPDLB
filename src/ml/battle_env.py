@@ -12,7 +12,7 @@ Observation space (float32 vector):
   Field:       weather_id/5, terrain_id/4, trick_room (0/1), turn/50
   STAB flags:  4 floats at [48..51], one per move slot (1.0 if move type ∈ active types)
   Speed tier:  1 float  at [52], 0.0=slower / 0.5=unknown / 1.0=faster (base stats)
-  Total dims:  OBS_DIM = 53 — see MOVE_TYPE_EFF_OBS_IDXS for type_eff slot indices
+  Total dims:  OBS_DIM = 78 — see MOVE_TYPE_EFF_OBS_IDXS for type_eff slot indices
 
 Action space (Discrete — gen9 = 26):
   0-5   → switch to team slot 0-5
@@ -27,6 +27,7 @@ See scripts/setup_showdown_server.md for setup instructions.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 from typing import Any
 
@@ -50,6 +51,13 @@ except ImportError:  # pragma: no cover
     DoublesEnv = object  # type: ignore
 
 log = logging.getLogger(__name__)
+
+
+def _stable_species_id(species: Any) -> float:
+    """Stable, cross-process species float in [0,1] using MD5 (not hash())."""
+    digest = hashlib.md5(str(species or "").encode()).digest()
+    return int.from_bytes(digest[:4], "big") / 0xFFFFFFFF
+
 
 # ── Observation constants ─────────────────────────────────────────────────────
 OBS_DIM = 78
@@ -297,7 +305,7 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     # ── Active Pokemon ─────────────────────────────────────────────
     active = battle.active_pokemon
     if active:
-        obs[idx] = hash(active.species) % 10000 / 10000.0
+        obs[idx] = _stable_species_id(active.species)
         idx += 1
         obs[idx] = _pokemon_hp(active)
         idx += 1
@@ -324,7 +332,7 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
     # ── Opponent active ────────────────────────────────────────────
     opp = battle.opponent_active_pokemon
     if opp:
-        obs[idx] = hash(opp.species) % 10000 / 10000.0
+        obs[idx] = _stable_species_id(opp.species)
         idx += 1
         obs[idx] = _pokemon_hp(opp)
         idx += 1
@@ -441,12 +449,13 @@ if POKE_ENV_AVAILABLE:
             self._sb3_action_space = Discrete(N_ACTIONS_GEN9)
             # Override observation_spaces with our custom flat Box per agent
             # (poke-env's __setattr__ wraps these with action_mask).
-            obs_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            # low=-1.0/high=2.0: covers intimidate/flameorb (-1.0) and choicescarf speed (1.5)
+            obs_space = Box(low=-1.0, high=2.0, shape=(OBS_DIM,), dtype=np.float32)
             self.observation_spaces = {
                 agent: obs_space for agent in self.possible_agents
             }
-            # Track previous faint counts for shaped reward (keyed by id(battle))
-            self._prev_state: dict[int, dict[str, int]] = {}
+            # Track previous faint counts for shaped reward (keyed by battle_tag)
+            self._prev_state: dict[str, dict[str, int]] = {}
 
         @property
         def action_space(self):
@@ -499,7 +508,7 @@ if POKE_ENV_AVAILABLE:
               +0.3  per opponent faint (delta since last step)
               -0.3  per own faint (delta since last step)
             """
-            bid = id(battle)
+            bid = getattr(battle, "battle_tag", id(battle))
             prev = self._prev_state.get(bid, {"opp_fainted": 0, "own_fainted": 0})
 
             curr_opp_fainted = sum(1 for p in battle.opponent_team.values() if p.fainted)
@@ -514,10 +523,13 @@ if POKE_ENV_AVAILABLE:
             reward += 0.3 * (curr_opp_fainted - prev["opp_fainted"])
             reward -= 0.3 * (curr_own_fainted - prev["own_fainted"])
 
-            self._prev_state[bid] = {
-                "opp_fainted": curr_opp_fainted,
-                "own_fainted": curr_own_fainted,
-            }
+            if battle.finished:
+                self._prev_state.pop(bid, None)
+            else:
+                self._prev_state[bid] = {
+                    "opp_fainted": curr_opp_fainted,
+                    "own_fainted": curr_own_fainted,
+                }
             return reward
 
 else:  # pragma: no cover
@@ -566,7 +578,7 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
     for slot in range(2):
         active = active_list[slot] if slot < len(active_list) else None
         if active:
-            obs[idx] = hash(active.species) % 10000 / 10000.0
+            obs[idx] = _stable_species_id(active.species)
             idx += 1
             obs[idx] = _pokemon_hp(active)
             idx += 1
@@ -594,7 +606,7 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
     for slot in range(2):
         opp = opp_list[slot] if slot < len(opp_list) else None
         if opp:
-            obs[idx] = hash(opp.species) % 10000 / 10000.0
+            obs[idx] = _stable_species_id(opp.species)
             idx += 1
             obs[idx] = _pokemon_hp(opp)
             idx += 1
@@ -710,11 +722,12 @@ if POKE_ENV_AVAILABLE:
             self._sb3_action_space = self.action_spaces[first_agent]
             # Override observation_spaces with our custom flat Box per agent
             # (poke-env's __setattr__ wraps these with action_mask).
-            obs_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
+            # low=-1.0/high=2.0: covers intimidate/flameorb (-1.0) and choicescarf speed (1.5)
+            obs_space = Box(low=-1.0, high=2.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
             self.observation_spaces = {
                 agent: obs_space for agent in self.possible_agents
             }
-            self._prev_state: dict[int, dict[str, int]] = {}
+            self._prev_state: dict[str, dict[str, int]] = {}
 
         @property
         def action_space(self):
@@ -752,7 +765,7 @@ if POKE_ENV_AVAILABLE:
               +0.3  per opponent faint (delta since last step)
               -0.3  per own faint (delta since last step)
             """
-            bid = id(battle)
+            bid = getattr(battle, "battle_tag", id(battle))
             prev = self._prev_state.get(bid, {"opp_fainted": 0, "own_fainted": 0})
 
             curr_opp_fainted = sum(1 for p in battle.opponent_team.values() if p.fainted)
@@ -767,10 +780,13 @@ if POKE_ENV_AVAILABLE:
             reward += 0.3 * (curr_opp_fainted - prev["opp_fainted"])
             reward -= 0.3 * (curr_own_fainted - prev["own_fainted"])
 
-            self._prev_state[bid] = {
-                "opp_fainted": curr_opp_fainted,
-                "own_fainted": curr_own_fainted,
-            }
+            if battle.finished:
+                self._prev_state.pop(bid, None)
+            else:
+                self._prev_state[bid] = {
+                    "opp_fainted": curr_opp_fainted,
+                    "own_fainted": curr_own_fainted,
+                }
             return reward
 
 else:  # pragma: no cover

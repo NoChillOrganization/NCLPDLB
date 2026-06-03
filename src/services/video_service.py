@@ -12,6 +12,7 @@ Exports:
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from dataclasses import dataclass
@@ -54,7 +55,7 @@ class VideoService:
         public_url = attachment.url
 
         # Save metadata to Google Sheets
-        sheets.save_video({
+        await asyncio.to_thread(sheets.save_video, {
             "video_id": video_id,
             "match_id": "",
             "uploader_id": uploader_id,

@@ -3,6 +3,7 @@ Battle Simulation Service — Damage calc, team comparison, Showdown replay pars
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from dataclasses import dataclass
@@ -160,7 +161,7 @@ class BattleSimService:
             return ReplayParseResult(success=False, error=f"Parse error: {e}")
 
         # Save to Google Sheets
-        sheets.save_replay({
+        await asyncio.to_thread(sheets.save_replay, {
             "replay_id": str(uuid.uuid4())[:8],
             "match_id": "",  # Will be linked if match exists
             "url": replay_url,
