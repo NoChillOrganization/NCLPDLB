@@ -2,6 +2,7 @@
 id: ISS-006
 title: ML training — provision x86 Linux environment
 status: done
+closed: 2026-06-03
 priority: medium
 phase: backlog
 labels: [ml, training, infra]

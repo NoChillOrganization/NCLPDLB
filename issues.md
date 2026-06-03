@@ -1,9 +1,9 @@
 ---
 title: Issue Tracker
-updated: 2026-06-01
-closed: 2026-06-01
-open: 3
-in-progress: 3
+updated: 2026-06-03
+closed: 2026-06-03
+open: 2
+in-progress: 2
 ---
 
 # Issue Tracker — NCLPDLB
@@ -14,11 +14,10 @@ in-progress: 3
 
 ## Open
 
-| ID                                              | Title                                          | Phase   | Priority | Labels         | Status      |
-| ----------------------------------------------- | ---------------------------------------------- | ------- | -------- | -------------- | ----------- |
-| [[ISS-006-ml-training-environment\|ISS-006]]    | ML training — provision x86 Linux environment  | backlog | medium   | ml, infra      | in-progress |
-| [[ISS-007-obs-stab-speed-tier\|ISS-007]]        | Observation space — STAB and speed tier        | backlog | low      | ml, obs-space  | in-progress |
-| [[ISS-008-ability-item-obs-awareness\|ISS-008]] | Observation space — ability and item awareness | backlog | low      | ml, obs-space  | in-progress |
+| ID                                              | Title                                          | Phase   | Priority | Labels        | Status      |
+| ----------------------------------------------- | ---------------------------------------------- | ------- | -------- | ------------- | ----------- |
+| [[ISS-007-obs-stab-speed-tier\|ISS-007]]        | Observation space — STAB and speed tier        | backlog | low      | ml, obs-space | in-progress |
+| [[ISS-008-ability-item-obs-awareness\|ISS-008]] | Observation space — ability and item awareness | backlog | low      | ml, obs-space | in-progress |
 
 ---
 
@@ -64,3 +63,4 @@ Status transitions: `open` → `in-progress` → `done`. Move done rows to a **C
 | [[ISS-003-transformer-train-mcts-selfplay\|ISS-003]] | BattleTransformer — train to convergence via MCTS self-play | 05    | high     | ml, training   | done   |
 | [[ISS-004-spar-wire-mcts-inference\|ISS-004]]        | /spar — wire use_mcts=True inference path                   | 06    | high     | bot, inference | done   |
 | [[ISS-005-spar-fallback-ppo\|ISS-005]]               | /spar — graceful PPO fallback                               | 06    | high     | bot, inference | done   |
+| [[ISS-006-ml-training-environment\|ISS-006]]         | ML training — provision x86 Linux environment               | backlog | medium  | ml, infra      | done   |
