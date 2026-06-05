@@ -124,6 +124,8 @@ class EloService:
             loser.elo = new_rating(loser.elo, exp_loser, 0.0, settings.elo_k_factor)
             winner.wins += 1
             loser.losses += 1
+            winner.streak = winner.streak + 1 if winner.streak >= 0 else 1
+            loser.streak = loser.streak - 1 if loser.streak <= 0 else -1
 
             # Persist to Sheets (off-loop via to_thread)
             await self._save_player(winner)

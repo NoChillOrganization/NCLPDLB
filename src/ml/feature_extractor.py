@@ -60,7 +60,7 @@ TEAM_FEATURE_DIM = TEAM_SIZE * 2   # minimum — extended below when data is ava
 #   [last_move_p1, last_move_p2]           = 2   (move vocab IDs)
 #   TOTAL                                  = 19
 #
-# Note: This is DIFFERENT from BattleEnv.OBS_DIM (=48), which is the
+# Note: This is DIFFERENT from BattleEnv.OBS_DIM (=78), which is the
 # real-time RL observation space used during self-play training.
 STATE_FEATURE_DIM = 19
 
@@ -260,95 +260,24 @@ class FeatureExtractor:
 
     def extract_features(self, battle: "AbstractBattle") -> np.ndarray:  # pragma: no cover
         """
-        Extracts 48 features from a live battle state.
-        This must EXACTLY match BattleEnv.build_observation() logic.
+        Extracts the 78-dim live battle observation vector.
+        Delegates to battle_env.build_observation() — the single source of truth —
+        so this always exactly matches the RL training observation space (OBS_DIM=78).
         """
-        active = battle.active_pokemon
-        opp_active = battle.opponent_active_pokemon
-
-        # 1. Active mon features (2 + 20 + 1 + 6 = 29)
-        # Species (1)
-        active_id = self._species_to_id_normalized(active.species if active else None)
-        # HP (1)
-        active_hp = active.current_hp_fraction if active else 0.0
-        
-        # Moves (4 slots × 5 features = 20)
-        move_feats = []
-        moves = list(active.moves.values()) if active else []
-        for i in range(4):
-            if i < len(moves):
-                m = moves[i]
-                eff = get_type_effectiveness_float(m, opp_active) if opp_active else 0.5
-                move_feats.extend([
-                    (m.base_power / 250.0),
-                    (m.accuracy if m.accuracy is not True else 1.0),
-                    (TYPE_IDS.get(m.type.name.lower(), 0) / 19.0),
-                    ((m.priority + 1) / 5.0),
-                    eff
-                ])
-            else:
-                move_feats.extend([0.0] * 5)
-        
-        # Status (1)
-        status_id = 0.0
-        if active and active.status:
-            status_id = STATUS_IDS.get(active.status.name.lower(), 0) / 6.0
-            
-        # Boosts (6)
-        boost_list = ["atk", "def", "spa", "spd", "spe", "accuracy"]
-        boosts = [((active.boosts.get(b, 0) + 6) / 12.0) if active else 0.5 for b in boost_list]
-
-        # 2. Opponent active (3)
-        opp_id = self._species_to_id_normalized(opp_active.species if opp_active else None)
-        opp_hp = opp_active.current_hp_fraction if opp_active else 0.0
-        opp_status = 0.0
-        if opp_active and opp_active.status:
-            opp_status = STATUS_IDS.get(opp_active.status.name.lower(), 0) / 6.0
-
-        # 3. Team HP (6 + 6 = 12)
-        my_team_hp = [p.current_hp_fraction for p in battle.team.values()]
-        while len(my_team_hp) < 6:
-            my_team_hp.append(0.0)
-
-        opp_team_hp = [p.current_hp_fraction for p in battle.opponent_team.values()]
-        while len(opp_team_hp) < 6:
-            opp_team_hp.append(0.0)
-
-        # 4. Field (4)
-        weather_id = 0.0
-        if battle.weather:
-            weather_id = WEATHER_IDS.get(list(battle.weather.keys())[0].name.lower(), 0) / 4.0
-        
-        terrain_id = 0.0
-        if battle.fields:
-            # Check for terrain in fields
-            for f in battle.fields:
-                if f.name.lower() in TERRAIN_IDS:
-                    terrain_id = TERRAIN_IDS[f.name.lower()] / 4.0
-                    break
-        
-        trick_room = 1.0 if "trickroom" in [f.name.lower() for f in (battle.fields.keys() if hasattr(battle.fields, "keys") else [])] else 0.0
-        turn_norm = min(battle.turn / 100.0, 1.0)
-
-        # Assemble
-        feature = np.array(
-            [active_id, active_hp] + move_feats + [status_id] + boosts +
-            [opp_id, opp_hp, opp_status] +
-            my_team_hp[:6] + opp_team_hp[:6] +
-            [weather_id, terrain_id, trick_room, turn_norm],
-            dtype=np.float32
-        )
-        return feature
+        from src.ml.battle_env import build_observation
+        return build_observation(battle)
 
     def _species_to_id_normalized(self, species_name: Optional[str]) -> float:
-        """Normalized species ID for the feature vector."""
+        """Normalized species ID for the feature vector.
+
+        Delegates to battle_env._stable_species_id (MD5-based) so the value is
+        deterministic across processes — unlike Python's salted hash().
+        Returns 0.0 for None/empty input.
+        """
         if not species_name:
             return 0.0
-        # Use simple hash like in BattleEnv.py for stability without vocab if needed
-        # But we have a vocab, so let's use it!
-        # Wait, BattleEnv.py used: hash(species) % 10000 / 10000.0
-        # If I want to be 100% compatible with the RL training in BattleEnv, I should use the SAME hash.
-        return (hash(species_name) % 10000) / 10000.0
+        from src.ml.battle_env import _stable_species_id
+        return _stable_species_id(species_name)
 
     # ── State feature extraction (Replays/Offline) ─────────────────
 

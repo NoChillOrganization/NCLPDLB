@@ -397,8 +397,20 @@ class TestSpeciesToIdNormalized:
         ext = FeatureExtractor()
         a = ext._species_to_id_normalized("pikachu")
         b = ext._species_to_id_normalized("garchomp")
-        # This is probabilistic but hash collision is extremely unlikely
+        # This is probabilistic but MD5 collision is vanishingly unlikely
         assert a != b
+
+    def test_matches_battle_env_stable_species_id(self):
+        """Regression for H11: _species_to_id_normalized must delegate to MD5-based
+        _stable_species_id so values are identical across processes (no salted hash)."""
+        from src.ml.battle_env import _stable_species_id
+        ext = FeatureExtractor()
+        for species in ("garchomp", "pikachu", "tyranitar", "toxapex"):
+            assert ext._species_to_id_normalized(species) == _stable_species_id(species), (
+                f"Determinism mismatch for {species!r}: "
+                f"feature_extractor returned {ext._species_to_id_normalized(species)!r}, "
+                f"battle_env returned {_stable_species_id(species)!r}"
+            )
 
 
 # ── state_features() faint event tracking (lines 379, 381-383) ───────────────

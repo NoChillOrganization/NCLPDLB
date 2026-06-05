@@ -29,13 +29,24 @@ intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 
+_synced = False
+
+
 @bot.event
 async def on_ready():
+    global _synced
+    if _synced:
+        return  # skip on reconnect — extensions already loaded (H7/L28)
+    _synced = True
     print(f"Logged in as {bot.user}")
     for cog in COGS:
         await bot.load_extension(cog)
     cmds = bot.tree.get_commands()
     print(f"Loaded {len(cmds)} commands")
+    if not settings.discord_guild_id:
+        print("ERROR: DISCORD_GUILD_ID is not set in .env")
+        await bot.close()
+        return
     guild = discord.Object(id=int(settings.discord_guild_id))
     bot.tree.copy_global_to(guild=guild)
     synced = await bot.tree.sync(guild=guild)
@@ -44,4 +55,5 @@ async def on_ready():
     print("Done.")
 
 
-asyncio.run(bot.start(settings.discord_token))
+if __name__ == "__main__":
+    asyncio.run(bot.start(settings.discord_token.get_secret_value()))
