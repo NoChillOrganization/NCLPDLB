@@ -62,13 +62,23 @@ def _embed_team_matrix(X: np.ndarray, vocab_size: int) -> np.ndarray:
     p1_bag = np.zeros((n, vocab_size), dtype=np.float32)
     p2_bag = np.zeros((n, vocab_size), dtype=np.float32)
 
+    dropped = 0
     for i in range(TEAM_SIZE):
         p1_ids = p1_cols[:, i]
         p2_ids = p2_cols[:, i]
-        valid_p1 = p1_ids > 0
-        valid_p2 = p2_ids > 0
+        # Guard: ids >= vocab_size would index out-of-bounds; treat them as UNK (skip).
+        valid_p1 = (p1_ids > 0) & (p1_ids < vocab_size)
+        valid_p2 = (p2_ids > 0) & (p2_ids < vocab_size)
+        dropped += int(((p1_ids > 0) & (p1_ids >= vocab_size)).sum())
+        dropped += int(((p2_ids > 0) & (p2_ids >= vocab_size)).sum())
         p1_bag[np.arange(n)[valid_p1], p1_ids[valid_p1]] = 1.0
         p2_bag[np.arange(n)[valid_p2], p2_ids[valid_p2]] = 1.0
+    if dropped:
+        log.warning(
+            "Dropped %d species id(s) >= vocab_size=%d — treated as UNK. "
+            "Re-run feature extraction to rebuild the vocabulary.",
+            dropped, vocab_size,
+        )
 
     # Symmetric difference — what's unique to each team
     p1_unique = p1_bag - p2_bag

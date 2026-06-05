@@ -86,42 +86,59 @@ def build_observation_from_dom(page: Any) -> np.ndarray:  # pragma: no cover
     Extract battle state from the Showdown DOM and return a float32 numpy array
     compatible with the existing BattleEnv observation space (shape: (OBS_DIM,)).
 
-    This is a best-effort DOM scrape; it is inherently less precise than the
-    WebSocket path.  Missing values are filled with zeros.
+    This is a *sparse*, best-effort DOM scrape.  Only a handful of dims are
+    populated; the rest stay at 0.  It is inherently less precise than the
+    WebSocket path (battle_env.build_observation).
+
+    Obs-space layout reference (battle_env.OBS_DIM = 78):
+      [0]         active species_id (not available via DOM — left 0)
+      [1]         active HP fraction (own)
+      [2..21]     move feats: 4 × (base_power, accuracy, type_id, priority, eff)
+                  We set obs[2 + 5*i] = 1.0 as "move available" proxy for slot i
+      [22]        status (not available via DOM — left 0)
+      [23..28]    boosts (not available via DOM — left 0)
+      [29]        opp species_id (not available via DOM — left 0)
+      [30]        opp active HP fraction
+      [31..43]    opp status + team HPs (not available — left 0)
+      [44..46]    weather/terrain/trick_room (not available — left 0)
+      [47]        turn / 100.0 (clamped)
+      [48..77]    STAB/speed/ability/item buckets (not available — left 0)
     """
     from src.ml.battle_env import OBS_DIM
 
     obs = np.zeros(OBS_DIM, dtype=np.float32)
 
     try:
-        # ── Active Pokémon HP (player side, slot 0) ──────────────────
+        # ── Active Pokémon HP (own, obs[1]) ──────────────────────────
         hp_els = page.locator(".hpbar .hptext")
         hp_count = hp_els.count()
         if hp_count:
             hp_text = hp_els.nth(0).inner_text()  # e.g. "72/100"
             parts = hp_text.replace("%", "").split("/")
             if len(parts) == 2:
-                obs[0] = float(parts[0]) / max(float(parts[1]), 1)  # fraction
+                obs[1] = float(parts[0]) / max(float(parts[1]), 1)  # fraction
 
-        # ── Active Pokémon HP (opponent side, slot 1) ─────────────────
+        # ── Active Pokémon HP (opponent, obs[30]) ─────────────────────
         if hp_count >= 2:
             hp_text = hp_els.nth(1).inner_text()
             parts = hp_text.replace("%", "").split("/")
             if len(parts) == 2:
-                obs[1] = float(parts[0]) / max(float(parts[1]), 1)
+                obs[30] = float(parts[0]) / max(float(parts[1]), 1)
 
-        # ── Turn number ───────────────────────────────────────────────
+        # ── Turn number (obs[47]) ─────────────────────────────────────
         turn_el = page.locator(".turn")
         if turn_el.count():
             try:
-                obs[2] = float(turn_el.first.inner_text().split()[-1]) / 100.0
+                obs[47] = float(turn_el.first.inner_text().split()[-1]) / 100.0
             except Exception:
                 pass
 
-        # ── Move PP (4 slots) — presence-only ────────────────────────
+        # ── Move availability (obs[2], [7], [12], [17]) — presence proxy
+        # Each move slot starts at obs[2 + 5*i]; we set base_power to 1.0
+        # as a binary "this move exists" signal (no DOM-accessible PP/power).
         move_btns = page.locator("button.move")
         for i in range(min(move_btns.count(), 4)):
-            obs[3 + i] = 1.0  # move available
+            obs[2 + 5 * i] = 1.0
 
     except Exception as exc:
         log.debug(f"[browser_trainer] DOM read error (non-fatal): {exc}")
@@ -202,7 +219,8 @@ class _ReplayEnv:
     def __init__(self, transitions: list) -> None:
         from gymnasium import spaces
         from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9
-        self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+        # Match real env bounds: low=-1.0 (intimidate/status), high=2.0 (choicescarf speed)
+        self.observation_space = spaces.Box(low=-1.0, high=2.0, shape=(OBS_DIM,), dtype=np.float32)
         self.action_space = spaces.Discrete(N_ACTIONS_GEN9)
         self._transitions = list(transitions)
         self._idx = 0
@@ -293,8 +311,9 @@ def train_browser(  # pragma: no cover
 
     class _FakeEnv(gym.Env):
         """Minimal stub so PPO can be initialised without a real poke-env."""
+        # Match real env bounds: low=-1.0 (intimidate/status), high=2.0 (choicescarf speed)
         observation_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32
+            low=-1.0, high=2.0, shape=(OBS_DIM,), dtype=np.float32
         )
         action_space = spaces.Discrete(N_ACTIONS_GEN9)
 
@@ -413,13 +432,21 @@ def train_browser(  # pragma: no cover
                     last_swap = steps
                     log.info(f"[browser_trainer] Checkpoint saved: {ckpt_path.name}")
                     if all_transitions:
-                        from stable_baselines3.common.vec_env import DummyVecEnv
                         n_trans = len(all_transitions)
-                        replay_env = DummyVecEnv([lambda t=all_transitions: _ReplayEnv(t)])
-                        policy.set_env(replay_env)
-                        policy.learn(total_timesteps=n_trans, reset_num_timesteps=False)
+                        # TODO(H16): PPO is on-policy — calling policy.learn() against
+                        # _ReplayEnv causes PPO to sample its own random actions and
+                        # ignore the recorded (obs, action) transitions entirely.  No
+                        # learning happens from the replays.  A real offline update
+                        # requires behaviour cloning (supervised cross-entropy on the
+                        # actor head) or an off-policy algorithm (SAC, DQN).  Until
+                        # that is implemented the transitions are discarded.
+                        log.warning(
+                            "[browser_trainer] %d transitions collected but NOT used for "
+                            "offline learning — PPO on-policy replay is a no-op. "
+                            "Implement behaviour cloning to enable offline updates.",
+                            n_trans,
+                        )
                         all_transitions.clear()
-                        log.info(f"[browser_trainer] Policy updated from {n_trans} transitions")
 
                 # Brief pause between battles
                 time.sleep(2)
@@ -436,13 +463,14 @@ def train_browser(  # pragma: no cover
 
     # ── Save final model ──────────────────────────────────────────────────────
     if policy is not None and SB3_OK and all_transitions:
-        from stable_baselines3.common.vec_env import DummyVecEnv
         n_trans = len(all_transitions)
-        replay_env = DummyVecEnv([lambda t=all_transitions: _ReplayEnv(t)])
-        policy.set_env(replay_env)
-        policy.learn(total_timesteps=n_trans, reset_num_timesteps=False)
+        # TODO(H16): same PPO on-policy no-op as the periodic checkpoint path above.
+        log.warning(
+            "[browser_trainer] %d final transitions discarded — offline learning "
+            "not yet implemented (PPO replay is a no-op; needs behaviour cloning).",
+            n_trans,
+        )
         all_transitions.clear()
-        log.info(f"[browser_trainer] Policy updated from {n_trans} final transitions")
     final_path = _results_dir / f"{fmt}_{start_date}.zip"
     if policy is not None and SB3_OK:
         policy.save(str(final_path))

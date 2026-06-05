@@ -174,13 +174,14 @@ if POKE_ENV_AVAILABLE:
                     from src.ml.mcts import MCTSConfig, _build_legal_mask, run_mcts
                     obs = build_observation(battle)
                     legal_mask = _build_legal_mask(battle, N_ACTIONS_GEN9)
-                    n_legal = (
-                        int((~legal_mask).sum())
-                        if legal_mask is not None
-                        else N_ACTIONS_GEN9
-                    )
                     cfg = MCTSConfig(n_simulations=self._mcts_n_simulations)
-                    action_id, _ = run_mcts(obs, self._transformer, n_legal, cfg)
+                    # Pass full action space + legal_mask so MCTS can prune illegal nodes.
+                    # Passing n_legal as n_actions was wrong — it truncated the tree and
+                    # dropped the mask entirely, letting MCTS pick illegal actions.
+                    action_id, _ = run_mcts(
+                        obs, self._transformer, N_ACTIONS_GEN9,
+                        config=cfg, legal_mask=legal_mask, deterministic=True,
+                    )
                     return self._action_to_move(action_id, battle)
                 except Exception as exc:
                     log.warning(
