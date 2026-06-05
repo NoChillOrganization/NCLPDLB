@@ -187,21 +187,41 @@ class TeamService:
         received = record["pokemon_received"]
         # league_id stores guild_id (set in propose_trade)
         guild_id = str(record.get("league_id", ""))
+        from_player_id = str(record["from_player_id"])
 
-        from_key = self._cache_key(guild_id, str(record["from_player_id"]))
-        to_key = self._cache_key(guild_id, player_id)
+        # Load both rosters (cache or Sheets) — never silently skip on cache miss (H1)
+        from_team = await self.get_team(guild_id, from_player_id)
+        to_team = await self.get_team(guild_id, player_id)
 
-        if from_key in _roster_cache and to_key in _roster_cache:
-            from_team = _roster_cache[from_key]
-            to_team = _roster_cache[to_key]
-            from_team.pokemon = [p for p in from_team.pokemon if p.name != given]
-            to_team.pokemon = [p for p in to_team.pokemon if p.name != received]
-            if mon := pokemon_db.find(received):
-                from_team.pokemon.append(mon)
-            if mon := pokemon_db.find(given):
-                to_team.pokemon.append(mon)
+        if not from_team:
+            return TradeResult(
+                success=False,
+                error=f"Sender's roster not found (guild={guild_id}, player={from_player_id}).",
+            )
+        if not to_team:
+            return TradeResult(success=False, error="Your roster was not found.")
 
-        # Mark accepted in sheets
+        # Swap Pokémon in memory
+        from_team.pokemon = [p for p in from_team.pokemon if p.name != given]
+        to_team.pokemon = [p for p in to_team.pokemon if p.name != received]
+        if mon := pokemon_db.find(received):
+            from_team.pokemon.append(mon)
+        if mon := pokemon_db.find(given):
+            to_team.pokemon.append(mon)
+
+        # Persist both rosters to Sheets before marking the trade accepted.
+        # If either write raises, the exception propagates so the caller knows
+        # the trade was NOT committed durably (H1).
+        from_slots = [(p.name, getattr(p, "tera_type", "")) for p in from_team.pokemon]
+        to_slots = [(p.name, getattr(p, "tera_type", "")) for p in to_team.pokemon]
+        await asyncio.to_thread(sheets.upsert_team_page, {
+            "player_id": from_player_id, "guild_id": guild_id, "slots": from_slots,
+        })
+        await asyncio.to_thread(sheets.upsert_team_page, {
+            "player_id": player_id, "guild_id": guild_id, "slots": to_slots,
+        })
+
+        # Mark accepted only after rosters are committed
         record["status"] = "accepted"
         await asyncio.to_thread(sheets.save_transaction, record)
         return TradeResult(success=True, summary=f"Trade complete! {given} ↔ {received}")

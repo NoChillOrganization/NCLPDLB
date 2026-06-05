@@ -25,6 +25,8 @@ Uses gspread synchronously (run in executor for async contexts).
 from __future__ import annotations
 
 import logging
+import random as _random
+import time as _time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -43,6 +45,30 @@ SCOPES = [
 
 def UTC_NOW() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _with_retry(fn, *args, max_tries: int = 5, **kwargs):
+    """Call fn(*args, **kwargs) with exponential-backoff retry on HTTP 429/503.
+
+    All other errors (including CellNotFound) propagate immediately.
+    """
+    for attempt in range(max_tries):
+        try:
+            return fn(*args, **kwargs)
+        except gspread.exceptions.APIError as exc:
+            status = None
+            try:
+                status = exc.response.status_code
+            except AttributeError:
+                pass
+            if status not in (429, 503) or attempt == max_tries - 1:
+                raise
+            delay = (2 ** attempt) + _random.uniform(0, 1)
+            log.warning(
+                "Sheets API rate-limit (HTTP %s) — retrying in %.1fs (attempt %d/%d)",
+                status, delay, attempt + 1, max_tries,
+            )
+            _time.sleep(delay)
 
 
 # ── Tab names (exact Unicode match to spreadsheet) ─────────────────────────────
@@ -116,10 +142,21 @@ class SheetsClient:
             self.connect()
         return self._spreadsheet
 
-    def get_tab(self, tab_name: str) -> gspread.Worksheet:
+    def get_tab(self, tab_name: str, create: bool = False) -> gspread.Worksheet:
+        """Return a worksheet by name.
+
+        Args:
+            tab_name: Exact worksheet title.
+            create:   If True, create the worksheet when it doesn't exist.
+                      Read-only callers must leave this False (default) so a
+                      missing tab raises WorksheetNotFound rather than silently
+                      creating an empty sheet (H4).
+        """
         try:
             return self.spreadsheet.worksheet(tab_name)
         except gspread.WorksheetNotFound:
+            if not create:
+                raise
             log.warning(f"Tab '{tab_name}' not found — creating it.")
             ws = self.spreadsheet.add_worksheet(title=tab_name, rows=1000, cols=26)
             ws.append_row([tab_name], value_input_option="USER_ENTERED")
@@ -155,27 +192,74 @@ class SheetsClient:
 
     def append_row(self, tab_name: str, row: list[Any]) -> None:
         """Append a row to any tab."""
-        ws = self.get_tab(tab_name)
-        ws.append_row(row, value_input_option="USER_ENTERED")
+        ws = self.get_tab(tab_name, create=True)
+        _with_retry(ws.append_row, row, value_input_option="USER_ENTERED")
 
     def update_row(self, tab_name: str, row_num: int, row_data: list) -> None:
         """Overwrite a specific row (1-indexed) starting from column A."""
-        ws = self.get_tab(tab_name)
-        ws.update(f"A{row_num}", [row_data])
+        ws = self.get_tab(tab_name, create=True)
+        _with_retry(ws.update, f"A{row_num}", [row_data])
 
     def upsert_row(self, tab_name: str, key_col: str, key_val: str, row_data: list) -> None:
-        """Insert or update a row matched by key_col == key_val."""
-        ws = self.get_tab(tab_name)
-        headers = ws.row_values(1)
+        """Insert or update a row matched by key_col == key_val (positional write).
+
+        Uses ws.find() to locate the row (H10) instead of get_all_records().
+        All gspread calls are wrapped with _with_retry for 429/503 backoff (H9).
+        """
+        ws = self.get_tab(tab_name, create=True)
+        headers = _with_retry(ws.row_values, 1)
         if key_col not in headers:
-            ws.append_row(row_data, value_input_option="USER_ENTERED")
+            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
             return
-        records = ws.get_all_records()
-        for i, record in enumerate(records, 2):  # row 2 = first data row
-            if str(record.get(key_col, "")) == str(key_val):
-                ws.update(f"A{i}", [row_data])
-                return
-        ws.append_row(row_data, value_input_option="USER_ENTERED")
+        key_col_idx = headers.index(key_col) + 1  # 1-based
+        try:
+            cell = _with_retry(ws.find, str(key_val), in_column=key_col_idx)
+            _with_retry(ws.update, f"A{cell.row}", [row_data])
+        except gspread.CellNotFound:
+            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
+
+    def _upsert_record(
+        self,
+        tab_name: str,
+        key_col: str,
+        key_val: str,
+        record: dict,
+        create: bool = True,
+    ) -> None:
+        """Header-aware partial-update upsert (H3).
+
+        Reads the header row once, locates the existing row via ws.find (H10),
+        merges *only* the keys present in record into the existing row values
+        (partial update — other columns are preserved), then writes the merged
+        row back.  On insert appends a row built from headers → record mapping.
+        """
+        ws = self.get_tab(tab_name, create=create)
+        headers = _with_retry(ws.row_values, 1)
+        if not headers:
+            # Bootstrap header row from record keys
+            headers = list(record.keys())
+            _with_retry(ws.append_row, headers, value_input_option="USER_ENTERED")
+
+        if key_col not in headers:
+            row_data = [record.get(h, "") for h in headers]
+            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
+            return
+
+        key_col_idx = headers.index(key_col) + 1
+        last_col = _col_letter(len(headers))
+        try:
+            cell = _with_retry(ws.find, str(key_val), in_column=key_col_idx)
+            row_num = cell.row
+            # Read current row, merge updates, write back (preserves unset columns)
+            current = _with_retry(ws.row_values, row_num)
+            current = (current + [""] * len(headers))[: len(headers)]
+            for i, hdr in enumerate(headers):
+                if hdr in record:
+                    current[i] = record[hdr]
+            _with_retry(ws.update, f"A{row_num}:{last_col}{row_num}", [current])
+        except gspread.CellNotFound:
+            row_data = [record.get(h, "") for h in headers]
+            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
 
     def read_all(self, tab_name: str) -> list[dict]:
         """Generic read — returns all records from a tab via gspread get_all_records()."""
@@ -423,7 +507,7 @@ class SheetsClient:
 
     def bulk_write_pokedex(self, pokemon_list: list[dict]) -> None:
         """Write all Pokémon to the Pokédex tab."""
-        ws = self.get_tab(Tab.POKEDEX)
+        ws = self.get_tab(Tab.POKEDEX, create=True)
         ws.clear()
         if not pokemon_list:
             return
@@ -456,7 +540,7 @@ class SheetsClient:
 
     def append_rule(self, category: str, title: str, description: str) -> None:
         """Append a new rule to the Rules tab (col D=✵, col E=text)."""
-        ws = self.get_tab(Tab.RULES)
+        ws = self.get_tab(Tab.RULES, create=True)
         e_col = ws.col_values(5)  # column E
         next_row = len(e_col) + 1
         text = f"[{category}] {title}: {description}" if category else f"{title}: {description}"
@@ -482,7 +566,7 @@ class SheetsClient:
 
     def refresh_mvp_race(self, mvp_entries: list[dict]) -> None:
         """Clear and re-write the MVP Race tab with updated entries."""
-        ws = self.get_tab(Tab.MVP_RACE)
+        ws = self.get_tab(Tab.MVP_RACE, create=True)
         ws.resize(rows=max(1, len(mvp_entries) + 1))
         for entry in mvp_entries:
             ws.append_row([
@@ -525,15 +609,28 @@ class SheetsClient:
         return {"coach": coach_name, "rows": raw[:10]}
 
     def upsert_team_page(self, team: dict) -> None:
-        """Insert or update a team page row."""
+        """Insert or update a team row in the Team Page Template tab.
+
+        Writes pokemon_list as a JSON array of names (H2) and guild_id (H5)
+        so get_team() can read them back.  Uses header-aware _upsert_record
+        for a partial update — fields absent from team dict are preserved.
+        """
+        import json as _json
         slots = team.get("slots", [])
-        row_data = [
-            team.get("player_id", ""), team.get("player_name", ""),
-            team.get("team_name", ""),
-            ",".join(f"{name}({tera})" for name, tera in slots) if slots else "",
-            UTC_NOW(),
-        ]
-        self.upsert_row(Tab.TEAM_TEMPLATE, "player_id", team.get("player_id", ""), row_data)
+        pokemon_names = [name for name, _tera in slots] if slots else []
+        record: dict[str, Any] = {
+            "player_id":     team.get("player_id", ""),
+            "guild_id":      team.get("guild_id", ""),
+            "pokemon_list":  _json.dumps(pokemon_names),
+            "updated_at":    UTC_NOW(),
+        }
+        # Only include optional display fields when provided by the caller
+        for field in ("player_name", "team_name", "team_logo_url", "pool"):
+            if field in team:
+                record[field] = team[field]
+        self._upsert_record(
+            Tab.TEAM_TEMPLATE, "player_id", team.get("player_id", ""), record
+        )
 
     # ── Data tab ──────────────────────────────────────────────────────────────
 
