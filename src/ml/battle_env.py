@@ -489,6 +489,12 @@ if POKE_ENV_AVAILABLE:
             try:
                 return super().step(action)
             except AssertionError:
+                # Only silence the known "battle ended before SB3 observed done=True" case.
+                # For any other assertion failure, re-raise so it surfaces and can be fixed.
+                # (If battles dict is missing or empty the battle already cleaned up — swallow.)
+                battles = list(self.battles.values()) if hasattr(self, "battles") else []
+                if battles and not any(b.finished for b in battles):
+                    raise
                 # Battle ended before SB3 could observe done=True.
                 # Return a terminal step with zero reward so the rollout closes cleanly.
                 # Note: self.observation_space is a method on the poke-env parent class,
@@ -746,6 +752,12 @@ if POKE_ENV_AVAILABLE:
             try:
                 return super().step(action)
             except AssertionError:
+                # Only silence the known "battle ended before SB3 observed done=True" case.
+                # For any other assertion failure, re-raise so it surfaces and can be fixed.
+                # (If battles dict is missing or empty the battle already cleaned up — swallow.)
+                battles = list(self.battles.values()) if hasattr(self, "battles") else []
+                if battles and not any(b.finished for b in battles):
+                    raise
                 # Battle ended before SB3 could observe done=True.
                 # Return a terminal step with zero reward so the rollout closes cleanly.
                 # Note: self.observation_space is a method on the poke-env parent class,

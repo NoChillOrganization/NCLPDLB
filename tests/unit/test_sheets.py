@@ -661,7 +661,8 @@ def test_append_rule_with_category():
         fresh.append_rule("Battle", "No timeout", "Do not let the timer run out")
     mock_ws.update.assert_called_once()
     args = mock_ws.update.call_args[0]
-    assert "[Battle]" in args[1][0][1]
+    # gspread 6.x: update(values, range_name) — values is args[0], range is args[1]
+    assert "[Battle]" in args[0][0][1]
 
 
 def test_append_rule_without_category():
@@ -673,7 +674,8 @@ def test_append_rule_without_category():
     with patch.object(fresh, "get_tab", return_value=mock_ws):
         fresh.append_rule("", "Simple Rule", "Description")
     args = mock_ws.update.call_args[0]
-    assert "[" not in args[1][0][1]
+    # gspread 6.x: update(values, range_name) — values is args[0], range is args[1]
+    assert "[" not in args[0][0][1]
 
 
 # ── get_mvp_race ──────────────────────────────────────────────────────────────

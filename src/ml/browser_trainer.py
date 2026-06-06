@@ -462,21 +462,15 @@ def train_browser(  # pragma: no cover
             browser2.close()
 
     # ── Save final model ──────────────────────────────────────────────────────
-    if policy is not None and SB3_OK and all_transitions:
-        n_trans = len(all_transitions)
-        # TODO(H16): same PPO on-policy no-op as the periodic checkpoint path above.
-        log.warning(
-            "[browser_trainer] %d final transitions discarded — offline learning "
-            "not yet implemented (PPO replay is a no-op; needs behaviour cloning).",
-            n_trans,
-        )
-        all_transitions.clear()
-    final_path = _results_dir / f"{fmt}_{start_date}.zip"
-    if policy is not None and SB3_OK:
-        policy.save(str(final_path))
-        log.info(f"[browser_trainer] Final model saved to {final_path}")
-    else:
-        final_path.write_text("no-policy")
-        log.warning("[browser_trainer] No policy trained (stable-baselines3 not available).")
+    # TODO(H16): PPO is on-policy; collected transitions are discarded (see periodic
+    # checkpoint path above).  Until behaviour cloning is implemented, raise here so
+    # callers get a clear error instead of silently receiving an untrained model zip.
+    raise NotImplementedError(
+        "[browser_trainer] Offline learning not yet implemented. "
+        "Collected (obs, action) transitions are discarded because PPO on-policy replay "
+        "is a no-op — it samples its own random actions and ignores the recorded data. "
+        "Implement behaviour cloning on the actor head (supervised cross-entropy) before "
+        "using browser-mode training. Track: TODO(H16)."
+    )
 
     return final_path

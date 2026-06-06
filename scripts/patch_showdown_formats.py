@@ -113,7 +113,7 @@ PATCHES: list[tuple[str, str, str]] = [
 
 
 def patch_formats(path: str) -> None:
-    with open(path) as fh:
+    with open(path, encoding="utf-8") as fh:
         src = fh.read()
 
     failed: list[str] = []
@@ -126,7 +126,7 @@ def patch_formats(path: str) -> None:
             print(f"  OK: patched {count} occurrence(s) for '{label}'")
         src = new_src
 
-    with open(path, "w") as fh:
+    with open(path, "w", encoding="utf-8") as fh:
         fh.write(src)
 
     if failed:

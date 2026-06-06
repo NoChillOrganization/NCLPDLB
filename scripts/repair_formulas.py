@@ -38,7 +38,7 @@ def get_formula(ws: gspread.Worksheet, cell: str) -> str:
 
 
 def set_formula(ws: gspread.Worksheet, cell: str, formula: str) -> None:
-    ws.update(cell, [[formula]], value_input_option="USER_ENTERED")
+    ws.update([[formula]], cell, value_input_option="USER_ENTERED")
     print(f"  ✓ Updated {ws.title}!{cell}")
 
 
