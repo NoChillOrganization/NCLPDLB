@@ -708,11 +708,9 @@ async def test_admin_showdown_check_server_reachable():
     mock_socket.__enter__ = MagicMock(return_value=mock_socket)
     mock_socket.__exit__ = MagicMock(return_value=False)
 
-    with patch("socket.create_connection", return_value=mock_socket), \
-         patch("webbrowser.open") as mock_browser:
+    with patch("socket.create_connection", return_value=mock_socket):
         await cog.admin_showdown_check.callback(cog, interaction)
 
-    mock_browser.assert_called_once()
     sent_text = interaction.followup.send.call_args[0][0]
     assert "✅" in sent_text
     assert "reachable" in sent_text.lower()

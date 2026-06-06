@@ -94,7 +94,7 @@ def test_get_tab_creates_when_not_found():
     mock_sp.worksheet.side_effect = gspread.WorksheetNotFound
     mock_sp.add_worksheet.return_value = new_ws
     fresh._spreadsheet = mock_sp
-    result = fresh.get_tab(Tab.SETUP)
+    result = fresh.get_tab(Tab.SETUP, create=True)
     assert result is new_ws
     new_ws.append_row.assert_called_once()
 
@@ -153,8 +153,8 @@ def test_find_rows(patched_get_tab):
 
 def test_upsert_row_appends_when_not_found(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["player_id", "name"]
+    mock_ws.find.return_value = None
     sheets.upsert_row(Tab.STANDINGS, "player_id", "p99", ["p99", "New Guy"])
     mock_ws.append_row.assert_called()
 
@@ -179,8 +179,8 @@ def test_upsert_row_appends_when_col_not_in_headers(patched_get_tab):
 
 def test_save_league_setup(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["server_id"]
+    mock_ws.find.return_value = None
     sheets.save_league_setup({
         "league_id": "L1", "server_id": "S1", "league_name": "Test League",
         "commissioner_id": "C1", "commissioner_name": "Admin",
@@ -208,32 +208,32 @@ def test_get_draft_picks(patched_get_tab):
 
 def test_update_pool_roster_pool_a(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["player_id"]
+    mock_ws.find.return_value = None
     sheets.update_pool_roster("A", {"player_id": "p1", "player_name": "Alice", "team_name": "Team A"}, ["Garchomp"])
     mock_ws.append_row.assert_called()
 
 
 def test_update_pool_roster_pool_b(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["player_id"]
+    mock_ws.find.return_value = None
     sheets.update_pool_roster("B", {"player_id": "p2", "player_name": "Bob", "team_name": "Team B"}, [])
     mock_ws.append_row.assert_called()
 
 
 def test_save_schedule_match(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["match_id"]
+    mock_ws.find.return_value = None
     sheets.save_schedule_match({"match_id": "m1", "week": 1, "player1_id": "p1", "player2_id": "p2"})
     mock_ws.append_row.assert_called()
 
 
 def test_save_match_stats(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["match_id"]
+    mock_ws.find.return_value = None
     sheets.save_match_stats({
         "match_id": "m1", "league_id": "L1",
         "p1_team": ["Garchomp"], "p2_team": ["Corviknight"],
@@ -243,8 +243,8 @@ def test_save_match_stats(patched_get_tab):
 
 def test_upsert_standing(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["player_id"]
+    mock_ws.find.return_value = None
     sheets.upsert_standing({"player_id": "p1", "elo": 1050, "wins": 3, "losses": 1})
     mock_ws.append_row.assert_called()
 
@@ -284,8 +284,8 @@ def test_get_standings_filtered_by_pool(patched_get_tab):
 
 def test_update_pokemon_stat(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["stat_id"]
+    mock_ws.find.return_value = None
     sheets.update_pokemon_stat({"stat_id": "s1", "pokemon": "Garchomp", "wins": 5})
     mock_ws.append_row.assert_called()
 
@@ -300,16 +300,16 @@ def test_refresh_mvp_race(patched_get_tab):
 
 def test_save_transaction(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["transaction_id"]
+    mock_ws.find.return_value = None
     sheets.save_transaction({"transaction_id": "t1", "type": "trade", "status": "pending"})
     mock_ws.append_row.assert_called()
 
 
 def test_save_playoff_match(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["bracket_id"]
+    mock_ws.find.return_value = None
     sheets.save_playoff_match({"bracket_id": "b1", "round": "QF", "match_number": 1})
     mock_ws.append_row.assert_called()
 
@@ -341,8 +341,8 @@ def test_bulk_write_pokedex_empty(patched_get_tab):
 
 def test_upsert_team_page(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["player_id"]
+    mock_ws.find.return_value = None
     sheets.upsert_team_page({
         "player_id": "p1", "player_name": "Alice", "team_name": "Team A",
         "slots": [("Garchomp", "Dragon"), ("Corviknight", "Flying")],
@@ -352,16 +352,16 @@ def test_upsert_team_page(patched_get_tab):
 
 def test_upsert_team_page_no_slots(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["player_id"]
+    mock_ws.find.return_value = None
     sheets.upsert_team_page({"player_id": "p1", "player_name": "Alice", "team_name": "T"})
     mock_ws.append_row.assert_called()
 
 
 def test_set_data(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["key"]
+    mock_ws.find.return_value = None
     sheets.set_data("season", "3", "string", "Current season")
     mock_ws.append_row.assert_called()
 
@@ -388,18 +388,12 @@ def test_save_replay_no_existing_match(patched_get_tab):
 
 
 def test_save_replay_updates_existing(patched_get_tab):
-    """save_replay updates match row when match_id found."""
+    """save_replay updates an existing replay row when replay_id found."""
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = [
-        {"match_id": "m1", "league_id": "L1", "week": 1, "pool": "A",
-         "player1_id": "p1", "player1_name": "Alice",
-         "player2_id": "p2", "player2_name": "Bob",
-         "winner_id": "p1", "winner_name": "Alice",
-         "game_format": "showdown", "replay_url": "", "video_url": ""},
-    ]
-    mock_ws.row_values.return_value = ["match_id"]
+    mock_ws.row_values.return_value = ["replay_id"]
+    # find() returns a cell → update path (not None → not append)
     sheets.save_replay({
-        "match_id": "m1", "url": "https://replay.ps.com/r1",
+        "replay_id": "r1", "match_id": "m1", "url": "https://replay.ps.com/r1",
         "p1_team": ["Garchomp"], "p2_team": ["Corviknight"], "turns": 25,
     })
     mock_ws.update.assert_called()
@@ -407,8 +401,8 @@ def test_save_replay_updates_existing(patched_get_tab):
 
 def test_save_video(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
     mock_ws.row_values.return_value = ["match_id"]
+    mock_ws.find.return_value = None
     sheets.save_video({
         "match_id": "m1", "league_id": "L1",
         "uploader_id": "p1", "opponent_id": "p2",
