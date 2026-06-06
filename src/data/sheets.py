@@ -212,11 +212,11 @@ class SheetsClient:
             _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
             return
         key_col_idx = headers.index(key_col) + 1  # 1-based
-        try:
-            cell = _with_retry(ws.find, str(key_val), in_column=key_col_idx)
-            _with_retry(ws.update, f"A{cell.row}", [row_data])
-        except gspread.CellNotFound:
+        cell = _with_retry(ws.find, str(key_val), in_column=key_col_idx)
+        if cell is None:
             _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
+        else:
+            _with_retry(ws.update, f"A{cell.row}", [row_data])
 
     def _upsert_record(
         self,
@@ -247,8 +247,11 @@ class SheetsClient:
 
         key_col_idx = headers.index(key_col) + 1
         last_col = _col_letter(len(headers))
-        try:
-            cell = _with_retry(ws.find, str(key_val), in_column=key_col_idx)
+        cell = _with_retry(ws.find, str(key_val), in_column=key_col_idx)
+        if cell is None:
+            row_data = [record.get(h, "") for h in headers]
+            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
+        else:
             row_num = cell.row
             # Read current row, merge updates, write back (preserves unset columns)
             current = _with_retry(ws.row_values, row_num)
@@ -257,9 +260,6 @@ class SheetsClient:
                 if hdr in record:
                     current[i] = record[hdr]
             _with_retry(ws.update, f"A{row_num}:{last_col}{row_num}", [current])
-        except gspread.CellNotFound:
-            row_data = [record.get(h, "") for h in headers]
-            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
 
     def read_all(self, tab_name: str) -> list[dict]:
         """Generic read — returns all records from a tab via gspread get_all_records()."""
@@ -418,22 +418,24 @@ class SheetsClient:
         self.upsert_row(Tab.MATCH_STATS, "match_id", match.get("match_id", ""), row_data)
 
     def save_replay(self, replay: dict) -> None:
-        """Update an existing match row with replay URL and team data."""
+        """Append a replay row keyed by replay_id (not match_id to avoid blank-key collisions)."""
         row_data = [
-            replay.get("match_id", ""), replay.get("url", ""),
+            replay.get("replay_id", ""), replay.get("match_id", ""),
+            replay.get("url", ""), replay.get("winner", ""),
             str(replay.get("p1_team", [])), str(replay.get("p2_team", [])),
-            str(replay.get("turns", "")), UTC_NOW(),
+            str(replay.get("turns", "")), replay.get("timestamp", UTC_NOW()),
         ]
-        self.upsert_row(Tab.SCHEDULE, "match_id", replay.get("match_id", ""), row_data)
+        self.upsert_row(Tab.MATCH_STATS, "replay_id", replay.get("replay_id", ""), row_data)
 
     def save_video(self, video: dict) -> None:
-        """Append a video entry."""
+        """Append a video entry keyed by video_id to avoid blank-match_id collisions."""
         row_data = [
-            video.get("match_id", ""), video.get("league_id", ""),
+            video.get("video_id", ""), video.get("match_id", ""),
             video.get("uploader_id", ""), video.get("opponent_id", ""),
-            video.get("storage_url", ""), UTC_NOW(),
+            video.get("storage_url", ""), video.get("thumbnail_url", ""),
+            video.get("notes", ""), video.get("timestamp", UTC_NOW()),
         ]
-        self.upsert_row(Tab.MATCH_STATS, "match_id", video.get("match_id", ""), row_data)
+        self.upsert_row(Tab.MATCH_STATS, "video_id", video.get("video_id", ""), row_data)
 
     # ── Transactions tab ──────────────────────────────────────────────────────
     #
