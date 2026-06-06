@@ -43,13 +43,27 @@ async def fetch_smogon_tiers(gen: int = 9) -> dict[str, str]:
             log.warning("[smogon] Warning: could not fetch tiers — %s", e)
             return _load_cached_tiers()
 
-    # Smogon embeds a JSON blob in a <script> tag
-    match = re.search(r"dexSettings\s*=\s*(\{.*?\});", resp.text, re.DOTALL)
-    if not match:
+    # Smogon embeds a JSON blob; non-greedy fails on nested objects — find
+    # the brace-balanced extent of the assignment instead.
+    start_match = re.search(r"dexSettings\s*=\s*\{", resp.text)
+    if not start_match:
+        return _load_cached_tiers()
+    brace_start = start_match.end() - 1  # index of the opening {
+    depth = 0
+    end_pos = brace_start
+    for i, ch in enumerate(resp.text[brace_start:], brace_start):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end_pos = i + 1
+                break
+    else:
         return _load_cached_tiers()
 
     try:
-        data: dict[str, Any] = json.loads(match.group(1))
+        data: dict[str, Any] = json.loads(resp.text[brace_start:end_pos])
         injectRpcs: list = data.get("injectRpcs", [])
     except json.JSONDecodeError:
         return _load_cached_tiers()

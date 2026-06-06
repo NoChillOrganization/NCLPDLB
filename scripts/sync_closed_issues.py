@@ -109,7 +109,7 @@ _CLOSED_ROW_RE = re.compile(
     r"\[\[(?P<slug>ISS-\d{3}-[^\]|]+)\|(?P<id>ISS-\d{3})\]\]"
 )
 _OPEN_ROW_RE = re.compile(
-    r"\[\[(?P<slug>ISS-\d{3}-[^\]|]+)\|(?P<id>ISS-\d{3})\]\].*?in-progress|open",
+    r"\[\[(?P<slug>ISS-\d{3}-[^\]|]+)\|(?P<id>ISS-\d{3})\]\].*?(?:in-progress|open)",
     re.IGNORECASE,
 )
 

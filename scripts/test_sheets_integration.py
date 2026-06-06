@@ -159,38 +159,51 @@ def main() -> None:
     except Exception as e:
         check("get_rules()", False, str(e))
 
-    # ── Save transaction (dry-run using a test entry) ────────────
-    print("\n--- Transactions write (live test) ---")
+    # ── Save transaction (write + verify + cleanup) ──────────────
+    print("\n--- Transactions write (live test with cleanup) ---")
     import time
-    try:
-        before = sheets.get_transactions()
-        before_count = len(before)
+    if not os.environ.get("NCLPDLB_LIVE_WRITE_TEST"):
+        print("  [SKIP] Set NCLPDLB_LIVE_WRITE_TEST=1 to enable live write test")
+        check("save_transaction() skipped (live write disabled)", True)
+    else:
+        try:
+            from src.data.sheets import Tab
+            before = sheets.get_transactions()
+            before_count = len(before)
 
-        test_txn = {
-            "type": "Test",
-            "week": "99",
-            "from_player_name": "TestCoach1",
-            "to_player_name": "TestCoach2",
-            "pokemon_given": "Pikachu",
-            "pokemon_received": "Raichu",
-            "status": "Integration test — delete me",
-        }
-        sheets.save_transaction(test_txn)
-        time.sleep(2)
+            test_txn = {
+                "type": "Test",
+                "week": "99",
+                "from_player_name": "TestCoach1",
+                "to_player_name": "TestCoach2",
+                "pokemon_given": "Pikachu",
+                "pokemon_received": "Raichu",
+                "status": "Integration test — delete me",
+            }
+            sheets.save_transaction(test_txn)
+            time.sleep(2)
 
-        after = sheets.get_transactions()
-        after_count = len(after)
-        check("save_transaction() increased row count by 1",
-              after_count == before_count + 1,
-              f"before={before_count}, after={after_count}")
-        if after:
-            last = after[-1]
-            check("test transaction has correct coach", last.get("coach1") == "TestCoach1",
-                  last.get("coach1", ""))
-            check("test transaction has correct pokemon", last.get("pokemon1") == "Pikachu",
-                  last.get("pokemon1", ""))
-    except Exception as e:
-        check("save_transaction()", False, str(e))
+            after = sheets.get_transactions()
+            after_count = len(after)
+            check("save_transaction() increased row count by 1",
+                  after_count == before_count + 1,
+                  f"before={before_count}, after={after_count}")
+            if after:
+                last = after[-1]
+                check("test transaction has correct coach", last.get("coach1") == "TestCoach1",
+                      last.get("coach1", ""))
+                check("test transaction has correct pokemon", last.get("pokemon1") == "Pikachu",
+                      last.get("pokemon1", ""))
+
+            # Cleanup: delete the test row so we don't pollute production data
+            try:
+                ws = sheets.get_tab(Tab.TRANSACTIONS)
+                ws.delete_rows(ws.row_count)
+                check("cleanup: test row deleted from sheet", True)
+            except Exception as cleanup_exc:
+                check("cleanup: test row deleted from sheet", False, str(cleanup_exc))
+        except Exception as e:
+            check("save_transaction()", False, str(e))
 
     # ── No-op write methods (should log warnings, not raise) ─────
     print("\n--- No-op write methods (should not raise) ---")

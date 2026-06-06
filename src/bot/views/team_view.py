@@ -39,9 +39,10 @@ class TeamEmbedView(discord.ui.View):
 
     @discord.ui.button(label="Full Analysis", style=discord.ButtonStyle.primary, emoji="📊")
     async def analysis(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        import asyncio
         from src.services.analytics_service import AnalyticsService
         svc = AnalyticsService()
-        report = svc.analyze_pokemon_list(self.roster.pokemon)
+        report = await asyncio.to_thread(svc.analyze_pokemon_list, self.roster.pokemon)
         embed = discord.Embed(title=f"Team Analysis — {self.owner.display_name}", color=discord.Color.blurple())
         embed.add_field(name="Coverage", value=report.coverage_summary, inline=False)
         embed.add_field(name="Weaknesses", value=report.weakness_summary, inline=False)
@@ -58,7 +59,14 @@ class TeamEmbedView(discord.ui.View):
             guild_id=str(interaction.guild_id),
             player_id=str(self.owner.id),
         )
-        await interaction.response.send_message(
-            f"**Showdown Export:**\n```\n{text}\n```",
-            ephemeral=True,
-        )
+        payload = f"**Showdown Export:**\n```\n{text}\n```"
+        # Discord hard-caps messages at 2000 chars; send as file attachment if too long
+        if len(payload) > 1990:
+            import io
+            await interaction.response.send_message(
+                "Team export (too long for inline display):",
+                file=discord.File(io.BytesIO(text.encode()), filename="team.txt"),
+                ephemeral=True,
+            )
+        else:
+            await interaction.response.send_message(payload, ephemeral=True)

@@ -135,6 +135,8 @@ class AdminCog(commands.Cog, name="Admin"):
                 f"❌ Sync failed (HTTP {exc.status}).{hint}\n`{exc.text}`",
                 ephemeral=True,
             )
+        except Exception as exc:
+            await interaction.followup.send(f"❌ Sync error: {exc}", ephemeral=True)
 
     # ── /admin-update ──────────────────────────────────────────
     @app_commands.command(
@@ -365,7 +367,6 @@ class AdminCog(commands.Cog, name="Admin"):
     @is_commissioner()
     async def admin_showdown_check(self, interaction: discord.Interaction) -> None:
         import socket
-        import webbrowser
 
         await interaction.response.defer(thinking=True, ephemeral=True)
 
@@ -380,9 +381,8 @@ class AdminCog(commands.Cog, name="Admin"):
             pass
 
         if reachable:
-            webbrowser.open(f"http://localhost:{port}")
             await interaction.followup.send(
-                f"✅ Showdown server is reachable at `localhost:{port}` — opening in browser.",
+                f"✅ Showdown server is reachable at `http://localhost:{port}` — open that URL in your browser.",
                 ephemeral=True,
             )
         else:

@@ -1,7 +1,7 @@
 ---
 id: ISS-007
 title: Observation space — add STAB and speed tier features
-status: in-progress
+status: done
 priority: low
 phase: backlog
 labels: [ml, obs-space]
@@ -61,4 +61,19 @@ Gate conditions cleared: ISS-004/005 closed, 22-format 500k training run complet
 - [x] `tests/unit/test_battle_env.py`: literal `== 48` updated; turn/terrain tests fixed to
       explicit indices (47 / 45); 12 new unit tests for `_stab_flag`, `_speed_tier`, new obs slots
 - [x] 113 tests pass, 0 failures
-- [ ] Dispatch fresh training run with OBS_DIM=53 (next milestone)
+- [x] Dispatch fresh training run with OBS_DIM=53 (superseded — folded into 78-dim run, see ISS-008)
+
+## Progress (2026-06-05)
+
+All code ACs verified complete on `master` (commit `4b67013`, PR #139):
+- `_stab_flag`, `_speed_tier` helpers present and tested
+- `build_observation()` STAB flags at [48-51], speed tier at [52]
+- `OBS_DIM = 53` milestone superseded by ISS-008 gate override (single 78-dim checkpoint break)
+- `feature_extractor._species_to_id_normalized` fixed (H11): now delegates to
+  `battle_env._stable_species_id` (MD5-based, cross-process deterministic)
+- `feature_extractor.extract_features` fixed: delegates to `build_observation()` (78-dim)
+- 137 tests pass, 2 skipped (expected poke-env import-skip on Windows)
+- Cross-process determinism verified: `_stable_species_id("Garchomp")` = 0.11927... in two
+  fresh processes
+
+Remaining: dispatch fresh 78-dim training run on x86 VM (follow-on infra milestone, not a code AC).

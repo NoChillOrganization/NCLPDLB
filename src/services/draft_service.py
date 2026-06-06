@@ -24,6 +24,9 @@ AUCTION_STARTING_BUDGET = 1000  # Points each player starts with in auction draf
 # In-memory draft cache (one active draft per guild)
 _active_drafts: dict[str, Draft] = {}
 
+# Per-guild pick locks — serialise make_pick calls so TOCTOU is impossible (M9)
+_pick_locks: dict[str, asyncio.Lock] = {}
+
 # Per-guild timer tasks (auto-skip when timer expires)
 _timer_tasks: dict[str, asyncio.Task] = {}
 # Strong references to fire-and-forget cleanup tasks so GC cannot cancel them
@@ -175,6 +178,10 @@ class DraftService:
             tera_types_per_captain=int(config.get("tera_types_per_captain", 1)),
         )
 
+    def get_draft(self, guild_id: str) -> "Draft | None":
+        """Return the current in-memory Draft for a guild, or None."""
+        return _active_drafts.get(guild_id)
+
     # ── Join ───────────────────────────────────────────────────
     async def add_player(
         self,
@@ -242,6 +249,21 @@ class DraftService:
 
     # ── Pick ───────────────────────────────────────────────────
     async def make_pick(
+        self,
+        guild_id: str,
+        player_id: str,
+        pokemon_name: str,
+        tera_type: str = "",
+        is_tera_captain: bool = False,
+        on_timeout: Callable[[str, str], Awaitable[None]] | None = None,
+    ) -> PickResult:
+        lock = _pick_locks.setdefault(guild_id, asyncio.Lock())
+        async with lock:
+            return await self._make_pick_locked(
+                guild_id, player_id, pokemon_name, tera_type, is_tera_captain, on_timeout
+            )
+
+    async def _make_pick_locked(
         self,
         guild_id: str,
         player_id: str,
@@ -424,6 +446,38 @@ class DraftService:
             f"amount={amount} nomination={draft.current_nomination_id}"
         )
         return BidResult(success=True, current_high=amount)
+
+    async def close_nomination(self, guild_id: str) -> PickResult:
+        """Award the current nomination to the highest bidder and deduct budget."""
+        draft = _active_drafts.get(guild_id)
+        if not draft or draft.format != DraftFormat.AUCTION:
+            return PickResult(success=False, error="No active auction draft.")
+        nom_id = draft.current_nomination_id
+        if not nom_id:
+            return PickResult(success=False, error="No active nomination.")
+        bids = draft.nomination_bids.get(nom_id, {})
+        if not bids:
+            return PickResult(success=False, error="No bids placed.")
+        winner_id = max(bids, key=lambda p: bids[p])
+        amount = bids[winner_id]
+        pokemon = pokemon_db.find(nom_id)
+        if not pokemon:
+            return PickResult(success=False, error=f"Pokemon '{nom_id}' not found.")
+        pick = DraftPick(
+            draft_id=draft.draft_id,
+            player_id=winner_id,
+            pokemon_name=pokemon.name,
+            round=draft.current_round,
+            pick_number=len(draft.picks) + 1,
+        )
+        draft.picks.append(pick)
+        draft.budget[winner_id] = draft.budget.get(winner_id, 0) - amount
+        draft.current_nomination_id = ""
+        await asyncio.to_thread(sheets.save_pick, pick.model_dump(mode="json"))
+        self._advance_pick(draft)
+        await _persist_draft(draft)
+        log.info(f"Auction: {winner_id} won {pokemon.name} for {amount} coins in guild {guild_id}")
+        return PickResult(success=True, pokemon=pokemon, round=draft.current_round)
 
     # ── Admin ops ──────────────────────────────────────────────
     async def force_skip(self, guild_id: str, player_id: str) -> ForceSkipResult:

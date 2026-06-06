@@ -32,8 +32,9 @@ try:
         import datetime
         import google.auth._helpers as _gah
         _offset = server_dt - datetime.datetime.now(datetime.timezone.utc)
-        _orig_utcnow = _gah.utcnow
-        _gah.utcnow = lambda: _orig_utcnow() + _offset
+        if hasattr(_gah, "utcnow"):
+            _orig_utcnow = _gah.utcnow
+            _gah.utcnow = lambda: _orig_utcnow() + _offset
 except Exception:
     pass
 

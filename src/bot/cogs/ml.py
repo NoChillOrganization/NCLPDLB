@@ -76,8 +76,7 @@ class MLCog(commands.Cog, name="ML"):
         if not _SHEETS_AVAILABLE or not learning_sheets or not learning_sheets.enabled:
             return
         try:
-            loop = asyncio.get_event_loop()
-            rows = await loop.run_in_executor(None, learning_sheets.get_stats_table)
+            rows = await asyncio.get_running_loop().run_in_executor(None, learning_sheets.get_stats_table)
             async with self._cache_lock:
                 self._stats_cache = rows
             log.info("[MLCog] Stats cache refreshed: %d formats", len(rows))

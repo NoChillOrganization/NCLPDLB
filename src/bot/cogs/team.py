@@ -294,10 +294,16 @@ class TeamCog(commands.Cog, name="Team"):
             guild_id=str(interaction.guild_id),
             player_id=str(interaction.user.id),
         )
-        await interaction.followup.send(
-            f"Your team in Showdown format:\n```\n{export}\n```",
-            ephemeral=True,
-        )
+        payload = f"Your team in Showdown format:\n```\n{export}\n```"
+        if len(payload) > 1990:
+            import io
+            await interaction.followup.send(
+                "Team export (attached as file):",
+                file=discord.File(io.BytesIO(export.encode()), filename="team.txt"),
+                ephemeral=True,
+            )
+        else:
+            await interaction.followup.send(payload, ephemeral=True)
 
     # ── /legality ────────────────────────────────────────────
     @app_commands.command(name="legality", description="Check if a Pokemon is legal in a specific game")

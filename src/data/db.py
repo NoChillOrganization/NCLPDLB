@@ -35,6 +35,8 @@ async def init_db() -> None:
     """Create tables if they don't exist. Safe to call on every startup."""
     _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     async with aiosqlite.connect(_DB_PATH) as conn:
+        # WAL mode allows concurrent reads during writes — prevents "database is locked" (M19)
+        await conn.execute("PRAGMA journal_mode=WAL")
         await conn.executescript("""
             CREATE TABLE IF NOT EXISTS active_drafts (
                 guild_id   TEXT PRIMARY KEY,

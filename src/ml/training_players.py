@@ -65,11 +65,12 @@ class SimpleHeuristicPlayer(Player):
     Intermediate curriculum opponent that uses type effectiveness and base power.
     """
     def choose_move(self, battle: Any) -> Any:
-        if battle.available_moves:
+        opp = battle.opponent_active_pokemon
+        if battle.available_moves and opp is not None:
             # Score moves: base_power * type_effectiveness
             scores = []
             for move in battle.available_moves:
-                effectiveness = battle.opponent_active_pokemon.damage_multiplier(move)
+                effectiveness = opp.damage_multiplier(move)
                 score = move.base_power * effectiveness
                 scores.append((move, score))
             

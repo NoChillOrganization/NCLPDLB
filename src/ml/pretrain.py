@@ -194,9 +194,13 @@ def build_obs_from_snapshot(
     else:
         idx += 3
 
+    def _base_name(n: str) -> str:
+        """Strip forme suffix so 'Charizard-Mega-X' matches team-preview 'Charizard'."""
+        return n.split("-")[0].lower() if n else ""
+
     # ── My team HP (6 dims) ────────────────────────────────────────
     for i in range(TEAM_SIZE):
-        if i < len(my_team_list) and my_team_list[i] == my_active:
+        if i < len(my_team_list) and _base_name(my_team_list[i]) == _base_name(my_active):
             obs[idx] = hp_by_slot.get(my_slot, 1.0)
         else:
             obs[idx] = 1.0  # benched HP unknown — assume full
@@ -204,7 +208,7 @@ def build_obs_from_snapshot(
 
     # ── Opponent team HP (6 dims) ──────────────────────────────────
     for i in range(TEAM_SIZE):
-        if i < len(opp_team_list) and opp_team_list[i] == opp_active:
+        if i < len(opp_team_list) and _base_name(opp_team_list[i]) == _base_name(opp_active):
             obs[idx] = hp_by_slot.get(opp_slot, 1.0)
         else:
             obs[idx] = 1.0

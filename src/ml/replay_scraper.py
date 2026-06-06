@@ -130,6 +130,10 @@ class ReplayScraper:
                 log.debug(f"Replay {meta.id} download failed: {exc}")
                 return False
 
+            if not isinstance(data, dict):
+                log.debug(f"Replay {meta.id} returned non-dict JSON: {type(data).__name__}")
+                return False
+
             # Attach metadata we already know
             data.setdefault("format", self.format)
             data.setdefault("rating", meta.rating)

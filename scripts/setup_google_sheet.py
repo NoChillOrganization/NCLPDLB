@@ -31,9 +31,12 @@ try:
         skew = server_dt.replace(tzinfo=None) - datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         if abs(skew.total_seconds()) > 10:
             import google.auth._helpers as _ga_helpers
-            _orig_utcnow = _ga_helpers.utcnow
-            _ga_helpers.utcnow = lambda: _orig_utcnow() + skew
-            print(f"[clock-fix] Adjusted JWT clock by {skew.total_seconds():.0f}s to match Google servers")
+            if hasattr(_ga_helpers, "utcnow"):
+                _orig_utcnow = _ga_helpers.utcnow
+                _ga_helpers.utcnow = lambda: _orig_utcnow() + skew
+                print(f"[clock-fix] Adjusted JWT clock by {skew.total_seconds():.0f}s to match Google servers")
+            else:
+                print(f"[clock-fix] Skew={skew.total_seconds():.0f}s but google.auth._helpers.utcnow not found; skipping patch")
 except Exception:
     pass  # Best-effort; let auth fail naturally if unreachable
 

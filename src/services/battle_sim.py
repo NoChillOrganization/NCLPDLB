@@ -151,7 +151,7 @@ class BattleSimService:
                             error=f"Could not fetch replay (HTTP {resp.status}). Check the URL."
                         )
                     data = await resp.json(content_type=None)
-        except aiohttp.ClientError as e:
+        except (aiohttp.ClientError, ValueError) as e:
             return ReplayParseResult(success=False, error=f"Network error: {e}")
 
         try:

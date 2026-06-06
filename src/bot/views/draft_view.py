@@ -20,13 +20,16 @@ class DraftPickView(discord.ui.View):
         self.add_item(PokemonSearchSelect(draft=draft))
 
     async def on_timeout(self) -> None:
-        """Auto-skip when timer expires."""
+        """Auto-skip when timer expires — only if pick is still pending."""
         from src.services.draft_service import DraftService
         svc = DraftService()
-        await svc.force_skip(
-            guild_id=self.draft.guild_id,
-            player_id=self.draft.current_player_id or "",
-        )
+        # Guard: only skip if the same player is still waiting (race-condition check)
+        draft = svc.get_draft(self.draft.guild_id)
+        if draft and draft.current_player_id == self.draft.current_player_id:
+            await svc.force_skip(
+                guild_id=self.draft.guild_id,
+                player_id=self.draft.current_player_id or "",
+            )
         for item in self.children:
             item.disabled = True
 
@@ -92,6 +95,7 @@ class PokemonSearchSelect(discord.ui.Select):
             embed.add_field(name="Types", value=result.pokemon.type_string)
             embed.add_field(name="Tier", value=result.pokemon.showdown_tier)
             embed.set_footer(text=f"Next: {result.next_player_name}")
+            self.view.stop()  # cancel timeout so it can't fire for the wrong player
             await interaction.response.edit_message(embed=embed, view=None)
         else:
             await interaction.response.send_message(f"Error: {result.error}", ephemeral=True)

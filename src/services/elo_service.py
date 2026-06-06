@@ -12,6 +12,14 @@ from src.data.db import load_all_elo, save_elo as _db_save_elo
 from src.data.models import PlayerElo
 from src.data.sheets import Tab, sheets
 
+
+def _safe_int(val: object, default: int) -> int:
+    """Parse ELO/wins/losses from a Sheets cell; return default on blank or non-numeric."""
+    try:
+        return int(str(val).strip().split()[0]) if str(val).strip() else default
+    except (ValueError, IndexError):
+        return default
+
 log = logging.getLogger(__name__)
 
 # In-memory ELO cache
@@ -80,9 +88,9 @@ class EloService:
                     player_id=player_id,
                     guild_id=guild_id,
                     display_name=str(record.get("player_name", "")),
-                    elo=int(record.get("elo", settings.elo_default_rating)),
-                    wins=int(record.get("wins", 0)),
-                    losses=int(record.get("losses", 0)),
+                    elo=_safe_int(record.get("elo", settings.elo_default_rating), settings.elo_default_rating),
+                    wins=_safe_int(record.get("wins", 0), 0),
+                    losses=_safe_int(record.get("losses", 0), 0),
                 )
             else:
                 guild_elo[player_id] = PlayerElo(
@@ -161,10 +169,10 @@ class EloService:
                         player_id=pid,
                         guild_id=guild_id,
                         display_name=str(r.get("player_name", "")),
-                        elo=int(r.get("elo", 1000)),
-                        wins=int(r.get("wins", 0)),
-                        losses=int(r.get("losses", 0)),
-                        streak=int(r.get("streak", 0)),
+                        elo=_safe_int(r.get("elo", 1000), 1000),
+                        wins=_safe_int(r.get("wins", 0), 0),
+                        losses=_safe_int(r.get("losses", 0), 0),
+                        streak=_safe_int(r.get("streak", 0), 0),
                     )
             _elo_cache[guild_id] = guild_elo
         return sorted(guild_elo.values(), key=lambda p: p.elo, reverse=True)

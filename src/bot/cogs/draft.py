@@ -52,11 +52,17 @@ class DraftSetupModal(discord.ui.Modal, title="Draft League Setup"):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         # Stash values on the interaction for the next step
+        def _safe_int(val: str, default: int) -> int:
+            try:
+                return int(val) if val.strip() else default
+            except ValueError:
+                return default
+
         interaction.extras["wizard_step1"] = {
             "league_name": self.league_name.value,
-            "season": int(self.season.value or 1),
-            "total_rounds": int(self.total_rounds.value or 6),
-            "timer_seconds": int(self.timer_seconds.value or 60),
+            "season": _safe_int(self.season.value, 1),
+            "total_rounds": _safe_int(self.total_rounds.value, 6),
+            "timer_seconds": _safe_int(self.timer_seconds.value, 60),
             "commissioner_team": self.team_name.value,
         }
         # Send step 2 — format + player count
@@ -165,11 +171,17 @@ class DraftWizardStep3Modal(discord.ui.Modal, title="Draft Setup — Tera Captai
         self.step2 = step2
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        max_p = min(16, max(2, int(self.max_players.value or 16)))
-        pool_a = int(self.pool_a_size.value or 8)
+        def _safe_int(val: str, default: int) -> int:
+            try:
+                return int(val) if val.strip() else default
+            except ValueError:
+                return default
+
+        max_p = min(16, max(2, _safe_int(self.max_players.value, 16)))
+        pool_a = _safe_int(self.pool_a_size.value, 8)
         pool_b = max(0, max_p - pool_a)
-        tera_cap = int(self.tera_captains.value or 0)
-        tera_types = int(self.tera_types_per_captain.value or 1)
+        tera_cap = _safe_int(self.tera_captains.value, 0)
+        tera_types = _safe_int(self.tera_types_per_captain.value, 1)
 
         config = {
             **self.step1,
@@ -559,10 +571,11 @@ class DraftCog(commands.Cog, name="Draft"):
     @draft_create.error
     @draft_cancel.error
     async def draft_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
-        if isinstance(error, app_commands.MissingPermissions):
-            await interaction.response.send_message("❌ Only server admins can create drafts.", ephemeral=True)
+        msg = "❌ Only server admins can create drafts." if isinstance(error, app_commands.MissingPermissions) else f"❌ Error: {error}"
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
         else:
-            await interaction.response.send_message(f"❌ Error: {error}", ephemeral=True)
+            await interaction.response.send_message(msg, ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:

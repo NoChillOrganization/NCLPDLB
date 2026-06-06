@@ -262,7 +262,10 @@ class BattleTransformer(nn.Module):
             if temperature != 1.0:
                 logits = logits / temperature
 
-            probs  = _torch.softmax(logits, dim=-1)
+            probs = _torch.softmax(logits, dim=-1)
+            # All-illegal mask produces all-NaN after softmax; fall back to uniform
+            if _torch.isnan(probs).all():
+                probs = _torch.ones_like(probs) / probs.shape[-1]
             action = int(_torch.argmax(probs, dim=-1).item())
             value  = float(val.squeeze().item())
 
@@ -288,7 +291,10 @@ class BattleTransformer(nn.Module):
             logits, _ = self.forward(x)
             if legal_mask is not None:
                 logits = logits.masked_fill(legal_mask.unsqueeze(0), float("-inf"))
-            return _torch.softmax(logits, dim=-1).squeeze(0)
+            probs = _torch.softmax(logits, dim=-1).squeeze(0)
+            if _torch.isnan(probs).all():
+                probs = _torch.ones_like(probs) / probs.shape[-1]
+            return probs
 
     # ── Model info ───────────────────────────────────────────────────────
 
