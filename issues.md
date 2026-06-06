@@ -148,3 +148,5 @@ Status transitions: `open` → `in-progress` → `done`. Move done rows to a **C
 | [[ISS-004-spar-wire-mcts-inference\|ISS-004]]        | /spar — wire use_mcts=True inference path                   | 06    | high     | bot, inference | done   |
 | [[ISS-005-spar-fallback-ppo\|ISS-005]]               | /spar — graceful PPO fallback                               | 06    | high     | bot, inference | done   |
 | [[ISS-006-ml-training-environment\|ISS-006]]         | ML training — provision x86 Linux environment               | backlog | medium  | ml, infra      | done   |
+| [[ISS-007-obs-stab-speed-tier\|ISS-007]]             | Observation space — add STAB and speed tier features        | backlog | low     | ml, obs-space  | done   |
+| [[ISS-008-ability-item-obs-awareness\|ISS-008]]      | Observation space — ability and item awareness              | backlog | low     | ml, obs-space  | done   |

@@ -6,6 +6,7 @@ priority: low
 phase: backlog
 labels: [ml, obs-space]
 created: 2026-05-31
+closed: 2026-06-05
 ---
 
 # ISS-008 — Observation Space: Ability and Item Awareness

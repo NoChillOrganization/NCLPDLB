@@ -271,7 +271,7 @@ def run(check: bool = False, verbose: bool = False) -> int:
             else:
                 _scaffold_solution(issue_id, slug, fm, solution_path)
                 print(f"  NEW   {issue_id}: scaffolded {solution_path.name}")
-                print(f"        → Fill in Analysis/Approach/Code Changes/Verification")
+                print(f"        -> Fill in Analysis/Approach/Code Changes/Verification")
                 scaffolded += 1
         elif verbose:
             print(f"  OK    {issue_id}: {solution_path.name} exists")
