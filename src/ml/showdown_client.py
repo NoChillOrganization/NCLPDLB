@@ -274,8 +274,36 @@ class ShowdownCommander:
         For local servers started with --no-security, password is ignored and
         challstr is passed as-is (the server accepts any assertion).
         """
-        # Local no-security: /trn username,0,challstr
-        await self._conn.send_raw(f"|/trn {username},0,{challstr}")
+        if password and challstr:
+            # Public server: exchange challstr + credentials for an assertion token
+            import aiohttp, urllib.parse
+            login_url = "https://play.pokemonshowdown.com/~~showdown/action.php"
+            payload = urllib.parse.urlencode({
+                "act": "login",
+                "name": username,
+                "pass": password,
+                "challstr": challstr,
+            })
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        login_url,
+                        data=payload,
+                        headers={"Content-Type": "application/x-www-form-urlencoded"},
+                        timeout=aiohttp.ClientTimeout(total=10),
+                    ) as resp:
+                        raw = await resp.text()
+                # Response is "]" + JSON
+                import json as _json
+                data = _json.loads(raw.lstrip("]"))
+                assertion = data.get("assertion", "")
+            except Exception as exc:
+                self._log.error("Public-server login failed: %s", exc)
+                return
+            await self._conn.send_raw(f"|/trn {username},0,{assertion}")
+        else:
+            # Local no-security server: pass challstr directly as assertion
+            await self._conn.send_raw(f"|/trn {username},0,{challstr}")
         self._log.info("Login sent for %s", username)
 
     # ── Matchmaking ─────────────────────────────────────────────────────
@@ -370,8 +398,8 @@ class ShowdownClient:
         # Wire challstr → auto-login
         self.handler.on("challstr", self._on_challstr)
 
-        # Signal for login completion
-        self._login_event: asyncio.Event = asyncio.Event()
+        # Deferred: asyncio.Event must be created inside a running loop (M25)
+        self._login_event: asyncio.Event | None = None
         self.handler.on("updateuser", self._on_updateuser)
 
     # ── Public API ──────────────────────────────────────────────────────
@@ -388,6 +416,7 @@ class ShowdownClient:
             ConnectionError: If the server is unreachable.
             asyncio.TimeoutError: If login doesn't complete within login_timeout.
         """
+        self._login_event = asyncio.Event()  # created inside running loop (M25)
         await self.connection.connect()
         try:
             await asyncio.wait_for(self._login_event.wait(), timeout=login_timeout)

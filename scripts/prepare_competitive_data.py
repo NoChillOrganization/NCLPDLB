@@ -126,7 +126,8 @@ def _fetch_smogon_stats(tier: str) -> list[dict]:
     for url in urls:
         try:
             print(f"  [FETCH] {tier} <- {url}")
-            with urllib.request.urlopen(url, timeout=15) as resp:
+            req = urllib.request.Request(url, headers={"User-Agent": "NCLPDLB/1.0 (competitive data seeder)"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
                 text = resp.read().decode("utf-8")
             break
         except Exception as exc:

@@ -240,7 +240,9 @@ class Draft(BaseModel):
             return None
         if self.current_round > self.total_rounds:
             return None
-        # Snake draft: reverse direction each round
+        # Snake: even rounds reverse direction so the last player in round N
+        # picks first in round N+1 (back-to-back). pick_index resets to 0 each
+        # round; reversed idx = (N-1) - 0 = N-1 on the first pick of an even round.
         if self.format == DraftFormat.SNAKE and self.current_round % 2 == 0:
             idx = len(self.player_order) - 1 - self.current_pick_index
         else:

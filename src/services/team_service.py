@@ -265,13 +265,14 @@ class TeamService:
                 current_name = ""
                 continue
 
-            skip_prefixes = ("-", "Ability:", "EVs:", "IVs:", "Level", "Shiny", "Happiness", "Gigantamax")
+            skip_prefixes = ("-", "Ability:", "EVs:", "IVs:", "Level", "Shiny", "Happiness", "Gigantamax", "Tera Type:")
             if any(line.startswith(p) for p in skip_prefixes) or line.endswith("Nature"):
                 continue
 
             if current_name == "":
                 # Handle: "Nickname (Pokemon) @ Item" or "Pokemon @ Item"
-                match = re.match(r"^(?:[\w\s'-]+\s+\()?([A-Za-z][A-Za-z\-'. ]+?)(?:\)|\s*@|$)", line)
+                # Allow colons in species names (e.g. "Type: Null") by not stopping at ":"
+                match = re.match(r"^(?:[\w\s'-]+\s+\()?([A-Za-z][A-Za-z\-'.: ]+?)(?:\s*\)|\s*@|$)", line)
                 if match:
                     current_name = match.group(1).strip()
                     pokemon = pokemon_db.find(current_name)

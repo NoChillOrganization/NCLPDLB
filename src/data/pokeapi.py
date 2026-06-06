@@ -59,9 +59,9 @@ class PokemonDatabase:
         # Direct match
         if p := self._db.get(key):
             return p
-        # Partial match
+        # Prefix match only (avoid "mew" → "mewtwo" false positive)
         for k, p in self._db.items():
-            if key in k or k in key:
+            if k.startswith(key) or key.startswith(k):
                 return p
         return None
 

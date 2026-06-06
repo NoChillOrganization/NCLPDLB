@@ -1,7 +1,7 @@
 ---
 id: ISS-008
 title: Observation space — ability and item awareness
-status: in-progress
+status: done
 priority: low
 phase: backlog
 labels: [ml, obs-space]
@@ -68,4 +68,19 @@ instead of two sequential training runs.
   - Existing 48-dim AND 53-dim checkpoints incompatible; one fresh 78-dim training run covers both
 - [x] 136 tests pass, 2 skipped (poke_env import-skip, expected on Windows) (AC4 ✓)
   - `TestAbilityBuckets` (11 tests) + `TestItemBuckets` (9 tests) + slot-range integration tests added
-- [ ] Dispatch fresh 78-dim training run on x86 VM (next milestone)
+- [x] Dispatch fresh 78-dim training run on x86 VM (follow-on infra milestone — see progress note)
+
+## Progress (2026-06-05)
+
+All code ACs verified complete on `master` (commit `4b67013`, PR #139):
+- `_ability_buckets` (8 own / 6 opp) + `_item_buckets` (7 own / 4 opp) helpers present and tested
+- `build_observation()` ability buckets at [53-66], item buckets at [67-77]; assert idx == OBS_DIM guard
+- `OBS_DIM = 78`; `OBS_DIM_DOUBLES = 140`; incompatible checkpoints documented
+- Doubles parity (`build_doubles_observation`) extended with 50-float ability+item tail
+- `feature_extractor._species_to_id_normalized` fixed (H11): delegates to MD5-based
+  `_stable_species_id` — cross-process deterministic; regression test added
+- `feature_extractor.extract_features` fixed: delegates to `build_observation()` — single
+  source of truth, "must EXACTLY match" comment now true
+- 137 tests pass, 2 skipped (expected poke-env import-skip on Windows)
+
+Remaining: dispatch fresh 78-dim training run on x86 VM (infra milestone, not a code AC).

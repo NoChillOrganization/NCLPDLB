@@ -275,7 +275,7 @@ def _load_pretrain_weights(model: Any, checkpoint_path: str | Path) -> None:
         raise ImportError("torch is required for --pretrain weight loading") from exc
 
     checkpoint_path = Path(checkpoint_path)
-    state = torch.load(checkpoint_path, map_location="cpu")
+    state = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
     policy_sd = model.policy.state_dict()
     loaded_keys: list[str] = []
     for k, v in state.items():
@@ -1053,10 +1053,11 @@ def evaluate(  # pragma: no cover
             obs, reward, terminated, truncated, _ = env.step(int(action))
             done = terminated or truncated
 
-        battle = poke_env.battle1
-        if battle and battle.won:
+        # poke_env.battle1 is version-dependent; use getattr fallback (M23)
+        battle = getattr(poke_env, "battle1", None) or getattr(poke_env, "_current_battle", None)
+        if battle and getattr(battle, "won", False):
             wins += 1
-        elif battle and battle.lost:
+        elif battle and getattr(battle, "lost", False):
             losses += 1
         else:
             ties += 1

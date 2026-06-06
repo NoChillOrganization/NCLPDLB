@@ -82,5 +82,16 @@ class Settings(BaseSettings):
         return PROJECT_ROOT / "data"
 
 
-# Singleton instance — import this everywhere
-settings = Settings()
+# Singleton instance — import this everywhere.
+# Lazy-loaded so import-time failures (missing .env) only occur when first accessed.
+class _LazySettings:
+    """Defers Settings() construction until first attribute access."""
+    _real: "Settings | None" = None
+
+    def __getattr__(self, name: str) -> object:
+        if type(self)._real is None:
+            type(self)._real = Settings()
+        return getattr(type(self)._real, name)
+
+
+settings: "Settings" = _LazySettings()  # type: ignore[assignment]

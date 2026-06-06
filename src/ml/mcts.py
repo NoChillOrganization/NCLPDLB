@@ -201,7 +201,11 @@ class MCTS:
         # Stochastic: sample proportional to visit_counts^(1/T)
         t = max(self.config.temperature, 1e-6)
         counts_t = visit_counts ** (1.0 / t)
-        probs = counts_t / counts_t.sum()
+        total = counts_t.sum()
+        if total == 0:
+            probs = np.ones(len(actions), dtype=np.float32) / len(actions)
+        else:
+            probs = counts_t / total
         return int(np.random.choice(actions, p=probs))
 
     def action_probs(self) -> dict[int, float]:
