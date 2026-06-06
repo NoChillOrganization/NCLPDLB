@@ -2,9 +2,12 @@
 League Cog — League management, schedules, multi-server support.
 """
 import asyncio
+import logging
 import uuid
 
 import discord
+
+log = logging.getLogger(__name__)
 from discord import app_commands
 from discord.ext import commands
 
@@ -105,15 +108,19 @@ class LeagueCog(commands.Cog, name="League"):
             loser_name=loser.display_name,
         )
 
-        # Persist match to Sheets
-        await asyncio.to_thread(sheets.save_match_stats, {
-            "match_id": str(uuid.uuid4())[:8],
-            "league_id": str(interaction.guild_id),
-            "winner_id": str(winner.id),
-            "loser_id": str(loser.id),
-            "p1_team": [],
-            "p2_team": [],
-        })
+        # Persist match to Sheets — best-effort: a write failure must not suppress
+        # the embed or leave ELO mutated with no user feedback.
+        try:
+            await asyncio.to_thread(sheets.save_match_stats, {
+                "match_id": str(uuid.uuid4())[:8],
+                "league_id": str(interaction.guild_id),
+                "winner_id": str(winner.id),
+                "loser_id": str(loser.id),
+                "p1_team": [],
+                "p2_team": [],
+            })
+        except Exception:
+            log.exception("[result] Non-fatal: failed to persist match stats to Sheets")
 
         embed = discord.Embed(
             title="Match Result Recorded!",

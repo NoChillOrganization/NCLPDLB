@@ -48,10 +48,10 @@ class MaxBasePowerPlayer(Player):
         # 1. Prioritize moves with highest base power
         if battle.available_moves:
             # Calculate max base power
-            max_power = max(m.base_power for m in battle.available_moves)
-            
+            max_power = max((m.base_power or 0) for m in battle.available_moves)
+
             # Get all moves with that power (to break ties randomly)
-            best_moves = [m for m in battle.available_moves if m.base_power == max_power]
+            best_moves = [m for m in battle.available_moves if (m.base_power or 0) == max_power]
             
             # Select one at random from the best
             chosen_move = random.choice(best_moves)

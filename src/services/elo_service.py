@@ -91,6 +91,7 @@ class EloService:
                     elo=_safe_int(record.get("elo", settings.elo_default_rating), settings.elo_default_rating),
                     wins=_safe_int(record.get("wins", 0), 0),
                     losses=_safe_int(record.get("losses", 0), 0),
+                    streak=_safe_int(record.get("streak", 0), 0),
                 )
             else:
                 guild_elo[player_id] = PlayerElo(

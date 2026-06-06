@@ -31,6 +31,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import gspread
+import requests.exceptions
 from google.oauth2.service_account import Credentials
 
 from src.config import settings
@@ -48,9 +49,9 @@ def UTC_NOW() -> str:
 
 
 def _with_retry(fn, *args, max_tries: int = 5, **kwargs):
-    """Call fn(*args, **kwargs) with exponential-backoff retry on HTTP 429/503.
+    """Call fn(*args, **kwargs) with exponential-backoff retry on HTTP 429/503 and transport errors.
 
-    All other errors (including CellNotFound) propagate immediately.
+    All other errors propagate immediately.
     """
     for attempt in range(max_tries):
         try:
@@ -67,6 +68,15 @@ def _with_retry(fn, *args, max_tries: int = 5, **kwargs):
             log.warning(
                 "Sheets API rate-limit (HTTP %s) — retrying in %.1fs (attempt %d/%d)",
                 status, delay, attempt + 1, max_tries,
+            )
+            _time.sleep(delay)
+        except requests.exceptions.RequestException as exc:
+            if attempt == max_tries - 1:
+                raise
+            delay = (2 ** attempt) + _random.uniform(0, 1)
+            log.warning(
+                "Sheets transport error (%s) — retrying in %.1fs (attempt %d/%d)",
+                exc, delay, attempt + 1, max_tries,
             )
             _time.sleep(delay)
 
@@ -182,7 +192,7 @@ class SheetsClient:
     def _set_cell(self, tab_name: str, cell: str, value: Any) -> None:
         """Write a single cell."""
         ws = self.get_tab(tab_name)
-        ws.update(cell, [[value]], value_input_option="USER_ENTERED")
+        ws.update([[value]], cell, value_input_option="USER_ENTERED")
 
     def _append_to_range(self, ws: gspread.Worksheet, range_: str, row: list[Any]) -> None:
         """Append a row using USER_ENTERED so formulas are evaluated."""
@@ -546,7 +556,7 @@ class SheetsClient:
         e_col = ws.col_values(5)  # column E
         next_row = len(e_col) + 1
         text = f"[{category}] {title}: {description}" if category else f"{title}: {description}"
-        ws.update(f"D{next_row}:E{next_row}", [["✵", text]], value_input_option="USER_ENTERED")
+        ws.update([["✵", text]], f"D{next_row}:E{next_row}", value_input_option="USER_ENTERED")
         log.info(f"Rule appended at row {next_row}")
 
     # ── MVP Race tab ──────────────────────────────────────────────────────────
