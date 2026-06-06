@@ -2994,7 +2994,7 @@ EVs: 252 HP / 4 SpA / 252 SpD
 Calm Nature
 - Sludge Bomb
 - Pain Split
-- Yawn
+- Protect
 - Toxic
 
 Oranguru @ Leftovers
@@ -3328,8 +3328,8 @@ EVs: 236 SpA / 36 SpD / 236 Spe
 Timid Nature
 - Fire Blast
 - Hyper Voice
-- Psychic
-- Superpower
+- Flamethrower
+- Facade
 
 Pawniard @ Eviolite
 Ability: Defiant
@@ -3576,18 +3576,18 @@ IVs: 0 Spe
 
 GEN9DOUBLESUU = [
 
-    # Team 1 — Hatterene Trick Room
+    # Team 1 — Dusclops Trick Room
     """\
-Hatterene @ Misty Seed
-Ability: Magic Bounce
-Tera Type: Psychic
-EVs: 252 HP / 252 SpA / 4 SpD
-Quiet Nature
-IVs: 0 Spe
-- Psychic
-- Mystical Fire
+Dusclops @ Eviolite
+Ability: Pressure
+Tera Type: Ghost
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 0 Atk / 0 Spe
+- Night Shade
+- Will-O-Wisp
 - Trick Room
-- Healing Wish
+- Pain Split
 
 Garganacl @ Sitrus Berry
 Ability: Purifying Salt
@@ -3600,16 +3600,16 @@ IVs: 0 Spe
 - Salt Cure
 - Protect
 
-Iron Hands @ Assault Vest
-Ability: Quark Drive
-Tera Type: Electric
+Scrafty @ Assault Vest
+Ability: Intimidate
+Tera Type: Dark
 EVs: 252 HP / 252 Atk / 4 SpD
 Brave Nature
 IVs: 0 Spe
-- Close Combat
-- Wild Charge
-- Thunder Punch
-- Fake Out
+- Drain Punch
+- Knock Off
+- Ice Punch
+- High Jump Kick
 
 Slowking @ Assault Vest
 Ability: Regenerator
@@ -3638,7 +3638,7 @@ Tera Type: Fairy
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Hyper Voice
-- Icy Wind
+- Moonblast
 - Shadow Ball
 - Protect
 """,
@@ -3725,19 +3725,19 @@ Tera Type: Fairy
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 - Hyper Voice
-- Icy Wind
+- Moonblast
 - Shadow Ball
 - Protect
 
-Iron Hands @ Assault Vest
-Ability: Quark Drive
-Tera Type: Fighting
+Scrafty @ Assault Vest
+Ability: Moxie
+Tera Type: Dark
 EVs: 252 HP / 252 Atk / 4 SpD
 Adamant Nature
-- Close Combat
-- Wild Charge
-- Thunder Punch
-- Fake Out
+- Drain Punch
+- Knock Off
+- Ice Punch
+- High Jump Kick
 
 Garganacl @ Leftovers
 Ability: Purifying Salt
