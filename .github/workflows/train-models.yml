@@ -2,6 +2,11 @@ name: Train ML Models
 
 on:
   workflow_dispatch:
+    inputs:
+      format_filter:
+        description: 'Comma-separated formats to train (empty = all)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -15,7 +20,7 @@ env:
 jobs:
   train:
     runs-on: self-hosted
-    timeout-minutes: 310
+    timeout-minutes: 310  # per-leg cap; matrix runs sequentially (max-parallel: 1)
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -49,7 +54,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          persist-credentials: false  # gh CLI uses GH_TOKEN env var; git credentials not needed
 
       - name: Set up Python virtualenv
         shell: bash
@@ -190,11 +195,16 @@ jobs:
             sleep 1
           done
 
-          # Clone once; reuse on subsequent jobs in the same run
-          if [ ! -d "$PS_DIR/.git" ]; then
-            git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
-            cd "$PS_DIR" && npm install --ignore-scripts
-          fi
+          # Clone once; reuse on subsequent jobs in the same run.
+          # flock guards against parallel legs racing on the same directory if
+          # max-parallel is ever increased above 1.
+          (
+            flock -x 200
+            if [ ! -d "$PS_DIR/.git" ]; then
+              git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
+              cd "$PS_DIR" && npm install --ignore-scripts
+            fi
+          ) 200>/tmp/showdown-clone.lock
 
           # Write config (overwrite each time to guarantee correct settings)
           printf '%s\n' \
@@ -295,7 +305,15 @@ PYEOF
           TRAIN_TIMESTEPS: ${{ matrix.config.timesteps }}
           TRAIN_TEAM_FORMAT: ${{ matrix.config.team_format }}
           TRAIN_TIMEOUT_MINUTES: ${{ matrix.config.train_timeout }}
+          FORMAT_FILTER: ${{ inputs.format_filter }}
         run: |
+          # Skip formats not listed in the optional format_filter input.
+          if [ -n "$FORMAT_FILTER" ]; then
+            if ! echo ",$FORMAT_FILTER," | grep -qF ",$TRAIN_FORMAT,"; then
+              echo "Skipping $TRAIN_FORMAT (not in format_filter input)"
+              exit 0
+            fi
+          fi
           MODEL_CACHE="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
           if [ -d "data/ml/${TRAIN_FORMAT}" ] && [ -f "$MODEL_CACHE" ]; then
             SIZE=$(stat -c%s "$MODEL_CACHE" 2>/dev/null || stat -f%z "$MODEL_CACHE")
@@ -454,6 +472,7 @@ PYEOF
         with:
           pattern: model-*
           path: all-models
+          if-no-files-found: warn
 
       - name: List models
         shell: bash
@@ -483,7 +502,7 @@ PYEOF
 
       - name: Publish models as GitHub Release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
           RUN_NUMBER: ${{ github.run_number }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
           REPO: ${{ github.repository }}
@@ -527,7 +546,8 @@ PYEOF
           # release cannot be deleted, and we don't need to since the tag is already unique.
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             echo "Release $TAG already exists — deleting before recreate"
-            gh release delete "$TAG" --repo "$REPO" --yes || true
+            gh release delete "$TAG" --repo "$REPO" --yes --cleanup-tag || \
+              git push --delete origin "$TAG" 2>/dev/null || true
           fi
           gh release create "$TAG" --repo "$REPO" --title "$TITLE" --notes "$NOTES" release-models/*.zip
           echo "Release ready: $TAG"
