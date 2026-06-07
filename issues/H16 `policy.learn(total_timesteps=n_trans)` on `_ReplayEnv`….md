@@ -2,7 +2,7 @@
 title: "H16: `policy.learn(total_timesteps=n_trans)` on `_ReplayEnv`…"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

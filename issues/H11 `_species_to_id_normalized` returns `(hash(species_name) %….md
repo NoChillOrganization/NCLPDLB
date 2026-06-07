@@ -2,7 +2,7 @@
 title: "H11: `_species_to_id_normalized` returns `(hash(species_name) %…"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

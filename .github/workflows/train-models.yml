@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
 
@@ -429,7 +429,7 @@ PYEOF
           fi
 
       - name: Upload model artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         if: success() || failure()
         with:
           name: model-${{ matrix.config.format }}
@@ -450,7 +450,7 @@ PYEOF
 
     steps:
       - name: Download all models
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           pattern: model-*
           path: all-models

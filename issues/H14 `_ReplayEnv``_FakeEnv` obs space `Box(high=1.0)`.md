@@ -2,7 +2,7 @@
 title: "H14: `_ReplayEnv`/`_FakeEnv` obs space `Box(high=1.0)`"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

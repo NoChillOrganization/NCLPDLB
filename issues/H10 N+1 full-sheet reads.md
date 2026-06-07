@@ -2,7 +2,7 @@
 title: "H10: N+1 full-sheet reads"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

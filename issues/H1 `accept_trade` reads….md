@@ -2,7 +2,7 @@
 title: "H1: `accept_trade` reads…"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

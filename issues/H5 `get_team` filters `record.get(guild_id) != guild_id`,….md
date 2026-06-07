@@ -2,7 +2,7 @@
 title: "H5: `get_team` filters `record.get('guild_id') != guild_id`,…"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>
