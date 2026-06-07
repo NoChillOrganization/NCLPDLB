@@ -506,3 +506,48 @@ class TestParseReplayDir:
             _write_replay(tmp_path, f"battle{i}.json")
         records = parse_replay_dir(tmp_path, max_count=0)
         assert len(records) == 4
+
+
+# ── Team ordering (M12 fix) ───────────────────────────────────────────────────
+
+class TestTeamAlphabeticalOrder:
+    """p1_team / p2_team must always be alphabetically sorted (Branch 1 fix)."""
+
+    def _parse(self, log_lines: list[str]) -> "BattleRecord":
+        from src.ml.replay_parser import parse_replay_json
+        log = "\n".join(log_lines)
+        return parse_replay_json({
+            "id": "test-sort",
+            "format": "gen9ou",
+            "rating": 1500,
+            "p1": "Alice", "p2": "Bob",
+            "log": log,
+        })
+
+    def test_team_preview_sorted(self):
+        """|poke| lines in non-alphabetical order → p1_team still sorted."""
+        record = self._parse([
+            "|poke|p1|Zygarde, M",
+            "|poke|p1|Arvalis, M",
+            "|poke|p1|Mewtwo",
+        ])
+        assert record.p1_team == sorted(record.p1_team)
+
+    def test_first_seen_switch_sorted(self):
+        """Species revealed via |switch| (no team preview) → sorted."""
+        record = self._parse([
+            "|turn|1",
+            "|switch|p1a: Zygarde|Zygarde, L50|250/250",
+            "|switch|p1a: Corviknight|Corviknight, L50|250/250",
+        ])
+        assert record.p1_team == sorted(record.p1_team)
+
+    def test_team_dedup_and_sorted(self):
+        """Duplicate |poke| entries deduplicated and list remains sorted."""
+        record = self._parse([
+            "|poke|p1|Garchomp",
+            "|poke|p1|Blissey",
+            "|poke|p1|Garchomp",  # duplicate
+        ])
+        assert record.p1_team.count("Garchomp") == 1
+        assert record.p1_team == sorted(record.p1_team)

@@ -293,15 +293,18 @@ class ActionResolver:
         list[tuple[np.ndarray, int]]
             (obs, action_index) pairs, one per mappable turn.
         """
-        p1_team = list(record.p1_team)
-        p2_team = list(record.p2_team)
+        # Branch 1+2: sort both sides alphabetically so slot indices are
+        # canonical and match battle_env's sorted team order.
+        p1_team = sorted(record.p1_team)
+        p2_team = sorted(record.p2_team)
         my_team = p1_team if self._player == "p1" else p2_team
+        slot_map = {species: i for i, species in enumerate(my_team)}
 
         pairs: list[tuple[np.ndarray, int]] = []
         for snap in record.turns:
             obs    = build_obs_from_snapshot(snap, player=self._player,
                                              p1_team=p1_team, p2_team=p2_team)
-            action = self._action_for_turn(snap, my_team)
+            action = self._action_for_turn(snap, slot_map)
             self._total += 1
             if action is None:
                 self._unmappable += 1
@@ -309,8 +312,43 @@ class ActionResolver:
                 pairs.append((obs, action))
         return pairs
 
+    def resolve_soft(
+        self, record: "BattleRecord", n_actions: int = 26,
+    ) -> list[tuple[np.ndarray, np.ndarray]]:
+        """
+        Like resolve() but switch actions (0-5) use a uniform 1/6 soft label
+        over all 6 switch slots instead of a single hard index.
+
+        Returns
+        -------
+        list[tuple[np.ndarray, np.ndarray]]
+            (obs, label_probs) where label_probs is float32 of shape (n_actions,).
+            Moves retain hard one-hot labels; switches get 1/6 over slots 0-5.
+        """
+        p1_team = sorted(record.p1_team)
+        p2_team = sorted(record.p2_team)
+        my_team = p1_team if self._player == "p1" else p2_team
+        slot_map = {species: i for i, species in enumerate(my_team)}
+
+        pairs: list[tuple[np.ndarray, np.ndarray]] = []
+        for snap in record.turns:
+            obs    = build_obs_from_snapshot(snap, player=self._player,
+                                             p1_team=p1_team, p2_team=p2_team)
+            action = self._action_for_turn(snap, slot_map)
+            self._total += 1
+            if action is None:
+                self._unmappable += 1
+                continue
+            label = np.zeros(n_actions, dtype=np.float32)
+            if action <= 5:
+                label[:6] = 1.0 / 6.0  # uniform over switch slots
+            else:
+                label[action] = 1.0     # hard one-hot for moves
+            pairs.append((obs, label))
+        return pairs
+
     def _action_for_turn(
-        self, snap: "TurnSnapshot", my_team: list[str]
+        self, snap: "TurnSnapshot", slot_map: dict[str, int]
     ) -> int | None:
         """Return the action index the player took this turn, or None if unmappable."""
         active_species = snap.p1_active if self._player == "p1" else snap.p2_active
@@ -331,9 +369,8 @@ class ActionResolver:
                 continue
             if event.kind == "switch":
                 species = event.detail
-                if species in my_team:
-                    return my_team.index(species)
-                return None
+                # Branch 2: O(1) lookup into sorted slot_map
+                return slot_map.get(species)
             if event.kind == "move":
                 return self._map_move(active_species, event.detail, tera_this_turn)
 

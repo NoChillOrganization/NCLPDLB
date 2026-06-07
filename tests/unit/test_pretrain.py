@@ -279,14 +279,27 @@ class TestActionResolver:
         pairs = resolver.resolve(record)
         assert pairs[0][1] == pairs[1][1] == 6
 
-    def test_switch_maps_to_team_index(self):
-        """Switch to Corviknight at team slot 1 → action 1."""
+    def test_switch_maps_to_sorted_team_index(self):
+        """Switch slot uses alphabetical team order: Corviknight < Garchomp → slot 0."""
         events = [BattleEvent(kind="switch", slot="p1a", detail="Corviknight", hp_after=1.0)]
         snap = _snap(events=events)
+        # sorted(["Garchomp", "Corviknight"]) = ["Corviknight", "Garchomp"]
         record = _record([snap], p1_team=["Garchomp", "Corviknight"])
         resolver = ActionResolver(player="p1")
         pairs = resolver.resolve(record)
-        assert pairs[0][1] == 1
+        assert pairs[0][1] == 0  # Corviknight is slot 0 alphabetically
+
+    def test_switch_slot_stable_regardless_of_input_order(self):
+        """Slot index is independent of how p1_team was passed — always sorted."""
+        events = [BattleEvent(kind="switch", slot="p1a", detail="Garchomp", hp_after=1.0)]
+        snap = _snap(events=events)
+        record_a = _record([snap], p1_team=["Garchomp", "Corviknight"])
+        record_b = _record([snap], p1_team=["Corviknight", "Garchomp"])
+        r = ActionResolver(player="p1")
+        idx_a = r.resolve(record_a)[0][1]
+        idx_b = r.resolve(record_b)[0][1]
+        assert idx_a == idx_b  # same slot regardless of input order
+        assert idx_a == 1      # sorted: ["Corviknight", "Garchomp"] → Garchomp = slot 1
 
     def test_tera_move_maps_to_22_plus_slot(self):
         """Tera event before move → action 22 + move_slot."""
@@ -377,6 +390,31 @@ class TestActionResolver:
         resolver.resolve(record2)
         assert resolver.total == 2
         assert resolver.unmappable == 1
+
+    def test_resolve_soft_move_is_one_hot(self):
+        """resolve_soft(): move actions keep hard one-hot label."""
+        events = [BattleEvent(kind="move", slot="p1a", detail="Earthquake")]
+        snap = _snap(events=events)
+        record = _record([snap])
+        pairs = ActionResolver(player="p1").resolve_soft(record, n_actions=26)
+        assert len(pairs) == 1
+        obs, label = pairs[0]
+        assert label.shape == (26,)
+        assert label[6] == pytest.approx(1.0)   # first move → action 6
+        assert label[:6].sum() == pytest.approx(0.0)
+
+    def test_resolve_soft_switch_is_uniform(self):
+        """resolve_soft(): switch actions get uniform 1/6 over slots 0-5."""
+        events = [BattleEvent(kind="switch", slot="p1a", detail="Corviknight", hp_after=1.0)]
+        snap = _snap(events=events)
+        record = _record([snap], p1_team=["Garchomp", "Corviknight"])
+        pairs = ActionResolver(player="p1").resolve_soft(record, n_actions=26)
+        assert len(pairs) == 1
+        obs, label = pairs[0]
+        assert label[:6].sum() == pytest.approx(1.0)
+        assert label[6:].sum() == pytest.approx(0.0)
+        for i in range(6):
+            assert label[i] == pytest.approx(1.0 / 6.0)
 
 
 # ── pretrain() ────────────────────────────────────────────────────────────────

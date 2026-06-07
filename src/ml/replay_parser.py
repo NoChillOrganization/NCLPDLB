@@ -21,6 +21,7 @@ Usage:
 """
 from __future__ import annotations
 
+import bisect
 import json
 import logging
 import re
@@ -264,10 +265,10 @@ class _Parser:
         species = parts[3].split(",")[0].strip()
         if player == "p1":
             if species not in self.p1_team:
-                self.p1_team.append(species)
+                bisect.insort(self.p1_team, species)
         elif player == "p2":
             if species not in self.p2_team:
-                self.p2_team.append(species)
+                bisect.insort(self.p2_team, species)
 
     def _on_turn(self, parts: list[str]) -> None:
         # |turn|N
@@ -297,7 +298,7 @@ class _Parser:
         player = _slot_player(slot)
         team   = self.p1_team if player == "p1" else self.p2_team
         if species not in team:
-            team.append(species)
+            bisect.insort(team, species)
 
         hp_pct = -1.0
         if len(parts) > 4:

@@ -59,6 +59,28 @@ def _stable_species_id(species: Any) -> float:
     return int.from_bytes(digest[:4], "big") / 0xFFFFFFFF
 
 
+def _sort_team_dict(battle: Any) -> None:
+    """Sort battle.team and battle.opponent_team alphabetically by species in-place.
+
+    Ensures that action slot i always refers to the alphabetically i-th team member,
+    matching the sorted ordering used by ActionResolver in pretrain.py (Branch 1/2 fix).
+    Called by BattleEnv.embed_battle() so poke-env's action_to_order sees the same order.
+    """
+    for attr in ("team", "opponent_team"):
+        team_dict = getattr(battle, attr, None)
+        if not team_dict:
+            continue
+        try:
+            items = sorted(
+                team_dict.items(),
+                key=lambda kv: str(getattr(kv[1], "species", None) or kv[0]),
+            )
+            team_dict.clear()
+            team_dict.update(items)
+        except Exception:
+            pass
+
+
 # ── Observation constants ─────────────────────────────────────────────────────
 OBS_DIM = 78
 TEAM_SIZE = 6
@@ -342,13 +364,13 @@ def build_observation(battle: "AbstractBattle") -> np.ndarray:
         idx += 3
 
     # ── My team HP ─────────────────────────────────────────────────
-    team = list(battle.team.values())
+    team = sorted(battle.team.values(), key=lambda p: str(getattr(p, "species", "") or ""))
     for i in range(TEAM_SIZE):
         obs[idx] = _pokemon_hp(team[i]) if i < len(team) else 0.0
         idx += 1
 
     # ── Opponent team HP ───────────────────────────────────────────
-    opp_team = list(battle.opponent_team.values())
+    opp_team = sorted(battle.opponent_team.values(), key=lambda p: str(getattr(p, "species", "") or ""))
     for i in range(TEAM_SIZE):
         obs[idx] = _pokemon_hp(opp_team[i]) if i < len(opp_team) else 1.0
         idx += 1
@@ -504,6 +526,7 @@ if POKE_ENV_AVAILABLE:
                 return obs, 0.0, True, True, {}
 
         def embed_battle(self, battle: AbstractBattle) -> np.ndarray:
+            _sort_team_dict(battle)
             return build_observation(battle)
 
         def calc_reward(self, battle: AbstractBattle) -> float:
@@ -622,13 +645,13 @@ def build_doubles_observation(battle: Any) -> np.ndarray:
             idx += 3
 
     # ── My team HP ─────────────────────────────────────────────────
-    team = list(battle.team.values())
+    team = sorted(battle.team.values(), key=lambda p: str(getattr(p, "species", "") or ""))
     for i in range(TEAM_SIZE):
         obs[idx] = _pokemon_hp(team[i]) if i < len(team) else 0.0
         idx += 1
 
     # ── Opponent team HP ───────────────────────────────────────────
-    opp_team = list(battle.opponent_team.values())
+    opp_team = sorted(battle.opponent_team.values(), key=lambda p: str(getattr(p, "species", "") or ""))
     for i in range(TEAM_SIZE):
         obs[idx] = _pokemon_hp(opp_team[i]) if i < len(opp_team) else 1.0
         idx += 1
