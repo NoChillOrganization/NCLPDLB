@@ -18,6 +18,8 @@ import logging
 import sys
 from pathlib import Path
 
+import aiohttp
+
 # Make sure project root is on path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -175,12 +177,15 @@ ALL_FORMATS: list[str] = [
 ]
 
 
-async def probe_format(fmt: str) -> bool:
+async def probe_format(
+    fmt: str,
+    session: aiohttp.ClientSession,
+    sem: asyncio.Semaphore,
+) -> bool:
     """Return True if the format has at least one replay on Showdown."""
-    import aiohttp
     url = "https://replay.pokemonshowdown.com/search.json"
     try:
-        async with aiohttp.ClientSession() as session:
+        async with sem:
             async with session.get(
                 url,
                 params={"format": fmt, "page": 1},
@@ -216,10 +221,12 @@ async def scrape_all(
         print(f"    tier filter: {tier_filter}")
     print()
 
-    # Probe all formats to find which are active
+    # Probe all formats to find which are active (shared session + semaphore to avoid hammering)
     print("Probing formats for active replay data...")
-    probe_tasks = [probe_format(fmt) for fmt in formats]
-    active_flags = await asyncio.gather(*probe_tasks)
+    sem = asyncio.Semaphore(10)
+    async with aiohttp.ClientSession() as session:
+        probe_tasks = [probe_format(fmt, session, sem) for fmt in formats]
+        active_flags = await asyncio.gather(*probe_tasks)
     active = [fmt for fmt, ok in zip(formats, active_flags) if ok]
     inactive = [fmt for fmt, ok in zip(formats, active_flags) if not ok]
 

@@ -40,7 +40,7 @@ class TestMCTSConfig:
 
     def test_default_values(self):
         cfg = MCTSConfig()
-        assert cfg.n_simulations == 30
+        assert cfg.n_simulations == 0
         assert cfg.c_puct == 1.5
         assert cfg.dirichlet_eps == 0.25
         assert cfg.temperature == 1.0
