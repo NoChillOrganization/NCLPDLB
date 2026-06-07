@@ -47,14 +47,14 @@ def _setup_logging() -> None:
 _SYNC_HASH_FILE = Path(__file__).parent.parent.parent / ".discord_sync_hash"
 
 
-def _command_fingerprint(commands) -> str:
+def _command_fingerprint(cmds) -> str:
     """Stable hash of command names + descriptions + parameter names.
 
     Used to skip Discord sync when nothing has changed between restarts,
     avoiding the guild-commands rate limit (429 / 355 s retry).
     """
     parts = []
-    for cmd in sorted(commands, key=lambda c: c.name):
+    for cmd in sorted(cmds, key=lambda c: c.name):
         entry: dict = {"n": cmd.name, "d": getattr(cmd, "description", "")}
         if hasattr(cmd, "parameters"):
             entry["p"] = sorted(p.name for p in cmd.parameters)

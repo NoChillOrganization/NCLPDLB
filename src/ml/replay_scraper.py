@@ -141,8 +141,10 @@ class ReplayScraper:
             path = self._replay_path(meta.id)
             path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
             self._seen.add(meta.id)
-            await asyncio.sleep(REQUEST_DELAY)
-            return True
+
+        # Rate-limit delay outside semaphore so other tasks can acquire the permit
+        await asyncio.sleep(REQUEST_DELAY)
+        return True
 
     # ── Public entry point ─────────────────────────────────────────
 

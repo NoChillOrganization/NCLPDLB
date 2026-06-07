@@ -156,7 +156,8 @@ def step_optional() -> dict[str, str]:
         values["R2_BUCKET_NAME"] = _ask("R2 Bucket Name", default="pokemon-draft-videos")
         values["R2_PUBLIC_URL"] = _ask("R2 Public URL (e.g. https://pub-xxxx.r2.dev)")
 
-    api_secret = _ask("API Secret Key (random string for web dashboard)", default="change-me-in-production")
+    import secrets as _secrets
+    api_secret = _ask("API Secret Key (random string for web dashboard)", default=_secrets.token_hex(32))
     values["API_SECRET_KEY"] = api_secret
     values["LOG_LEVEL"] = _ask("Log level", default="INFO")
     return values

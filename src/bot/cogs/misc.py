@@ -42,7 +42,8 @@ def build_help_embed(csv_path: Path = _CSV_PATH) -> discord.Embed:
                 categories.setdefault(cat, []).append(cmd)
 
     for cat, cmds in categories.items():
-        embed.add_field(name=cat, value="\n".join(cmds), inline=False)
+        value = "\n".join(cmds)[:1024]
+        embed.add_field(name=cat, value=value, inline=False)
 
     return embed
 

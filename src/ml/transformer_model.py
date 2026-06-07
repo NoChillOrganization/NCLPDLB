@@ -24,12 +24,12 @@ Usage
   model = BattleTransformer(n_actions=26, d_model=64, n_heads=4, n_layers=2)
 
   # Forward pass — single timestep (MCTS inference)
-  obs = torch.zeros(1, 1, 48)   # (batch=1, seq_len=1, OBS_DIM=48)
+  obs = torch.zeros(1, 1, 78)   # (batch=1, seq_len=1, OBS_DIM=78)
   policy_logits, value = model(obs)
   # policy_logits: (1, 26)   value: (1, 1)
 
   # Forward pass — sequence of turns (training)
-  obs_seq = torch.zeros(8, 10, 48)   # (batch=8, seq_len=10, OBS_DIM=48)
+  obs_seq = torch.zeros(8, 10, 78)   # (batch=8, seq_len=10, OBS_DIM=78)
   policy_logits, value = model(obs_seq)
   # policy_logits: (8, 26)  value: (8, 1)  (last timestep used)
 

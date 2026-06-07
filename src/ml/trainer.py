@@ -130,7 +130,8 @@ class ReplayBuffer:
         """
         Push an entire game into the buffer at once.
 
-        The terminal `reward` is applied to every step in the game.
+        The terminal `reward` is applied uniformly to every step (sparse Monte Carlo return).
+        For dense per-step rewards, call add() directly instead.
         `done` is True only on the last step.
         """
         n = len(observations)
