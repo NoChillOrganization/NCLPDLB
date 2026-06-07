@@ -187,24 +187,33 @@ jobs:
         run: |
           PS_DIR="$HOME/pokemon-showdown"
 
-          # Kill any leftover server from a previous job (jobs are sequential)
-          pkill -f "node.*pokemon-showdown" 2>/dev/null || true
-          # Wait for port 8000 to be fully released before starting a new server
+          # Kill any leftover Showdown server from a previous job (jobs are sequential).
+          # pkill is Linux-only; use PowerShell on the Windows/Git-Bash self-hosted runner.
+          if command -v pkill >/dev/null 2>&1; then
+            pkill -f "node.*pokemon-showdown" 2>/dev/null || true
+          else
+            powershell.exe -NoProfile -Command \
+              "Get-CimInstance Win32_Process | Where-Object { \$_.CommandLine -like '*pokemon-showdown*' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue }" \
+              2>/dev/null || true
+          fi
+          # Wait for port 8000 to be fully released before starting a new server.
+          # lsof is Linux/macOS-only; netstat works on both Windows and Linux.
           for i in $(seq 1 10); do
-            if ! lsof -ti:8000 >/dev/null 2>&1; then break; fi
+            if ! netstat -ano 2>/dev/null | grep -qE ':8000[[:space:]]'; then break; fi
             sleep 1
           done
 
           # Clone once; reuse on subsequent jobs in the same run.
-          # flock guards against parallel legs racing on the same directory if
+          # Portable mkdir-based mutex replaces flock (unavailable on Windows/Git Bash).
+          # Guards against parallel legs racing on the same directory if
           # max-parallel is ever increased above 1.
-          (
-            flock -x 200
-            if [ ! -d "$PS_DIR/.git" ]; then
-              git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
-              cd "$PS_DIR" && npm install --ignore-scripts
-            fi
-          ) 200>/tmp/showdown-clone.lock
+          LOCK="/tmp/showdown-clone.lock.d"
+          until mkdir "$LOCK" 2>/dev/null; do sleep 1; done
+          trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+          if [ ! -d "$PS_DIR/.git" ]; then
+            git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
+            cd "$PS_DIR" && npm install --ignore-scripts
+          fi
 
           # Write config (overwrite each time to guarantee correct settings)
           printf '%s\n' \
