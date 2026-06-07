@@ -400,8 +400,7 @@ class ShowdownClient:
         # Wire challstr → auto-login
         self.handler.on("challstr", self._on_challstr)
 
-        # Deferred: asyncio.Event must be created inside a running loop (M25)
-        self._login_event: asyncio.Event | None = None
+        self._login_event = asyncio.Event()
         self.handler.on("updateuser", self._on_updateuser)
 
     # ── Public API ──────────────────────────────────────────────────────
@@ -418,7 +417,6 @@ class ShowdownClient:
             ConnectionError: If the server is unreachable.
             asyncio.TimeoutError: If login doesn't complete within login_timeout.
         """
-        self._login_event = asyncio.Event()  # created inside running loop (M25)
         await self.connection.connect()
         try:
             await asyncio.wait_for(self._login_event.wait(), timeout=login_timeout)

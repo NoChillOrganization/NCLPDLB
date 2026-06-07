@@ -332,7 +332,7 @@ class TestShowdownCommander:
 
     async def test_login_sends_trn(self):
         cmd, conn = self._make()
-        await cmd.login("Alice", challstr="abc", password="pw")
+        await cmd.login("Alice", challstr="abc")
         conn.send_raw.assert_awaited_once_with("|/trn Alice,0,abc")
 
     async def test_challenge(self):
