@@ -92,8 +92,10 @@ class Tab:
     POOL_A        = "Pool A Board"
     POOL_B        = "Pool B Board"
     SCHEDULE      = "Schedule"
-    MATCH_STATS   = "Match Stats"
-    STANDINGS     = "Standings"
+    MATCH_STATS   = "Match Stats"    # visual template — read-only via get_match_results()
+    MATCH_RECORDS = "Match Records"  # flat tab: match/replay/video rows written by the bot
+    STANDINGS     = "Standings"      # visual template — read-only via get_standings_visual()
+    ELO_DATA      = "ELO Data"       # flat tab: ELO records written/read by EloService
     POKEMON_STATS = "Pokémon Stats"
     MVP_RACE      = "MVP Race"
     TRANSACTIONS  = "Transactions"
@@ -192,7 +194,7 @@ class SheetsClient:
     def _set_cell(self, tab_name: str, cell: str, value: Any) -> None:
         """Write a single cell."""
         ws = self.get_tab(tab_name)
-        ws.update(cell, [[value]], value_input_option="USER_ENTERED")
+        ws.update([[value]], cell, value_input_option="USER_ENTERED")
 
     def _append_to_range(self, ws: gspread.Worksheet, range_: str, row: list[Any]) -> None:
         """Append a row using USER_ENTERED so formulas are evaluated."""
@@ -317,20 +319,20 @@ class SheetsClient:
     # ── Standings tab ─────────────────────────────────────────────────────────
 
     def get_standings(self, pool: str | None = None) -> list[dict]:
-        """Return standings rows, optionally filtered by pool."""
-        rows = self.read_all(Tab.STANDINGS)
+        """Return ELO standings rows from the flat ELO Data tab."""
+        rows = self.read_all(Tab.ELO_DATA)
         if pool:
             rows = [r for r in rows if str(r.get("pool", "")) == str(pool)]
         return rows
 
     def upsert_standing(self, standing: dict) -> None:
-        """Insert or update a standing row."""
+        """Insert or update an ELO standing row in the flat ELO Data tab."""
         row_data = [
             standing.get("player_id", ""), standing.get("player_name", ""),
             standing.get("elo", ""), standing.get("wins", ""),
             standing.get("losses", ""), standing.get("streak", ""), UTC_NOW(),
         ]
-        self.upsert_row(Tab.STANDINGS, "player_id", standing.get("player_id", ""), row_data)
+        self.upsert_row(Tab.ELO_DATA, "player_id", standing.get("player_id", ""), row_data)
 
     # ── Schedule tab ──────────────────────────────────────────────────────────
     #
@@ -420,32 +422,32 @@ class SheetsClient:
         return results
 
     def save_match_stats(self, match: dict) -> None:
-        """Write match stats row."""
+        """Write match stats row to the flat Match Records tab."""
         row_data = [
             match.get("match_id", ""), match.get("league_id", ""),
             str(match.get("p1_team", [])), str(match.get("p2_team", [])), UTC_NOW(),
         ]
-        self.upsert_row(Tab.MATCH_STATS, "match_id", match.get("match_id", ""), row_data)
+        self.upsert_row(Tab.MATCH_RECORDS, "match_id", match.get("match_id", ""), row_data)
 
     def save_replay(self, replay: dict) -> None:
-        """Append a replay row keyed by replay_id (not match_id to avoid blank-key collisions)."""
+        """Append a replay row to the flat Match Records tab, keyed by replay_id."""
         row_data = [
             replay.get("replay_id", ""), replay.get("match_id", ""),
             replay.get("url", ""), replay.get("winner", ""),
             str(replay.get("p1_team", [])), str(replay.get("p2_team", [])),
             str(replay.get("turns", "")), replay.get("timestamp", UTC_NOW()),
         ]
-        self.upsert_row(Tab.MATCH_STATS, "replay_id", replay.get("replay_id", ""), row_data)
+        self.upsert_row(Tab.MATCH_RECORDS, "replay_id", replay.get("replay_id", ""), row_data)
 
     def save_video(self, video: dict) -> None:
-        """Append a video entry keyed by video_id to avoid blank-match_id collisions."""
+        """Append a video entry to the flat Match Records tab, keyed by video_id."""
         row_data = [
             video.get("video_id", ""), video.get("match_id", ""),
             video.get("uploader_id", ""), video.get("opponent_id", ""),
             video.get("storage_url", ""), video.get("thumbnail_url", ""),
             video.get("notes", ""), video.get("timestamp", UTC_NOW()),
         ]
-        self.upsert_row(Tab.MATCH_STATS, "video_id", video.get("video_id", ""), row_data)
+        self.upsert_row(Tab.MATCH_RECORDS, "video_id", video.get("video_id", ""), row_data)
 
     # ── Transactions tab ──────────────────────────────────────────────────────
     #

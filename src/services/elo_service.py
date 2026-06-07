@@ -81,8 +81,8 @@ class EloService:
     async def _get_player(self, guild_id: str, player_id: str) -> PlayerElo:
         guild_elo = _elo_cache.setdefault(guild_id, {})
         if player_id not in guild_elo:
-            # Try loading from Standings tab
-            record = await asyncio.to_thread(sheets.find_row, Tab.STANDINGS, "player_id", player_id)
+            # Try loading from flat ELO Data tab
+            record = await asyncio.to_thread(sheets.find_row, Tab.ELO_DATA, "player_id", player_id)
             if record:
                 guild_elo[player_id] = PlayerElo(
                     player_id=player_id,
