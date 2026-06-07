@@ -53,8 +53,16 @@ except ImportError:  # pragma: no cover
 
 @dataclass
 class MCTSConfig:
-    """Hyperparameters for the MCTS engine."""
-    n_simulations: int   = 30       # simulations per decision (25–50 recommended)
+    """Hyperparameters for the MCTS engine.
+
+    NOTE: Without a state-transition model this implementation is degenerate —
+    all leaf evaluations reuse the root observation, so every node's prior and
+    value are identical.  Set n_simulations=0 (default) to operate as an honest
+    1-ply prior-shaping pass: the root is expanded, Dirichlet noise is added for
+    exploration, and action_probs() returns the network prior distribution
+    directly.  Set n_simulations>0 only once a forward model is available.
+    """
+    n_simulations: int   = 0        # 0 = prior-shaping pass (see NOTE); >0 = full MCTS
     c_puct:        float = 1.5      # exploration constant (UCB coefficient)
     dirichlet_eps: float = 0.25     # fraction of Dirichlet noise added at root
     dirichlet_alpha: float = 0.3    # Dirichlet concentration (0.3 = reasonable for ~26 actions)
@@ -134,6 +142,10 @@ class MCTS:
         """
         Run `config.n_simulations` MCTS simulations from the root.
 
+        When n_simulations=0 (default), acts as a 1-ply prior-shaping pass:
+        expands root, adds Dirichlet noise, and returns without simulating.
+        action_probs() then returns network priors rather than visit counts.
+
         Args:
             obs        : observation vector (numpy array or torch tensor, shape (obs_dim,))
             model      : BattleTransformer — provides priors + value
@@ -180,8 +192,11 @@ class MCTS:
         Return the action with the most visits (deterministic) or
         sample from visit-count distribution (stochastic).
 
+        When n_simulations=0 all visit counts are zero; falls back to
+        selecting by prior probability instead.
+
         Args:
-            deterministic: if True return argmax of visits; else sample.
+            deterministic: if True return argmax; else sample.
 
         Returns:
             action id (int)
@@ -190,10 +205,21 @@ class MCTS:
             log.warning("[MCTS] No children — returning action 0")
             return 0
 
-        visit_counts = np.array([
-            node.visit_count for node in self.root.children.values()
-        ], dtype=np.float32)
+        visit_counts = np.array(
+            [n.visit_count for n in self.root.children.values()], dtype=np.float32
+        )
         actions = list(self.root.children.keys())
+
+        # n_simulations=0: no visits recorded — select by prior
+        if visit_counts.sum() == 0:
+            priors = np.array(
+                [n.prior for n in self.root.children.values()], dtype=np.float32
+            )
+            if deterministic:
+                return actions[int(np.argmax(priors))]
+            total = priors.sum()
+            probs = priors / total if total > 0 else np.ones(len(actions), dtype=np.float32) / len(actions)
+            return int(np.random.choice(actions, p=probs))
 
         if deterministic:
             return actions[int(np.argmax(visit_counts))]
@@ -209,16 +235,20 @@ class MCTS:
         return int(np.random.choice(actions, p=probs))
 
     def action_probs(self) -> dict[int, float]:
-        """Return normalized visit-count probabilities for all children."""
+        """Return normalized visit-count (or prior) probabilities for all children.
+
+        When n_simulations=0, returns network prior distribution so the training
+        pipeline receives honest policy targets rather than degenerate visit counts.
+        """
         if not self.root.children:
             return {}
         total = sum(n.visit_count for n in self.root.children.values())
         if total == 0:
-            return {a: 1.0 / len(self.root.children) for a in self.root.children}
-        return {
-            action: node.visit_count / total
-            for action, node in self.root.children.items()
-        }
+            prior_sum = sum(n.prior for n in self.root.children.values())
+            if prior_sum == 0:
+                return {a: 1.0 / len(self.root.children) for a in self.root.children}
+            return {a: n.prior / prior_sum for a, n in self.root.children.items()}
+        return {a: n.visit_count / total for a, n in self.root.children.items()}
 
     # ── Internal ────────────────────────────────────────────────────────
 

@@ -370,15 +370,13 @@ class TestMakePlayerCreatesNew:
 # ── LadderLoop.run_game ────────────────────────────────────────────────────────
 
 class TestRunGame:
-    def _loop_with_mock_player(self, wins_delta=0, losses_delta=0):
+    def _loop_with_mock_player(self, outcome: str = "tie"):
         loop = _make_loop()
         player = MagicMock()
-        player.n_won_battles = 0
-        player.n_lost_battles = 0
+        player._last_outcome = "tie"  # reset value; ladder sets the real outcome
 
         async def _fake_ladder(*a, **kw):
-            player.n_won_battles += wins_delta
-            player.n_lost_battles += losses_delta
+            player._last_outcome = outcome
 
         player.ladder = _fake_ladder
         loop._make_player = AsyncMock(return_value=player)
@@ -386,7 +384,7 @@ class TestRunGame:
 
     @pytest.mark.asyncio
     async def test_run_game_records_win(self):
-        loop = self._loop_with_mock_player(wins_delta=1)
+        loop = self._loop_with_mock_player(outcome="win")
         with patch("asyncio.wait_for", new=lambda coro, timeout: coro):
             snap = await loop.run_game()
         assert snap["wins"] == 1
@@ -394,21 +392,21 @@ class TestRunGame:
 
     @pytest.mark.asyncio
     async def test_run_game_records_loss(self):
-        loop = self._loop_with_mock_player(losses_delta=1)
+        loop = self._loop_with_mock_player(outcome="loss")
         with patch("asyncio.wait_for", new=lambda coro, timeout: coro):
             snap = await loop.run_game()
         assert snap["losses"] == 1
 
     @pytest.mark.asyncio
     async def test_run_game_records_tie(self):
-        loop = self._loop_with_mock_player()  # no delta → tie
+        loop = self._loop_with_mock_player(outcome="tie")
         with patch("asyncio.wait_for", new=lambda coro, timeout: coro):
             snap = await loop.run_game()
         assert snap["ties"] == 1
 
     @pytest.mark.asyncio
     async def test_run_game_returns_snapshot_dict(self):
-        loop = self._loop_with_mock_player(wins_delta=1)
+        loop = self._loop_with_mock_player(outcome="win")
         with patch("asyncio.wait_for", new=lambda coro, timeout: coro):
             snap = await loop.run_game()
         assert set(snap.keys()) == {"games", "wins", "losses", "ties", "winrate"}
@@ -503,9 +501,10 @@ class TestMCTSPlayer:
             p._replay_buffer = defaults["replay_buffer"]
             p._stats = defaults["stats"]
             p._name = kwargs.get("name", "AccountA")
-            p._turn_obs = []
-            p._turn_acts = []
-            p._turn_probs = []
+            p._turn_obs = {}
+            p._turn_acts = {}
+            p._turn_probs = {}
+            p._last_outcome = "tie"
         return p
 
     def test_init_sets_all_attributes(self):
@@ -527,14 +526,16 @@ class TestMCTSPlayer:
         assert p._replay_buffer is buf
         assert p._stats is stats
         assert p._name == "Bot"
-        assert p._turn_obs == []
-        assert p._turn_acts == []
-        assert p._turn_probs == []
+        assert p._turn_obs == {}
+        assert p._turn_acts == {}
+        assert p._turn_probs == {}
+        assert p._last_outcome == "tie"
 
     def test_choose_move_success_records_experience(self):
         import numpy as np
         p = self._make_player()
         battle = MagicMock()
+        battle.battle_tag = "tag-1"
 
         obs = np.zeros(10, dtype=np.float32)
         legal_mask = np.zeros(10, dtype=bool)
@@ -547,9 +548,9 @@ class TestMCTSPlayer:
             result = p.choose_move(battle)
 
         assert result == "move_order"
-        assert len(p._turn_obs) == 1
-        assert len(p._turn_acts) == 1
-        assert p._turn_acts[0] == 0
+        assert len(p._turn_obs["tag-1"]) == 1
+        assert len(p._turn_acts["tag-1"]) == 1
+        assert p._turn_acts["tag-1"][0] == 0
 
     def test_choose_move_exception_falls_back_to_random(self):
         p = self._make_player()
@@ -560,18 +561,18 @@ class TestMCTSPlayer:
             result = p.choose_move(battle)
 
         assert result == "random_order"
-        assert p._turn_obs == []  # nothing was recorded
+        assert p._turn_obs == {}  # nothing was recorded
 
     def test_battle_finished_callback_win(self):
         p = self._make_player()
         import numpy as np
-        p._turn_obs = [np.zeros(10)]
-        p._turn_acts = [0]
-        p._turn_probs = [None]
-
         battle = MagicMock()
+        battle.battle_tag = "tag-win"
         battle.won = True
         battle.lost = False
+        p._turn_obs  = {"tag-win": [np.zeros(10)]}
+        p._turn_acts = {"tag-win": [0]}
+        p._turn_probs = {"tag-win": [None]}
 
         with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
             p._battle_finished_callback(battle)
@@ -579,19 +580,18 @@ class TestMCTSPlayer:
         p._replay_buffer.add_game.assert_called_once()
         args = p._replay_buffer.add_game.call_args[0]
         assert args[3] == 1.0  # reward
-        # Buffers cleared after game
-        assert p._turn_obs == []
+        assert p._turn_obs == {}  # buffer flushed for this tag
 
     def test_battle_finished_callback_loss(self):
         p = self._make_player()
         import numpy as np
-        p._turn_obs = [np.zeros(10)]
-        p._turn_acts = [0]
-        p._turn_probs = [None]
-
         battle = MagicMock()
+        battle.battle_tag = "tag-loss"
         battle.won = False
         battle.lost = True
+        p._turn_obs  = {"tag-loss": [np.zeros(10)]}
+        p._turn_acts = {"tag-loss": [0]}
+        p._turn_probs = {"tag-loss": [None]}
 
         with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
             p._battle_finished_callback(battle)
@@ -602,13 +602,13 @@ class TestMCTSPlayer:
     def test_battle_finished_callback_tie(self):
         p = self._make_player()
         import numpy as np
-        p._turn_obs = [np.zeros(10)]
-        p._turn_acts = [0]
-        p._turn_probs = [None]
-
         battle = MagicMock()
+        battle.battle_tag = "tag-tie"
         battle.won = False
         battle.lost = False
+        p._turn_obs  = {"tag-tie": [np.zeros(10)]}
+        p._turn_acts = {"tag-tie": [0]}
+        p._turn_probs = {"tag-tie": [None]}
 
         with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
             p._battle_finished_callback(battle)
@@ -619,6 +619,7 @@ class TestMCTSPlayer:
     def test_battle_finished_callback_empty_turns_returns_early(self):
         p = self._make_player()
         battle = MagicMock()
+        battle.battle_tag = "tag-empty"
 
         with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
             p._battle_finished_callback(battle)
@@ -628,14 +629,14 @@ class TestMCTSPlayer:
     def test_battle_finished_callback_buffer_error_swallowed(self):
         p = self._make_player()
         import numpy as np
-        p._turn_obs = [np.zeros(10)]
-        p._turn_acts = [0]
-        p._turn_probs = [None]
-        p._replay_buffer.add_game.side_effect = RuntimeError("buffer full")
-
         battle = MagicMock()
+        battle.battle_tag = "tag-err"
         battle.won = True
         battle.lost = False
+        p._turn_obs  = {"tag-err": [np.zeros(10)]}
+        p._turn_acts = {"tag-err": [0]}
+        p._turn_probs = {"tag-err": [None]}
+        p._replay_buffer.add_game.side_effect = RuntimeError("buffer full")
 
         with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
             p._battle_finished_callback(battle)  # must not raise

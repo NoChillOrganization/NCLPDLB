@@ -154,10 +154,11 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             self._stats         = stats
             self._name          = name
 
-            # Accumulate turns for the current game
-            self._turn_obs:   list[np.ndarray]       = []
-            self._turn_acts:  list[int]               = []
-            self._turn_probs: list[np.ndarray | None] = []
+            # Per-battle turn buffers keyed by battle_tag (safe for concurrent battles)
+            self._turn_obs:    dict[str, list[np.ndarray]]        = {}
+            self._turn_acts:   dict[str, list[int]]                = {}
+            self._turn_probs:  dict[str, list[np.ndarray | None]]  = {}
+            self._last_outcome: str = "tie"  # set by callback; read by LadderLoop.run_game
 
         def load_policy(self, path: Any) -> None:
             """No-op: MCTS opponent uses a fixed transformer; ignore PPO checkpoint swaps."""
@@ -186,9 +187,10 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
                 for a, p in stats["action_probs"].items():
                     probs[a] = p
 
-                self._turn_obs.append(obs)
-                self._turn_acts.append(action)
-                self._turn_probs.append(probs)
+                tag = battle.battle_tag
+                self._turn_obs.setdefault(tag, []).append(obs)
+                self._turn_acts.setdefault(tag, []).append(action)
+                self._turn_probs.setdefault(tag, []).append(probs)
 
                 return self._action_to_move(action, battle)
 
@@ -200,43 +202,38 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             """Called by poke-env when a battle ends. Push experience to buffer."""
             super()._battle_finished_callback(battle)
 
-            if not self._turn_obs:
+            tag = battle.battle_tag
+            turn_obs   = self._turn_obs.pop(tag, [])
+            turn_acts  = self._turn_acts.pop(tag, [])
+            turn_probs = self._turn_probs.pop(tag, [])
+
+            if not turn_obs:
                 return
 
-            # Determine terminal reward from this player's perspective
             if battle.won:
                 reward = 1.0
+                self._last_outcome = "win"
             elif battle.lost:
                 reward = -1.0
+                self._last_outcome = "loss"
             else:
                 reward = 0.0
+                self._last_outcome = "tie"
 
-            # Push entire game to replay buffer (only when one is configured)
             if self._replay_buffer is not None:
                 try:
-                    self._replay_buffer.add_game(
-                        self._turn_obs,
-                        self._turn_acts,
-                        self._turn_probs,
-                        reward,
-                    )
+                    self._replay_buffer.add_game(turn_obs, turn_acts, turn_probs, reward)
                 except Exception as exc:
                     log.warning("[MCTSPlayer:%s] replay buffer push error: %s", self._name, exc)
-
                 log.debug(
                     "[MCTSPlayer:%s] game done — reward=%.1f turns=%d buffer=%d",
-                    self._name, reward, len(self._turn_obs), len(self._replay_buffer),
+                    self._name, reward, len(turn_obs), len(self._replay_buffer),
                 )
             else:
                 log.debug(
                     "[MCTSPlayer:%s] game done (no buffer) — reward=%.1f turns=%d",
-                    self._name, reward, len(self._turn_obs),
+                    self._name, reward, len(turn_obs),
                 )
-
-            # Reset for next game
-            self._turn_obs   = []
-            self._turn_acts  = []
-            self._turn_probs = []
 
         def _action_to_move(self, action_id: int, battle: Any) -> Any:
             """Convert action index to a poke-env BattleOrder."""
@@ -347,18 +344,9 @@ class LadderLoop:
         """Queue one ladder game and return updated stats snapshot."""
         player = await self._make_player()
 
-        wins_before   = player.n_won_battles
-        losses_before = player.n_lost_battles
-
+        player._last_outcome = "tie"  # reset before each game
         await asyncio.wait_for(player.ladder(1), timeout=600.0)
-
-        if player.n_won_battles > wins_before:
-            outcome = "win"
-        elif player.n_lost_battles > losses_before:
-            outcome = "loss"
-        else:
-            outcome = "tie"
-        self.stats.record(outcome)
+        self.stats.record(player._last_outcome)
 
         return self.stats.snapshot()
 

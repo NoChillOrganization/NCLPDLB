@@ -76,9 +76,10 @@ class TestMCTSPlayerOpponentMode:
         player._replay_buffer = None
         player._stats = None
         player._name = "TestOpponent"
-        player._turn_obs = []
-        player._turn_acts = []
-        player._turn_probs = []
+        player._turn_obs = {}
+        player._turn_acts = {}
+        player._turn_probs = {}
+        player._last_outcome = "tie"
         return player
 
     def test_constructs_with_none_buffer_and_stats(self):
@@ -103,13 +104,13 @@ class TestMCTSPlayerOpponentMode:
         from src.ml.self_play import MCTSPlayer
 
         player = self._make_player()
-        player._turn_obs = [np.zeros(48, dtype="float32")]
-        player._turn_acts = [0]
-        player._turn_probs = [np.ones(26, dtype="float32") / 26]
-
         battle_mock = MagicMock()
+        battle_mock.battle_tag = "tag-opponent"
         battle_mock.won = True
         battle_mock.lost = False
+        player._turn_obs  = {"tag-opponent": [np.zeros(48, dtype="float32")]}
+        player._turn_acts = {"tag-opponent": [0]}
+        player._turn_probs = {"tag-opponent": [np.ones(26, dtype="float32") / 26]}
 
         # Patch the parent _battle_finished_callback so poke-env doesn't try
         # to do network bookkeeping on an unconnected player.
@@ -117,10 +118,10 @@ class TestMCTSPlayerOpponentMode:
         with patch.object(base_cls, "_battle_finished_callback", return_value=None):
             player._battle_finished_callback(battle_mock)
 
-        # Turn buffers must be reset regardless of whether a buffer was configured
-        assert player._turn_obs == []
-        assert player._turn_acts == []
-        assert player._turn_probs == []
+        # Turn buffers flushed for this tag (no buffer → just cleared)
+        assert player._turn_obs == {}
+        assert player._turn_acts == {}
+        assert player._turn_probs == {}
 
 
 # ── Doubles guard ─────────────────────────────────────────────────────────────
