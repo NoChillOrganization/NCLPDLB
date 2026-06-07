@@ -2,7 +2,7 @@
 title: "M13: `parse_replay` passes `replay_id`/`winner`/`timestamp` but…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

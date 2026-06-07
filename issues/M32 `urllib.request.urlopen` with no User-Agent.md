@@ -2,7 +2,7 @@
 title: "M32: `urllib.request.urlopen` with no User-Agent"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

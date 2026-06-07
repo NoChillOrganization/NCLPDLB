@@ -2,7 +2,7 @@
 title: "M24: Public-server login sends `\"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

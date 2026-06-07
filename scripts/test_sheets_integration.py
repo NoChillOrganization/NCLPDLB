@@ -160,25 +160,48 @@ def main() -> None:
         check("get_rules()", False, str(e))
 
     # ── Save transaction (write + verify + cleanup) ──────────────
+    # M34 fix: gated behind env var; prefers a throwaway test spreadsheet over production;
+    # uses a UUID marker for safe row lookup and deletion.
     print("\n--- Transactions write (live test with cleanup) ---")
     import time
+    import uuid
     if not os.environ.get("NCLPDLB_LIVE_WRITE_TEST"):
         print("  [SKIP] Set NCLPDLB_LIVE_WRITE_TEST=1 to enable live write test")
         check("save_transaction() skipped (live write disabled)", True)
     else:
+        # Prefer a dedicated test spreadsheet; only fall back to production when explicitly
+        # not overridden (print a clear warning so ops notices).
+        test_sheet_id = os.environ.get("NCLPDLB_TEST_SPREADSHEET_ID")
+        if test_sheet_id:
+            print(f"  [INFO] Using test spreadsheet: {test_sheet_id}")
+            _write_spreadsheet = sheets._client.open_by_key(test_sheet_id)
+        else:
+            print(
+                "  [WARN] NCLPDLB_TEST_SPREADSHEET_ID is not set — "
+                "live write test will touch the PRODUCTION spreadsheet."
+            )
+            _write_spreadsheet = sheets.spreadsheet
+
         try:
             from src.data.sheets import Tab
+            _write_ws = _write_spreadsheet.worksheet(Tab.TRANSACTIONS)
+
+            # Unique marker so cleanup can find exactly this row even if concurrent writes occur
+            _marker = f"inttest-{uuid.uuid4().hex[:12]}"
+
             before = sheets.get_transactions()
             before_count = len(before)
 
             test_txn = {
+                "transaction_id": _marker,
                 "type": "Test",
                 "week": "99",
-                "from_player_name": "TestCoach1",
-                "to_player_name": "TestCoach2",
-                "pokemon_given": "Pikachu",
-                "pokemon_received": "Raichu",
-                "status": "Integration test — delete me",
+                # Use canonical field names that save_transaction() reads (coach1/pokemon1)
+                "coach1": "TestCoach1",
+                "coach2": "TestCoach2",
+                "pokemon1": "Pikachu",
+                "pokemon2": "Raichu",
+                "status": f"Integration test — {_marker}",
             }
             sheets.save_transaction(test_txn)
             time.sleep(2)
@@ -188,18 +211,27 @@ def main() -> None:
             check("save_transaction() increased row count by 1",
                   after_count == before_count + 1,
                   f"before={before_count}, after={after_count}")
+
+            # Verify using keys from get_transactions() output schema
             if after:
                 last = after[-1]
-                check("test transaction has correct coach", last.get("coach1") == "TestCoach1",
+                check("test transaction has correct coach",
+                      last.get("coach1") == "TestCoach1",
                       last.get("coach1", ""))
-                check("test transaction has correct pokemon", last.get("pokemon1") == "Pikachu",
+                check("test transaction has correct pokemon",
+                      last.get("pokemon1") == "Pikachu",
                       last.get("pokemon1", ""))
 
-            # Cleanup: delete the test row so we don't pollute production data
+            # Cleanup: locate the test row by its unique marker, not by row_count
+            # (row_count is fragile if another write lands concurrently)
             try:
-                ws = sheets.get_tab(Tab.TRANSACTIONS)
-                ws.delete_rows(ws.row_count)
-                check("cleanup: test row deleted from sheet", True)
+                marker_cell = _write_ws.find(_marker)
+                if marker_cell:
+                    _write_ws.delete_rows(marker_cell.row)
+                    check("cleanup: test row deleted from sheet", True)
+                else:
+                    check("cleanup: test row deleted from sheet", False,
+                          f"marker {_marker!r} not found in sheet")
             except Exception as cleanup_exc:
                 check("cleanup: test row deleted from sheet", False, str(cleanup_exc))
         except Exception as e:

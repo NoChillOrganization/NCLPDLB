@@ -2,7 +2,7 @@
 title: "M2: `draft_error` calls `interaction.response.send_message` but…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

@@ -2,7 +2,7 @@
 title: "M6: `admin_sync` has no `cog_app_command_error`"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

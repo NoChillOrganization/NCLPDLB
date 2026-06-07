@@ -22,21 +22,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # ── Clock skew fix ────────────────────────────────────────────
-try:
-    import urllib.request
-    import email.utils
-    with urllib.request.urlopen("https://accounts.google.com", timeout=5) as resp:
-        date_header = resp.headers.get("Date", "")
-    if date_header:
-        server_dt = email.utils.parsedate_to_datetime(date_header)
-        import datetime
-        import google.auth._helpers as _gah
-        _offset = server_dt - datetime.datetime.now(datetime.timezone.utc)
-        if hasattr(_gah, "utcnow"):
-            _orig_utcnow = _gah.utcnow
-            _gah.utcnow = lambda: _orig_utcnow() + _offset
-except Exception:
-    pass
+# Shared helper — see scripts/_clock_skew.py for details (M33)
+from _clock_skew import apply_google_clock_skew
+apply_google_clock_skew()
 
 from src.config import settings
 from src.data.sheets import REPLAY_HEADERS, TRAINING_RUN_HEADERS

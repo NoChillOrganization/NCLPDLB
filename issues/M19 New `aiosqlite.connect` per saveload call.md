@@ -2,7 +2,7 @@
 title: "M19: New `aiosqlite.connect` per save/load call"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

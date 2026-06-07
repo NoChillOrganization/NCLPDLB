@@ -2,7 +2,7 @@
 title: "M14: `resp.json()` on a non-JSON body (404 HTML, Cloudflare)…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

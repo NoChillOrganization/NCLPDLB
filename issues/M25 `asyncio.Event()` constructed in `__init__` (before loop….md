@@ -2,7 +2,7 @@
 title: "M25: `asyncio.Event()` constructed in `__init__` (before loop…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

@@ -18,7 +18,7 @@ from discord.ext import commands
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.config import settings
-from src.data.db import init_db
+from src.data.db import init_db, close_db
 from src.services.draft_service import DraftService as _DraftService
 from src.services.elo_service import EloService as _EloService
 
@@ -166,6 +166,11 @@ class DraftLeagueBot(commands.Bot):
                 name=settings.bot_status,
             )
         )
+
+    async def close(self) -> None:
+        """Graceful shutdown — release SQLite connection before discord.py exits."""
+        await close_db()
+        await super().close()
 
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
         log.error(f"Command error: {error}", exc_info=True)

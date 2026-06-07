@@ -2,7 +2,7 @@
 title: "M31: `_OPEN_ROW_RE` alternation precedence: `…\]\].*?in-progress\"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

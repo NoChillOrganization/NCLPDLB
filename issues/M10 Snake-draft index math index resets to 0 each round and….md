@@ -2,7 +2,7 @@
 title: "M10: Snake-draft index math: index resets to 0 each round and…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

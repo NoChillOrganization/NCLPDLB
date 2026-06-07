@@ -1,8 +1,8 @@
 ---
 title: Issue Tracker
-updated: 2026-06-05
+updated: 2026-06-07
 closed: 2026-06-03
-open: 77
+open: 0
 in-progress: 0
 ---
 
@@ -41,40 +41,40 @@ in-progress: 0
 | [[H14 `_ReplayEnv``_FakeEnv` obs space `Box(high=1.0)`\|H14]]             | _ReplayEnv/_FakeEnv obs space Box(high=1.0)                 | `ml/browser_trainer.py:205,296-298 vs battle_env.py:453`       | high     | done   |
 | [[H15 `build_observation_from_dom` writes HP\|H15]]                       | build_observation_from_dom writes HP                        | `ml/browser_trainer.py:94-124`                                 | high     | done   |
 | [[H16 `policy.learn(total_timesteps=n_trans)` on `_ReplayEnv`…\|H16]]     | policy.learn(total_timesteps=n_trans) on _ReplayEnv…        | `ml/browser_trainer.py:418-443`                                | high     | done   |
-| [[M1 Unguarded `int(self.season.value or 1)` etc\|M1]]                    | Unguarded int(self.season.value or 1) etc                   | `bot/cogs/draft.py:57-60,168-172`                              | medium   | open   |
-| [[M2 `draft_error` calls `interaction.response.send_message` but…\|M2]]   | draft_error calls interaction.response.send_message but…    | `bot/cogs/draft.py:561-565`                                    | medium   | open   |
-| [[M3 `on_timeout` calls `force_skip(guild, current_player_id)`…\|M3]]     | on_timeout calls force_skip(guild, current_player_id)…      | `bot/views/draft_view.py:22-31,86-95`                          | medium   | open   |
-| [[M4 `report = svc.analyze_pokemon_list(...)` called without…\|M4]]       | report = svc.analyze_pokemon_list(...) called without…      | `bot/views/team_view.py:42-44`                                 | medium   | open   |
-| [[M5 Full Showdown export in an inline code block can exceed…\|M5]]       | Full Showdown export in an inline code block can exceed…    | `bot/cogs/team.py:297-300; views/team_view.py:61-64`           | medium   | open   |
-| [[M6 `admin_sync` has no `cog_app_command_error`\|M6]]                    | admin_sync has no cog_app_command_error                     | `bot/cogs/admin.py:113-137`                                    | medium   | open   |
-| [[M7 `webbrowser.open(...)` runs server-side (bot host), is…\|M7]]        | webbrowser.open(...) runs server-side (bot host), is…       | `bot/cogs/admin.py:383`                                        | medium   | open   |
-| [[M8 `asyncio.get_event_loop()` inside a coroutine is deprecated…\|M8]]   | asyncio.get_event_loop() inside a coroutine is deprecated…  | `bot/cogs/ml.py:79`                                            | medium   | open   |
-| [[M9 `make_pick` `await`s (`to_thread(save_pick)`,…\|M9]]                 | make_pick awaits (to_thread(save_pick),…                    | `services/draft_service.py:25-30,283-310`                      | medium   | open   |
-| [[M10 Snake-draft index math index resets to 0 each round and…\|M10]]     | Snake-draft index math: index resets to 0 each round and…   | `services/draft_service.py (models.py:237-248)`                | medium   | open   |
-| [[M11 Auction `place_bid` records bids but there is no method to…\|M11]]  | Auction: place_bid records bids but there is no method to…  | `services/draft_service.py:393-426`                            | medium   | open   |
-| [[M12 `int(record.get(elo, 1000))` raises `ValueError` on…\|M12]]         | int(record.get("elo", 1000)) raises ValueError on…          | `services/elo_service.py:83-85,162-166`                        | medium   | open   |
-| [[M13 `parse_replay` passes `replay_id``winner``timestamp` but…\|M13]]    | parse_replay passes replay_id/winner/timestamp but…         | `services/battle_sim.py:164-173 ↔ sheets.py:336-343`           | medium   | open   |
-| [[M14 `resp.json()` on a non-JSON body (404 HTML, Cloudflare)…\|M14]]     | resp.json() on a non-JSON body (404 HTML, Cloudflare)…      | `services/battle_sim.py:153-154`                               | medium   | open   |
-| [[M15 `save_video` fieldtab mismatch (same blank-`match_id`…\|M15]]       | save_video field/tab mismatch (same blank-match_id…         | `services/video_service.py:58-67 ↔ sheets.py:345-352`          | medium   | open   |
-| [[M16 Showdown import regex mishandles `Type Null` (stops at…\|M16]]      | Showdown import regex mishandles Type: Null (stops at…      | `services/team_service.py:248-261`                             | medium   | open   |
-| [[M17 `find()` returns first dict match on `key in k or k in key`…\|M17]] | find() returns first dict match on key in k or k in key…    | `data/pokeapi.py:62-65`                                        | medium   | open   |
-| [[M18 Smogon tier scrape regex `dexSettings = {…}\|M18]]                  | Smogon tier scrape regex dexSettings = {…}                  | `data/smogon.py:36-47; data/showdown.py:54-58,82`              | medium   | open   |
-| [[M19 New `aiosqlite.connect` per saveload call\|M19]]                    | New aiosqlite.connect per save/load call                    | `data/db.py:65-130`                                            | medium   | open   |
-| [[M20 `best_action` stochastic branch `counts_t counts_t.sum()`\|M20]]    | best_action stochastic branch: counts_t / counts_t.sum()    | `ml/mcts.py:202-205`                                           | medium   | open   |
-| [[M21 `predict``policy_probs` do `masked_fill(mask, -inf)` then…\|M21]]   | predict/policy_probs do masked_fill(mask, -inf) then…       | `ml/transformer_model.py:260,290`                              | medium   | open   |
-| [[M22 `torch.load(...)` without `weights_only=True` (security…\|M22]]     | torch.load(...) without weights_only=True (security:…       | `ml/train_policy.py:278; pretrain weights load`                | medium   | open   |
-| [[M23 `evaluate()` uses `poke_env.battle1` — version-dependent…\|M23]]    | evaluate() uses poke_env.battle1 — version-dependent…       | `ml/train_policy.py:1056`                                      | medium   | open   |
-| [[M24 Public-server login sends `\|M24]]                                  | Public-server login sends \                                 | `ml/showdown_client.py:278`                                    | medium   | open   |
-| [[M25 `asyncio.Event()` constructed in `__init__` (before loop…\|M25]]    | asyncio.Event() constructed in __init__ (before loop…       | `ml/showdown_client.py:374`                                    | medium   | open   |
-| [[M26 Team-HP slot match `my_team_list[i] == my_active` compares…\|M26]]  | Team-HP slot match my_team_list[i] == my_active compares…   | `ml/pretrain.py:199,207`                                       | medium   | open   |
-| [[M27 `SimpleHeuristicPlayer.choose_move` does…\|M27]]                    | SimpleHeuristicPlayer.choose_move does…                     | `ml/training_players.py:72`                                    | medium   | open   |
-| [[M28 `data.setdefault(...)` runs outside the per-replay try\|M28]]       | data.setdefault(...) runs outside the per-replay try        | `ml/replay_scraper.py:133-138`                                 | medium   | open   |
-| [[M29 `settings = Settings()` at import time with required…\|M29]]        | settings = Settings() at import time with required…         | `src/config.py:86`                                             | medium   | open   |
-| [[M30 `ws.update` called values-first in one place, range-first…\|M30]]   | ws.update called values-first in one place, range-first…    | `data/sheets.py:148 vs 164,176,463`                            | medium   | open   |
-| [[M31 `_OPEN_ROW_RE` alternation precedence `…]].in-progress\|M31]]       | _OPEN_ROW_RE alternation precedence: …\]\].*?in-progress\   | `scripts/sync_closed_issues.py:111-114`                        | medium   | open   |
-| [[M32 `urllib.request.urlopen` with no User-Agent\|M32]]                  | urllib.request.urlopen with no User-Agent                   | `scripts/prepare_competitive_data.py:129`                      | medium   | open   |
-| [[M33 Monkey-patches private `google.auth._helpers.utcnow`…\|M33]]        | Monkey-patches private google.auth._helpers.utcnow…         | `scripts/setup_google_sheet.py:33-37; setup_ml_sheet.py:33-36` | medium   | open   |
-| [[M34 Writes a real Test transaction to the production sheet…\|M34]]      | Writes a real "Test" transaction to the production sheet…   | `scripts/test_sheets_integration.py:163-193,85-147`            | medium   | open   |
+| [[M1 Unguarded `int(self.season.value or 1)` etc\|M1]]                    | Unguarded int(self.season.value or 1) etc                   | `bot/cogs/draft.py:57-60,168-172`                              | medium   | done   |
+| [[M2 `draft_error` calls `interaction.response.send_message` but…\|M2]]   | draft_error calls interaction.response.send_message but…    | `bot/cogs/draft.py:561-565`                                    | medium   | done   |
+| [[M3 `on_timeout` calls `force_skip(guild, current_player_id)`…\|M3]]     | on_timeout calls force_skip(guild, current_player_id)…      | `bot/views/draft_view.py:22-31,86-95`                          | medium   | done   |
+| [[M4 `report = svc.analyze_pokemon_list(...)` called without…\|M4]]       | report = svc.analyze_pokemon_list(...) called without…      | `bot/views/team_view.py:42-44`                                 | medium   | done   |
+| [[M5 Full Showdown export in an inline code block can exceed…\|M5]]       | Full Showdown export in an inline code block can exceed…    | `bot/cogs/team.py:297-300; views/team_view.py:61-64`           | medium   | done   |
+| [[M6 `admin_sync` has no `cog_app_command_error`\|M6]]                    | admin_sync has no cog_app_command_error                     | `bot/cogs/admin.py:113-137`                                    | medium   | done   |
+| [[M7 `webbrowser.open(...)` runs server-side (bot host), is…\|M7]]        | webbrowser.open(...) runs server-side (bot host), is…       | `bot/cogs/admin.py:383`                                        | medium   | done   |
+| [[M8 `asyncio.get_event_loop()` inside a coroutine is deprecated…\|M8]]   | asyncio.get_event_loop() inside a coroutine is deprecated…  | `bot/cogs/ml.py:79`                                            | medium   | done   |
+| [[M9 `make_pick` `await`s (`to_thread(save_pick)`,…\|M9]]                 | make_pick awaits (to_thread(save_pick),…                    | `services/draft_service.py:25-30,283-310`                      | medium   | done   |
+| [[M10 Snake-draft index math index resets to 0 each round and…\|M10]]     | Snake-draft index math: index resets to 0 each round and…   | `services/draft_service.py (models.py:237-248)`                | medium   | done   |
+| [[M11 Auction `place_bid` records bids but there is no method to…\|M11]]  | Auction: place_bid records bids but there is no method to…  | `services/draft_service.py:393-426`                            | medium   | done   |
+| [[M12 `int(record.get(elo, 1000))` raises `ValueError` on…\|M12]]         | int(record.get("elo", 1000)) raises ValueError on…          | `services/elo_service.py:83-85,162-166`                        | medium   | done   |
+| [[M13 `parse_replay` passes `replay_id``winner``timestamp` but…\|M13]]    | parse_replay passes replay_id/winner/timestamp but…         | `services/battle_sim.py:164-173 ↔ sheets.py:336-343`           | medium   | done   |
+| [[M14 `resp.json()` on a non-JSON body (404 HTML, Cloudflare)…\|M14]]     | resp.json() on a non-JSON body (404 HTML, Cloudflare)…      | `services/battle_sim.py:153-154`                               | medium   | done   |
+| [[M15 `save_video` fieldtab mismatch (same blank-`match_id`…\|M15]]       | save_video field/tab mismatch (same blank-match_id…         | `services/video_service.py:58-67 ↔ sheets.py:345-352`          | medium   | done   |
+| [[M16 Showdown import regex mishandles `Type Null` (stops at…\|M16]]      | Showdown import regex mishandles Type: Null (stops at…      | `services/team_service.py:248-261`                             | medium   | done   |
+| [[M17 `find()` returns first dict match on `key in k or k in key`…\|M17]] | find() returns first dict match on key in k or k in key…    | `data/pokeapi.py:62-65`                                        | medium   | done   |
+| [[M18 Smogon tier scrape regex `dexSettings = {…}\|M18]]                  | Smogon tier scrape regex dexSettings = {…}                  | `data/smogon.py:36-47; data/showdown.py:54-58,82`              | medium   | done   |
+| [[M19 New `aiosqlite.connect` per saveload call\|M19]]                    | New aiosqlite.connect per save/load call                    | `data/db.py:65-130`                                            | medium   | done   |
+| [[M20 `best_action` stochastic branch `counts_t counts_t.sum()`\|M20]]    | best_action stochastic branch: counts_t / counts_t.sum()    | `ml/mcts.py:202-205`                                           | medium   | done   |
+| [[M21 `predict``policy_probs` do `masked_fill(mask, -inf)` then…\|M21]]   | predict/policy_probs do masked_fill(mask, -inf) then…       | `ml/transformer_model.py:260,290`                              | medium   | done   |
+| [[M22 `torch.load(...)` without `weights_only=True` (security…\|M22]]     | torch.load(...) without weights_only=True (security:…       | `ml/train_policy.py:278; pretrain weights load`                | medium   | done   |
+| [[M23 `evaluate()` uses `poke_env.battle1` — version-dependent…\|M23]]    | evaluate() uses poke_env.battle1 — version-dependent…       | `ml/train_policy.py:1056`                                      | medium   | done   |
+| [[M24 Public-server login sends `\|M24]]                                  | Public-server login sends \                                 | `ml/showdown_client.py:278`                                    | medium   | done   |
+| [[M25 `asyncio.Event()` constructed in `__init__` (before loop…\|M25]]    | asyncio.Event() constructed in __init__ (before loop…       | `ml/showdown_client.py:374`                                    | medium   | done   |
+| [[M26 Team-HP slot match `my_team_list[i] == my_active` compares…\|M26]]  | Team-HP slot match my_team_list[i] == my_active compares…   | `ml/pretrain.py:199,207`                                       | medium   | done   |
+| [[M27 `SimpleHeuristicPlayer.choose_move` does…\|M27]]                    | SimpleHeuristicPlayer.choose_move does…                     | `ml/training_players.py:72`                                    | medium   | done   |
+| [[M28 `data.setdefault(...)` runs outside the per-replay try\|M28]]       | data.setdefault(...) runs outside the per-replay try        | `ml/replay_scraper.py:133-138`                                 | medium   | done   |
+| [[M29 `settings = Settings()` at import time with required…\|M29]]        | settings = Settings() at import time with required…         | `src/config.py:86`                                             | medium   | done   |
+| [[M30 `ws.update` called values-first in one place, range-first…\|M30]]   | ws.update called values-first in one place, range-first…    | `data/sheets.py:148 vs 164,176,463`                            | medium   | done   |
+| [[M31 `_OPEN_ROW_RE` alternation precedence `…]].in-progress\|M31]]       | _OPEN_ROW_RE alternation precedence: …\]\].*?in-progress\   | `scripts/sync_closed_issues.py:111-114`                        | medium   | done   |
+| [[M32 `urllib.request.urlopen` with no User-Agent\|M32]]                  | urllib.request.urlopen with no User-Agent                   | `scripts/prepare_competitive_data.py:129`                      | medium   | done   |
+| [[M33 Monkey-patches private `google.auth._helpers.utcnow`…\|M33]]        | Monkey-patches private google.auth._helpers.utcnow…         | `scripts/setup_google_sheet.py:33-37; setup_ml_sheet.py:33-36` | medium   | done   |
+| [[M34 Writes a real Test transaction to the production sheet…\|M34]]      | Writes a real "Test" transaction to the production sheet…   | `scripts/test_sheets_integration.py:163-193,85-147`            | medium   | done   |
 | [[L1 Param named `commands` shadows the `discord.ext.commands`…\|L1]]     | Param named commands shadows the discord.ext.commands…      | `bot/main.py:50,57`                                            | low      | done   |
 | [[L2 `socket.create_connection(...)` result never closed\|L2]]            | socket.create_connection(...) result never closed           | `bot/cogs/admin.py:375-377`                                    | low      | done   |
 | [[L3 `match_upload` claims max 25MB but never checks…\|L3]]               | match_upload claims "max 25MB" but never checks…            | `bot/cogs/stats.py:197-216`                                    | low      | done   |

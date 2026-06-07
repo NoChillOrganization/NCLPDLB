@@ -400,10 +400,18 @@ class ShowdownClient:
         # Wire challstr → auto-login
         self.handler.on("challstr", self._on_challstr)
 
-        self._login_event = asyncio.Event()
+        # Lazy-init: do not create asyncio.Event in __init__ (pre-loop construction is
+        # incorrect on Python <3.10 and misleading on 3.10+). Created on first async use. (M25)
+        self._login_event: "asyncio.Event | None" = None
         self.handler.on("updateuser", self._on_updateuser)
 
     # ── Public API ──────────────────────────────────────────────────────
+
+    def _get_login_event(self) -> "asyncio.Event":
+        """Return the login Event, creating it lazily inside the running loop."""
+        if self._login_event is None:
+            self._login_event = asyncio.Event()
+        return self._login_event
 
     @property
     def connected(self) -> bool:
@@ -419,7 +427,7 @@ class ShowdownClient:
         """
         await self.connection.connect()
         try:
-            await asyncio.wait_for(self._login_event.wait(), timeout=login_timeout)
+            await asyncio.wait_for(self._get_login_event().wait(), timeout=login_timeout)
         except asyncio.TimeoutError:
             self._log.warning(
                 "Login confirmation not received within %.1fs — proceeding anyway",
@@ -433,7 +441,7 @@ class ShowdownClient:
     async def wait_for_login(self, timeout: float = 15.0) -> bool:
         """Wait up to `timeout` seconds for login to complete. Returns True if logged in."""
         try:
-            await asyncio.wait_for(self._login_event.wait(), timeout=timeout)
+            await asyncio.wait_for(self._get_login_event().wait(), timeout=timeout)
             return True
         except asyncio.TimeoutError:
             return False
@@ -460,8 +468,9 @@ class ShowdownClient:
     async def _on_updateuser(self, room: str, parts: list[str]) -> None:
         # |updateuser|username|...
         if parts and parts[0].strip().lower() == self.username.lower():
-            if not self._login_event.is_set():
-                self._login_event.set()
+            evt = self._get_login_event()
+            if not evt.is_set():
+                evt.set()
                 self._log.info("Authenticated as %s", self.username)
 
 

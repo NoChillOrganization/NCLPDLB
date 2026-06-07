@@ -2,7 +2,7 @@
 title: "M27: `SimpleHeuristicPlayer.choose_move` does…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>
