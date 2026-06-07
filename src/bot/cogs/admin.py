@@ -954,7 +954,12 @@ async def _pull_models(
                     results[target_fmt] = f"❌ {exc}"
 
     except Exception as exc:
-        await interaction.followup.send(f"❌ GitHub API error: `{exc}`", ephemeral=True)
+        # Download can take up to 300 s — DM in case webhook token expired.
+        msg = f"❌ GitHub API error: `{exc}`"
+        try:
+            await interaction.followup.send(msg, ephemeral=True)
+        except discord.NotFound:
+            await interaction.user.send(msg)
         return
 
     ok = sum(1 for v in results.values() if v.startswith("✅"))
@@ -966,7 +971,10 @@ async def _pull_models(
         color=discord.Color.green() if fail == 0 else discord.Color.orange(),
     )
     embed.set_footer(text=f"{ok} downloaded, {fail} skipped/failed")
-    await interaction.followup.send(embed=embed, ephemeral=True)
+    try:
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    except discord.NotFound:
+        await interaction.user.send(embed=embed)
 
 
 async def setup(bot: commands.Bot) -> None:

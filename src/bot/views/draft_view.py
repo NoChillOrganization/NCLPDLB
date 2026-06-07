@@ -4,41 +4,43 @@ Uses discord.py Views (buttons + selects) for a rich interactive experience.
 """
 from __future__ import annotations
 
+from typing import Awaitable, Callable
+
 import discord
 
 from src.data.models import Draft
 from src.data.pokeapi import pokemon_db
 
+# Service timer (DraftService._start_timer) is the single timeout authority.
+# Views use timeout=None so Discord never fires on_timeout independently.
+OnTimeoutCb = Callable[[str, str], Awaitable[None]]
+
 
 class DraftPickView(discord.ui.View):
-    """Interactive view shown during a snake/tiered draft pick."""
+    """Interactive view shown during a snake/tiered draft pick.
 
-    def __init__(self, draft: Draft, bot: discord.Client) -> None:
-        super().__init__(timeout=draft.timer_seconds)
+    The service timer owns auto-skip; this view owns interactive picks only.
+    Pass on_timeout_cb so make_pick re-registers the callback for the next player.
+    """
+
+    def __init__(
+        self,
+        draft: Draft,
+        bot: discord.Client,
+        on_timeout_cb: OnTimeoutCb | None = None,
+    ) -> None:
+        super().__init__(timeout=None)  # service timer is the sole authority
         self.draft = draft
         self.bot = bot
-        self.add_item(PokemonSearchSelect(draft=draft))
-
-    async def on_timeout(self) -> None:
-        """Auto-skip when timer expires — only if pick is still pending."""
-        from src.services.draft_service import DraftService
-        svc = DraftService()
-        # Guard: only skip if the same player is still waiting (race-condition check)
-        draft = svc.get_draft(self.draft.guild_id)
-        if draft and draft.current_player_id == self.draft.current_player_id:
-            await svc.force_skip(
-                guild_id=self.draft.guild_id,
-                player_id=self.draft.current_player_id or "",
-            )
-        for item in self.children:
-            item.disabled = True
+        self.add_item(PokemonSearchSelect(draft=draft, on_timeout_cb=on_timeout_cb))
 
 
 class PokemonSearchSelect(discord.ui.Select):
     """Dropdown select for choosing a Pokemon (shows top 25 by tier)."""
 
-    def __init__(self, draft: Draft) -> None:
+    def __init__(self, draft: Draft, on_timeout_cb: OnTimeoutCb | None = None) -> None:
         self.draft = draft
+        self._on_timeout_cb = on_timeout_cb
         picked_names = {p.pokemon_name.lower() for p in draft.picks}
         banned_names = {b.pokemon_name.lower() for b in draft.bans}
 
@@ -84,6 +86,7 @@ class PokemonSearchSelect(discord.ui.Select):
             guild_id=self.draft.guild_id,
             player_id=str(interaction.user.id),
             pokemon_name=self.values[0],
+            on_timeout=self._on_timeout_cb,  # thread callback to next service timer
         )
 
         if result.success:
@@ -95,8 +98,28 @@ class PokemonSearchSelect(discord.ui.Select):
             embed.add_field(name="Types", value=result.pokemon.type_string)
             embed.add_field(name="Tier", value=result.pokemon.showdown_tier)
             embed.set_footer(text=f"Next: {result.next_player_name}")
-            self.view.stop()  # cancel timeout so it can't fire for the wrong player
             await interaction.response.edit_message(embed=embed, view=None)
+
+            # M4: post a fresh interactive view for the next player
+            from src.services.draft_service import DraftStatus
+            updated = svc.get_draft(self.draft.guild_id)
+            if (
+                updated
+                and updated.status == DraftStatus.ACTIVE
+                and updated.current_player_id
+                and interaction.channel
+            ):
+                next_embed = discord.Embed(
+                    title=f"<@{updated.current_player_id}> — you're on the clock!",
+                    description=f"Round {updated.current_round} · Pick your Pokémon.",
+                    color=discord.Color.blue(),
+                )
+                next_view = DraftPickView(
+                    draft=updated,
+                    bot=self.view.bot,
+                    on_timeout_cb=self._on_timeout_cb,
+                )
+                await interaction.channel.send(embed=next_embed, view=next_view)
         else:
             await interaction.response.send_message(f"Error: {result.error}", ephemeral=True)
 

@@ -450,15 +450,18 @@ async def _run_spar_challenge(
         embed.add_field(name="Format", value=fmt, inline=True)
         embed.add_field(name="Turns", value=str(result["turns"]), inline=True)
         embed.set_footer(text="GG! Use /analysis to review your team's strengths and weaknesses.")
-        await interaction.followup.send(embed=embed)
+        # Challenge + battle can exceed the ~15-min interaction webhook TTL — use DM.
+        await interaction.user.send(embed=embed)
 
     except Exception as exc:
         log.error(f"[/spar] Live challenge failed: {exc}", exc_info=True)
-        await interaction.followup.send(
-            f"The spar battle encountered an error: `{exc}`\n"
-            "Make sure your Showdown username is correct and you are online.",
-            ephemeral=True,
-        )
+        try:
+            await interaction.user.send(
+                f"The spar battle encountered an error: `{exc}`\n"
+                "Make sure your Showdown username is correct and you are online.",
+            )
+        except Exception:
+            log.warning("[/spar] Could not DM result to user %s", interaction.user.id)
 
 
 async def setup(bot: commands.Bot) -> None:

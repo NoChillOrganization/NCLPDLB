@@ -393,14 +393,44 @@ class DraftCog(commands.Cog, name="Draft"):
     @app_commands.command(name="draft-start", description="Start the draft (commissioner only)")
     async def draft_start(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
+        channel = interaction.channel
+        bot = self.bot
+
+        # Single on_timeout closure threaded through the entire draft session.
+        # Called by the service timer (the sole auto-skip authority) whenever a
+        # player's timer expires — posts a skip notice and the next player's view.
+        async def _on_pick_timeout(guild_id: str, skipped_player_id: str) -> None:
+            active = self.draft_service.get_draft(guild_id)
+            from src.services.draft_service import DraftStatus
+            next_mention = (
+                f"<@{active.current_player_id}>" if active and active.current_player_id
+                else "Draft complete!"
+            )
+            skip_embed = discord.Embed(
+                title="⏰ Pick timer expired",
+                description=f"<@{skipped_player_id}>'s turn was skipped. Now up: {next_mention}",
+                color=discord.Color.orange(),
+            )
+            if (
+                active
+                and active.status == DraftStatus.ACTIVE
+                and active.current_player_id
+                and channel
+            ):
+                next_view = DraftPickView(draft=active, bot=bot, on_timeout_cb=_on_pick_timeout)
+                await channel.send(embed=skip_embed, view=next_view)
+            elif channel:
+                await channel.send(embed=skip_embed)
+
         draft = await self.draft_service.start_draft(
             guild_id=str(interaction.guild_id),
             commissioner_id=str(interaction.user.id),
+            on_timeout=_on_pick_timeout,
         )
-        view = DraftPickView(draft=draft, bot=self.bot)
+        view = DraftPickView(draft=draft, bot=self.bot, on_timeout_cb=_on_pick_timeout)
         embed = discord.Embed(
             title="The Draft Has Started! 🎉",
-            description=f"Round 1 — **{draft.current_player_id}** is on the clock!",
+            description=f"Round 1 — <@{draft.current_player_id}> is on the clock!",
             color=discord.Color.blue(),
         )
         embed.add_field(name="Format", value=draft.format.value.title())
