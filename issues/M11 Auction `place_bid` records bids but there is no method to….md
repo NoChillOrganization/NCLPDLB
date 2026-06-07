@@ -2,7 +2,7 @@
 title: "M11: Auction: `place_bid` records bids but there is no method to…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

@@ -2,7 +2,7 @@
 title: "M21: `predict`/`policy_probs` do `masked_fill(mask, -inf)` then…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

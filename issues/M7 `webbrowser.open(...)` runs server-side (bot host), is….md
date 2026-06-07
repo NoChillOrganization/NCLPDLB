@@ -2,7 +2,7 @@
 title: "M7: `webbrowser.open(...)` runs server-side (bot host), is…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

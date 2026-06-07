@@ -2,7 +2,7 @@
 title: "M16: Showdown import regex mishandles `Type: Null` (stops at…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

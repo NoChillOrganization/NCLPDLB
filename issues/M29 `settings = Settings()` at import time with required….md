@@ -2,7 +2,7 @@
 title: "M29: `settings = Settings()` at import time with required…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

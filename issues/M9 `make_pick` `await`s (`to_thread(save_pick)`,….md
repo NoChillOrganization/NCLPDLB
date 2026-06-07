@@ -2,7 +2,7 @@
 title: "M9: `make_pick` `await`s (`to_thread(save_pick)`,…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

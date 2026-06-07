@@ -2,7 +2,7 @@
 title: "M23: `evaluate()` uses `poke_env.battle1` — version-dependent…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

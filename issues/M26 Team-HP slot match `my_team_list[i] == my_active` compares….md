@@ -2,7 +2,7 @@
 title: "M26: Team-HP slot match `my_team_list[i] == my_active` compares…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

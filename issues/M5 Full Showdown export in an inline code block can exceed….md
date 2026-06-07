@@ -2,7 +2,7 @@
 title: "M5: Full Showdown export in an inline code block can exceed…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

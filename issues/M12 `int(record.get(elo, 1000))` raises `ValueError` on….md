@@ -2,7 +2,7 @@
 title: "M12: `int(record.get('elo', 1000))` raises `ValueError` on…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

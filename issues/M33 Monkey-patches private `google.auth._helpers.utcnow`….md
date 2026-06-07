@@ -2,7 +2,7 @@
 title: "M33: Monkey-patches private `google.auth._helpers.utcnow`…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

@@ -2,7 +2,7 @@
 title: "M34: Writes a real 'Test' transaction to the production sheet…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

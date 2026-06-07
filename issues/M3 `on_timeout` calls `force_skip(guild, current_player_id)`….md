@@ -2,7 +2,7 @@
 title: "M3: `on_timeout` calls `force_skip(guild, current_player_id)`…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

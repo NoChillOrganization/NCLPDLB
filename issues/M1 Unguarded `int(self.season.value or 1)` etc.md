@@ -2,7 +2,7 @@
 title: "M1: Unguarded `int(self.season.value or 1)` etc"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

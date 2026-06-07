@@ -2,7 +2,7 @@
 title: "M17: `find()` returns first dict match on `key in k or k in key`…"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

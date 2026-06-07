@@ -17,28 +17,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # ── Clock skew fix ────────────────────────────────────────────
-# If the local system clock is behind/ahead of Google's servers,
-# JWT auth will fail with "invalid_grant". We fetch the real time
-# from Google and patch google.auth._helpers.utcnow() before any
-# auth call is made so the generated JWT has correct iat/exp values.
-try:
-    import urllib.request
-    import email.utils
-    with urllib.request.urlopen("https://accounts.google.com", timeout=5) as resp:
-        date_header = resp.headers.get("Date", "")
-    if date_header:
-        server_dt = email.utils.parsedate_to_datetime(date_header)
-        skew = server_dt.replace(tzinfo=None) - datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-        if abs(skew.total_seconds()) > 10:
-            import google.auth._helpers as _ga_helpers
-            if hasattr(_ga_helpers, "utcnow"):
-                _orig_utcnow = _ga_helpers.utcnow
-                _ga_helpers.utcnow = lambda: _orig_utcnow() + skew
-                print(f"[clock-fix] Adjusted JWT clock by {skew.total_seconds():.0f}s to match Google servers")
-            else:
-                print(f"[clock-fix] Skew={skew.total_seconds():.0f}s but google.auth._helpers.utcnow not found; skipping patch")
-except Exception:
-    pass  # Best-effort; let auth fail naturally if unreachable
+# Shared helper — see scripts/_clock_skew.py for details (M33)
+from _clock_skew import apply_google_clock_skew
+apply_google_clock_skew()
 
 import gspread
 from google.oauth2.service_account import Credentials

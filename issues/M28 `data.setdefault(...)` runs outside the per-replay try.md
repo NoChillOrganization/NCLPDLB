@@ -2,7 +2,7 @@
 title: "M28: `data.setdefault(...)` runs outside the per-replay try"
 created: 2026-06-05
 priority: medium
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>
