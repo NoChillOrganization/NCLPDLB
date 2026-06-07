@@ -52,6 +52,7 @@ class TeamImportConfirmView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         """Save the parsed team to the player's per-format roster slot."""
+        button.disabled = True
         await interaction.response.defer(ephemeral=True)
         result = await self.team_service.import_showdown(
             guild_id=self.guild_id,

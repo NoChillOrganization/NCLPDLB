@@ -140,7 +140,7 @@ class AnalyticsService:
         threat_score = min(100, int(avg_bst / 6))
 
         # Role distribution
-        roles: dict[str, int] = {"Attacker": 0, "Wall": 0, "Support": 0, "Mixed": 0}
+        roles: dict[str, int] = {"Attacker": 0, "Wall": 0, "Mixed": 0}
         for mon in team:
             if mon.base_stats.atk > 100 or mon.base_stats.spa > 100:
                 roles["Attacker"] += 1

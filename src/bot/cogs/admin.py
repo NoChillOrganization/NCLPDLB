@@ -373,9 +373,10 @@ class AdminCog(commands.Cog, name="Admin"):
         host, port = "127.0.0.1", 8000
         reachable = False
         try:
-            await asyncio.get_running_loop().run_in_executor(
-                None, lambda: socket.create_connection((host, port), 3)
-            )
+            def _check():
+                with socket.create_connection((host, port), 3):
+                    pass
+            await asyncio.get_running_loop().run_in_executor(None, _check)
             reachable = True
         except OSError:
             pass

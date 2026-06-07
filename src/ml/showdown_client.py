@@ -130,8 +130,10 @@ class ShowdownConnection:
             self._recv_task.cancel()
             try:
                 await self._recv_task
-            except (asyncio.CancelledError, Exception):
-                pass
+            except asyncio.CancelledError:
+                pass  # expected — task was cancelled
+            except Exception:
+                pass  # ignore recv errors on disconnect
         if self._ws:
             try:
                 await self._ws.close()

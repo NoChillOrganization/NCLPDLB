@@ -151,8 +151,8 @@ class DraftService:
             created_at=datetime.now(timezone.utc).isoformat(),
         )
         _active_drafts[guild_id] = draft
-        # Persist league setup to Google Sheets
-        await asyncio.to_thread(sheets.save_league_setup, {
+        # Persist league setup to Google Sheets (fire-and-forget — don't block draft creation)
+        asyncio.get_running_loop().create_task(asyncio.to_thread(sheets.save_league_setup, {
             "league_id": draft.draft_id,
             "server_id": guild_id,
             "commissioner_id": commissioner_id,
@@ -161,7 +161,7 @@ class DraftService:
             "timer_seconds": timer_seconds,
             "status": "setup",
             "created_at": draft.created_at,
-        })
+        }))
         log.info(f"Draft {draft.draft_id} created for guild {guild_id}")
         return draft
 
@@ -308,7 +308,9 @@ class DraftService:
             is_tera_captain=is_tera_captain,
         )
         draft.picks.append(pick)
-        await asyncio.to_thread(sheets.save_pick, pick.model_dump(mode="json"))
+        asyncio.get_running_loop().create_task(
+            asyncio.to_thread(sheets.save_pick, pick.model_dump(mode="json"))
+        )
 
         # Advance pick pointer
         self._advance_pick(draft)
@@ -473,7 +475,9 @@ class DraftService:
         draft.picks.append(pick)
         draft.budget[winner_id] = draft.budget.get(winner_id, 0) - amount
         draft.current_nomination_id = ""
-        await asyncio.to_thread(sheets.save_pick, pick.model_dump(mode="json"))
+        asyncio.get_running_loop().create_task(
+            asyncio.to_thread(sheets.save_pick, pick.model_dump(mode="json"))
+        )
         self._advance_pick(draft)
         await _persist_draft(draft)
         log.info(f"Auction: {winner_id} won {pokemon.name} for {amount} coins in guild {guild_id}")

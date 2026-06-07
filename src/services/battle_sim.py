@@ -124,7 +124,7 @@ class BattleSimService:
     def _type_advantage_summary(self, p1: list[Pokemon], p2: list[Pokemon]) -> str:
         p1_types = set(t for m in p1 for t in m.types)
         p2_types = set(t for m in p2 for t in m.types)
-        p1_wins = [t for t in p1_types if any(get_type_effectiveness(t, list(p2_types)) > 1 for _ in [1])]
+        p1_wins = [t for t in p1_types if get_type_effectiveness(t, list(p2_types)) > 1]
         return f"P1 type advantages: {', '.join(p1_wins[:4]) or 'Few'}"
 
     # ── Showdown Replay Parser ────────────────────────────────

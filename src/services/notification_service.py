@@ -96,7 +96,12 @@ class NotificationService:
     async def _dm(self, player_id: str, message: str) -> bool:
         """Send a DM to a user by ID. Returns True if successful."""
         try:
-            user = self.bot.get_user(int(player_id)) or await self.bot.fetch_user(int(player_id))
+            try:
+                uid = int(player_id)
+            except ValueError:
+                log.warning(f"Invalid player_id: {player_id!r}")
+                return False
+            user = self.bot.get_user(uid) or await self.bot.fetch_user(uid)
             await user.send(message)
             return True
         except discord.Forbidden:

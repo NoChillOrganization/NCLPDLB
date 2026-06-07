@@ -346,6 +346,9 @@ class SelfPlayCallback(BaseCallback):
     Every `swap_every` steps:
       1. Save the latest agent weights to <save_dir>/latest.zip
       2. Signal the opponent player to reload from that checkpoint
+
+    NOTE: This callback is unused in the current MCTS training path (train_policy uses
+    CurriculumCallback + MCTSPlayer directly). Retained for potential PPO self-play revival.
     """
 
     def __init__(

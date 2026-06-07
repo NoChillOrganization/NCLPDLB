@@ -15,7 +15,7 @@ from src.ml.train_all import TRAINING_MAP
 from src.services.analytics_service import AnalyticsService
 from src.services.battle_sim import BattleSimService
 from src.services.elo_service import EloService
-from src.services.video_service import VideoService
+from src.services.video_service import ALLOWED_MIME_TYPES, MAX_FILE_SIZE_MB, VideoService
 
 log = logging.getLogger(__name__)
 
@@ -196,7 +196,7 @@ class StatsCog(commands.Cog, name="Stats"):
     # ── /match upload ─────────────────────────────────────────
     @app_commands.command(name="match-upload", description="Upload a capture card video of your match")
     @app_commands.describe(
-        video="Video file (MP4, MOV, AVI) — max 25MB via Discord",
+        video=f"Video file (MP4, MOV, AVI) — max {MAX_FILE_SIZE_MB}MB",
         opponent="Your opponent in this match",
         notes="Optional notes about the match",
     )
@@ -208,8 +208,7 @@ class StatsCog(commands.Cog, name="Stats"):
         notes: str = "",
     ) -> None:
         await interaction.response.defer()
-        allowed_types = {"video/mp4", "video/quicktime", "video/x-msvideo", "video/avi"}
-        if video.content_type not in allowed_types:
+        if video.content_type not in ALLOWED_MIME_TYPES:
             await interaction.followup.send(
                 "Unsupported file type. Please upload MP4, MOV, or AVI.", ephemeral=True
             )

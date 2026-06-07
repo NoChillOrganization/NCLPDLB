@@ -122,7 +122,10 @@ def should_skip_format(fmt: str, ml_dir: Path, replays_dir: Path) -> bool:
     if not manifest_path.exists():
         return False
 
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return False
     entry = manifest.get(fmt)
     if not entry:
         return False
@@ -172,7 +175,11 @@ def update_manifest(
     """
     manifest: dict = {}
     if manifest_path.exists():
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            log.warning("Corrupt manifest %s: %s — overwriting", manifest_path, exc)
+            manifest = {}
 
     manifest[fmt] = {
         "format": fmt,
@@ -266,7 +273,9 @@ def run_pipeline(formats: list[str], pages: int, min_rating: int) -> None:
 
         # Step 1: Scrape
         log.info("Scraping %s (pages=%d, min_rating=%d) ...", fmt, pages, min_rating)
-        scrape_format(fmt, pages, min_rating)
+        n_fetched = scrape_format(fmt, pages, min_rating)
+        if n_fetched is not None:
+            log.info("scrape_format returned %d for %s", n_fetched, fmt)
 
         # Count scraped files
         replay_dir = REPLAYS_DIR / fmt
@@ -352,7 +361,7 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="FORMAT",
         help=(
             "Format IDs to process (e.g. gen9ou gen9vgc2024regh). "
-            "Use 'all' to expand to all 18 formats. Default: all"
+            f"Use 'all' to expand to all {len(ALL_FORMATS)} formats. Default: all"
         ),
     )
     parser.add_argument(

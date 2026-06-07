@@ -31,10 +31,15 @@ class PokemonDatabase:
         with pokemon_file.open(encoding="utf-8") as f:
             data = json.load(f)
         for entry in data:
+            national_dex = entry.get("national_dex")
+            name = entry.get("name")
+            if national_dex is None or not name:
+                log.warning("Skipping malformed Pokemon entry: %s", entry)
+                continue
             p = Pokemon(
-                national_dex=entry["national_dex"],
-                name=entry["name"],
-                types=entry["types"],
+                national_dex=national_dex,
+                name=name,
+                types=entry.get("types", []),
                 base_stats=PokemonStats(**entry["base_stats"]),
                 abilities=entry.get("abilities", []),
                 hidden_ability=entry.get("hidden_ability"),

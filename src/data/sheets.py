@@ -192,7 +192,7 @@ class SheetsClient:
     def _set_cell(self, tab_name: str, cell: str, value: Any) -> None:
         """Write a single cell."""
         ws = self.get_tab(tab_name)
-        ws.update([[value]], cell, value_input_option="USER_ENTERED")
+        ws.update(cell, [[value]], value_input_option="USER_ENTERED")
 
     def _append_to_range(self, ws: gspread.Worksheet, range_: str, row: list[Any]) -> None:
         """Append a row using USER_ENTERED so formulas are evaluated."""
