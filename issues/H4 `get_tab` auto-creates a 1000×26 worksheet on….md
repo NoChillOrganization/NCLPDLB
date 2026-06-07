@@ -2,7 +2,7 @@
 title: "H4: `get_tab` auto-creates a 1000×26 worksheet on…"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

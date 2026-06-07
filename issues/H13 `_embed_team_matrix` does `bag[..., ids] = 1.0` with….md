@@ -2,7 +2,7 @@
 title: "H13: `_embed_team_matrix` does `bag[..., ids] = 1.0` with…"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

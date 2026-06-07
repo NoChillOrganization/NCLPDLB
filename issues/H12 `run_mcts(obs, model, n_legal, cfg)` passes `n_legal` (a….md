@@ -2,7 +2,7 @@
 title: "H12: `run_mcts(obs, model, n_legal, cfg)` passes `n_legal` (a…"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

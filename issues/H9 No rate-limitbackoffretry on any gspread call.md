@@ -2,7 +2,7 @@
 title: "H9: No rate-limit/backoff/retry on any gspread call"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

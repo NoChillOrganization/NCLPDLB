@@ -194,7 +194,7 @@ class SheetsClient:
     def _set_cell(self, tab_name: str, cell: str, value: Any) -> None:
         """Write a single cell."""
         ws = self.get_tab(tab_name)
-        ws.update([[value]], cell, value_input_option="USER_ENTERED")
+        _with_retry(ws.update, cell, [[value]], value_input_option="USER_ENTERED")
 
     def _append_to_range(self, ws: gspread.Worksheet, range_: str, row: list[Any]) -> None:
         """Append a row using USER_ENTERED so formulas are evaluated."""
@@ -274,9 +274,9 @@ class SheetsClient:
             _with_retry(ws.update, f"A{row_num}:{last_col}{row_num}", [current])
 
     def read_all(self, tab_name: str) -> list[dict]:
-        """Generic read — returns all records from a tab via gspread get_all_records()."""
+        """Generic read — returns all records from a tab via gspread get_all_records() (H9)."""
         ws = self.get_tab(tab_name)
-        vals = ws.get_all_values()
+        vals = _with_retry(ws.get_all_values)
         if not vals:
             return []
         seen: set[str] = set()
@@ -285,14 +285,20 @@ class SheetsClient:
             if h and h not in seen:
                 hdrs.append(h)
                 seen.add(h)
-        return ws.get_all_records(expected_headers=hdrs)
+        return _with_retry(ws.get_all_records, expected_headers=hdrs)
 
     def find_row(self, tab_name: str, col: str, value: str) -> dict | None:
-        """Return the first row where col == value, or None."""
-        for row in self.read_all(tab_name):
-            if str(row.get(col, "")) == str(value):
-                return row
-        return None
+        """Return the first row where col == value using ws.find() (H10 — avoids full read)."""
+        ws = self.get_tab(tab_name)
+        headers = _with_retry(ws.row_values, 1)
+        if col not in headers:
+            return None
+        col_idx = headers.index(col) + 1
+        cell = _with_retry(ws.find, str(value), in_column=col_idx)
+        if cell is None:
+            return None
+        row_vals = (_with_retry(ws.row_values, cell.row) + [""] * len(headers))[: len(headers)]
+        return dict(zip(headers, row_vals))
 
     def find_rows(self, tab_name: str, col: str, value: str) -> list[dict]:
         """Return all rows where col == value."""

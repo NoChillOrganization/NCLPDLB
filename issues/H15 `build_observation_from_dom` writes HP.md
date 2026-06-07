@@ -2,7 +2,7 @@
 title: "H15: `build_observation_from_dom` writes HP"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>

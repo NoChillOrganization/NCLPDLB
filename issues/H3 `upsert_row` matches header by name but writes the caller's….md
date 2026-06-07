@@ -2,7 +2,7 @@
 title: "H3: `upsert_row` matches header by name but writes the caller's…"
 created: 2026-06-05
 priority: high
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>
