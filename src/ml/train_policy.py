@@ -961,8 +961,12 @@ def train(  # pragma: no cover
     # Primary: save_dir/fmt/final_model.zip (CI + resume checkpoint)
     # Saved even on unexpected exception so CI artifact upload always has a file.
     final_path = fmt_save_dir / "final_model.zip"
-    model.save(str(final_path))
-    log.info(f"\nFinal model saved to {final_path}")
+    try:
+        model.save(str(final_path))
+        log.info(f"\nFinal model saved to {final_path}")
+    except Exception as save_exc:
+        log.error(f"[train] model.save() FAILED: {save_exc!r}")
+        raise
     if _SHEETS_OK and _learning_sheets:
         final_win_rate = (
             sum(curriculum_cb._win_window) / len(curriculum_cb._win_window)
