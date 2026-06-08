@@ -17,8 +17,8 @@ Architecture
 
 Usage
 -----
-  python -m src.ml.train_transformer --games 50 --epochs 10 --mcts-sims 30
-  python -m src.ml.train_transformer --games 6 --epochs 3 --mcts-sims 8   # CI smoke
+  python -m src.ml.train_transformer --games 50 --epochs 10
+  python -m src.ml.train_transformer --games 6 --epochs 3   # CI smoke
 
 Requirements
 ------------
@@ -197,7 +197,7 @@ def train(
     n_epochs: int = 10,
     steps_per_epoch: int = 4,
     buffer_capacity: int = 50_000,
-    mcts_sims: int = 30,
+    mcts_sims: int = 0,
     lr: float = 1e-3,
     val_frac: float = 0.2,
     checkpoint_out: str = DEFAULT_CHECKPOINT_OUT,
@@ -368,8 +368,8 @@ def _parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--mcts-sims",
         type=int,
-        default=30,
-        help="MCTS simulations per move (default: 30)",
+        default=0,
+        help="MCTS simulations per move (0 = honest prior-shaping pass; >0 requires forward model)",
     )
     ap.add_argument(
         "--lr",

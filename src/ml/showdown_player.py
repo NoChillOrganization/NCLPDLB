@@ -122,7 +122,7 @@ if POKE_ENV_AVAILABLE:
             *args: Any,
             use_mcts: bool = False,
             transformer_path: str | Path | None = None,
-            mcts_n_simulations: int = 30,
+            mcts_n_simulations: int = 0,
             **kwargs: Any,
         ) -> None:
             super().__init__(*args, **kwargs)

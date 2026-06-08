@@ -105,13 +105,27 @@ async def fetch_pokemon_strategy(pokemon_name: str, gen: int = 9) -> str:
         except httpx.HTTPError:
             return ""
 
-    # Extract embedded dexSettings JSON for the overview
-    match = re.search(r"dexSettings\s*=\s*(\{.*?\});", resp.text, re.DOTALL)
-    if not match:
+    # Extract embedded dexSettings JSON — brace-count to handle nested objects
+    # (non-greedy regex fails on nested braces; same approach as fetch_smogon_tiers)
+    start_match = re.search(r"dexSettings\s*=\s*\{", resp.text)
+    if not start_match:
+        return ""
+    brace_start = start_match.end() - 1
+    depth = 0
+    end_pos = brace_start
+    for i, ch in enumerate(resp.text[brace_start:], brace_start):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end_pos = i + 1
+                break
+    else:
         return ""
 
     try:
-        data: dict[str, Any] = json.loads(match.group(1))
+        data: dict[str, Any] = json.loads(resp.text[brace_start:end_pos])
     except json.JSONDecodeError:
         return ""
 

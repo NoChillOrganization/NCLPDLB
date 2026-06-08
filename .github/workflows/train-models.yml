@@ -267,6 +267,10 @@ jobs:
           if [ -n "$FORMAT_FILTER" ]; then
             if ! echo ",$FORMAT_FILTER," | grep -qF ",$TRAIN_FORMAT,"; then
               echo "Skipping $TRAIN_FORMAT (not in format_filter input)"
+              # Write sentinel so downstream steps (stub generator, verify) know
+              # this format was deliberately skipped, not failed.
+              mkdir -p "data/ml/${TRAIN_FORMAT}"
+              touch "data/ml/${TRAIN_FORMAT}/.format_skipped"
               exit 0
             fi
           fi
@@ -347,6 +351,11 @@ jobs:
         env:
           TRAIN_FORMAT: ${{ matrix.config.format }}
         run: |
+          # Format was deliberately skipped by format_filter — no stub needed.
+          if [ -f "data/ml/${TRAIN_FORMAT}/.format_skipped" ]; then
+            echo "Format ${TRAIN_FORMAT} was skipped by format_filter — stub suppressed"
+            exit 0
+          fi
           MODEL_PATH="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
           if [ -f "$MODEL_PATH" ]; then
             echo "Model exists — stub skipped"
@@ -370,7 +379,7 @@ jobs:
           try:
               from src.ml.battle_env import OBS_DIM, OBS_DIM_DOUBLES, N_ACTIONS_GEN9
           except Exception:
-              OBS_DIM, OBS_DIM_DOUBLES, N_ACTIONS_GEN9 = 48, 80, 26
+              OBS_DIM, OBS_DIM_DOUBLES, N_ACTIONS_GEN9 = 78, 80, 26
           from stable_baselines3 import PPO
           import gymnasium as gym, numpy as np
           from gymnasium.spaces import Box, Discrete, MultiDiscrete
@@ -392,6 +401,10 @@ jobs:
         env:
           TRAIN_FORMAT: ${{ matrix.config.format }}
         run: |
+          if [ -f "data/ml/${TRAIN_FORMAT}/.format_skipped" ]; then
+            echo "Format ${TRAIN_FORMAT} was skipped by format_filter — verify skipped"
+            exit 0
+          fi
           MODEL_PATH="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
           if [ -f "$MODEL_PATH" ]; then
             SIZE=$(stat -c%s "$MODEL_PATH" 2>/dev/null || stat -f%z "$MODEL_PATH")
@@ -404,11 +417,11 @@ jobs:
 
       - name: Upload model artifact
         uses: actions/upload-artifact@v4
-        if: success() || failure()
+        if: success()
         with:
           name: model-${{ matrix.config.format }}
           path: data/ml/policy/${{ matrix.config.format }}/final_model.zip
-          if-no-files-found: error
+          if-no-files-found: warn
           overwrite: true
           retention-days: 90
 
