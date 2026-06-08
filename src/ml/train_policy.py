@@ -943,6 +943,16 @@ def train(  # pragma: no cover
         log.info("Make sure Pokemon Showdown server is running on ws://localhost:8000")
     log.info("Press Ctrl+C to stop training early.")
 
+    # Drop per-message WS traffic logs (<<< / >>>) so the job log stays under
+    # GitHub's ~1 GB API limit and the actual crash (if any) remains visible.
+    class _DropWSTraffic(logging.Filter):
+        def filter(self, record):
+            if record.levelno < logging.WARNING:
+                msg = record.getMessage()
+                return "<<<" not in msg and ">>>" not in msg
+            return True
+    logging.getLogger().addFilter(_DropWSTraffic())
+
     _train_exc: BaseException | None = None
     try:
         model.learn(
