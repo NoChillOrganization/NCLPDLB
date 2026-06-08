@@ -339,6 +339,9 @@ jobs:
 
           if [ "${EXIT}" -ne 0 ]; then
             echo "Training exited ${EXIT} and no model was saved."
+            echo "===== /tmp/showdown.log (tail) ====="
+            tail -n 200 /tmp/showdown.log 2>/dev/null || cat /tmp/showdown.log 2>/dev/null || echo "(no showdown log)"
+            echo "===== end showdown.log ====="
             exit ${EXIT}
           fi
 
