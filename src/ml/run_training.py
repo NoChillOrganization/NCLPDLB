@@ -30,7 +30,7 @@ CLI options
 -----------
   --port        HTTP port for API + dashboard  (default: 8080)
   --format      Showdown battle format         (default: gen9randombattle)
-  --mcts-sims   MCTS simulations per move      (default: 30)
+  --mcts-sims   MCTS simulations per move      (default: 0 = prior-shaping pass)
   --buffer      Replay buffer capacity         (default: 50000)
   --lr          Transformer learning rate      (default: 3e-4)
   --train-every Train after N games            (default: 5)
@@ -117,7 +117,7 @@ def _run_self_play_in_thread(
 def main(
     port: int = 8080,
     fmt: str = "gen9randombattle",
-    mcts_sims: int = 30,
+    mcts_sims: int = 0,
     buffer_capacity: int = 50_000,
     lr: float = 3e-4,
     train_every: int = 5,
@@ -263,7 +263,7 @@ def _parse_args() -> argparse.Namespace:
     )
     ap.add_argument("--port",        type=int,   default=8080,               help="API/dashboard port")
     ap.add_argument("--format",      default="gen9randombattle",             help="Showdown format")
-    ap.add_argument("--mcts-sims",   type=int,   default=30,                 help="MCTS simulations per move")
+    ap.add_argument("--mcts-sims",   type=int,   default=0,                  help="MCTS simulations per move (0 = honest prior-shaping pass; >0 requires forward model)")
     ap.add_argument("--buffer",      type=int,   default=50_000,             help="Replay buffer capacity")
     ap.add_argument("--lr",          type=float, default=3e-4,               help="Transformer learning rate")
     ap.add_argument("--train-every", type=int,   default=5,                  help="Train after N games (0=off)")

@@ -24,8 +24,13 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 import gspread
 from google.oauth2.service_account import Credentials
 
+import os
 CREDS_FILE = Path(__file__).parent.parent / "credentials.json"
-SPREADSHEET_ID = "16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs"
+_DEFAULT_ID = "16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs"
+SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID") or _DEFAULT_ID
+if SPREADSHEET_ID == _DEFAULT_ID:
+    print("[fix_bh2_formula] WARNING: using hardcoded production spreadsheet ID. "
+          "Set SPREADSHEET_ID env var to target a different sheet.", flush=True)
 SCOPES = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/spreadsheets",

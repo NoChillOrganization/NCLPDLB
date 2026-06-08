@@ -13,6 +13,7 @@ Usage
   env = BattleEnv(battle_format="gen9ou", team=tb, ...)
 """
 from __future__ import annotations
+import threading
 
 from poke_env.teambuilder.teambuilder import Teambuilder
 
@@ -32,10 +33,12 @@ class RotatingTeambuilder(Teambuilder):
             self.join_team(self.parse_showdown_team(t)) for t in teams
         ]
         self._idx: int = 0
+        self._lock = threading.Lock()
 
     def yield_team(self) -> str:
-        team = self._packed[self._idx % len(self._packed)]
-        self._idx += 1
+        with self._lock:
+            team = self._packed[self._idx % len(self._packed)]
+            self._idx += 1
         return team
 
     def __len__(self) -> int:

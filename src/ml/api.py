@@ -55,7 +55,7 @@ _STATE: dict[str, Any] = {
     "ties":      0,
     "winrate":   0.0,
     "status":    "stopped",   # "stopped" | "running" | "error"
-    "mcts_sims": 30,
+    "mcts_sims": 0,
     "train_steps": 0,
     "buffer_size": 0,
     "last_loss":   None,
@@ -98,7 +98,7 @@ if FASTAPI_OK:
     # ── Request / response models ────────────────────────────────────────
 
     class ConfigRequest(BaseModel):
-        mcts_sims: int = Field(default=30, ge=1, le=200)
+        mcts_sims: int = Field(default=0, ge=0, le=200)
 
     # ── Routes ───────────────────────────────────────────────────────────
 
