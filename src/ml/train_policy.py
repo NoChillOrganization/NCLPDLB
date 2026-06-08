@@ -945,15 +945,23 @@ def train(  # pragma: no cover
 
     # Drop per-message WS traffic logs (<<< / >>>) so the job log stays under
     # GitHub's ~1 GB API limit and the actual crash (if any) remains visible.
+    # Must attach to handlers, not the root logger: child logger propagation calls
+    # callHandlers() directly, bypassing the root logger's own filter() method.
     class _DropWSTraffic(logging.Filter):
         def filter(self, record):
             if record.levelno < logging.WARNING:
                 msg = record.getMessage()
                 return "<<<" not in msg and ">>>" not in msg
             return True
-    logging.getLogger().addFilter(_DropWSTraffic())
+    _ws_filter = _DropWSTraffic()
+    _root = logging.getLogger()
+    _root.addFilter(_ws_filter)
+    for _h in _root.handlers:
+        _h.addFilter(_ws_filter)
 
     _train_exc: BaseException | None = None
+    # Declare final_path before try/finally so the finally block can reference it.
+    final_path = fmt_save_dir / "final_model.zip"
     try:
         model.learn(
             total_timesteps=total_timesteps,
@@ -963,20 +971,20 @@ def train(  # pragma: no cover
         )
     except KeyboardInterrupt:
         log.info("Training interrupted by user.")
-    except Exception as exc:
-        log.warning(f"[train] Training error: {exc}; saving checkpoint before raising.")
+    except BaseException as exc:
+        # Catches asyncio.CancelledError (BaseException since Python 3.8) that fires when
+        # the poke_env event loop shuts down after Showdown server dies (WinError 64).
+        log.warning(f"[train] Training error: {type(exc).__name__}: {exc}; saving checkpoint.")
         _train_exc = exc
-
-    # ── Save final model ────────────────────────────────────────────
-    # Primary: save_dir/fmt/final_model.zip (CI + resume checkpoint)
-    # Saved even on unexpected exception so CI artifact upload always has a file.
-    final_path = fmt_save_dir / "final_model.zip"
-    try:
-        model.save(str(final_path))
-        log.info(f"\nFinal model saved to {final_path}")
-    except Exception as save_exc:
-        log.error(f"[train] model.save() FAILED: {save_exc!r}")
-        raise
+    finally:
+        # ── Save final model ──────────────────────────────────────────
+        # In finally so the model is always written to disk, even if BaseException
+        # (CancelledError, SystemExit, etc.) is propagating.
+        try:
+            model.save(str(final_path))
+            log.info(f"\nFinal model saved to {final_path}")
+        except Exception as save_exc:
+            log.error(f"[train] model.save() FAILED: {save_exc!r}")
     if _SHEETS_OK and _learning_sheets:
         final_win_rate = (
             sum(curriculum_cb._win_window) / len(curriculum_cb._win_window)

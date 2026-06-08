@@ -319,8 +319,13 @@ jobs:
           { sleep ${GRACE_SECS} && python -c "import os,signal; os.kill(${TRAIN_PID},signal.SIGINT)" 2>/dev/null || kill -INT ${TRAIN_PID} 2>/dev/null; } &
           TIMER_PID=$!
 
-          wait ${TRAIN_PID}
-          EXIT=$?
+          # Capture Python exit code without triggering bash -e on non-zero exit.
+          # Plain `wait pid; EXIT=$?` would exit the script immediately with set -e.
+          if wait ${TRAIN_PID}; then
+            EXIT=0
+          else
+            EXIT=$?
+          fi
           kill ${TIMER_PID} 2>/dev/null; wait ${TIMER_PID} 2>/dev/null || true
 
           MODEL_PATH="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
