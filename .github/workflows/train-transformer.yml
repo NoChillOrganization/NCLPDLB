@@ -6,6 +6,9 @@ name: Train Transformer (MCTS self-play)
 #   - logs/transformer_training.log contains >= 2 epoch= lines
 # Uploads the checkpoint and log as build artifacts.
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [master]
