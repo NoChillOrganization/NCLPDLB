@@ -124,10 +124,12 @@ def test_update_row(patched_get_tab):
 
 def test_find_row_found(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = [
-        {"player_id": "p1", "name": "Alice"},
-        {"player_id": "p2", "name": "Bob"},
-    ]
+    cell = MagicMock()
+    cell.row = 2
+    mock_ws.row_values.side_effect = lambda row: (
+        ["player_id", "name"] if row == 1 else ["p1", "Alice"]
+    )
+    mock_ws.find.return_value = cell
     result = sheets.find_row(Tab.STANDINGS, "player_id", "p1")
     assert result["name"] == "Alice"
 
@@ -252,10 +254,12 @@ def test_upsert_standing(patched_get_tab):
 def test_get_league_setup_found(patched_get_tab):
     """get_league_setup returns the matching row for a server_id."""
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = [
-        {"server_id": "S1", "league_name": "Test League"},
-        {"server_id": "S2", "league_name": "Other"},
-    ]
+    cell = MagicMock()
+    cell.row = 2
+    mock_ws.row_values.side_effect = lambda row: (
+        ["server_id", "league_name"] if row == 1 else ["S1", "Test League"]
+    )
+    mock_ws.find.return_value = cell
     result = sheets.get_league_setup("S1")
     assert result is not None
     assert result["league_name"] == "Test League"
@@ -368,7 +372,12 @@ def test_set_data(patched_get_tab):
 
 def test_get_data_found(patched_get_tab):
     mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = [{"key": "season", "value": "3"}]
+    cell = MagicMock()
+    cell.row = 2
+    mock_ws.row_values.side_effect = lambda row: (
+        ["key", "value"] if row == 1 else ["season", "3"]
+    )
+    mock_ws.find.return_value = cell
     result = sheets.get_data("season")
     assert result == "3"
 

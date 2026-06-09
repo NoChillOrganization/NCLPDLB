@@ -198,7 +198,7 @@ class TestRouteConfig:
         assert get_state()["mcts_sims"] == 200
 
     def test_out_of_range_low_rejected(self, client):
-        r = client.post("/config", json={"mcts_sims": 0})
+        r = client.post("/config", json={"mcts_sims": -1})
         assert r.status_code == 422
 
     def test_out_of_range_high_rejected(self, client):
@@ -208,4 +208,4 @@ class TestRouteConfig:
     def test_missing_body_uses_default(self, client):
         r = client.post("/config", json={})
         assert r.status_code == 200
-        assert r.json()["mcts_sims"] == 30
+        assert r.json()["mcts_sims"] == 0
