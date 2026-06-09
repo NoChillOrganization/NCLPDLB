@@ -37,14 +37,14 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: Run unit tests (exclude integration)
-        run: pytest -m "not integration"
+        run: python scripts/ci_pytest.py -m "not integration"
 
       - name: Coverage gate — self_play.py ≥ 80%
         # -o addopts="" clears the global --cov=src so --cov-fail-under scopes
         # only to src.ml.self_play instead of the entire src package.
         # Module-path notation (src.ml.self_play) works on both Windows and Linux.
         run: >
-          pytest tests/unit/test_ml_self_play.py
+          python scripts/ci_pytest.py tests/unit/test_ml_self_play.py
           -o addopts=""
           --cov=src.ml.self_play
           --cov-report=term-missing
