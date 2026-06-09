@@ -71,7 +71,7 @@ class SimpleHeuristicPlayer(Player):
             scores = []
             for move in battle.available_moves:
                 effectiveness = opp.damage_multiplier(move)
-                score = move.base_power * effectiveness
+                score = (move.base_power or 0) * effectiveness
                 scores.append((move, score))
             
             # Pick move with highest score

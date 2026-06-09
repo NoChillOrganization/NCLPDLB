@@ -102,6 +102,9 @@ class NotificationService:
                 log.warning(f"Invalid player_id: {player_id!r}")
                 return False
             user = self.bot.get_user(uid) or await self.bot.fetch_user(uid)
+            if user is None:
+                log.warning(f"User {player_id} not found in cache or API.")
+                return False
             await user.send(message)
             return True
         except discord.Forbidden:
