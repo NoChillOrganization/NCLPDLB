@@ -64,31 +64,26 @@ jobs:
         with:
           persist-credentials: false  # gh CLI uses GH_TOKEN env var; git credentials not needed
 
+      - name: Set up Python (GitHub-hosted runners)
+        if: runner.environment == 'github-hosted'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Set up Python virtualenv
         shell: bash
         run: |
-          # Self-hosted runner: system Python already installed.
-          # Try multiple names: python3.12/python3 are Linux/WSL names;
-          # python/python.exe reach Windows binaries via WSL PATH interop.
-          # '|| true' prevents bash -e from aborting when all candidates fail
-          # (Windows App Execution Alias stubs write to the console handle
-          # bypassing $() capture but still exit non-zero).
-          PYBIN=$(python3.12 -c "import sys; print(sys.executable)" 2>/dev/null \
-            || python3.11 -c "import sys; print(sys.executable)" 2>/dev/null \
-            || python3 -c "import sys; print(sys.executable)" 2>/dev/null \
-            || python -c "import sys; print(sys.executable)" 2>/dev/null \
-            || python.exe -c "import sys; print(sys.executable)" 2>/dev/null \
-            || true)
-          # Strip Windows App Execution Alias junk that leaks onto stdout.
-          PYBIN=$(printf '%s' "$PYBIN" | grep -m1 -E '^(/|[A-Za-z]:[/\\])' || true)
-
+          # GitHub-hosted runners: actions/setup-python already wired up python3.
+          # Self-hosted runners: detect system Python (Windows or Linux).
+          if command -v python3 >/dev/null 2>&1; then
+            PYBIN=$(python3 -c "import sys; print(sys.executable)" 2>/dev/null || true)
+          fi
+          # Windows self-hosted: also try python / python.exe
           if [ -z "$PYBIN" ]; then
-            if command -v apt-get >/dev/null 2>&1; then
-              echo "No Python found — installing via apt-get..."
-              DEBIAN_FRONTEND=noninteractive sudo apt-get update -qq
-              DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3 python3-venv python3-pip
-              PYBIN=$(python3 -c "import sys; print(sys.executable)" 2>/dev/null || true)
-            fi
+            PYBIN=$(python -c "import sys; print(sys.executable)" 2>/dev/null \
+              || python.exe -c "import sys; print(sys.executable)" 2>/dev/null \
+              || true)
+            PYBIN=$(printf '%s' "$PYBIN" | grep -m1 -E '^(/|[A-Za-z]:[/\\])' || true)
           fi
           if [ -z "$PYBIN" ]; then
             echo "ERROR: No Python interpreter found — install Python 3.11+ on the self-hosted runner"
@@ -100,13 +95,11 @@ jobs:
           PY_MAJOR=${PY_VER%%.*}
           PY_MINOR=${PY_VER##*.}
           if [[ "$PY_MAJOR" -lt 3 || ( "$PY_MAJOR" -eq 3 && "$PY_MINOR" -lt 11 ) ]]; then
-            echo "ERROR: Python 3.11+ required, found ${PY_VER} — install Python 3.11+ on the runner"
+            echo "ERROR: Python 3.11+ required, found ${PY_VER}"
             exit 1
           fi
 
           # Reuse existing .venv if it matches the detected Python version.
-          # Check both bin/ (Linux/WSL venv) and Scripts/ (Windows venv).
-          # pip/torch cache on self-hosted runner persists between sequential jobs.
           VENV_OK=false
           for VENV_PY_BIN in .venv/bin/python ".venv/Scripts/python.exe" ".venv/Scripts/python"; do
             if [ -x "$VENV_PY_BIN" ]; then
@@ -120,13 +113,7 @@ jobs:
 
           if [ "$VENV_OK" != "true" ]; then
             echo "Creating .venv with Python ${PY_VER}..."
-            if ! "$PYBIN" -m venv .venv; then
-              echo "venv failed — attempting to install python3-venv"
-              if command -v apt-get >/dev/null 2>&1; then
-                DEBIAN_FRONTEND=noninteractive sudo apt-get install -y python3-venv || true
-              fi
-              "$PYBIN" -m venv .venv
-            fi
+            "$PYBIN" -m venv .venv
           fi
 
           # Add whichever layout the venv created (bin/ on Linux, Scripts/ on Windows).
