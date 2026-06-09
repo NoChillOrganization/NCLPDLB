@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full ML Integration + Cleanup
-status: Phases 01-05 complete; repo audit/cleanup in progress
+status: Phases 01-06 complete; OBS_DIM=78 prep done; CI training triggered
 stopped_at: ""
 last_updated: "2026-06-09T00:00:00Z"
-last_activity: 2026-06-09 — full repo audit, junk removal, doc refresh, config fixes
+last_activity: 2026-06-09 — OBS_DIM=78 prep: load_model dim-check, remove 48-dim artifacts, trigger CI
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 10
   completed_plans: 10
-  percent: 83
+  percent: 100
 ---
 
 # Project State — NCLPDLB Full ML Integration
