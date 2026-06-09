@@ -113,7 +113,7 @@ class BattleTransformer(nn.Module):
 
     Parameters
     ----------
-    obs_dim    : input feature size per timestep (default: OBS_DIM = 48)
+    obs_dim    : input feature size per timestep (default: OBS_DIM = 78)
     n_actions  : size of action space (default: N_ACTIONS_GEN9 = 26)
     d_model    : transformer hidden dimension (default: 64)
     n_heads    : number of attention heads (default: 4)
@@ -352,8 +352,25 @@ def load_model(path: str | Path, device: str = "cpu") -> "BattleTransformer":
 
     data = _torch.load(path, map_location=device, weights_only=True)
     config = data.get("config", {})
+
+    # Detect obs_dim from the saved weights so we can give a clear error
+    # when an old checkpoint (48-dim or 53-dim) is loaded against a newer env.
+    sd = data.get("state_dict", data)
+    ip_weight = sd.get("input_proj.weight")
+    if ip_weight is not None:
+        ckpt_dim = ip_weight.shape[1]
+        if ckpt_dim != OBS_DIM:
+            raise ValueError(
+                f"Checkpoint obs_dim mismatch: checkpoint expects {ckpt_dim}-dim "
+                f"observations but the environment is {OBS_DIM}-dim. "
+                f"Delete the checkpoint and run a fresh training run."
+            )
+        # Inject obs_dim from the weight so BattleTransformer(**config) uses the
+        # correct value even if config was saved empty (old save_model format).
+        config.setdefault("obs_dim", ckpt_dim)
+
     model = BattleTransformer(**config)
-    model.load_state_dict(data["state_dict"])
+    model.load_state_dict(sd)
     model.eval()
     log.info("Model loaded from %s", path)
     return model
