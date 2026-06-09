@@ -137,6 +137,7 @@ src/
     training_doctor.py   — Diagnoses training health
     showdown_client.py   — 3-layer WebSocket client for Showdown (P1)
     transformer_model.py — Transformer-based policy/value model (P2)
+    train_transformer.py — Training loop for the Transformer policy
     mcts.py              — MCTS battle decision engine; integrates with showdown_player.py (P3)
     browser_trainer.py   — Browser-based self-play trainer
     teams.py             — Team management utilities for RL agents

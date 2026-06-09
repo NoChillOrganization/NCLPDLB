@@ -2,7 +2,7 @@
 title: "L1: Param named `commands` shadows the `discord.ext.commands`…"
 created: 2026-06-05
 priority: low
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>
@@ -11,7 +11,7 @@ tags: [audit, nclpdlb-code-review]
   <location>bot/main.py:50,57</location>
   <description>Param named `commands` shadows the `discord.ext.commands` module import.</description>
   <priority>LOW</priority>
-  <status>open</status>
+  <status>done</status>
   <created>2026-06-05</created>
   <source>NCLPDLB Code Audit Report (Read-Only)</source>
 </issue>

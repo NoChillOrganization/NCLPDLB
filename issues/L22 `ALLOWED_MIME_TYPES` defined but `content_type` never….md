@@ -2,7 +2,7 @@
 title: "L22: `ALLOWED_MIME_TYPES` defined but `content_type` never…"
 created: 2026-06-05
 priority: low
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>
@@ -11,7 +11,7 @@ tags: [audit, nclpdlb-code-review]
   <location>services/video_service.py:26</location>
   <description>`ALLOWED_MIME_TYPES` defined but `content_type` never validated.</description>
   <priority>LOW</priority>
-  <status>open</status>
+  <status>done</status>
   <created>2026-06-05</created>
   <source>NCLPDLB Code Audit Report (Read-Only)</source>
 </issue>

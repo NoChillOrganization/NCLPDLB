@@ -2,20 +2,33 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+This is a single-deployment Discord bot (no versioned releases). The `master` branch
+is the only supported version.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| Branch  | Supported |
+| ------- | --------- |
+| master  | ✅ Yes    |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+Please **do not** open a public GitHub issue for security vulnerabilities.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Report privately via one of:
+
+- **GitHub private security advisory**: [Report a vulnerability](https://github.com/NoChillModeOnline/NCLPDLB/security/advisories/new)
+- **Email**: travis.r.weisberg@gmail.com
+
+Include:
+- Description of the vulnerability and affected component
+- Steps to reproduce
+- Potential impact
+
+You can expect an acknowledgement within 48 hours. If accepted, a fix will be
+deployed to `master` and the advisory will be published. If declined, you'll
+receive an explanation.
+
+## Sensitive components
+
+- `credentials.json` — Google service-account key (gitignored, never committed)
+- `.env` — bot token + spreadsheet credentials (gitignored, never committed)
+- `pokemon_draft.db` — local SQLite DB with draft/ELO data (gitignored)

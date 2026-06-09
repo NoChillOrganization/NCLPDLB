@@ -2,7 +2,7 @@
 title: "L8: Help text 'all 18 formats' but `ALL_FORMATS` has 20"
 created: 2026-06-05
 priority: low
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>
@@ -11,7 +11,7 @@ tags: [audit, nclpdlb-code-review]
   <location>data_pipeline.py:356</location>
   <description>Help text "all 18 formats" but `ALL_FORMATS` has 20.</description>
   <priority>LOW</priority>
-  <status>open</status>
+  <status>done</status>
   <created>2026-06-05</created>
   <source>NCLPDLB Code Audit Report (Read-Only)</source>
 </issue>

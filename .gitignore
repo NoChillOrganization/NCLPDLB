@@ -107,6 +107,17 @@ data/ml/**
 !data/ml/**/*.json
 !data/replays/**/*.json
 
+# Zips / archives (large binaries — use releases)
+*.zip
+
+# Stray empty venvs / temp dirs
+.venv-linux/
+.trash/
+
+# Cloud-sync duplicate files (OneDrive/Finder " 2.json" etc.)
+*\ [0-9].json
+*\ [0-9].csv
+
 # Misc
 *.bak
 *.tmp
