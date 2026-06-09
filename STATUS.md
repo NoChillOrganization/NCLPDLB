@@ -1,6 +1,6 @@
 # Pokemon Draft League Bot - Setup Status
 
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-06-09
 
 ---
 
@@ -14,28 +14,25 @@
   - Schedule, Match Stats, Standings, Pokemon Stats, MVP Race
   - Transactions, Playoffs, Pokédex (populated with all 1,025 Pokemon), Team Template, Data
 - ✅ **Configuration Files**: `.env` and `credentials.json` in place
-- ✅ **Spreadsheet ID**: `16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs`
+- ✅ **Spreadsheet ID**: set via `GOOGLE_SHEETS_SPREADSHEET_ID` in `.env`
 
 ### Tests
 
-- ✅ **Unit Tests**: All 41 tests in `test_analytics.py` and `test_battle_sim.py` pass
-  - `analytics_service.py`: type chart, coverage, weakness, archetype, threat score, role detection
-  - `battle_sim.py`: replay parsing, team comparison, matchup scoring
+- ✅ **Unit Tests**: 1,495 tests collected, 0 collection errors
 
 ### Code & Documentation
 
-- ✅ **ML Infrastructure**:
-  - BattleEnv (singles) and BattleDoubleEnv (doubles/VGC)
-  - train_policy.py with team-based training
-  - train_all.py for sequential format training
-  - teams.py with 5 pre-built teams × 10 formats
-  - RotatingTeambuilder for custom team formats
-- ✅ **Supported Formats**: gen9randombattle, gen9ou, gen9nationaldex, gen9monotype,
-  gen9anythinggoes, gen9doublesou, gen9vgc2026regi, gen9vgc2026regf, gen7randombattle,
-  gen6randombattle
+- ✅ **ML Infrastructure** (AlphaZero-style Transformer + MCTS):
+  - `transformer_model.py` — BattleTransformer policy + value heads
+  - `train_transformer.py` — Transformer training loop
+  - `mcts.py` — Monte Carlo Tree Search decision engine
+  - `self_play.py` — Async self-play loop
+  - `showdown_client.py` — 3-layer WebSocket client
+- ✅ **Supported Formats**: 20 formats across Singles, Doubles, and Champions tiers
+  (see `.github/workflows/train-models.yml` matrix for full list)
 - ✅ **Documentation**: README.md, docs/COMMANDS.md, docs/DEPLOYMENT.md
 - ✅ **GitHub**: All code synced to <https://github.com/NoChillModeOnline/NCLPDLB.git>
-- ✅ **Standalone .exe**: PyInstaller spec updated (`src/bot/NCLPDLB.spec`)
+- ✅ **Standalone .exe**: PyInstaller spec at `src/bot/NCLPDLB.spec`
 
 ### Deployment
 
@@ -48,17 +45,15 @@
 
 ### Environment
 
-- ✅ **PyTorch + stable-baselines3**: Resolved via VirtualBox x86-64 Ubuntu VM
-  (ARM64 Windows host → Linux guest via shared folder; no file copying needed)
-- ✅ **Showdown server**: Running on `ws://localhost:8000` inside the VM
-- ✅ **All 22 formats trained**: Full 500k run completed 2026-06-03; 20/22 formats trained to
-  completion, 2 champion VGC formats saved 0-step checkpoints (poke_env auth issue with local
-  Showdown server for Champions ladder formats — see ISS-006-SOLUTION.md)
-- ✅ **Models**: `data/ml/policy/<format>/final_model.zip` present for all 22 formats
-- ⚠️ **Checkpoint break (ISS-007 + ISS-008)**: `OBS_DIM` changed 48 → 78 across branches
-  `feat/obs-dim-53-stab-speed` (STAB+speed, +5) and `feat/obs-ability-item` (ability+item, +25).
-  Existing 48-dim and 53-dim `final_model.zip` / `transformer_checkpoint.pt` are **incompatible**
-  with the new observation space. One fresh 78-dim training run covers both expansions.
+- ✅ **PyTorch + stable-baselines3**: Installed via `.venv` (CPU wheel)
+- ✅ **Showdown server**: Required at `ws://localhost:8000` for local training;
+  ladder training uses `play.pokemonshowdown.com`
+- ✅ **20 formats** in the CI training matrix
+- ✅ **Models**: `src/ml/models/transformer_checkpoint.pt` (current active model)
+- ⚠️ **Checkpoint break (ISS-007 + ISS-008)**: `OBS_DIM` changed 48 → 78 across
+  `feat/obs-dim-53-stab-speed` and `feat/obs-ability-item`. Existing 48-dim and
+  53-dim checkpoints are **incompatible** with the new observation space. One fresh
+  78-dim training run covers both expansions.
 
 See `docs/DEPLOYMENT.md` → *ML Training Environment* for full setup instructions.
 
@@ -77,35 +72,21 @@ python src/bot/main.py
 **From exe:**
 
 ```bash
-# Build first
 cd src/bot && pyinstaller NCLPDLB.spec
-
-# Then run
 src/bot/dist/NCLPDLB.exe
 ```
 
 ### 2. ML Training (Optional — for /spar)
 
 ```bash
-# On x86 Linux/Windows with Python 3.11
-pip install torch stable-baselines3
-python -m src.ml.train_all
+# Trigger via GitHub Actions (recommended — uses self-hosted Windows runner)
+# Go to Actions → Train ML Models → Run workflow
+
+# Or run locally:
+python -m src.ml.run_training
 ```
 
-This trains all 22 formats sequentially:
-
-- gen9randombattle (500k steps)
-- gen9ou (500k steps)
-- gen9doublesou (500k steps)
-- gen9nationaldex (500k steps)
-- gen9monotype (500k steps)
-- gen9anythinggoes (500k steps)
-- gen7randombattle (500k steps)
-- gen6randombattle (500k steps)
-- gen9vgc2026regi (500k steps)
-- gen9vgc2026regf (500k steps)
-
-Models saved to: `data/ml/policy/<format>/final_model.zip`
+Trains all 20 formats. Models saved to `src/ml/models/transformer_checkpoint.pt`.
 
 ---
 
@@ -118,9 +99,7 @@ Models saved to: `data/ml/policy/<format>/final_model.zip`
 | Analytics & Coverage | ✅ |
 | ELO & Matchmaking | ✅ |
 | Replay Parsing | ✅ |
-| `/spar` (Battle AI) | ⏸️ Needs trained models |
-
-**49 out of 50 commands work without ML training.**
+| `/spar` (Battle AI) | ⏸️ Needs trained model at `src/ml/models/transformer_checkpoint.pt` |
 
 ---
 
@@ -128,4 +107,4 @@ Models saved to: `data/ml/policy/<format>/final_model.zip`
 
 - **Documentation**: `README.md`, `docs/COMMANDS.md`, `docs/DEPLOYMENT.md`
 - **GitHub**: <https://github.com/NoChillModeOnline/NCLPDLB>
-- **Spreadsheet**: <https://docs.google.com/spreadsheets/d/16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs>
+- **Spreadsheet**: set `GOOGLE_SHEETS_SPREADSHEET_ID` in `.env`

@@ -1,33 +1,32 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.1
-milestone_name: milestone
-status: Phase 04 fully executed; data pipeline hardened; all 22 training formats mapped
+milestone_name: Full ML Integration + Cleanup
+status: Phases 01-05 complete; repo audit/cleanup in progress
 stopped_at: ""
-last_updated: "2026-05-26T03:30:00.000Z"
-last_activity: 2026-05-26 -- fixed Unicode cp1252 errors; bumped all tiers to 1760 Elo; added 4 Champions format mappings (bssregi tier); format_meta.json now covers 20 formats
+last_updated: "2026-06-09T00:00:00Z"
+last_activity: 2026-06-09 — full repo audit, junk removal, doc refresh, config fixes
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 17
+  completed_phases: 5
+  total_plans: 10
+  completed_plans: 10
+  percent: 83
 ---
 
 # Project State — NCLPDLB Full ML Integration
 
-*Last updated: 2026-05-20*
+*Last updated: 2026-06-09*
 
 ---
 
 ## Current Position
 
-Phase: 04 — Browser Training
-Plan: 04-01 ✅ complete; 04-02 ✅ complete
-Status: Phase 04 fully executed; no further plans in this phase
-Last activity: 2026-05-20 — 04-01 (3 bug fixes + playwright dep) and 04-02 (14 unit tests) committed
+Phase: 06 — Repo Audit & Cleanup
+Status: In progress (cleanup commit pending)
+Last activity: 2026-06-09 — audit + cleanup session
 
-Progress: `[x][ ][ ]` 1/3 phases complete (Phase 04 done)
+Progress: `[x][x][x][x][x][ ]` 5/6 phases complete
 
 ---
 
@@ -35,33 +34,29 @@ Progress: `[x][ ][ ]` 1/3 phases complete (Phase 04 done)
 
 | Decision | Rationale |
 |----------|-----------|
-| OBS_DIM 44→48 (not 54) | Validate 4-float expansion before adding STAB + speed tier |
-| log2 normalization for type_eff | Centers neutral at 0.0; symmetric extremes; immunity=-1.0 |
-| Unknown type defaults to 0.0 (log2 neutral) | Avoids false immunity signal from 0.0 fallback |
-| MaxBasePowerPlayer (not MaxDamagePlayer) | Verified in poke-env baselines.py; MaxDamagePlayer does not exist |
-| `imitation` library for BC | Official SB3-endorsed library; provides BC class compatible with ActorCriticPolicy |
-| Actor-only BC weight transfer | Value head has no BC signal; partial state dict with actor keys only |
-| ent_coef=0.05 for first 100k steps after BC | Prevents entropy collapse; SB3 default 0.01 insufficient |
-| Browser training before MCTS integration | No local server is the bigger unblock; transformer already tested |
-| Transformer+MCTS in /spar falls back to PPO | Backward-compatible; users without transformer model unaffected |
+| transformer_checkpoint.pt = active model | Renamed from latest.pt; all docs updated |
+| VGC format = reg-m-a | Reg M-A (Champions) active from May 29 2026 |
+| 20 formats in training matrix | Reconciled from conflicting 10/22 claims |
+| OBS_DIM=78 retraining needed | ISS-007+ISS-008 checkpoint break; fresh run required |
+| MCTS + Transformer in /spar | AlphaZero-style; PPO fallback removed |
 
 ---
 
 ## Repo Location
 
-- Local clone: `/home/vboxuser/Documents/No Chill Draft League Bot/NCLPDLB`
+- Local clone: `F:\NCLPDLB`
 - Remote: `NoChillModeOnline/NCLPDLB`
-- Branch: `master` (push directly)
+- Branch: `master`
 
 ---
 
 ## Blockers
 
-None currently.
+- OBS_DIM=78 retraining run needed (ISS-007+ISS-008)
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-05-26T03:15:10.968Z
-Stopped at: context exhaustion at 75% (2026-05-26)
+Last session: 2026-06-09
+Stopped at: post-audit cleanup commit pending

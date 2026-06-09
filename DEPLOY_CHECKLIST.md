@@ -7,7 +7,7 @@ Quick reference for running the Pokemon Draft League Bot.
 ## Prerequisites
 
 - [ ] Discord bot token from <https://discord.com/developers/applications>
-- [ ] Google Sheets spreadsheet ID: `16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs`
+- [ ] Google Sheets spreadsheet ID (set `GOOGLE_SHEETS_SPREADSHEET_ID` in `.env`)
 - [ ] Google service account `credentials.json`
 - [ ] Bot invited to Discord server with proper permissions
 
@@ -54,7 +54,7 @@ uv pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env with your Discord token and Google Sheets ID
+# Edit .env — set DISCORD_TOKEN, DISCORD_CLIENT_ID, GOOGLE_SHEETS_SPREADSHEET_ID, etc.
 ```
 
 ### 3. Seed data (first run only)
@@ -76,11 +76,8 @@ python src/bot/main.py
 
 ### 1. Invite Bot to Discord Server
 
-```text
-https://discord.com/api/oauth2/authorize?client_id=1178100227522171004&permissions=2147551232&scope=bot%20applications.commands
-```
-
-Required permissions:
+Generate an invite URL from the [Discord Developer Portal](https://discord.com/developers/applications)
+for your application. Required permissions:
 
 - Send Messages
 - Embed Links
@@ -111,14 +108,17 @@ Share the Google Sheet with your service account email:
 
 ## ML Training (Optional — for /spar)
 
-All commands work without ML. Only `/spar` requires trained models.
+All commands work without ML. Only `/spar` requires a trained model.
 
 ```bash
-# Requires x86 machine with Python 3.11 + PyTorch
-python -m src.ml.train_all
+# Trigger via GitHub Actions (recommended)
+# Actions → Train ML Models → Run workflow
+
+# Or run locally (requires local Showdown server on ws://localhost:8000):
+python -m src.ml.run_training
 ```
 
-Models saved to `data/ml/policy/` — place next to the exe or in the project root.
+Model saved to `src/ml/models/transformer_checkpoint.pt`.
 
 ---
 
@@ -131,7 +131,7 @@ Check `logs/bot.log` for errors.
 ### Google Sheets Errors
 
 1. Verify service account has Editor access
-2. Check `GOOGLE_SHEETS_SPREADSHEET_ID` is correct
+2. Check `GOOGLE_SHEETS_SPREADSHEET_ID` is correct in `.env`
 3. Verify `credentials.json` is valid
 
 ### Commands Not Appearing
@@ -139,3 +139,7 @@ Check `logs/bot.log` for errors.
 1. Ensure bot has `applications.commands` scope
 2. Wait 5-10 minutes for Discord to sync commands
 3. Restart the bot
+
+### `/spar` Not Working
+
+Model must exist at `src/ml/models/transformer_checkpoint.pt`. Run training first.

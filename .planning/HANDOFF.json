@@ -1,69 +1,46 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-21T23:43:56Z",
-  "phase": "04",
-  "phase_name": "Browser Training (complete) — ad-hoc CI fix applied this session",
-  "phase_dir": ".planning/phases/04-browser-training",
+  "timestamp": "2026-06-09T00:00:00Z",
+  "phase": "06",
+  "phase_name": "Repo audit + cleanup (in progress)",
+  "phase_dir": null,
   "plan": null,
   "task": null,
   "total_tasks": null,
-  "status": "paused",
+  "status": "active",
   "completed_tasks": [
-    {
-      "id": 1,
-      "name": "04-01: Fix 3 browser training bugs + add playwright dep",
-      "status": "done",
-      "commit": "548667a"
-    },
-    {
-      "id": 2,
-      "name": "04-02: Unit tests for browser_trainer.py fixed functions",
-      "status": "done",
-      "commit": "5d7dae9"
-    },
-    {
-      "id": 3,
-      "name": "ad-hoc: Fix dependency-submission.yml CI timeout",
-      "status": "done",
-      "commit": "uncommitted — .github/workflows/dependency-submission.yml modified",
-      "detail": "Removed torch (200 MB) + full requirements install. Now parses requirements.txt directly. Timeout 45 min → 5 min."
-    }
+    { "id": 1, "name": "Phase 01: Core ML infrastructure", "status": "done" },
+    { "id": 2, "name": "Phase 02: Transformer model", "status": "done" },
+    { "id": 3, "name": "Phase 03: MCTS integration", "status": "done" },
+    { "id": 4, "name": "Phase 04: Browser training", "status": "done" },
+    { "id": 5, "name": "Phase 05: MCTSPlayer + /spar inference", "status": "done" },
+    { "id": 6, "name": "ISS-001..008: all closed", "status": "done" },
+    { "id": 7, "name": "Resolve L1-L28 low-priority audit findings", "status": "done", "commit": "c771ed8" },
+    { "id": 8, "name": "Repo audit + cleanup (full cleanup of junk, stale docs, config)", "status": "in-progress" }
   ],
-  "remaining_tasks": [],
+  "remaining_tasks": [
+    "Verify OBS_DIM=78 retraining for ISS-007+ISS-008 checkpoint break"
+  ],
   "blockers": [],
-  "human_actions_pending": [
-    {
-      "action": "Commit and push .github/workflows/dependency-submission.yml",
-      "context": "Fix is on disk but not committed. Push to trigger CI and verify new workflow completes in <5 min.",
-      "blocking": false
-    }
-  ],
+  "human_actions_pending": [],
   "decisions": [
     {
-      "decision": "_ReplayEnv placed at module level (not inside train_browser())",
-      "rationale": "Required for direct import in unit tests without side effects at collection time",
-      "phase": "04"
+      "decision": "transformer_checkpoint.pt is the active model path (not latest.pt)",
+      "rationale": "All docs updated to reflect actual filename",
+      "phase": "06"
     },
     {
-      "decision": "DEFAULT_RESULTS_DIR kept as module-level constant",
-      "rationale": "test_showdown_player.py imports it; plan acceptance criteria conflicted with existing test",
-      "phase": "04"
+      "decision": "VGC format updated to reg-m-a (Reg M-A Champions, active from May 29 2026)",
+      "rationale": "Reg I expired May 28 2026",
+      "phase": "06"
     },
     {
-      "decision": "_ReplayEnv uses lazy imports in __init__",
-      "rationale": "Avoids loading gymnasium and battle_env at module import time",
-      "phase": "04"
-    },
-    {
-      "decision": "Parse requirements.txt directly for dependency submission (no pip install)",
-      "rationale": "torch+playwright+poke-env install caused 45-90 min CI timeout. Direct parse is seconds.",
-      "phase": "ad-hoc"
+      "decision": "20 formats in training matrix (not 22 or 10)",
+      "rationale": "Audit reconciled conflicting claims across docs",
+      "phase": "06"
     }
   ],
-  "uncommitted_files": [
-    ".github/workflows/dependency-submission.yml",
-    ".planning/STATE.md"
-  ],
-  "next_action": "Commit the CI fix, then run /gsd:plan-phase 5 to plan Phase 05: MCTSPlayer + Transformer Training",
-  "context_notes": "Phase 04 fully complete (both plans done, all tests green). This session: diagnosed GitHub Actions dependency-submission workflow timing out (image: actions-run-summary.png), rewrote workflow to parse requirements.txt directly instead of installing all packages. Unrelated to Phase 05. Next phase: MCTS-01/02/03 per ROADMAP."
+  "uncommitted_files": [],
+  "next_action": "Commit repo cleanup changes; then plan OBS_DIM=78 retraining run",
+  "context_notes": "Phases 01-05 complete. ISS-001..008 all resolved. Audit cleanup session 2026-06-09: removed 38MB graphify-out, fixed stale docs, deleted obsolete fixes/, moved ISS solutions to issues/, synced L-series status, scrubbed Sheet IDs from docs."
 }

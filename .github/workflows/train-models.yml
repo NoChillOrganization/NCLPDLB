@@ -7,6 +7,14 @@ on:
         description: 'Comma-separated formats to train (empty = all)'
         required: false
         default: ''
+      runner:
+        description: 'Runner type (self-hosted = local Windows GPU; ubuntu-latest = GitHub-hosted)'
+        required: false
+        default: 'self-hosted'
+        type: choice
+        options:
+          - self-hosted
+          - ubuntu-latest
 
 permissions:
   contents: write
@@ -19,7 +27,7 @@ env:
 
 jobs:
   train:
-    runs-on: self-hosted
+    runs-on: ${{ inputs.runner || 'self-hosted' }}
     timeout-minutes: 310  # per-leg cap; matrix runs sequentially (max-parallel: 1)
     strategy:
       fail-fast: false

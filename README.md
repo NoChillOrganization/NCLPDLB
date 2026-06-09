@@ -213,7 +213,7 @@ python -m src.ml.run_training \
   --train-every 5               # train after N games
 ```
 
-Models are saved to `src/ml/models/latest.pt`. The bot loads this when a user runs `/spar`.
+Models are saved to `src/ml/models/transformer_checkpoint.pt`. The bot loads this when a user runs `/spar`.
 
 ---
 
@@ -227,7 +227,7 @@ Models are saved to `src/ml/models/latest.pt`. The bot loads this when a user ru
 │  Discord Bot (discord.py)  ──► Google Sheets (17 tabs)│
 │  SQLite (pokemon_draft.db)                            │
 │  poke-env (Showdown client) ──► play.pokemonshowdown.com
-│  ML model (src/ml/models/latest.pt)                  │
+│  ML model (src/ml/models/transformer_checkpoint.pt)                  │
 └──────────────────────────────────────────────────────┘
 
 ML Pipeline (AlphaZero-style):
@@ -374,7 +374,7 @@ mypy src/
   python -m src.ml.run_training --format gen9ou
   ```
 
-  The model must exist at `src/ml/models/latest.pt`
+  The model must exist at `src/ml/models/transformer_checkpoint.pt`
 
 ### Video uploads fail
 

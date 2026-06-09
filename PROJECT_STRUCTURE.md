@@ -35,7 +35,8 @@ bot/
 │   ├── league.py      — /league-create, /schedule, /result
 │   ├── sheet.py       — /sheet-* commands (Manage Server only)
 │   ├── admin.py       — /admin-skip, /admin-pause, /admin-override-pick, /admin-reset
-│   └── misc.py        — /spar and miscellaneous commands
+│   ├── ml.py          — /ml-stats, /spar, ML-related commands
+│   └── misc.py        — miscellaneous commands
 └── views/             — discord.py UI (modals, selects, buttons)
     ├── draft_view.py
     ├── team_view.py
@@ -47,6 +48,7 @@ bot/
 ```
 data/
 ├── models.py          — All Pydantic v2 models (Pokemon, Draft, DraftPick, etc.)
+├── db.py              — Async SQLite layer (aiosqlite); active_drafts + elo_ratings tables
 ├── pokeapi.py         — PokéAPI client + in-memory pokemon_db cache (1,025 mons)
 ├── sheets.py          — gspread sync wrapper; Tab constants, cell-specific writes
 ├── showdown.py        — Showdown format/tier fetching
@@ -81,6 +83,7 @@ ml/
 ├── trainer.py             — ReplayBuffer (thread-safe) + PolicyTrainer
 │                            Trains BattleTransformer from self-play experience
 ├── transformer_model.py   — BattleTransformer: Transformer policy + value heads
+├── train_transformer.py   — Training loop for the Transformer policy
 ├── mcts.py                — Monte Carlo Tree Search decision engine
 │                            MCTSPlayer uses BattleTransformer to guide search
 ├── showdown_player.py     — poke-env player using trained model for /spar
@@ -102,7 +105,7 @@ ml/
 ├── type_chart.py          — Gen 9 type effectiveness chart
 ├── showdown_modes.py      — Format/mode definitions
 └── models/                — Saved model artifacts
-    └── latest.pt          — Trained BattleTransformer weights
+    └── transformer_checkpoint.pt          — Trained BattleTransformer weights
 ```
 
 **Training flow:**
@@ -138,5 +141,5 @@ Run with: `python -m pytest tests/ --ignore=tests/performance -q`
 - **Draft state is in-memory.** `_active_drafts` in `draft_service.py` is lost on restart.
 - **Google Sheets is the database.** All completed data writes to Sheets via gspread (sync, run in executor).
 - **Command sync is hash-gated.** `main.py` fingerprints commands and only calls `tree.sync()` on change.
-- **ML model path:** `src/ml/models/latest.pt` (PyTorch checkpoint).
+- **ML model path:** `src/ml/models/transformer_checkpoint.pt` (PyTorch checkpoint).
 - **Local Showdown required for ML.** `battle_env.py` connects to `ws://localhost:8000`.

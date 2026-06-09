@@ -2,7 +2,7 @@
 title: "L2: `socket.create_connection(...)` result never closed"
 created: 2026-06-05
 priority: low
-status: open
+status: done
 tags: [audit, nclpdlb-code-review]
 ---
 <issue>
@@ -11,7 +11,7 @@ tags: [audit, nclpdlb-code-review]
   <location>bot/cogs/admin.py:375-377</location>
   <description>`socket.create_connection(...)` result never closed → fd leak per check.</description>
   <priority>LOW</priority>
-  <status>open</status>
+  <status>done</status>
   <created>2026-06-05</created>
   <source>NCLPDLB Code Audit Report (Read-Only)</source>
 </issue>
