@@ -173,7 +173,7 @@ class TestConfigRoute:
         assert get_state()["mcts_sims"] == 100
 
     def test_mcts_sims_below_min_rejected(self, client):
-        r = client.post("/config", json={"mcts_sims": 0})
+        r = client.post("/config", json={"mcts_sims": -1})
         assert r.status_code == 422
 
     def test_mcts_sims_above_max_rejected(self, client):

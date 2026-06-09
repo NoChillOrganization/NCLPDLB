@@ -404,7 +404,7 @@ class TestShowdownClient:
     async def test_connect_waits_for_login_event(self):
         client = self._make()
         # Simulate login event firing immediately
-        client._login_event.set()
+        client._get_login_event().set()
         await client.connect(login_timeout=5.0)
         client.connection.connect.assert_awaited_once()
 
@@ -428,7 +428,7 @@ class TestShowdownClient:
 
     async def test_wait_for_login_returns_true(self):
         client = self._make()
-        client._login_event.set()
+        client._get_login_event().set()
         result = await client.wait_for_login(timeout=5.0)
         assert result is True
 
@@ -439,7 +439,7 @@ class TestShowdownClient:
 
     async def test_context_manager(self):
         client = self._make()
-        client._login_event.set()
+        client._get_login_event().set()
         async with client as c:
             assert c is client
         client.connection.connect.assert_awaited()
@@ -456,9 +456,9 @@ class TestShowdownClient:
 
     async def test_on_updateuser_sets_event_on_match(self):
         client = self._make()
-        assert not client._login_event.is_set()
+        assert not client._get_login_event().is_set()
         await client._on_updateuser("", ["Alice", "1", "avatar"])
-        assert client._login_event.is_set()
+        assert client._get_login_event().is_set()
 
     async def test_on_updateuser_case_insensitive(self):
         client = self._make()
@@ -468,18 +468,18 @@ class TestShowdownClient:
     async def test_on_updateuser_ignores_different_user(self):
         client = self._make()
         await client._on_updateuser("", ["Bob", "1"])
-        assert not client._login_event.is_set()
+        assert not client._get_login_event().is_set()
 
     async def test_on_updateuser_noop_when_already_set(self):
         client = self._make()
-        client._login_event.set()
+        client._get_login_event().set()
         # Second call should not raise or change anything
         await client._on_updateuser("", ["Alice", "1"])
 
     async def test_on_updateuser_ignores_empty_parts(self):
         client = self._make()
         await client._on_updateuser("", [])
-        assert not client._login_event.is_set()
+        assert not client._get_login_event().is_set()
 
 
 # ── ShowdownClientPool ─────────────────────────────────────────────────────────
@@ -500,8 +500,8 @@ class TestShowdownClientPool:
         pool.account_b.connection.disconnect = AsyncMock()
         pool.account_b.commander.login = AsyncMock()
         # Pre-set login events so connect() doesn't timeout
-        pool.account_a._login_event.set()
-        pool.account_b._login_event.set()
+        pool.account_a._get_login_event().set()
+        pool.account_b._get_login_event().set()
         return pool
 
     def test_accounts_created_with_correct_usernames(self):

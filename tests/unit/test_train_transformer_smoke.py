@@ -221,7 +221,7 @@ class TestParseArgs:
 
     def test_default_mcts_sims(self):
         args = self._parse([])
-        assert args.mcts_sims == 30
+        assert args.mcts_sims == 0
 
     def test_default_checkpoint_out(self):
         args = self._parse([])

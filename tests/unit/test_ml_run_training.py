@@ -97,7 +97,7 @@ class TestParseArgs:
             args = _parse_args()
         assert args.port == 8080
         assert args.format == "gen9randombattle"
-        assert args.mcts_sims == 30
+        assert args.mcts_sims == 0
         assert args.buffer == 50_000
         assert args.lr == pytest.approx(3e-4)
         assert args.train_every == 5
