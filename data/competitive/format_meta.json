@@ -587,580 +587,395 @@
   "gen9championsvgc2026regma": {
     "top10_usage": [
       {
+        "pokemon": "Garchomp",
+        "usage_pct": "30.01",
+        "win_pct": "51.2",
+        "tier": "A",
+        "avg_rating": "1419"
+      },
+      {
+        "pokemon": "Basculegion",
+        "usage_pct": "29.58",
+        "win_pct": "52.47",
+        "tier": "A",
+        "avg_rating": "1438"
+      },
+      {
+        "pokemon": "Sneasler",
+        "usage_pct": "28.84",
+        "win_pct": "50.24",
+        "tier": "B",
+        "avg_rating": "1411"
+      },
+      {
+        "pokemon": "Kingambit",
+        "usage_pct": "27.37",
+        "win_pct": "51.89",
+        "tier": "B",
+        "avg_rating": "1430"
+      },
+      {
+        "pokemon": "Sinistcha",
+        "usage_pct": "28.43",
+        "win_pct": "49.58",
+        "tier": "B",
+        "avg_rating": "1403"
+      },
+      {
         "pokemon": "Incineroar",
-        "usage_pct": "41.9",
-        "win_pct": "50.21",
-        "role": "Intimidate / Fake Out Support"
+        "usage_pct": "27.72",
+        "win_pct": "49.6",
+        "tier": "B",
+        "avg_rating": "1404"
       },
       {
-        "pokemon": "Calyrex-Shadow",
-        "usage_pct": "29.29",
-        "win_pct": "52.03",
-        "role": "Restricted Sweeper"
+        "pokemon": "Charizard",
+        "usage_pct": "19.42",
+        "win_pct": "52.0",
+        "tier": "B",
+        "avg_rating": "1427"
       },
       {
-        "pokemon": "Flutter Mane",
-        "usage_pct": "21.33",
-        "win_pct": "50.88",
-        "role": "Fast Special Attacker"
+        "pokemon": "Whimsicott",
+        "usage_pct": "18.34",
+        "win_pct": "51.03",
+        "tier": "B",
+        "avg_rating": "1421"
       },
       {
-        "pokemon": "Rillaboom",
-        "usage_pct": "21.23",
-        "win_pct": "51.42",
-        "role": "Grassy Terrain Setter / Priority"
+        "pokemon": "Floette-Eternal",
+        "usage_pct": "13.72",
+        "win_pct": "51.78",
+        "tier": "B",
+        "avg_rating": "1437"
       },
       {
-        "pokemon": "Koraidon",
-        "usage_pct": "20.42",
-        "win_pct": "51.67",
-        "role": "Restricted Physical Attacker"
-      },
-      {
-        "pokemon": "Calyrex-Ice",
-        "usage_pct": "23.75",
-        "win_pct": "53.04",
-        "role": "Restricted Trick Room Sweeper"
-      },
-      {
-        "pokemon": "Miraidon",
-        "usage_pct": "23.48",
-        "win_pct": "52.81",
-        "role": "Restricted Special Attacker"
-      },
-      {
-        "pokemon": "Amoonguss",
-        "usage_pct": "18.21",
-        "win_pct": "50.33",
-        "role": "Redirection / Spore Support"
-      },
-      {
-        "pokemon": "Kyogre",
-        "usage_pct": "18.24",
-        "win_pct": "51.07",
-        "role": "Restricted Rain Sweeper"
-      },
-      {
-        "pokemon": "Zamazenta",
-        "usage_pct": "17.64",
-        "win_pct": "53.18",
-        "role": "Restricted Physical Wall/Attacker"
+        "pokemon": "Sylveon",
+        "usage_pct": "12.39",
+        "win_pct": "51.68",
+        "tier": "B",
+        "avg_rating": "1423"
       }
     ],
-    "stats_tier": "vgc"
+    "stats_tier": "champions",
+    "archetypes": [
+      {
+        "rank": "1",
+        "core": "Basculegion + Charizard + Garchomp + Glimmora + Kingambit + Whimsicott",
+        "size": "6",
+        "usage_pct": "1.75",
+        "win_pct": "55.27",
+        "avg_rating": "1458"
+      },
+      {
+        "rank": "2",
+        "core": "Charizard + Floette-Eternal + Garchomp + Incineroar + Sinistcha + Venusaur",
+        "size": "6",
+        "usage_pct": "0.78",
+        "win_pct": "51.94",
+        "avg_rating": "1424"
+      },
+      {
+        "rank": "3",
+        "core": "Aerodactyl + Basculegion + Charizard + Garchomp + Kingambit + Sylveon",
+        "size": "6",
+        "usage_pct": "0.72",
+        "win_pct": "55.3",
+        "avg_rating": "1472"
+      },
+      {
+        "rank": "4",
+        "core": "Charizard + Floette-Eternal + Incineroar + Milotic + Sinistcha + Sneasler",
+        "size": "6",
+        "usage_pct": "0.51",
+        "win_pct": "55.87",
+        "avg_rating": "1473"
+      },
+      {
+        "rank": "5",
+        "core": "Basculegion + Charizard + Garchomp + Kingambit + Whimsicott",
+        "size": "5",
+        "usage_pct": "2.86",
+        "win_pct": "55.54",
+        "avg_rating": "1468"
+      },
+      {
+        "rank": "6",
+        "core": "Basculegion + Charizard + Garchomp + Glimmora + Whimsicott",
+        "size": "5",
+        "usage_pct": "2.31",
+        "win_pct": "55.4",
+        "avg_rating": "1465"
+      },
+      {
+        "rank": "7",
+        "core": "Charizard + Floette-Eternal + Incineroar + Sinistcha + Sneasler",
+        "size": "5",
+        "usage_pct": "0.81",
+        "win_pct": "56.08",
+        "avg_rating": "1477"
+      },
+      {
+        "rank": "8",
+        "core": "Archaludon + Basculegion + Dragonite + Pelipper + Scizor",
+        "size": "5",
+        "usage_pct": "0.8",
+        "win_pct": "54.52",
+        "avg_rating": "1479"
+      },
+      {
+        "rank": "9",
+        "core": "Basculegion + Charizard + Garchomp + Kingambit",
+        "size": "4",
+        "usage_pct": "4.34",
+        "win_pct": "55.2",
+        "avg_rating": "1461"
+      },
+      {
+        "rank": "10",
+        "core": "Basculegion + Charizard + Garchomp + Whimsicott",
+        "size": "4",
+        "usage_pct": "3.88",
+        "win_pct": "55.35",
+        "avg_rating": "1467"
+      },
+      {
+        "rank": "11",
+        "core": "Charizard + Garchomp + Kingambit + Whimsicott",
+        "size": "4",
+        "usage_pct": "3.76",
+        "win_pct": "54.38",
+        "avg_rating": "1453"
+      },
+      {
+        "rank": "12",
+        "core": "Basculegion + Charizard + Kingambit + Whimsicott",
+        "size": "4",
+        "usage_pct": "3.48",
+        "win_pct": "54.96",
+        "avg_rating": "1469"
+      },
+      {
+        "rank": "13",
+        "core": "Gengar + Incineroar + Politoed + Sinistcha",
+        "size": "4",
+        "usage_pct": "2.35",
+        "win_pct": "50.81",
+        "avg_rating": "1434"
+      },
+      {
+        "rank": "14",
+        "core": "Charizard + Floette-Eternal + Incineroar + Sinistcha",
+        "size": "4",
+        "usage_pct": "2.13",
+        "win_pct": "54.04",
+        "avg_rating": "1457"
+      },
+      {
+        "rank": "15",
+        "core": "Archaludon + Basculegion + Pelipper + Sableye",
+        "size": "4",
+        "usage_pct": "1.77",
+        "win_pct": "53.32",
+        "avg_rating": "1442"
+      }
+    ]
   },
   "gen9championsvgc2026regmabo3": {
     "top10_usage": [
       {
-        "pokemon": "Incineroar",
-        "usage_pct": "41.9",
-        "win_pct": "50.21",
-        "role": "Intimidate / Fake Out Support"
+        "pokemon": "Garchomp",
+        "usage_pct": "30.01",
+        "win_pct": "51.2",
+        "tier": "A",
+        "avg_rating": "1419"
       },
       {
-        "pokemon": "Calyrex-Shadow",
-        "usage_pct": "29.29",
-        "win_pct": "52.03",
-        "role": "Restricted Sweeper"
+        "pokemon": "Basculegion",
+        "usage_pct": "29.58",
+        "win_pct": "52.47",
+        "tier": "A",
+        "avg_rating": "1438"
       },
       {
-        "pokemon": "Flutter Mane",
-        "usage_pct": "21.33",
-        "win_pct": "50.88",
-        "role": "Fast Special Attacker"
+        "pokemon": "Sneasler",
+        "usage_pct": "28.84",
+        "win_pct": "50.24",
+        "tier": "B",
+        "avg_rating": "1411"
       },
       {
-        "pokemon": "Rillaboom",
-        "usage_pct": "21.23",
-        "win_pct": "51.42",
-        "role": "Grassy Terrain Setter / Priority"
+        "pokemon": "Kingambit",
+        "usage_pct": "27.37",
+        "win_pct": "51.89",
+        "tier": "B",
+        "avg_rating": "1430"
       },
       {
-        "pokemon": "Koraidon",
-        "usage_pct": "20.42",
-        "win_pct": "51.67",
-        "role": "Restricted Physical Attacker"
+        "pokemon": "Sinistcha",
+        "usage_pct": "28.43",
+        "win_pct": "49.58",
+        "tier": "B",
+        "avg_rating": "1403"
       },
-      {
-        "pokemon": "Calyrex-Ice",
-        "usage_pct": "23.75",
-        "win_pct": "53.04",
-        "role": "Restricted Trick Room Sweeper"
-      },
-      {
-        "pokemon": "Miraidon",
-        "usage_pct": "23.48",
-        "win_pct": "52.81",
-        "role": "Restricted Special Attacker"
-      },
-      {
-        "pokemon": "Amoonguss",
-        "usage_pct": "18.21",
-        "win_pct": "50.33",
-        "role": "Redirection / Spore Support"
-      },
-      {
-        "pokemon": "Kyogre",
-        "usage_pct": "18.24",
-        "win_pct": "51.07",
-        "role": "Restricted Rain Sweeper"
-      },
-      {
-        "pokemon": "Zamazenta",
-        "usage_pct": "17.64",
-        "win_pct": "53.18",
-        "role": "Restricted Physical Wall/Attacker"
-      }
-    ],
-    "stats_tier": "vgc"
-  },
-  "gen9doublesou": {
-    "top10_usage": [
       {
         "pokemon": "Incineroar",
-        "usage_pct": "41.9",
-        "win_pct": "50.21",
-        "role": "Intimidate / Fake Out Support"
+        "usage_pct": "27.72",
+        "win_pct": "49.6",
+        "tier": "B",
+        "avg_rating": "1404"
       },
       {
-        "pokemon": "Calyrex-Shadow",
-        "usage_pct": "29.29",
-        "win_pct": "52.03",
-        "role": "Restricted Sweeper"
+        "pokemon": "Charizard",
+        "usage_pct": "19.42",
+        "win_pct": "52.0",
+        "tier": "B",
+        "avg_rating": "1427"
       },
       {
-        "pokemon": "Flutter Mane",
-        "usage_pct": "21.33",
-        "win_pct": "50.88",
-        "role": "Fast Special Attacker"
+        "pokemon": "Whimsicott",
+        "usage_pct": "18.34",
+        "win_pct": "51.03",
+        "tier": "B",
+        "avg_rating": "1421"
       },
       {
-        "pokemon": "Rillaboom",
-        "usage_pct": "21.23",
-        "win_pct": "51.42",
-        "role": "Grassy Terrain Setter / Priority"
+        "pokemon": "Floette-Eternal",
+        "usage_pct": "13.72",
+        "win_pct": "51.78",
+        "tier": "B",
+        "avg_rating": "1437"
       },
       {
-        "pokemon": "Koraidon",
-        "usage_pct": "20.42",
-        "win_pct": "51.67",
-        "role": "Restricted Physical Attacker"
-      },
-      {
-        "pokemon": "Calyrex-Ice",
-        "usage_pct": "23.75",
-        "win_pct": "53.04",
-        "role": "Restricted Trick Room Sweeper"
-      },
-      {
-        "pokemon": "Miraidon",
-        "usage_pct": "23.48",
-        "win_pct": "52.81",
-        "role": "Restricted Special Attacker"
-      },
-      {
-        "pokemon": "Amoonguss",
-        "usage_pct": "18.21",
-        "win_pct": "50.33",
-        "role": "Redirection / Spore Support"
-      },
-      {
-        "pokemon": "Kyogre",
-        "usage_pct": "18.24",
-        "win_pct": "51.07",
-        "role": "Restricted Rain Sweeper"
-      },
-      {
-        "pokemon": "Zamazenta",
-        "usage_pct": "17.64",
-        "win_pct": "53.18",
-        "role": "Restricted Physical Wall/Attacker"
+        "pokemon": "Sylveon",
+        "usage_pct": "12.39",
+        "win_pct": "51.68",
+        "tier": "B",
+        "avg_rating": "1423"
       }
     ],
-    "stats_tier": "vgc"
-  },
-  "gen9doublesubers": {
-    "top10_usage": [
+    "stats_tier": "champions",
+    "archetypes": [
       {
-        "pokemon": "Incineroar",
-        "usage_pct": "41.9",
-        "win_pct": "50.21",
-        "role": "Intimidate / Fake Out Support"
+        "rank": "1",
+        "core": "Basculegion + Charizard + Garchomp + Glimmora + Kingambit + Whimsicott",
+        "size": "6",
+        "usage_pct": "1.75",
+        "win_pct": "55.27",
+        "avg_rating": "1458"
       },
       {
-        "pokemon": "Calyrex-Shadow",
-        "usage_pct": "29.29",
-        "win_pct": "52.03",
-        "role": "Restricted Sweeper"
+        "rank": "2",
+        "core": "Charizard + Floette-Eternal + Garchomp + Incineroar + Sinistcha + Venusaur",
+        "size": "6",
+        "usage_pct": "0.78",
+        "win_pct": "51.94",
+        "avg_rating": "1424"
       },
       {
-        "pokemon": "Flutter Mane",
-        "usage_pct": "21.33",
-        "win_pct": "50.88",
-        "role": "Fast Special Attacker"
+        "rank": "3",
+        "core": "Aerodactyl + Basculegion + Charizard + Garchomp + Kingambit + Sylveon",
+        "size": "6",
+        "usage_pct": "0.72",
+        "win_pct": "55.3",
+        "avg_rating": "1472"
       },
       {
-        "pokemon": "Rillaboom",
-        "usage_pct": "21.23",
-        "win_pct": "51.42",
-        "role": "Grassy Terrain Setter / Priority"
+        "rank": "4",
+        "core": "Charizard + Floette-Eternal + Incineroar + Milotic + Sinistcha + Sneasler",
+        "size": "6",
+        "usage_pct": "0.51",
+        "win_pct": "55.87",
+        "avg_rating": "1473"
       },
       {
-        "pokemon": "Koraidon",
-        "usage_pct": "20.42",
-        "win_pct": "51.67",
-        "role": "Restricted Physical Attacker"
+        "rank": "5",
+        "core": "Basculegion + Charizard + Garchomp + Kingambit + Whimsicott",
+        "size": "5",
+        "usage_pct": "2.86",
+        "win_pct": "55.54",
+        "avg_rating": "1468"
       },
       {
-        "pokemon": "Calyrex-Ice",
-        "usage_pct": "23.75",
-        "win_pct": "53.04",
-        "role": "Restricted Trick Room Sweeper"
+        "rank": "6",
+        "core": "Basculegion + Charizard + Garchomp + Glimmora + Whimsicott",
+        "size": "5",
+        "usage_pct": "2.31",
+        "win_pct": "55.4",
+        "avg_rating": "1465"
       },
       {
-        "pokemon": "Miraidon",
-        "usage_pct": "23.48",
-        "win_pct": "52.81",
-        "role": "Restricted Special Attacker"
+        "rank": "7",
+        "core": "Charizard + Floette-Eternal + Incineroar + Sinistcha + Sneasler",
+        "size": "5",
+        "usage_pct": "0.81",
+        "win_pct": "56.08",
+        "avg_rating": "1477"
       },
       {
-        "pokemon": "Amoonguss",
-        "usage_pct": "18.21",
-        "win_pct": "50.33",
-        "role": "Redirection / Spore Support"
+        "rank": "8",
+        "core": "Archaludon + Basculegion + Dragonite + Pelipper + Scizor",
+        "size": "5",
+        "usage_pct": "0.8",
+        "win_pct": "54.52",
+        "avg_rating": "1479"
       },
       {
-        "pokemon": "Kyogre",
-        "usage_pct": "18.24",
-        "win_pct": "51.07",
-        "role": "Restricted Rain Sweeper"
+        "rank": "9",
+        "core": "Basculegion + Charizard + Garchomp + Kingambit",
+        "size": "4",
+        "usage_pct": "4.34",
+        "win_pct": "55.2",
+        "avg_rating": "1461"
       },
       {
-        "pokemon": "Zamazenta",
-        "usage_pct": "17.64",
-        "win_pct": "53.18",
-        "role": "Restricted Physical Wall/Attacker"
+        "rank": "10",
+        "core": "Basculegion + Charizard + Garchomp + Whimsicott",
+        "size": "4",
+        "usage_pct": "3.88",
+        "win_pct": "55.35",
+        "avg_rating": "1467"
+      },
+      {
+        "rank": "11",
+        "core": "Charizard + Garchomp + Kingambit + Whimsicott",
+        "size": "4",
+        "usage_pct": "3.76",
+        "win_pct": "54.38",
+        "avg_rating": "1453"
+      },
+      {
+        "rank": "12",
+        "core": "Basculegion + Charizard + Kingambit + Whimsicott",
+        "size": "4",
+        "usage_pct": "3.48",
+        "win_pct": "54.96",
+        "avg_rating": "1469"
+      },
+      {
+        "rank": "13",
+        "core": "Gengar + Incineroar + Politoed + Sinistcha",
+        "size": "4",
+        "usage_pct": "2.35",
+        "win_pct": "50.81",
+        "avg_rating": "1434"
+      },
+      {
+        "rank": "14",
+        "core": "Charizard + Floette-Eternal + Incineroar + Sinistcha",
+        "size": "4",
+        "usage_pct": "2.13",
+        "win_pct": "54.04",
+        "avg_rating": "1457"
+      },
+      {
+        "rank": "15",
+        "core": "Archaludon + Basculegion + Pelipper + Sableye",
+        "size": "4",
+        "usage_pct": "1.77",
+        "win_pct": "53.32",
+        "avg_rating": "1442"
       }
-    ],
-    "stats_tier": "vgc"
-  },
-  "gen9doublesuu": {
-    "top10_usage": [
-      {
-        "pokemon": "Incineroar",
-        "usage_pct": "41.9",
-        "win_pct": "50.21",
-        "role": "Intimidate / Fake Out Support"
-      },
-      {
-        "pokemon": "Calyrex-Shadow",
-        "usage_pct": "29.29",
-        "win_pct": "52.03",
-        "role": "Restricted Sweeper"
-      },
-      {
-        "pokemon": "Flutter Mane",
-        "usage_pct": "21.33",
-        "win_pct": "50.88",
-        "role": "Fast Special Attacker"
-      },
-      {
-        "pokemon": "Rillaboom",
-        "usage_pct": "21.23",
-        "win_pct": "51.42",
-        "role": "Grassy Terrain Setter / Priority"
-      },
-      {
-        "pokemon": "Koraidon",
-        "usage_pct": "20.42",
-        "win_pct": "51.67",
-        "role": "Restricted Physical Attacker"
-      },
-      {
-        "pokemon": "Calyrex-Ice",
-        "usage_pct": "23.75",
-        "win_pct": "53.04",
-        "role": "Restricted Trick Room Sweeper"
-      },
-      {
-        "pokemon": "Miraidon",
-        "usage_pct": "23.48",
-        "win_pct": "52.81",
-        "role": "Restricted Special Attacker"
-      },
-      {
-        "pokemon": "Amoonguss",
-        "usage_pct": "18.21",
-        "win_pct": "50.33",
-        "role": "Redirection / Spore Support"
-      },
-      {
-        "pokemon": "Kyogre",
-        "usage_pct": "18.24",
-        "win_pct": "51.07",
-        "role": "Restricted Rain Sweeper"
-      },
-      {
-        "pokemon": "Zamazenta",
-        "usage_pct": "17.64",
-        "win_pct": "53.18",
-        "role": "Restricted Physical Wall/Attacker"
-      }
-    ],
-    "stats_tier": "vgc"
-  },
-  "gen9vgc2026regi": {
-    "top10_usage": [
-      {
-        "pokemon": "Incineroar",
-        "usage_pct": "41.9",
-        "win_pct": "50.21",
-        "role": "Intimidate / Fake Out Support"
-      },
-      {
-        "pokemon": "Calyrex-Shadow",
-        "usage_pct": "29.29",
-        "win_pct": "52.03",
-        "role": "Restricted Sweeper"
-      },
-      {
-        "pokemon": "Flutter Mane",
-        "usage_pct": "21.33",
-        "win_pct": "50.88",
-        "role": "Fast Special Attacker"
-      },
-      {
-        "pokemon": "Rillaboom",
-        "usage_pct": "21.23",
-        "win_pct": "51.42",
-        "role": "Grassy Terrain Setter / Priority"
-      },
-      {
-        "pokemon": "Koraidon",
-        "usage_pct": "20.42",
-        "win_pct": "51.67",
-        "role": "Restricted Physical Attacker"
-      },
-      {
-        "pokemon": "Calyrex-Ice",
-        "usage_pct": "23.75",
-        "win_pct": "53.04",
-        "role": "Restricted Trick Room Sweeper"
-      },
-      {
-        "pokemon": "Miraidon",
-        "usage_pct": "23.48",
-        "win_pct": "52.81",
-        "role": "Restricted Special Attacker"
-      },
-      {
-        "pokemon": "Amoonguss",
-        "usage_pct": "18.21",
-        "win_pct": "50.33",
-        "role": "Redirection / Spore Support"
-      },
-      {
-        "pokemon": "Kyogre",
-        "usage_pct": "18.24",
-        "win_pct": "51.07",
-        "role": "Restricted Rain Sweeper"
-      },
-      {
-        "pokemon": "Zamazenta",
-        "usage_pct": "17.64",
-        "win_pct": "53.18",
-        "role": "Restricted Physical Wall/Attacker"
-      }
-    ],
-    "stats_tier": "vgc",
-    "banned_mythicals": [
-      "Mew",
-      "Celebi",
-      "Jirachi",
-      "Deoxys (all forms)",
-      "Phione",
-      "Manaphy",
-      "Darkrai",
-      "Shaymin (both forms)",
-      "Arceus",
-      "Victini",
-      "Keldeo",
-      "Meloetta",
-      "Genesect",
-      "Diancie",
-      "Hoopa (both forms)",
-      "Volcanion",
-      "Magearna",
-      "Marshadow",
-      "Zeraora",
-      "Meltan",
-      "Melmetal",
-      "Zarude",
-      "Glastrier",
-      "Spectrier",
-      "Pecharunt"
-    ],
-    "restricted_pokemon": [
-      "Mewtwo",
-      "Lugia",
-      "Ho-Oh",
-      "Kyogre",
-      "Groudon",
-      "Rayquaza",
-      "Dialga",
-      "Palkia",
-      "Giratina",
-      "Reshiram",
-      "Zekrom",
-      "Kyurem (all forms)",
-      "Xerneas",
-      "Yveltal",
-      "Zygarde",
-      "Solgaleo",
-      "Lunala",
-      "Necrozma (all forms)",
-      "Zacian (both forms)",
-      "Zamazenta-Crowned",
-      "Eternatus",
-      "Calyrex-Shadow",
-      "Calyrex-Ice",
-      "Koraidon",
-      "Miraidon",
-      "Terapagos",
-      "Urshifu-RS",
-      "Urshifu-SS",
-      "Cosmoem",
-      "Kubfu",
-      "Enamorus",
-      "Regieleki",
-      "Regidrago"
-    ]
-  },
-  "gen9vgc2026regibo3": {
-    "top10_usage": [
-      {
-        "pokemon": "Incineroar",
-        "usage_pct": "41.9",
-        "win_pct": "50.21",
-        "role": "Intimidate / Fake Out Support"
-      },
-      {
-        "pokemon": "Calyrex-Shadow",
-        "usage_pct": "29.29",
-        "win_pct": "52.03",
-        "role": "Restricted Sweeper"
-      },
-      {
-        "pokemon": "Flutter Mane",
-        "usage_pct": "21.33",
-        "win_pct": "50.88",
-        "role": "Fast Special Attacker"
-      },
-      {
-        "pokemon": "Rillaboom",
-        "usage_pct": "21.23",
-        "win_pct": "51.42",
-        "role": "Grassy Terrain Setter / Priority"
-      },
-      {
-        "pokemon": "Koraidon",
-        "usage_pct": "20.42",
-        "win_pct": "51.67",
-        "role": "Restricted Physical Attacker"
-      },
-      {
-        "pokemon": "Calyrex-Ice",
-        "usage_pct": "23.75",
-        "win_pct": "53.04",
-        "role": "Restricted Trick Room Sweeper"
-      },
-      {
-        "pokemon": "Miraidon",
-        "usage_pct": "23.48",
-        "win_pct": "52.81",
-        "role": "Restricted Special Attacker"
-      },
-      {
-        "pokemon": "Amoonguss",
-        "usage_pct": "18.21",
-        "win_pct": "50.33",
-        "role": "Redirection / Spore Support"
-      },
-      {
-        "pokemon": "Kyogre",
-        "usage_pct": "18.24",
-        "win_pct": "51.07",
-        "role": "Restricted Rain Sweeper"
-      },
-      {
-        "pokemon": "Zamazenta",
-        "usage_pct": "17.64",
-        "win_pct": "53.18",
-        "role": "Restricted Physical Wall/Attacker"
-      }
-    ],
-    "stats_tier": "vgc",
-    "banned_mythicals": [
-      "Mew",
-      "Celebi",
-      "Jirachi",
-      "Deoxys (all forms)",
-      "Phione",
-      "Manaphy",
-      "Darkrai",
-      "Shaymin (both forms)",
-      "Arceus",
-      "Victini",
-      "Keldeo",
-      "Meloetta",
-      "Genesect",
-      "Diancie",
-      "Hoopa (both forms)",
-      "Volcanion",
-      "Magearna",
-      "Marshadow",
-      "Zeraora",
-      "Meltan",
-      "Melmetal",
-      "Zarude",
-      "Glastrier",
-      "Spectrier",
-      "Pecharunt"
-    ],
-    "restricted_pokemon": [
-      "Mewtwo",
-      "Lugia",
-      "Ho-Oh",
-      "Kyogre",
-      "Groudon",
-      "Rayquaza",
-      "Dialga",
-      "Palkia",
-      "Giratina",
-      "Reshiram",
-      "Zekrom",
-      "Kyurem (all forms)",
-      "Xerneas",
-      "Yveltal",
-      "Zygarde",
-      "Solgaleo",
-      "Lunala",
-      "Necrozma (all forms)",
-      "Zacian (both forms)",
-      "Zamazenta-Crowned",
-      "Eternatus",
-      "Calyrex-Shadow",
-      "Calyrex-Ice",
-      "Koraidon",
-      "Miraidon",
-      "Terapagos",
-      "Urshifu-RS",
-      "Urshifu-SS",
-      "Cosmoem",
-      "Kubfu",
-      "Enamorus",
-      "Regieleki",
-      "Regidrago"
     ]
   }
 }
