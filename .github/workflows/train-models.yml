@@ -1,5 +1,46 @@
 name: Train ML Models
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Pokemon Competitive ML Model
+# Build an ML pipeline for the formats in this matrix using Gen 9 Smogon,
+# Gen 9 Smogon Doubles, and Pokemon Champions data.  (rev. 2026-06-09)
+#
+# Formats:
+#   gen9randombattle, gen9ou, gen9nationaldex, gen9monotype, gen9anythinggoes,
+#   gen9ubers, gen9uu, gen9ru, gen9nu, gen9pu, gen9zu, gen9lc,
+#   gen9doublesou, gen9randomdoublesbattle, gen9doublesubers, gen9doublesuu,
+#   gen9championsou, gen9championsbssregma,
+#   gen9championsvgc2026regma, gen9championsvgc2026regmabo3
+#
+# Per-format meta artifacts: format_meta.json · rules.json · top_usage.csv
+#
+# ── Smogon Singles ──────────────────────────────────────────────────────────
+#   6v6 Singles, Level 100. Species / Sleep / OHKO / Evasion / Moody /
+#   Endless Battle clauses. Tiers: AG, Ubers, OU, UU, RU, NU, PU, ZU, LC,
+#   National Dex, Monotype, Random Battle.
+#   OU uses a 4.52% usage threshold; lower tiers use 1.67%.
+#   Tera Blast suspect ongoing — treat Tera Blast as legal until officially banned.
+# ── Smogon Doubles ──────────────────────────────────────────────────────────
+#   6v6 Doubles, tiered separately from VGC: DOU, Doubles Ubers, Doubles UU,
+#   Random Doubles. Smogon Singles and Smogon Doubles are separate ecosystems.
+# ── Pokemon Champions ───────────────────────────────────────────────────────
+#   Champions formats only; SV VGC phased out.
+#   Champions OU, Champions BSS Reg M-A, Champions VGC Reg M-A (Bo1 / Bo3).
+#   Doubles, bring 4 of 6, Level 50. Species Clause, Item Clause,
+#   Mega Evolutions legal. Paldea Dex #001-375, #388-392.
+#   Champions VGC uses Reg M-A only — do NOT use SV VGC Regulations A-J or
+#   Regulation I.
+#
+# Tasks: format legality classification · team recommendation from partial
+#   teams · team archetype classification · usage prediction · cross-format
+#   viability prediction.
+# Pipeline: load per-format metadata + usage files → normalize features by
+#   format, battle style, legality, bans, and usage → train per-format or
+#   grouped models for singles, doubles, and Champions → validate against known
+#   usage leaders and archetypes → return structured JSON predictions by format.
+#   Use only formats present in this matrix.
+# ─────────────────────────────────────────────────────────────────────────────
+
 on:
   workflow_dispatch:
     inputs:
@@ -15,6 +56,10 @@ on:
         options:
           - self-hosted
           - ubuntu-latest
+      use_live_competitive_urls:
+        description: 'Fetch Smogon/Champions data from live URLs'
+        required: false
+        default: 'true'
 
 permissions:
   contents: write
@@ -24,6 +69,33 @@ env:
   # Directory where competitive meta data (CSVs + format_meta.json) is staged.
   # Passed to train_policy.py via --meta-path to log usage context per format.
   COMPETITIVE_DATA_DIR: data/competitive
+  # Supported (non-deprecated) competitive data files pulled for training.
+  # SV VGC Regulation I files are intentionally excluded — phased out; Champions
+  # VGC uses Reg M-A only. The prune step below removes them if present.
+  COMPETITIVE_DATA_FILES: >-
+    pokemon_competitive_data.json
+    FormatID-Label-Type.csv
+    smogon_format_pokemon_champions.csv
+    smogon_sv_formats.csv
+    smogon_sv_ou_bans.csv
+    smogon_ou_usage.csv
+    smogon_ou_usage_april2026.csv
+    smogon_april2026_tier_shifts.csv
+    smogon_tier_ou.csv smogon_tier_ubers.csv smogon_tier_uu.csv
+    smogon_tier_ru.csv smogon_tier_nu.csv smogon_tier_pu.csv
+    smogon_tier_zu.csv smogon_tier_lc.csv
+    top_team_archetypes.csv
+    champions_reg_ma_usage.csv
+    champions_reg_ma_archetypes.csv
+    vgc_formats.csv
+    limitless_vgc_usage.csv
+  # Deprecated SV VGC Regulation I files — removed before seeding.
+  COMPETITIVE_DATA_DEPRECATED: >-
+    vgc_reg_i_banned.csv
+    vgc_reg_i_restricted.csv
+    vgc_regulation_i_usage.csv
+    vgc_sv_regulations.csv
+    vgc_team_archetypes.csv
 
 jobs:
   train:
@@ -53,20 +125,26 @@ jobs:
           - { format: gen9doublesubers,        team_format: gen9doublesubers,    timesteps: 300000, train_timeout: 230 }
           - { format: gen9doublesuu,           team_format: gen9doublesuu,       timesteps: 300000, train_timeout: 230 }
           # ── Champions formats ─────────────────────────────────────────────────
-          - { format: gen9championsou,              team_format: "",                  timesteps: 500000, train_timeout: 160 }
-          - { format: gen9championsbssregma,        team_format: "",                  timesteps: 500000, train_timeout: 160 }
-          - { format: gen9championsvgc2026regma,    team_format: "",                  timesteps: 300000, train_timeout: 230 }
-          - { format: gen9championsvgc2026regmabo3, team_format: "",                  timesteps: 300000, train_timeout: 230 }
+          # team_format mirrors each format's own ID (per user directive). These IDs
+          # are NOT FORMAT_TEAMS keys and don't exist on the Showdown server, so:
+          #   • validate_teams.py → "No team pool mapped" → skips (non-fatal)
+          #   • train_policy.py   → no custom pool → trains without curated teams
+          #     (battles still run via the gen9ou / gen9vgc2026regi alias in
+          #      TRAINING_FORMAT_ALIASES, train_policy.py:198-201)
+          - { format: gen9championsou,              team_format: gen9championsou,              timesteps: 500000, train_timeout: 160 }
+          - { format: gen9championsbssregma,        team_format: gen9championsbssregma,        timesteps: 500000, train_timeout: 160 }
+          - { format: gen9championsvgc2026regma,    team_format: gen9championsvgc2026regma,    timesteps: 300000, train_timeout: 230 }
+          - { format: gen9championsvgc2026regmabo3, team_format: gen9championsvgc2026regmabo3, timesteps: 300000, train_timeout: 230 }
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false  # gh CLI uses GH_TOKEN env var; git credentials not needed
 
       - name: Set up Python (GitHub-hosted runners)
         if: runner.environment == 'github-hosted'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -128,20 +206,47 @@ jobs:
           # torch CPU wheel; pip disk cache persists on self-hosted runner between jobs
           pip install "torch>=2.8.0" --index-url https://download.pytorch.org/whl/cpu
 
+      - name: Prune deprecated competitive data
+        shell: bash
+        run: |
+          # SV VGC Regulation I is phased out; Champions VGC uses Reg M-A only.
+          # Delete the deprecated Reg I exports so the seeder can never consume them,
+          # even if the runner's working tree still carries old copies.
+          for f in ${COMPETITIVE_DATA_DEPRECATED}; do
+            target="${COMPETITIVE_DATA_DIR}/${f}"
+            if [ -f "$target" ]; then
+              rm -f "$target" && echo "  [PRUNED] $target"
+            fi
+          done
+          echo "Deprecated SV VGC Reg I files pruned (if present)."
+
       - name: Seed competitive meta data
         shell: bash
         env:
           PYTHONIOENCODING: utf-8
           PYTHONUTF8: "1"
+          USE_LIVE_COMPETITIVE_URLS: ${{ inputs.use_live_competitive_urls }}
+          COMPETITIVE_DATA_DIR: ${{ env.COMPETITIVE_DATA_DIR }}
         run: |
-          # Copy Gen 9 competitive CSVs/JSON from the local Showdown exports
-          # directory and build data/competitive/format_meta.json.
-          # Non-fatal: script fetches live Smogon stats when local exports are absent.
-          python scripts/prepare_competitive_data.py \
-            || echo "Competitive data seeding failed — check logs above"
+          mkdir -p "${COMPETITIVE_DATA_DIR}"
+
+          if [ "${USE_LIVE_COMPETITIVE_URLS}" = "true" ]; then
+            python scripts/prepare_competitive_data.py \
+              --smogon-stats-index "https://www.smogon.com/stats/" \
+              --smogon-api-base "https://pkmn.github.io/smogon/data/stats" \
+              --champions-rules-url "https://victoryroad.pro/champions-regulations/" \
+              --champions-online-events-url "https://play.limitlesstcg.com/tournaments/completed?game=VGC" \
+              --champions-major-events-url "https://labmaus.net/" \
+              --champions-usage-url "https://pokekipe.com/champions/vgc2026regma" \
+              --champions-usage-api-docs "https://pokekipe.com/openapi.json" \
+              || echo "Competitive data seeding failed — check logs above"
+          else
+            python scripts/prepare_competitive_data.py \
+              || echo "Competitive data seeding failed — check logs above"
+          fi
+
           if [ -f "${COMPETITIVE_DATA_DIR}/format_meta.json" ]; then
             echo "Meta data ready at ${COMPETITIVE_DATA_DIR}"
-            python -c "import json; d=json.load(open('${COMPETITIVE_DATA_DIR}/format_meta.json', encoding='utf-8')); print(f'  Formats indexed: {len(d)}'); [print(f\"  {k} ({v.get('stats_tier','?')}): top usage = {', '.join(e.get('pokemon','') for e in v.get('top10_usage',[])[:3])}\") for k, v in list(d.items())[:5]]" || true
           else
             echo "No format_meta.json generated — training proceeds without meta context"
           fi
