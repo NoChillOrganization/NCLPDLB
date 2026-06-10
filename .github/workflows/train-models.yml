@@ -153,18 +153,29 @@ jobs:
         run: |
           # GitHub-hosted runners: actions/setup-python already wired up python3.
           # Self-hosted runners: detect system Python (Windows or Linux).
-          if command -v python3 >/dev/null 2>&1; then
-            PYBIN=$(python3 -c "import sys; print(sys.executable)" 2>/dev/null || true)
+          # Reject the Microsoft Store app-execution alias — it resolves on PATH but
+          # fails to launch outside an interactive registered store session (CI breakage).
+          _probe() {
+            local exe
+            exe=$("$@" -c "import sys; print(sys.executable)" 2>/dev/null) || return 1
+            case "$exe" in *[Ww]indows[Aa]pps*) return 1 ;; esac
+            [ -n "$exe" ] && printf '%s\n' "$exe"
+          }
+          PYBIN=""
+          # GitHub-hosted: setup-python already put the right python3 first.
+          if [ "${RUNNER_ENVIRONMENT:-}" = "github-hosted" ]; then
+            PYBIN=$(_probe python3 || true)
           fi
-          # Windows self-hosted: also try python / python.exe
+          # Self-hosted: pin to 3.12 explicitly, store alias excluded.
+          [ -z "$PYBIN" ] && PYBIN=$(_probe python3.12 || true)
+          [ -z "$PYBIN" ] && PYBIN=$(_probe py -3.12 || true)
+          # Last-resort generic probes (still store-alias-guarded).
+          [ -z "$PYBIN" ] && PYBIN=$(_probe python3 || true)
+          [ -z "$PYBIN" ] && PYBIN=$(_probe python  || true)
+          [ -z "$PYBIN" ] && PYBIN=$(_probe python.exe || true)
           if [ -z "$PYBIN" ]; then
-            PYBIN=$(python -c "import sys; print(sys.executable)" 2>/dev/null \
-              || python.exe -c "import sys; print(sys.executable)" 2>/dev/null \
-              || true)
-            PYBIN=$(printf '%s' "$PYBIN" | grep -m1 -E '^(/|[A-Za-z]:[/\\])' || true)
-          fi
-          if [ -z "$PYBIN" ]; then
-            echo "ERROR: No Python interpreter found — install Python 3.11+ on the self-hosted runner"
+            echo "ERROR: No usable Python interpreter found (Microsoft Store alias excluded)."
+            echo "Install/repair Python 3.12 on the runner, or expose it as 'python3.12' on PATH."
             exit 1
           fi
 
@@ -476,7 +487,13 @@ jobs:
                     "${GITHUB_WORKSPACE}/.venv/Scripts/python"; do
             [ -x "$_P" ] && { PYBIN="$_P"; break; }
           done
-          [ -n "$PYBIN" ] || PYBIN=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v python.exe 2>/dev/null)
+          if [ -z "$PYBIN" ]; then
+            for _CMD in python3 python python.exe; do
+              _P=$(command -v "$_CMD" 2>/dev/null || true)
+              case "$_P" in *[Ww]indows[Aa]pps*) continue ;; esac
+              [ -n "$_P" ] && { PYBIN="$_P"; break; }
+            done
+          fi
           "$PYBIN" -c "
           import sys, os
           sys.path.insert(0, '.')
