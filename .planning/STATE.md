@@ -45,7 +45,7 @@ Progress: `[x][x][x][x][x][ ]` 5/6 phases complete
 ## Repo Location
 
 - Local clone: `F:\NCLPDLB`
-- Remote: `NoChillModeOnline/NCLPDLB`
+- Remote: `NoChillOrganization/NCLPDLB`
 - Branch: `master`
 
 ---

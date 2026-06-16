@@ -116,6 +116,7 @@ def _run_self_play_in_thread(
 
 def main(
     port: int = 8080,
+    host: str = "127.0.0.1",
     fmt: str = "gen9randombattle",
     mcts_sims: int = 0,
     buffer_capacity: int = 50_000,
@@ -242,7 +243,7 @@ def main(
         log.info("Open the dashboard and click Start to begin training.")
         log.info("Press Ctrl+C to stop.")
 
-        uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
+        uvicorn.run(app, host=host, port=port, log_level="warning")
 
     except KeyboardInterrupt:
         log.info("Shutting down...")
@@ -262,6 +263,7 @@ def _parse_args() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     ap.add_argument("--port",        type=int,   default=8080,               help="API/dashboard port")
+    ap.add_argument("--host",                    default="127.0.0.1",        help="API bind address (default loopback)")
     ap.add_argument("--format",      default="gen9randombattle",             help="Showdown format")
     ap.add_argument("--mcts-sims",   type=int,   default=0,                  help="MCTS simulations per move (0 = honest prior-shaping pass; >0 requires forward model)")
     ap.add_argument("--buffer",      type=int,   default=50_000,             help="Replay buffer capacity")
@@ -281,6 +283,7 @@ if __name__ == "__main__":
     args = _parse_args()
     main(
         port=args.port,
+        host=args.host,
         fmt=args.format,
         mcts_sims=args.mcts_sims,
         buffer_capacity=args.buffer,
