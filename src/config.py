@@ -56,7 +56,7 @@ class Settings(BaseSettings):
 
     # GitHub — used by /admin-pull-models to download trained models from releases
     github_token: SecretStr = SecretStr("")   # Personal access token (optional for public repos)
-    github_repo: str = "NoChillModeOnline/NCLPDLB"
+    github_repo: str = "NoChillOrganization/NCLPDLB"
 
     # ML policy models directory
     ml_policy_dir: str = "data/ml/policy"
