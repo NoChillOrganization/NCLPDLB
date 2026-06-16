@@ -9,7 +9,7 @@ discord.py>=2.7.1
 
 # Google Sheets Integration
 gspread>=6.2.1
-google-auth>=2.53.0
+google-auth>=2.55.0
 google-auth-oauthlib>=1.4.0
 
 # Data Validation
