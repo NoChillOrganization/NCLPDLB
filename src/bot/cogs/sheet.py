@@ -25,6 +25,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from src.bot.permissions import ROLE_GUILDMASTER, ROLE_MOD, require_role
 from src.data.sheets import Tab, sheets
 
 
@@ -215,7 +216,7 @@ class SheetCog(commands.Cog, name="Sheet"):
         name="sheet-standings",
         description="Recalculate and write standings to the spreadsheet",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @require_role(ROLE_MOD)
     @app_commands.describe(pool="Filter to a specific pool (A or B), or leave blank for all")
     async def sheet_standings(self, interaction: discord.Interaction, pool: str = "") -> None:
         await interaction.response.defer(ephemeral=True)
@@ -241,25 +242,25 @@ class SheetCog(commands.Cog, name="Sheet"):
 
     # ── /sheet-schedule add ───────────────────────────────────
     @app_commands.command(name="sheet-schedule", description="Add a match to the Schedule tab")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @require_role(ROLE_MOD)
     async def sheet_schedule(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_modal(ScheduleAddModal())
 
     # ── /sheet-result set ─────────────────────────────────────
     @app_commands.command(name="sheet-result", description="Record a match result in the spreadsheet")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @require_role(ROLE_MOD)
     async def sheet_result(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_modal(ResultSetModal())
 
     # ── /sheet-transaction ────────────────────────────────────
     @app_commands.command(name="sheet-transaction", description="Log a trade, drop, or add to Transactions tab")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @require_role(ROLE_MOD)
     async def sheet_transaction(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_modal(TransactionModal())
 
     # ── /sheet-rule add ───────────────────────────────────────
     @app_commands.command(name="sheet-rule", description="Add a rule to the Rules tab")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @require_role(ROLE_MOD)
     async def sheet_rule(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_modal(RuleAddModal())
 
@@ -270,6 +271,7 @@ class SheetCog(commands.Cog, name="Sheet"):
         app_commands.Choice(name="View current setup", value="view"),
         app_commands.Choice(name="Edit a value", value="edit"),
     ])
+    @require_role(ROLE_GUILDMASTER)
     async def sheet_setup(self, interaction: discord.Interaction, action: str = "view") -> None:
         if action == "edit":
             await interaction.response.send_modal(SetupEditModal())
@@ -288,13 +290,13 @@ class SheetCog(commands.Cog, name="Sheet"):
 
     # ── /sheet-player ─────────────────────────────────────────
     @app_commands.command(name="sheet-player", description="Update a player's team name, pool, or logo in the spreadsheet")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @require_role(ROLE_MOD)
     async def sheet_player(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_modal(PlayerTeamModal())
 
     # ── /sheet-pokedex sync ───────────────────────────────────
     @app_commands.command(name="sheet-pokedex", description="Sync local Pokemon data to the Pokedex tab (slow)")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @require_role(ROLE_GUILDMASTER)
     async def sheet_pokedex(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
         import json
@@ -317,7 +319,7 @@ class SheetCog(commands.Cog, name="Sheet"):
 
     # ── /sheet-playoff add ────────────────────────────────────
     @app_commands.command(name="sheet-playoff", description="Add a playoff match to the Playoffs tab")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @require_role(ROLE_MOD)
     async def sheet_playoff(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_modal(PlayoffAddModal())
 
@@ -325,8 +327,8 @@ class SheetCog(commands.Cog, name="Sheet"):
     async def cog_app_command_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
     ) -> None:
-        if isinstance(error, app_commands.MissingPermissions):
-            msg = "❌ You need **Manage Server** permission to use sheet commands."
+        if isinstance(error, app_commands.CheckFailure):
+            msg = str(error)
         else:
             msg = f"❌ Error: {error}"
         try:

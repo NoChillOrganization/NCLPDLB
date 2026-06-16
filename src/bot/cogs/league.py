@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 from discord import app_commands
 from discord.ext import commands
 
+from src.bot.permissions import ROLE_COACH, ROLE_GUILDMASTER, require_role
 from src.data.sheets import Tab, sheets
 from src.services.elo_service import EloService
 from src.services.notification_service import NotificationService
@@ -23,6 +24,7 @@ class LeagueCog(commands.Cog, name="League"):
         self.notifications = NotificationService(bot)
 
     @app_commands.command(name="league-create", description="Create a new draft league for this server")
+    @require_role(ROLE_GUILDMASTER)
     @app_commands.describe(name="League name", format="Draft format", season="Season number")
     async def league_create(
         self,
@@ -56,6 +58,7 @@ class LeagueCog(commands.Cog, name="League"):
         await interaction.followup.send(embed=embed)
 
     @app_commands.command(name="schedule", description="View the match schedule")
+    @require_role(ROLE_COACH)
     @app_commands.describe(week="Filter to a specific week (leave blank for all)", pool="Filter by pool (A or B)")
     async def schedule(
         self,
@@ -89,6 +92,7 @@ class LeagueCog(commands.Cog, name="League"):
         await interaction.followup.send(embed=embed)
 
     @app_commands.command(name="result", description="Report a match result")
+    @require_role(ROLE_COACH)
     @app_commands.describe(opponent="Your opponent", won="Did you win?")
     async def result(
         self,

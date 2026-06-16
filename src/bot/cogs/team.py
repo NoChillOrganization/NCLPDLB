@@ -8,6 +8,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from src.bot.constants import SUPPORTED_FORMATS
+from src.bot.permissions import ROLE_COACH, require_role
 from src.bot.views.team_import_view import TeamImportConfirmView, build_confirm_embed
 from src.bot.views.team_view import TeamEmbedView
 from src.services.analytics_service import AnalyticsService
@@ -68,6 +69,7 @@ class TeamCog(commands.Cog, name="Team"):
 
     # ── /team ────────────────────────────────────────────────
     @app_commands.command(name="team", description="View your current drafted team")
+    @require_role(ROLE_COACH)
     @app_commands.describe(user="View another player's team (leave blank for yours)")
     async def team(
         self,
@@ -88,6 +90,7 @@ class TeamCog(commands.Cog, name="Team"):
 
     # ── /team-register ───────────────────────────────────────
     @app_commands.command(name="team-register", description="Register your team name and logo for the league")
+    @require_role(ROLE_COACH)
     @app_commands.describe(
         team_name="Your team name",
         pool="Pool assignment (A or B)",
@@ -140,6 +143,7 @@ class TeamCog(commands.Cog, name="Team"):
 
     # ── /trade ───────────────────────────────────────────────
     @app_commands.command(name="trade", description="Propose a Pokemon trade")
+    @require_role(ROLE_COACH)
     @app_commands.describe(
         target="Player to trade with",
         offer="Pokemon you are offering",
@@ -185,6 +189,7 @@ class TeamCog(commands.Cog, name="Team"):
 
     # ── /trade-accept ────────────────────────────────────────
     @app_commands.command(name="trade-accept", description="Accept a pending trade offer")
+    @require_role(ROLE_COACH)
     @app_commands.describe(trade_id="Trade ID to accept")
     async def trade_accept(self, interaction: discord.Interaction, trade_id: str) -> None:
         await interaction.response.defer()
@@ -199,6 +204,7 @@ class TeamCog(commands.Cog, name="Team"):
 
     # ── /trade-decline ───────────────────────────────────────
     @app_commands.command(name="trade-decline", description="Decline a pending trade offer")
+    @require_role(ROLE_COACH)
     @app_commands.describe(trade_id="Trade ID to decline")
     async def trade_decline(self, interaction: discord.Interaction, trade_id: str) -> None:
         await interaction.response.defer(ephemeral=True)
@@ -216,6 +222,7 @@ class TeamCog(commands.Cog, name="Team"):
         name="teamimport",
         description="Import a Showdown team from a .txt file attachment",
     )
+    @require_role(ROLE_COACH)
     @app_commands.describe(
         format="Format to store the team under (e.g. Gen 9 OU, VGC 2024 Reg G)",
         team_file="Your Showdown team export as a .txt file",
@@ -288,6 +295,7 @@ class TeamCog(commands.Cog, name="Team"):
 
     # ── /teamexport ──────────────────────────────────────────
     @app_commands.command(name="teamexport", description="Export your team in Pokemon Showdown format")
+    @require_role(ROLE_COACH)
     async def teamexport(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
         export = await self.team_service.export_showdown(
@@ -307,6 +315,7 @@ class TeamCog(commands.Cog, name="Team"):
 
     # ── /legality ────────────────────────────────────────────
     @app_commands.command(name="legality", description="Check if a Pokemon is legal in a specific game")
+    @require_role(ROLE_COACH)
     @app_commands.describe(pokemon="Pokemon to check", game="Game to check legality for")
     @app_commands.choices(game=[
         app_commands.Choice(name="Scarlet/Violet", value="sv"),

@@ -11,6 +11,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from src.bot.permissions import ROLE_COACH, require_role
+
 log = logging.getLogger(__name__)
 
 try:
@@ -86,6 +88,7 @@ class MLCog(commands.Cog, name="ML"):
     # ── /ml-stats ─────────────────────────────────────────────────────
 
     @app_commands.command(name="ml-stats", description="Show ML training stats per format")
+    @require_role(ROLE_COACH)
     @app_commands.describe(refresh="Re-fetch latest data from the sheet")
     async def ml_stats(
         self,

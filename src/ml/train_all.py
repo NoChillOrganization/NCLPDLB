@@ -75,9 +75,6 @@ TRAINING_MAP: dict[str, tuple[str | None, str | None]] = {
     "gen9doublesou"          : ("gen9doublesou",          "gen9doublesou"),
     "gen9doublesubers"       : ("gen9doublesubers",       "gen9doublesubers"),
     "gen9doublesuu"          : ("gen9doublesuu",          "gen9doublesuu"),
-    # VGC 2026 — active regulation (Reg I) + Bo3 variant
-    "gen9vgc2026regi"             : ("gen9vgc2026regi",             "gen9vgc2026regi"),
-    "gen9vgc2026regibo3"          : ("gen9vgc2026regibo3",          "gen9vgc2026regi"),
     # Champions
     "gen9championsou"             : ("gen9championsou",             None),
     "gen9championsbssregma"       : ("gen9championsbssregma",       None),

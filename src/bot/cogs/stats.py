@@ -10,6 +10,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from src.bot.permissions import ROLE_COACH, require_role
 from src.data.pokeapi import pokemon_db
 from src.ml.train_all import TRAINING_MAP
 from src.services.analytics_service import AnalyticsService
@@ -91,6 +92,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
     # ── /analysis ─────────────────────────────────────────────
     @app_commands.command(name="analysis", description="Full team analysis: coverage, weaknesses, roles")
+    @require_role(ROLE_COACH)
     @app_commands.describe(user="Player to analyze (leave blank for yourself)")
     async def analysis(
         self,
@@ -117,6 +119,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
     # ── /matchup ──────────────────────────────────────────────
     @app_commands.command(name="matchup", description="Compare two teams head-to-head")
+    @require_role(ROLE_COACH)
     @app_commands.describe(
         player1="First player",
         player2="Second player",
@@ -146,6 +149,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
     # ── /standings ────────────────────────────────────────────
     @app_commands.command(name="standings", description="Show league standings and ELO ratings")
+    @require_role(ROLE_COACH)
     async def standings(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         standings = await self.elo.get_standings(guild_id=str(interaction.guild_id))
@@ -168,6 +172,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
     # ── /replay submit ────────────────────────────────────────
     @app_commands.command(name="replay", description="Submit a Pokemon Showdown replay link for a match")
+    @require_role(ROLE_COACH)
     @app_commands.describe(url="Pokemon Showdown replay URL (replay.pokemonshowdown.com/...)")
     async def replay(self, interaction: discord.Interaction, url: str) -> None:
         await interaction.response.defer()
@@ -195,6 +200,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
     # ── /match upload ─────────────────────────────────────────
     @app_commands.command(name="match-upload", description="Upload a capture card video of your match")
+    @require_role(ROLE_COACH)
     @app_commands.describe(
         video=f"Video file (MP4, MOV, AVI) — max {MAX_FILE_SIZE_MB}MB",
         opponent="Your opponent in this match",
@@ -236,6 +242,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
     # ── /pokemon ──────────────────────────────────────────────
     @app_commands.command(name="pokemon", description="Look up a Pokemon's stats and competitive info")
+    @require_role(ROLE_COACH)
     @app_commands.describe(name="Pokemon name (e.g. Garchomp, Rotom-Wash)")
     async def pokemon_lookup(self, interaction: discord.Interaction, name: str) -> None:
         await interaction.response.defer()
@@ -289,6 +296,7 @@ class StatsCog(commands.Cog, name="Stats"):
         name="spar",
         description="Challenge the bot to a practice battle on Pokemon Showdown",
     )
+    @require_role(ROLE_COACH)
     @app_commands.describe(
         showdown_name="Your Pokemon Showdown username",
         format="Battle format (default: gen9randombattle)",

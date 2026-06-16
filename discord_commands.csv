@@ -1,51 +1,56 @@
 Category,Command,Description,Parameters,Permission Required,Notes
-Draft,/draft-setup,Launch the interactive step-by-step draft setup wizard,(none — opens wizard UI),Manage Server,Walks through format / rounds / timer / game mode interactively
-Draft,/draft-create,Quickly create a draft with inline options,"format (snake/auction/tiered/custom), rounds (int), timer_seconds (int), game_format (showdown/vgc/sv/swsh/bdsp/legends)",Manage Server,Skips the wizard; all parameters have defaults
-Draft,/draft-join,Join an active draft as a player,"team_name (optional text), pool (A or B optional)",Any Player,Can only join while draft is in SETUP status
-Draft,/draft-cancel,Cancel and delete the current draft (confirmation required),(none),Manage Server,Shows a confirmation button before permanently removing the draft and all picks
-Draft,/draft-start,Start the draft and begin the first pick turn,(none),Commissioner Only,Requires at least 2 players joined; starts pick timer
-Draft,/pick,Pick a Pokemon on your turn,"pokemon (name, required), tera_type (optional — Normal/Fire/Water/…), is_tera_captain (optional bool)",Any Player (on their turn),Auto-skips if pick timer expires; validates against ban list
-Draft,/ban,Ban a Pokemon during the ban phase,pokemon (name required),Any Player (on their turn),Only valid during BAN_PHASE (Custom format)
-Draft,/bid,Place a bid during an auction draft,amount (integer required),Any Player (on their turn),Auction format only; checked against remaining budget
-Draft,/draft-status,Show the current draft status and whose turn it is,(none),Any Player,Shows round / pick number / current player / timer
-Draft,/draft-board,Show the full draft board with all picks so far,(none),Any Player,Paginated embed of all picks by round
-League,/league-create,Create a new draft league for this server,"name (text required), format (snake/auction/tiered/custom optional), season (int optional)",Any Member,Saves league to Google Sheets; one league per server typical
-League,/schedule,View the match schedule,"week (int optional), pool (A or B optional)",Any Member,Reads from Google Sheets Schedule tab
-League,/result,Report a match result and update ELO ratings,"opponent (@mention required), won (True/False required)",Any Member,Records ELO changes; DMs both players with new ratings; saves to Sheets
-Team,/team,View a player's drafted team,user (@mention optional — defaults to yourself),Any Member,Shows full roster embed with type coverage
-Team,/team-register,Register your team name and logo,"team_name (text required), logo_url (URL optional)",Any Member,Logo must be a valid image URL (Discord CDN or public link)
-Team,/trade,Propose a Pokemon trade with another player,"opponent (@mention required), give (Pokemon name required), receive (Pokemon name required)",Any Member,Creates a pending trade; opponent must /trade-accept to complete
-Team,/trade-accept,Accept a pending trade offer,trade_id (text required),Any Member (trade recipient),Trade ID shown in the trade offer embed
-Team,/trade-decline,Decline a pending trade offer,trade_id (text required),Any Member (trade recipient),Trade ID shown in the trade offer embed
-Team,/teamimport,Import a Showdown team from a .txt file attachment,"format (autocomplete: Gen 9 Smogon/VGC/Draft League), team_file (attachment: .txt Showdown export)",Any Player,Parses the export and shows a Confirm/Cancel embed before saving; format stored as separate team
-Team,/teamexport,Export your team in Pokemon Showdown format,(none),Any Member,Returns a pasteable Showdown team export string
-Team,/legality,Check if a Pokemon is legal in a specific game,"pokemon (name required), game (sv/swsh/bdsp/vgc/legends required)",Any Member,Checks console legality tables and VGC legality flag
-Stats,/analysis,Full team analysis — type coverage / weaknesses / roles / archetypes,user (@mention optional — defaults to yourself),Any Member,Powered by AnalyticsService; includes archetype label and threat score
-Stats,/matchup,Compare two teams head-to-head and show advantage score,"player1 (@mention optional), player2 (@mention optional)",Any Member,Leave both blank to compare the two most recent draft participants
-Stats,/standings,Show league ELO standings and win/loss records,(none),Any Member,Sorted by ELO descending; pulled from EloService + Sheets
-Stats,/replay,Submit a Pokemon Showdown replay link for a match,url (replay.pokemonshowdown.com URL required),Any Member,Auto-parses winner / Pokemon used / turns; records match result
-Stats,/match-upload,Upload a capture card video of your match,"opponent (@mention required), video (file attachment required), game_id (optional text)",Any Member,Uploads to Cloudflare R2 or Azure Blob; generates ffmpeg thumbnail if available; max 100MB
-Stats,/pokemon,Look up a Pokemon's stats / tier / abilities / console legality,name (Pokemon name required),Any Member,Returns embed with base stats / Showdown tier / VGC legality / sprite
-Stats,/spar,Challenge the AI bot to a live practice battle on Pokemon Showdown,"showdown_name (your Showdown username required), format (autocomplete — defaults to Gen 9 Random Battle)",Any Member,"Bot (NCL-Colress) sends you a challenge on Showdown; posts result when done. Trained models: gen9randombattle, gen9monorandom, gen7randombattle, gen6randombattle"
-Admin,/admin-update,Pull latest code from git + reload all cogs + re-sync commands,(none),Commissioner Only,"Runs git pull --ff-only, reloads every cog, then syncs slash commands to the server — one-stop bot update"
-Admin,/admin-sync,Sync slash commands with Discord — pushes new or updated commands,scope (guild = instant / global = up to 1 hour — defaults to guild),Commissioner Only,Use after adding or changing commands; guild sync is instant and affects this server only
-Admin,/admin-skip,Force-skip a player's pick turn,user (@mention required),Commissioner Only,Advances the pick order; cancels the current timer
-Admin,/admin-pause,Pause the active draft — freezes the pick timer and stops auto-skips,(none),Commissioner Only,Draft stays in PAUSED status until /admin-resume
-Admin,/admin-resume,Resume a paused draft — restores pick order and timer,(none),Commissioner Only,Restarts at the current player's turn
-Admin,/admin-override-pick,Replace an existing pick with a different Pokemon,"user (@mention required), old_pokemon (name required), new_pokemon (name required)",Commissioner Only,Edits the pick in-memory; does not re-save to Sheets automatically
-Admin,/admin-reset,Reset the entire draft (CANNOT BE UNDONE),(none — confirmation button appears),Commissioner Only,Wipes draft state from memory; does not roll back Sheets rows already written
-Admin,/admin-train-all,Train AI models for ALL formats sequentially,"timesteps (int — default 500000), skip_existing (bool — default True), server (localhost/showdown/browser — default localhost)",Commissioner Only,Trains every format in TRAINING_MAP one at a time; DMs a summary when all done. localhost requires local Node.js server; showdown/browser require two Showdown accounts
-Admin,/admin-train,Train the AI bot for a battle format,"format (autocomplete from TRAINING_MAP), timesteps (int — default 500000), force (bool — retrain even if model exists), server (localhost/showdown/browser — default localhost)",Commissioner Only,Runs train_all.py in background; DMs result when done. localhost requires local Node.js server; showdown/browser require two Showdown accounts
-Admin,/admin-pull-models,Download trained AI models from the latest GitHub Release into data/ml/policy/,"format (autocomplete — blank = all formats), release (tag e.g. ml-models-r5 — blank = latest)",Commissioner Only,Fetches the newest ml-models-r* release automatically; specific tag overrides default
-Admin,/admin-showdown-check,Open the local Showdown server health page in your browser + report TCP status,(none),Commissioner Only,Opens http://localhost:8000 in the host machine's default browser; also shows reachability status. Ephemeral reply.
-Sheet (Admin),/sheet-standings,View standings from the Google Sheets Standings tab,pool (A or B optional),Manage Server,Read-only view pulled directly from Sheets
-Sheet (Admin),/sheet-schedule,Add a new match to the Schedule tab in Google Sheets,(none — opens modal form),Manage Server,Modal prompts for player 1 / player 2 / week / date
-Sheet (Admin),/sheet-result,Record a match result manually in the spreadsheet,(none — opens modal form),Manage Server,Separate from /result — does not update ELO; for manual corrections
-Sheet (Admin),/sheet-transaction,Log a trade / drop / add to the Transactions tab,(none — opens modal form),Manage Server,For keeper leagues or waiver wire transactions
-Sheet (Admin),/sheet-rule,Add a rule entry to the Rules tab,(none — opens modal form),Manage Server,Rules are stored per-league in the Sheets Rules tab
-Sheet (Admin),/sheet-setup,"View or edit the league Setup tab (name, format, season, timer, etc.)",action (view or edit — defaults to view),Manage Server,Edit mode opens a modal to change a specific setting key/value
-Sheet (Admin),/sheet-player,Update a player's team name / pool / logo in the spreadsheet,(none — opens modal form),Manage Server,Useful for correcting registrations or pool assignments
-Sheet (Admin),/sheet-pokedex,Sync all local Pokemon data to the Pokedex tab (slow — up to 1000 rows),(none),Manage Server,One-time seed operation; takes ~10s for all Gen 1-9 data
-Sheet (Admin),/sheet-playoff,Add a playoff match result to the Playoffs tab,(none — opens modal form),Manage Server,Tracks bracket results separate from regular season
-ML,/ml-stats,Show ML training stats per format — battles logged / win rate / latest checkpoint,"refresh (bool optional — default False: use cache, True: re-fetch from sheet)",Any Member,Data sourced from ML learning spreadsheet; cache warmed on bot startup
-Misc,/help,Show all available bot commands grouped by category,(none),Any Player,Reads discord_commands.csv at call time — always reflects current command list
+Draft,/draft-setup,Launch the interactive step-by-step draft setup wizard,(none — opens wizard UI),Guildmaster,Walks through format / rounds / timer / game mode interactively
+Draft,/draft-create,Quickly create a draft with inline options,"format (snake/auction/tiered/custom), rounds (int), timer_seconds (int), game_format (showdown/vgc/sv/swsh/bdsp/legends)",Guildmaster,Skips the wizard; all parameters have defaults
+Draft,/draft-join,Join an active draft as a player,"team_name (optional text), pool (A or B optional)",Draft League Coaches,Can only join while draft is in SETUP status
+Draft,/draft-cancel,Cancel and delete the current draft (confirmation required),(none),Guildmaster,Shows a confirmation button before permanently removing the draft and all picks
+Draft,/draft-start,Start the draft and begin the first pick turn,(none),Guildmaster,Requires at least 2 players joined; starts pick timer
+Draft,/pick,Pick a Pokemon on your turn,"pokemon (name, required), tera_type (optional), is_tera_captain (optional bool)",Draft League Coaches (on their turn),Auto-skips if pick timer expires; validates against ban list
+Draft,/ban,Ban a Pokemon during the ban phase,pokemon (name required),Draft League Coaches (on their turn),Only valid during BAN_PHASE (Custom format)
+Draft,/bid,Place a bid during an auction draft,amount (integer required),Draft League Coaches (on their turn),Auction format only; checked against remaining budget
+Draft,/draft-status,Show the current draft status and whose turn it is,(none),Draft League Coaches,Shows round / pick number / current player / timer
+Draft,/draft-board,Show the full draft board with all picks so far,(none),Draft League Coaches,Paginated embed of all picks by round
+League,/league-create,Create a new draft league for this server,"name (text required), format (snake/auction/tiered/custom optional), season (int optional)",Guildmaster,Saves league to Google Sheets; one league per server typical
+League,/schedule,View the match schedule,"week (int optional), pool (A or B optional)",Draft League Coaches,Reads from Google Sheets Schedule tab
+League,/result,Report a match result and update ELO ratings,"opponent (@mention required), won (True/False required)",Draft League Coaches,Records ELO changes; DMs both players with new ratings; saves to Sheets
+Team,/team,View a player's drafted team,user (@mention optional — defaults to yourself),Draft League Coaches,Shows full roster embed with type coverage
+Team,/team-register,Register your team name and logo,"team_name (text required), logo_url (URL optional)",Draft League Coaches,Logo must be a valid image URL (Discord CDN or public link)
+Team,/trade,Propose a Pokemon trade with another player,"opponent (@mention required), give (Pokemon name required), receive (Pokemon name required)",Draft League Coaches,Creates a pending trade; opponent must /trade-accept to complete
+Team,/trade-accept,Accept a pending trade offer,trade_id (text required),Draft League Coaches (trade recipient),Trade ID shown in the trade offer embed
+Team,/trade-decline,Decline a pending trade offer,trade_id (text required),Draft League Coaches (trade recipient),Trade ID shown in the trade offer embed
+Team,/teamimport,Import a Showdown team from a .txt file attachment,"format (autocomplete: Gen 9 Smogon/VGC/Draft League), team_file (attachment: .txt Showdown export)",Draft League Coaches,Parses the export and shows a Confirm/Cancel embed before saving; format stored as separate team
+Team,/teamexport,Export your team in Pokemon Showdown format,(none),Draft League Coaches,Returns a pasteable Showdown team export string
+Team,/legality,Check if a Pokemon is legal in a specific game,"pokemon (name required), game (sv/swsh/bdsp/vgc/legends required)",Draft League Coaches,Checks console legality tables and VGC legality flag
+Stats,/analysis,Full team analysis -- type coverage / weaknesses / roles / archetypes,user (@mention optional -- defaults to yourself),Draft League Coaches,Powered by AnalyticsService; includes archetype label and threat score
+Stats,/matchup,Compare two teams head-to-head and show advantage score,"player1 (@mention optional), player2 (@mention optional)",Draft League Coaches,Leave both blank to compare the two most recent draft participants
+Stats,/standings,Show league ELO standings and win/loss records,(none),Draft League Coaches,Sorted by ELO descending; pulled from EloService + Sheets
+Stats,/replay,Submit a Pokemon Showdown replay link for a match,url (replay.pokemonshowdown.com URL required),Draft League Coaches,Auto-parses winner / Pokemon used / turns; records match result
+Stats,/match-upload,Upload a capture card video of your match,"opponent (@mention required), video (file attachment required), game_id (optional text)",Draft League Coaches,Uploads to Cloudflare R2 or Azure Blob; max 100MB
+Stats,/pokemon,Look up a Pokemon's stats / tier / abilities / console legality,name (Pokemon name required),Draft League Coaches,Returns embed with base stats / Showdown tier / VGC legality / sprite
+Stats,/spar,Challenge the AI bot to a live practice battle on Pokemon Showdown,"showdown_name (your Showdown username required), format (autocomplete -- defaults to gen9randombattle)",Draft League Coaches,"Bot (NCL-Colress) sends you a challenge on Showdown; posts result when done. Trained models: gen9randombattle, gen9monorandom, gen9randomdoublesbattle, gen9ou/uu/ru/nu/pu/zu/lc, gen9monotype, gen9nationaldex, gen9anythinggoes, gen9doublesou/uu, gen9championsou, gen9championsbssregma, gen9championsvgc2026regma/bo3"
+Admin,/admin-update,Pull latest code from git + reload all cogs + re-sync commands,(none),Guildmaster,"Runs git pull --ff-only, reloads every cog, then syncs slash commands to the server"
+Admin,/admin-sync,Sync slash commands with Discord -- pushes new or updated commands,scope (guild = instant / global = up to 1 hour -- defaults to guild),Guildmaster,Use after adding or changing commands; guild sync is instant and affects this server only
+Admin,/admin-skip,Force-skip a player's pick turn,user (@mention required),Moderators,Advances the pick order; cancels the current timer
+Admin,/admin-pause,Pause the active draft -- freezes the pick timer and stops auto-skips,(none),Moderators,Draft stays in PAUSED status until /admin-resume
+Admin,/admin-resume,Resume a paused draft -- restores pick order and timer,(none),Moderators,Restarts at the current player's turn
+Admin,/admin-override-pick,Replace an existing pick with a different Pokemon,"user (@mention required), old_pokemon (name required), new_pokemon (name required)",Moderators,In-memory only -- run /sheet-result to persist. Does not re-save to Sheets automatically.
+Admin,/admin-reset,Reset the entire draft (CANNOT BE UNDONE),(none -- confirmation button appears),Guildmaster,Wipes draft state from memory; does not roll back Sheets rows already written
+Admin,/admin-train-all,Train AI models for ALL formats sequentially,"timesteps (int -- default 500000), skip_existing (bool -- default True), server (localhost/showdown/browser -- default localhost)",Guildmaster,Trains every format in TRAINING_MAP one at a time; DMs a summary when all done
+Admin,/admin-train,Train the AI bot for a battle format,"format (autocomplete from TRAINING_MAP), timesteps (int -- default 500000), force (bool -- retrain even if model exists), server (localhost/showdown/browser -- default localhost)",Guildmaster,Runs train_all.py in background; DMs result when done
+Admin,/admin-pull-models,Download trained AI models from the latest GitHub Release into data/ml/policy/,"format (autocomplete -- blank = all formats), release (tag e.g. ml-models-r5-a1 -- blank = latest)",Guildmaster,"Fetches the newest ml-models-r* release; specific tag overrides default. Requires GITHUB_TOKEN (private repo). See /admin-list-releases for available tags."
+Admin,/admin-showdown-check,Check the local Showdown server health and TCP status,(none),Moderators,Shows reachability status for localhost:8000. Ephemeral reply.
+Admin,/admin-list-releases,List available ml-models-r* GitHub Releases with tag / date / asset count,(none),Moderators,Requires GITHUB_TOKEN. Use the tag shown here as the release: parameter for /admin-pull-models.
+Admin,/admin-cancel-pull,Cancel an in-progress /admin-pull-models download,(none),Guildmaster,Cancels all background pull tasks; safe to run if a download is stuck or stale.
+Admin,/admin-set-repo,Override the GitHub repo used for model downloads this session,repo (owner/repo format),Guildmaster,In-memory only; resets on bot restart. Use to test pulls from a fork or staging repo.
+Sheet (Admin),/sheet-standings,Recalculate and write standings to the spreadsheet,pool (A or B optional),Moderators,Writes ELO + win/loss for all players to Standings tab
+Sheet (Admin),/sheet-schedule,Add a new match to the Schedule tab in Google Sheets,(none -- opens modal form),Moderators,Modal prompts for player 1 / player 2 / week / date
+Sheet (Admin),/sheet-result,Record a match result manually in the spreadsheet,(none -- opens modal form),Moderators,Separate from /result -- does not update ELO; for manual corrections
+Sheet (Admin),/sheet-transaction,Log a trade / drop / add to the Transactions tab,(none -- opens modal form),Moderators,For keeper leagues or waiver wire transactions
+Sheet (Admin),/sheet-rule,Add a rule entry to the Rules tab,(none -- opens modal form),Moderators,Rules are stored per-league in the Sheets Rules tab
+Sheet (Admin),/sheet-setup,"View or edit the league Setup tab (name, format, season, timer, etc.)",action (view or edit -- defaults to view),Guildmaster,Edit mode opens a modal to change a specific setting key/value
+Sheet (Admin),/sheet-player,Update a player's team name / pool / logo in the spreadsheet,(none -- opens modal form),Moderators,Useful for correcting registrations or pool assignments
+Sheet (Admin),/sheet-pokedex,Sync all local Pokemon data to the Pokedex tab (slow -- up to 1000 rows),(none),Guildmaster,One-time seed operation; takes ~10s for all Gen 1-9 data
+Sheet (Admin),/sheet-playoff,Add a playoff match result to the Playoffs tab,(none -- opens modal form),Moderators,Tracks bracket results separate from regular season
+ML,/ml-stats,Show ML training stats per format -- battles logged / win rate / latest checkpoint,"refresh (bool optional -- default False: use cache, True: re-fetch from sheet)",Draft League Coaches,Data sourced from ML learning spreadsheet; cache warmed on bot startup
+Misc,/help,Show all available bot commands grouped by category,(none),Draft League Coaches,Reads discord_commands.csv at call time -- always reflects current command list
+Misc,/help-roles,Show which roles can use which commands,(none),Draft League Coaches,Static embed mapping Guildmaster / Moderators / Draft League Coaches to their command groups
+Misc,/models-status,Show which trained AI models are installed locally in data/ml/policy/,(none),Draft League Coaches,Scans for final_model.zip per format; shows size in KB or missing status
