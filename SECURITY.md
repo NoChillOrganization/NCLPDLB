@@ -15,7 +15,7 @@ Please **do not** open a public GitHub issue for security vulnerabilities.
 
 Report privately via one of:
 
-- **GitHub private security advisory**: [Report a vulnerability](https://github.com/NoChillModeOnline/NCLPDLB/security/advisories/new)
+- **GitHub private security advisory**: [Report a vulnerability](https://github.com/NoChillOrganization/NCLPDLB/security/advisories/new)
 - **Email**: travis.r.weisberg@gmail.com
 
 Include:

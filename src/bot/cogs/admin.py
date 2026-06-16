@@ -405,7 +405,7 @@ class AdminCog(commands.Cog, name="Admin"):
             headers["Authorization"] = f"Bearer {settings.github_token.get_secret_value()}"
 
         try:
-            async with httpx.AsyncClient(headers=headers, timeout=30) as client:
+            async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=30) as client:
                 resp = await client.get(f"https://api.github.com/repos/{repo}/releases")
                 resp.raise_for_status()
                 releases = resp.json()
@@ -856,12 +856,12 @@ async def _run_training_all(
 
     summary_embed = discord.Embed(
         title="Train-All Complete" if n_fail == 0 else "Train-All Finished With Errors",
-        description=(
-            f"**{n_ok} succeeded / {n_fail} failed** (+ {skipped_count} skipped)\n\n"
-            + "\n".join(summary_lines)
-        ),
+        description=f"**{n_ok} succeeded / {n_fail} failed** (+ {skipped_count} skipped)",
         color=discord.Color.green() if n_fail == 0 else discord.Color.orange(),
     )
+    # Split per-format results into ≤1024-char fields to avoid embed overflow.
+    for chunk in _chunk_lines(summary_lines):
+        summary_embed.add_field(name="​", value=chunk, inline=False)
     try:
         await interaction.user.send(embed=summary_embed)
     except Exception as exc:
@@ -956,6 +956,29 @@ def _build_progress_embed(
     return discord.Embed(title=title, description=desc, color=color)
 
 
+def _chunk_lines(lines: list[str], limit: int = 1024) -> list[str]:
+    """Split *lines* into joined chunks each ≤ *limit* characters.
+
+    Used to build Discord embed fields whose values must not exceed 1024 chars.
+    """
+    chunks: list[str] = []
+    current: list[str] = []
+    current_len = 0
+    for line in lines:
+        needed = len(line) + (1 if current else 0)  # +1 for the joining newline
+        if current_len + needed > limit:
+            if current:
+                chunks.append("\n".join(current))
+            current = [line]
+            current_len = len(line)
+        else:
+            current.append(line)
+            current_len += needed
+    if current:
+        chunks.append("\n".join(current))
+    return chunks
+
+
 async def _pull_models(
     interaction: discord.Interaction,
     fmt: str | None,
@@ -1021,7 +1044,15 @@ async def _pull_models(
                 save_path = policy_dir / target_fmt / "final_model.zip"
                 save_path.parent.mkdir(parents=True, exist_ok=True)
                 try:
-                    dl = await client.get(asset["browser_download_url"])
+                    # Use the asset API URL (not browser_download_url) so that
+                    # private-repo assets are fetched with the PAT.  GitHub 302s
+                    # to a signed objects.githubusercontent.com URL; httpx follows
+                    # the redirect automatically (follow_redirects=True above) and
+                    # drops the Authorization header on the cross-host hop.
+                    dl = await client.get(
+                        asset["url"],
+                        headers={"Accept": "application/octet-stream"},
+                    )
                     dl.raise_for_status()
                     save_path.write_bytes(dl.content)
                     size_kb = len(dl.content) // 1024
@@ -1040,17 +1071,27 @@ async def _pull_models(
 
     ok = sum(1 for v in results.values() if v.startswith("✅"))
     fail = len(results) - ok
-    lines = [f"`{f}` — {s}" for f, s in results.items()]
+    result_lines = [f"`{f}` — {s}" for f, s in results.items()]
     embed = discord.Embed(
         title=f"Model Download — {tag}",
-        description="\n".join(lines),
         color=discord.Color.green() if fail == 0 else discord.Color.orange(),
     )
     embed.set_footer(text=f"{ok} downloaded, {fail} skipped/failed")
+    # Split results into ≤1024-char field values to respect Discord's embed limits.
+    for chunk in _chunk_lines(result_lines):
+        embed.add_field(name="​", value=chunk, inline=False)
     try:
         await interaction.followup.send(embed=embed, ephemeral=True)
     except discord.NotFound:
         await interaction.user.send(embed=embed)
+    except discord.HTTPException as exc:
+        # Embed still too large or malformed — fall back to a safe plain summary.
+        log.warning(f"[admin-pull-models] embed send failed ({exc}); sending plain summary")
+        fallback = f"**Model Download — {tag}**\n{ok} downloaded, {fail} skipped/failed"
+        try:
+            await interaction.followup.send(fallback, ephemeral=True)
+        except discord.NotFound:
+            await interaction.user.send(fallback)
 
 
 async def setup(bot: commands.Bot) -> None:

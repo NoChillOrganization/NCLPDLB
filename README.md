@@ -27,7 +27,7 @@ and a standalone Windows executable (no server required).
 
 ### Option A: Run the standalone .exe (Windows — easiest)
 
-1. Download `NCLPDLB.exe` from the [Releases](https://github.com/NoChillModeOnline/NCLPDLB/releases) page
+1. Download `NCLPDLB.exe` from the [Releases](https://github.com/NoChillOrganization/NCLPDLB/releases) page
 2. Create a `.env` file next to the exe (copy from `.env.example`, fill in your tokens)
 3. Place your `credentials.json` next to the exe
 4. Double-click `NCLPDLB.exe` — the bot connects to Discord
@@ -43,7 +43,7 @@ and a standalone Windows executable (no server required).
 #### 1. Clone & configure
 
 ```bash
-git clone https://github.com/NoChillModeOnline/NCLPDLB.git
+git clone https://github.com/NoChillOrganization/NCLPDLB.git
 cd NCLPDLB
 cp .env.example .env
 # Edit .env with your tokens
@@ -207,11 +207,17 @@ The bot queues the ranked ladder on [play.pokemonshowdown.com](https://play.poke
 ```bash
 python -m src.ml.run_training \
   --format gen9randombattle \   # battle format (default: gen9randombattle)
+  --host 127.0.0.1 \            # API bind address (default: loopback only)
+  --port 8080 \                 # dashboard port
   --mcts-sims 30 \              # MCTS simulations per move
   --buffer 50000 \              # replay buffer capacity
   --lr 3e-4 \                   # transformer learning rate
   --train-every 5               # train after N games
 ```
+
+The training dashboard API binds to `127.0.0.1` by default (loopback only). Set
+`TRAIN_API_TOKEN` in `.env` to require a shared secret on the control endpoints
+(`/start`, `/stop`, `/config`).
 
 Models are saved to `src/ml/models/transformer_checkpoint.pt`. The bot loads this when a user runs `/spar`.
 
@@ -319,7 +325,7 @@ ML_LEARNING_SPREADSHEET_ID=      # Separate sheet for storing replay URLs (optio
 
 # GitHub — required for /admin-pull-models to download trained models from Releases
 GITHUB_TOKEN=                    # PAT (optional for public repos)
-GITHUB_REPO=NoChillModeOnline/NCLPDLB
+GITHUB_REPO=NoChillOrganization/NCLPDLB
 
 # Showdown — used for /spar and ladder training
 SHOWDOWN_USERNAME=YourBotAccount

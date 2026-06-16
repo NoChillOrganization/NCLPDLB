@@ -16,7 +16,7 @@ and write safely.
 Usage
 -----
   # Standalone (for testing):
-  uvicorn src.ml.api:app --host 0.0.0.0 --port 8080 --reload
+  uvicorn src.ml.api:app --host 127.0.0.1 --port 8080 --reload
 
   # Via run_training.py (recommended):
   python -m src.ml.run_training --port 8080
@@ -24,6 +24,7 @@ Usage
 from __future__ import annotations
 
 import logging
+import os
 import threading
 from pathlib import Path
 from typing import Any
@@ -33,7 +34,7 @@ log = logging.getLogger(__name__)
 # ── Dependency guard ──────────────────────────────────────────────────────────
 
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import Depends, FastAPI, Header, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse, JSONResponse
     from pydantic import BaseModel, Field
@@ -90,10 +91,18 @@ if FASTAPI_OK:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=["http://localhost:8080", "http://127.0.0.1:8080"],
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "X-Train-Token"],
     )
+
+    # ── Auth dependency ──────────────────────────────────────────────────
+
+    _TRAIN_TOKEN: str | None = os.environ.get("TRAIN_API_TOKEN")
+
+    def _require_token(x_train_token: str | None = Header(default=None)) -> None:
+        if _TRAIN_TOKEN and x_train_token != _TRAIN_TOKEN:
+            raise HTTPException(status_code=401, detail="Invalid or missing X-Train-Token")
 
     # ── Request / response models ────────────────────────────────────────
 
@@ -119,7 +128,7 @@ if FASTAPI_OK:
         return FileResponse(str(html_path), media_type="text/html")
 
     @app.post("/start")
-    def route_start() -> JSONResponse:
+    def route_start(_: None = Depends(_require_token)) -> JSONResponse:
         """Signal the training loop to start."""
         with _STATE_LOCK:
             if _STATE["status"] == "running":
@@ -132,14 +141,14 @@ if FASTAPI_OK:
         return JSONResponse({"ok": True, "message": "Training started"})
 
     @app.post("/stop")
-    def route_stop() -> JSONResponse:
+    def route_stop(_: None = Depends(_require_token)) -> JSONResponse:
         """Signal the training loop to stop after the current game."""
         update_state(status="stopped")
         log.info("[API] Training stop requested")
         return JSONResponse({"ok": True, "message": "Training stopped"})
 
     @app.post("/config")
-    def route_config(req: ConfigRequest) -> JSONResponse:
+    def route_config(req: ConfigRequest, _: None = Depends(_require_token)) -> JSONResponse:
         """Update runtime configuration."""
         update_state(mcts_sims=req.mcts_sims)
         log.info("[API] Config updated: mcts_sims=%d", req.mcts_sims)

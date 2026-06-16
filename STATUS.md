@@ -31,7 +31,7 @@
 - ✅ **Supported Formats**: 20 formats across Singles, Doubles, and Champions tiers
   (see `.github/workflows/train-models.yml` matrix for full list)
 - ✅ **Documentation**: README.md, docs/COMMANDS.md, docs/DEPLOYMENT.md
-- ✅ **GitHub**: All code synced to <https://github.com/NoChillModeOnline/NCLPDLB.git>
+- ✅ **GitHub**: All code synced to <https://github.com/NoChillOrganization/NCLPDLB.git>
 - ✅ **Standalone .exe**: PyInstaller spec at `src/bot/NCLPDLB.spec`
 
 ### Deployment
@@ -106,5 +106,5 @@ Trains all 20 formats. Models saved to `src/ml/models/transformer_checkpoint.pt`
 ## 📞 Support
 
 - **Documentation**: `README.md`, `docs/COMMANDS.md`, `docs/DEPLOYMENT.md`
-- **GitHub**: <https://github.com/NoChillModeOnline/NCLPDLB>
+- **GitHub**: <https://github.com/NoChillOrganization/NCLPDLB>
 - **Spreadsheet**: set `GOOGLE_SHEETS_SPREADSHEET_ID` in `.env`

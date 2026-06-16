@@ -19,7 +19,7 @@ Quick reference for running the Pokemon Draft League Bot.
 
 ### 1. Get the exe
 
-Download `NCLPDLB.exe` from [Releases](https://github.com/NoChillModeOnline/NCLPDLB/releases),
+Download `NCLPDLB.exe` from [Releases](https://github.com/NoChillOrganization/NCLPDLB/releases),
 or build it yourself:
 
 ```bash
@@ -115,7 +115,19 @@ All commands work without ML. Only `/spar` requires a trained model.
 # Actions → Train ML Models → Run workflow
 
 # Or run locally (requires local Showdown server on ws://localhost:8000):
-python -m src.ml.run_training
+python -m src.ml.run_training          # binds 127.0.0.1:8080 by default
+python -m src.ml.run_training --host 0.0.0.0  # expose to LAN (not recommended)
+```
+
+The training API dashboard defaults to loopback (`127.0.0.1`) and is not reachable
+from other machines unless you explicitly pass `--host 0.0.0.0`.
+
+To protect the control endpoints (`/start`, `/stop`, `/config`), set `TRAIN_API_TOKEN`
+in `.env`. If unset, endpoints are unauthenticated (local-only is acceptable for dev).
+
+```bash
+# .env
+TRAIN_API_TOKEN=your-random-secret-here
 ```
 
 Model saved to `src/ml/models/transformer_checkpoint.pt`.
