@@ -12,6 +12,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from src.bot.permissions import ROLE_COACH, ROLE_GUILDMASTER, require_role
 from src.bot.views.draft_view import DraftPickView
 from src.data.models import DraftFormat, TeraType
 from src.services.draft_service import DraftService
@@ -292,13 +293,14 @@ class DraftCog(commands.Cog, name="Draft"):
         name="draft-setup",
         description="Interactive setup wizard — configure the draft and save to spreadsheet",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @require_role(ROLE_GUILDMASTER)
     async def draft_setup(self, interaction: discord.Interaction) -> None:
         """Walks commissioner through all questions: players, format, game mode, tera captains."""
         await interaction.response.send_modal(DraftSetupModal())
 
     # ── /draft-create (quick create, for power users) ─────────
     @app_commands.command(name="draft-create", description="Quickly create a draft with options")
+    @require_role(ROLE_GUILDMASTER)
     @app_commands.describe(
         format="Draft format",
         rounds="Number of rounds (default: 6)",
@@ -359,6 +361,7 @@ class DraftCog(commands.Cog, name="Draft"):
 
     # ── /draft-join ───────────────────────────────────────────
     @app_commands.command(name="draft-join", description="Join an active draft")
+    @require_role(ROLE_COACH)
     @app_commands.describe(
         team_name="Your team name",
         pool="Pool assignment (A or B, default: auto)",
@@ -390,7 +393,8 @@ class DraftCog(commands.Cog, name="Draft"):
             await interaction.followup.send(f"❌ {result.error}", ephemeral=True)
 
     # ── /draft-start ──────────────────────────────────────────
-    @app_commands.command(name="draft-start", description="Start the draft (commissioner only)")
+    @app_commands.command(name="draft-start", description="Start the draft (Guildmaster only)")
+    @require_role(ROLE_GUILDMASTER)
     async def draft_start(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         channel = interaction.channel
@@ -445,6 +449,7 @@ class DraftCog(commands.Cog, name="Draft"):
 
     # ── /pick ─────────────────────────────────────────────────
     @app_commands.command(name="pick", description="Pick a Pokemon during the draft")
+    @require_role(ROLE_COACH)
     @app_commands.describe(
         pokemon="Pokemon name to pick",
         tera_type="Tera type (required if this Pokemon is a Tera Captain)",
@@ -486,6 +491,7 @@ class DraftCog(commands.Cog, name="Draft"):
 
     # ── /ban ──────────────────────────────────────────────────
     @app_commands.command(name="ban", description="Ban a Pokemon during the ban phase")
+    @require_role(ROLE_COACH)
     @app_commands.describe(pokemon="Pokemon name to ban")
     async def ban(self, interaction: discord.Interaction, pokemon: str) -> None:
         await interaction.response.defer()
@@ -506,6 +512,7 @@ class DraftCog(commands.Cog, name="Draft"):
 
     # ── /bid ──────────────────────────────────────────────────
     @app_commands.command(name="bid", description="Place a bid during auction draft")
+    @require_role(ROLE_COACH)
     @app_commands.describe(amount="Bid amount")
     async def bid(self, interaction: discord.Interaction, amount: int) -> None:
         await interaction.response.defer(ephemeral=True)
@@ -523,6 +530,7 @@ class DraftCog(commands.Cog, name="Draft"):
 
     # ── /draft-status ─────────────────────────────────────────
     @app_commands.command(name="draft-status", description="Show current draft status")
+    @require_role(ROLE_COACH)
     async def draft_status(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         draft = await self.draft_service.get_active_draft(str(interaction.guild_id))
@@ -544,6 +552,7 @@ class DraftCog(commands.Cog, name="Draft"):
 
     # ── /draft-board ──────────────────────────────────────────
     @app_commands.command(name="draft-board", description="Show the current draft board — all picks so far")
+    @require_role(ROLE_COACH)
     async def draft_board(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         draft = await self.draft_service.get_active_draft(str(interaction.guild_id))
@@ -574,8 +583,8 @@ class DraftCog(commands.Cog, name="Draft"):
         await interaction.followup.send(embed=embed)
 
     # ── /draft-cancel ─────────────────────────────────────────
-    @app_commands.command(name="draft-cancel", description="Cancel and delete the current draft (commissioner only)")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.command(name="draft-cancel", description="Cancel and delete the current draft (Guildmaster only)")
+    @require_role(ROLE_GUILDMASTER)
     async def draft_cancel(self, interaction: discord.Interaction) -> None:
         """Shows a confirmation prompt before cancelling the draft."""
         draft = await self.draft_service.get_active_draft(str(interaction.guild_id))
@@ -600,8 +609,9 @@ class DraftCog(commands.Cog, name="Draft"):
     @draft_setup.error
     @draft_create.error
     @draft_cancel.error
+    @draft_start.error
     async def draft_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
-        msg = "❌ Only server admins can create drafts." if isinstance(error, app_commands.MissingPermissions) else f"❌ Error: {error}"
+        msg = str(error) if isinstance(error, app_commands.CheckFailure) else f"❌ Error: {error}"
         if interaction.response.is_done():
             await interaction.followup.send(msg, ephemeral=True)
         else:
