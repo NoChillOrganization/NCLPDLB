@@ -6,8 +6,6 @@ import logging
 import uuid
 
 import discord
-
-log = logging.getLogger(__name__)
 from discord import app_commands
 from discord.ext import commands
 
@@ -15,6 +13,8 @@ from src.bot.permissions import ROLE_COACH, ROLE_GUILDMASTER, require_role
 from src.data.sheets import Tab, sheets
 from src.services.elo_service import EloService
 from src.services.notification_service import NotificationService
+
+log = logging.getLogger(__name__)
 
 
 class LeagueCog(commands.Cog, name="League"):

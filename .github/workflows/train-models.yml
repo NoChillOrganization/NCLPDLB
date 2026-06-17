@@ -541,7 +541,7 @@ jobs:
           fi
 
       - name: Upload model artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: success()
         with:
           name: model-${{ matrix.config.format }}
@@ -562,7 +562,7 @@ jobs:
 
     steps:
       - name: Download all models
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: model-*
           path: all-models

@@ -48,7 +48,7 @@ class VideoService:
         if attachment.content_type not in ALLOWED_MIME_TYPES:
             return VideoUploadResult(
                 success=False,
-                error=f"Unsupported file type. Please upload MP4, MOV, or AVI."
+                error="Unsupported file type. Please upload MP4, MOV, or AVI."
             )
         if attachment.size > MAX_FILE_SIZE_MB * 1024 * 1024:
             return VideoUploadResult(

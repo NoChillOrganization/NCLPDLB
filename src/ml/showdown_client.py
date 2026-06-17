@@ -278,7 +278,8 @@ class ShowdownCommander:
         """
         if password and challstr:
             # Public server: exchange challstr + credentials for an assertion token
-            import aiohttp, urllib.parse
+            import aiohttp
+            import urllib.parse
             login_url = "https://play.pokemonshowdown.com/~~showdown/action.php"
             payload = urllib.parse.urlencode({
                 "act": "login",
