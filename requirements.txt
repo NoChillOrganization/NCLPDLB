@@ -72,4 +72,4 @@ fastapi>=0.136.3       # ML training API server (src/ml/api.py, run_training.py)
 uvicorn>=0.48.0        # ASGI server for FastAPI ML API
 
 # Packaging (build standalone .exe)
-pyinstaller>=6.0       # build: pyinstaller src/bot/NCLPDLB.spec
+pyinstaller>=6.21.0       # build: pyinstaller src/bot/NCLPDLB.spec
