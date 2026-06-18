@@ -21,7 +21,7 @@ aiohttp>=3.14.1,<3.15
 httpx>=0.28.1
 
 # Data Scraping (Smogon)
-beautifulsoup4>=4.14.3
+beautifulsoup4>=4.15.0
 lxml>=6.1.1
 
 # Database
@@ -72,4 +72,4 @@ fastapi>=0.136.3       # ML training API server (src/ml/api.py, run_training.py)
 uvicorn>=0.48.0        # ASGI server for FastAPI ML API
 
 # Packaging (build standalone .exe)
-pyinstaller>=6.0       # build: pyinstaller src/bot/NCLPDLB.spec
+pyinstaller>=6.21.0       # build: pyinstaller src/bot/NCLPDLB.spec

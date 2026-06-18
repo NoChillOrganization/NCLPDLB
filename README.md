@@ -4,6 +4,8 @@ A full-featured Discord bot for running Pokemon draft leagues — supporting Pok
 console games (Scarlet/Violet, Sword/Shield), with Google Sheets integration, ELO matchmaking,
 and a standalone Windows executable (no server required).
 
+<!-- verify: Automatic Dependency Submission toggle, run 27686802052 follow-up -->
+
 ---
 
 ## Features
