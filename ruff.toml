@@ -1,0 +1,5 @@
+[lint.per-file-ignores]
+# sys.path bootstrap / pytest.importorskip guards require imports after
+# non-import statements — intentional, not an ordering bug.
+"scripts/*.py" = ["E402"]
+"tests/**/*.py" = ["E402"]

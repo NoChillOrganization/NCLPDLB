@@ -1,7 +1,6 @@
 """
 Stats Cog — Team analytics, battle simulation, ELO, Showdown replays, video uploads, /spar.
 """
-import asyncio
 import logging
 from pathlib import Path
 from src.bot.cogs.admin import _create_background_task

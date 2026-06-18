@@ -31,8 +31,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
+
+if TYPE_CHECKING:
+    from src.ml.replay_parser import BattleRecord
 
 from src.ml.replay_parser import (
     _extract_species,
@@ -513,7 +517,7 @@ class TestParseReplayDir:
 class TestTeamAlphabeticalOrder:
     """p1_team / p2_team must always be alphabetically sorted (Branch 1 fix)."""
 
-    def _parse(self, log_lines: list[str]) -> "BattleRecord":
+    def _parse(self, log_lines: list[str]) -> BattleRecord:
         from src.ml.replay_parser import parse_replay_json
         log = "\n".join(log_lines)
         return parse_replay_json({

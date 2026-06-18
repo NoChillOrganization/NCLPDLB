@@ -115,7 +115,7 @@ class MiscCog(commands.Cog, name="Misc"):
             else:
                 lines.append(f"❌ `{fmt}` — not installed")
 
-        installed = sum(1 for l in lines if l.startswith("✅"))
+        installed = sum(1 for line in lines if line.startswith("✅"))
         embed = discord.Embed(
             title="Local Model Status",
             description="\n".join(lines) or "No formats in TRAINING_MAP.",

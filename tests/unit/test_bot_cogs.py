@@ -1152,7 +1152,7 @@ async def test_pull_models_latest_release_fetched_by_id():
     list_resp = MagicMock()
     list_resp.raise_for_status = MagicMock()
     list_resp.json = MagicMock(return_value=[
-        {"tag_name": "ml-models-r1", "id": 999},
+        {"tag_name": "ml-models-r1", "id": 999, "created_at": "2026-01-01T00:00:00Z"},
     ])
 
     release_detail_resp = MagicMock()
@@ -1190,7 +1190,9 @@ async def test_pull_models_download_exception_recorded():
 
     list_resp = MagicMock()
     list_resp.raise_for_status = MagicMock()
-    list_resp.json = MagicMock(return_value=[{"tag_name": "ml-models-r1", "id": 1}])
+    list_resp.json = MagicMock(return_value=[
+        {"tag_name": "ml-models-r1", "id": 1, "created_at": "2026-01-01T00:00:00Z"},
+    ])
 
     release_resp = MagicMock()
     release_resp.raise_for_status = MagicMock()
@@ -1213,10 +1215,10 @@ async def test_pull_models_download_exception_recorded():
          patch("pathlib.Path.mkdir"):
         await _pull_models(interaction, fmt=fmt, release_tag=None)
 
-    # followup.send(embed=embed, ephemeral=True) — check the embed's description
+    # followup.send(embed=embed, ephemeral=True) — check the embed's fields
     send_kwargs = interaction.followup.send.call_args[1]
     embed = send_kwargs["embed"]
-    assert "❌" in embed.description
+    assert any("❌" in f.value for f in embed.fields)
 
 
 # ── TeamCog command handlers ───────────────────────────────────────────────────
@@ -1630,6 +1632,8 @@ async def test_is_commissioner_predicate_with_manage_guild_returns_true():
     predicate = check_decorator.__closure__[0].cell_contents
 
     interaction = make_interaction()
+    interaction.user = MagicMock(spec=discord.Member)
+    interaction.user.guild_permissions = MagicMock()
     interaction.user.guild_permissions.manage_guild = True
 
     result = await predicate(interaction)
@@ -2337,7 +2341,7 @@ async def test_pull_models_asset_not_in_release_marks_not_found():
     interaction.followup.send.assert_awaited_once()
     embed_arg = interaction.followup.send.call_args.kwargs.get("embed")
     assert embed_arg is not None
-    assert "not in release" in embed_arg.description
+    assert any("not in release" in f.value for f in embed_arg.fields)
 
 
 async def test_pull_models_github_api_error_sends_error_message():

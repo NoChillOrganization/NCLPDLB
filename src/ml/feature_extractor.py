@@ -31,7 +31,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from src.ml.type_chart import get_type_effectiveness_float
 
 if TYPE_CHECKING:
     from poke_env.battle import AbstractBattle
