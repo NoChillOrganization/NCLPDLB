@@ -337,9 +337,6 @@ def train_browser(  # pragma: no cover
         policy = None
         log.warning("[browser_trainer] stable-baselines3 not available — running random policy")
 
-    from datetime import datetime
-    start_date = datetime.now().strftime("%Y-%m-%d")
-
     steps = 0
     swap_every = 50_000
     last_swap = 0
@@ -472,5 +469,3 @@ def train_browser(  # pragma: no cover
         "Implement behaviour cloning on the actor head (supervised cross-entropy) before "
         "using browser-mode training. Track: TODO(H16)."
     )
-
-    return final_path

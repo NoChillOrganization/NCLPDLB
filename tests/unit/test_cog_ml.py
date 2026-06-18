@@ -2,7 +2,6 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import discord
 import pytest
 
 from src.bot.cogs.ml import MLCog, _build_stats_table, _fmt_pct, _fmt_ckpt

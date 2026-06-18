@@ -117,6 +117,8 @@ src/
                            misc, ml)
     views/               — discord.py UI views (draft_view, team_view, team_import_view)
     constants.py         — Shared embed colours, emoji, strings
+    permissions.py       — `require_role()` app_commands.check decorator; enforces named
+                           Discord roles (commissioner/captain/etc.) on commands
     hooks/
       hook-pydantic.py   — PyInstaller hook; suppresses pydantic V1 compat warning on Python 3.14+
   ml/
@@ -157,6 +159,8 @@ src/
 **Cogs are the public API.** Commands live in `src/bot/cogs/`; they delegate all logic to `src/services/`. Views (`src/bot/views/`) handle multi-step Discord UI interactions (modals, selects, buttons).
 
 **ML requires a local Showdown server.** `battle_env.py` connects to `ws://localhost:8000`. See `scripts/setup_showdown_server.md` for setup. Training is independent of the Discord bot.
+
+**ML training API is loopback-only.** `run_training.py`/`api.py` bind to `127.0.0.1` by default and support optional bearer-token auth via `TRAIN_API_TOKEN` env var. Don't change the default bind address without adding auth in front of it.
 
 ### Configuration (`.env`)
 

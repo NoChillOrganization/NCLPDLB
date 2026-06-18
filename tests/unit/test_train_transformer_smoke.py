@@ -12,9 +12,8 @@ Covers:
 """
 from __future__ import annotations
 
-import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 
@@ -145,7 +144,7 @@ class TestTrainSmoke:
                 mock_asyncio.run.return_value = synthetic
                 mock_asyncio.wait_for = asyncio.wait_for
 
-                results = train(
+                train(
                     fmt="gen9randombattle",
                     n_games=20,
                     n_epochs=3,
