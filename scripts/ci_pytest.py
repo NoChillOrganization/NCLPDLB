@@ -9,4 +9,7 @@ import sys
 import pytest
 
 if __name__ == "__main__":
-    os._exit(int(pytest.main(sys.argv[1:])))
+    rc = pytest.main(sys.argv[1:])
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(int(rc))

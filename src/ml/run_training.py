@@ -59,10 +59,15 @@ log = logging.getLogger(__name__)
 # ── Windows asyncio fix ───────────────────────────────────────────────────────
 
 def _apply_windows_event_loop_fix() -> None:
-    """Ensure ProactorEventLoop is used on Windows for WebSocket + subprocess support."""
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-        log.debug("Applied WindowsProactorEventLoopPolicy")
+    """No-op on all supported Pythons.
+
+    ProactorEventLoop has been the Windows default since Python 3.8, so this
+    used to just re-apply the default via the (now-deprecated, removed in
+    3.16) event-loop-policy API. Kept as a no-op function — rather than
+    deleting it outright — so callers and tests don't need to change if a
+    real loop-construction workaround is ever needed again.
+    """
+    return
 
 
 # ── Dependency checks ─────────────────────────────────────────────────────────
