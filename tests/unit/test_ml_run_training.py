@@ -40,13 +40,14 @@ class TestApplyWindowsEventLoopFix:
         # On macOS/Linux sys.platform != "win32", function is a no-op
         _apply_windows_event_loop_fix()  # should not raise
 
-    def test_sets_proactor_on_windows(self):
-        mock_policy = MagicMock()
+    def test_noop_on_windows(self):
+        # Function is a no-op on every platform now (Proactor is the
+        # Windows default since 3.8); it must not touch the event loop
+        # policy API, which was removed in Python 3.16.
         with patch("sys.platform", "win32"), \
-             patch("asyncio.WindowsProactorEventLoopPolicy", mock_policy, create=True), \
              patch("asyncio.set_event_loop_policy") as mock_set:
             _apply_windows_event_loop_fix()
-            mock_set.assert_called_once()
+            mock_set.assert_not_called()
 
 
 # ── _check_dependencies ───────────────────────────────────────────────────────
