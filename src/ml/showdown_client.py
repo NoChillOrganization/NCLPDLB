@@ -46,14 +46,15 @@ except ImportError:  # pragma: no cover
 # ── Windows compatibility helper ──────────────────────────────────────────────
 
 def windows_event_loop_fix() -> None:
-    """
-    Ensure asyncio uses ProactorEventLoop on Windows.
+    """No-op on all supported Pythons.
 
-    Call once at the top of any script that uses ShowdownClient.
-    No-op on macOS / Linux.
+    ProactorEventLoop has been the Windows default since Python 3.8, so this
+    used to just re-apply the default via the (now-deprecated, removed in
+    3.16) event-loop-policy API. Kept as a no-op function — rather than
+    deleting it outright — so callers and tests don't need to change if a
+    real loop-construction workaround is ever needed again.
     """
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    return
 
 
 # ── Layer 1: Connection ───────────────────────────────────────────────────────
