@@ -140,6 +140,7 @@ jobs:
           - { format: gen9championsvgc2026regma,    team_format: gen9championsvgc2026regma,    timesteps: 300000, train_timeout: 230 }
           - { format: gen9championsvgc2026regmb,    team_format: gen9championsvgc2026regmb,    timesteps: 300000, train_timeout: 230 }
           - { format: gen9championsvgc2026regmabo3, team_format: gen9championsvgc2026regmabo3, timesteps: 300000, train_timeout: 230 }
+          - { format: gen9championsvgc2026regmb,    team_format: gen9championsvgc2026regmb,    timesteps: 300000, train_timeout: 230 }
           - { format: gen9championsvgc2026regmbbo3, team_format: gen9championsvgc2026regmbbo3, timesteps: 300000, train_timeout: 230 }
 
     steps:
