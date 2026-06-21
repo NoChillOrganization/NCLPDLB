@@ -190,9 +190,10 @@ Four structures govern which ML format goes where — central to any ML format w
 
 - **`FORMAT_TEAMS`** (`src/ml/teams.py`) — format → curated Showdown team strings; consumed by
   `RotatingTeambuilder` and `--team-format`.
-- **`TRAINING_FORMAT_ALIASES`** (`src/ml/train_policy.py:193`) — maps unsupported formats (BO3
+- **`TRAINING_FORMAT_ALIASES`** (`src/ml/train_policy.py:195`) — maps unsupported formats (BO3
   series, Champions) to a real trainable format (e.g. `gen9championsou→gen9ou`,
-  `gen9championsvgc2026regma→gen9vgc2026regi`), since poke-env/the server can't run them directly.
+  `gen9championsvgc2026regma→gen9vgc2026regi`, `gen9championsvgc2026regmb→gen9vgc2026regi`),
+  since poke-env/the server can't run them directly.
 - **`DOUBLES_FORMATS`** (`src/ml/train_policy.py:168`) — formats routed to `BattleDoubleEnv`.
 - **`TRAINING_MAP`** (`src/ml/train_all.py:58`) — the canonical format list; mirrors the
   `train-models.yml` CI matrix. `SPAR_FORMATS` (bot) derives from it.

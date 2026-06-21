@@ -18,6 +18,8 @@ Optional live-URL flags (all non-fatal — fall back to bundled CSVs on error):
   --champions-major-events-url URL    labmaus.net major events
   --champions-usage-url URL   pokekipe.com Champions VGC usage page
   --champions-usage-api-docs URL      pokekipe.com/openapi.json spec
+  --champions-tournament-data-url URL pikalytics.com Champions tournament data (Reg M-B)
+  --champions-regmb-ranked-data-url URL pikalytics.com Reg M-B ranked ladder data
 
 Usage:
     python scripts/prepare_competitive_data.py
@@ -25,7 +27,9 @@ Usage:
         --smogon-stats-index https://www.smogon.com/stats/ \\
         --smogon-api-base https://pkmn.github.io/smogon/data/stats \\
         --champions-usage-url https://pokekipe.com/champions/vgc2026regma \\
-        --champions-usage-api-docs https://pokekipe.com/openapi.json
+        --champions-usage-api-docs https://pokekipe.com/openapi.json \\
+        --champions-tournament-data-url https://www.pikalytics.com/pokedex/championstournaments \\
+        --champions-regmb-ranked-data-url https://www.pikalytics.com/pokedex/battledataregmbs3
     COMPETITIVE_EXPORTS_DIR=/some/other/path python scripts/prepare_competitive_data.py
 """
 from __future__ import annotations
@@ -135,8 +139,11 @@ FORMAT_TIER_MAP: dict[str, str] = {
     # Champions formats
     "gen9championsou":              "ou",
     "gen9championsbssregma":        "bssregi",
+    "gen9championsbssregmb":        "bssregi",
     "gen9championsvgc2026regma":    "champions",
     "gen9championsvgc2026regmabo3": "champions",
+    "gen9championsvgc2026regmb":    "championsmb",
+    "gen9championsvgc2026regmbbo3": "championsmb",
 }
 
 # Cache so each tier URL is only fetched once per run
@@ -247,13 +254,13 @@ def _top10_from_csv(filename: str) -> list[dict]:
     return top10
 
 
-def _load_champions_archetypes() -> list[dict]:
-    """Load top archetypes from champions_reg_ma_archetypes.csv.
+def _load_champions_archetypes(filename: str = "champions_reg_ma_archetypes.csv") -> list[dict]:
+    """Load top archetypes from a Champions archetypes CSV.
 
     Columns: rank, core, size, usage_pct, win_pct, avg_rating
     Returns up to 15 entries, each as a dict of non-empty fields.
     """
-    path = DEST_DIR / "champions_reg_ma_archetypes.csv"
+    path = DEST_DIR / filename
     if not path.exists():
         return []
     rows = _read_csv(path)
@@ -445,6 +452,75 @@ def fetch_champions_usage(usage_url: str, api_docs: str) -> None:
         print(f"  [WARN] Champions usage fetch failed: {exc}")
 
 
+def fetch_champions_regmb(ranked_url: str, tournament_url: str) -> None:
+    """Refresh champions_reg_mb_usage.csv and champions_reg_mb_archetypes.csv.
+
+    Sources from pikalytics.com Reg M-B ranked/tournament HTML pages (no JSON
+    API like pokekipe). Selectors are best-effort — pikalytics' markup shape
+    isn't known ahead of a live fetch, so this does a generic regex scan for
+    pokemon-name/usage-percent pairs and falls back silently (keep bundled
+    CSV, log INFO) if nothing recognizable is found.
+    """
+    if not _HTTPX_AVAILABLE:
+        print("  [WARN] httpx not available — skipping live Champions Reg M-B fetch")
+        return
+    try:
+        usage_rows: list[dict] = []
+        if ranked_url:
+            try:
+                r = _httpx.get(ranked_url, timeout=20, follow_redirects=True)
+                r.raise_for_status()
+                html = r.text
+                # Best-effort: pokemon name + adjacent usage percentage.
+                for i, m in enumerate(
+                    re.finditer(r'data-pokemon="([A-Za-z0-9\-]+)"[^>]*>.*?([\d.]+)%', html), 1
+                ):
+                    usage_rows.append({
+                        "rank": i, "tier": "regmb", "pokemon": m.group(1),
+                        "usage_pct": m.group(2), "win_pct": "", "avg_rating": "",
+                    })
+            except Exception as exc:
+                print(f"  [WARN] Champions Reg M-B ranked fetch failed: {exc}")
+
+        if usage_rows:
+            csv_path = DEST_DIR / "champions_reg_mb_usage.csv"
+            with csv_path.open("w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=["rank", "tier", "pokemon", "usage_pct", "win_pct", "avg_rating"])
+                writer.writeheader()
+                writer.writerows(usage_rows)
+            print(f"  [CHAMPIONS] Reg M-B usage: {len(usage_rows)} pokemon → champions_reg_mb_usage.csv")
+        else:
+            print("  [INFO] Champions Reg M-B usage: no parseable rows — keeping bundled CSV")
+
+        archetype_rows: list[dict] = []
+        if tournament_url:
+            try:
+                r = _httpx.get(tournament_url, timeout=20, follow_redirects=True)
+                r.raise_for_status()
+                html = r.text
+                for i, m in enumerate(
+                    re.finditer(r'data-core="([^"]+)"[^>]*>.*?([\d.]+)%', html), 1
+                ):
+                    archetype_rows.append({
+                        "rank": i, "core": m.group(1), "size": "",
+                        "usage_pct": m.group(2), "win_pct": "", "avg_rating": "",
+                    })
+            except Exception as exc:
+                print(f"  [WARN] Champions Reg M-B tournament fetch failed: {exc}")
+
+        if archetype_rows:
+            csv_path = DEST_DIR / "champions_reg_mb_archetypes.csv"
+            with csv_path.open("w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=["rank", "core", "size", "usage_pct", "win_pct", "avg_rating"])
+                writer.writeheader()
+                writer.writerows(archetype_rows)
+            print(f"  [CHAMPIONS] Reg M-B archetypes: {len(archetype_rows)} → champions_reg_mb_archetypes.csv")
+        else:
+            print("  [INFO] Champions Reg M-B archetypes: no parseable rows — keeping bundled CSV")
+    except Exception as exc:
+        print(f"  [WARN] Champions Reg M-B fetch failed: {exc}")
+
+
 def fetch_champions_rules(rules_url: str) -> None:
     """Fetch Champions Reg M-A legality rules from victoryroad.pro.  Non-fatal; logs only."""
     if not _HTTPX_AVAILABLE:
@@ -517,6 +593,8 @@ def build_format_configs() -> None:
             # Champions VGC Reg M-A — read from local CSV (Garchomp/Basculegion pool,
             # NOT Calyrex/Koraidon/Miraidon which appeared in the old Reg I file).
             top10 = _top10_from_csv("champions_reg_ma_usage.csv")
+        elif tier == "championsmb":
+            top10 = _top10_from_csv("champions_reg_mb_usage.csv")
         else:
             rows = _fetch_smogon_stats(tier)
             top10 = _top10_from_smogon_rows(rows)
@@ -538,11 +616,18 @@ def build_format_configs() -> None:
                     )
 
     # Champions VGC archetypes (champions_reg_ma_archetypes.csv — core column)
-    champ_archetypes = _load_champions_archetypes()
+    champ_archetypes = _load_champions_archetypes("champions_reg_ma_archetypes.csv")
     if champ_archetypes:
         for champ_fmt in ("gen9championsvgc2026regma", "gen9championsvgc2026regmabo3"):
             if champ_fmt in config:
                 config[champ_fmt]["archetypes"] = champ_archetypes
+
+    # Champions VGC Reg M-B archetypes (champions_reg_mb_archetypes.csv)
+    champ_mb_archetypes = _load_champions_archetypes("champions_reg_mb_archetypes.csv")
+    if champ_mb_archetypes:
+        for champ_fmt in ("gen9championsvgc2026regmb", "gen9championsvgc2026regmbbo3"):
+            if champ_fmt in config:
+                config[champ_fmt]["archetypes"] = champ_mb_archetypes
 
     # Sanity-check: warn if multiple non-alias formats share identical top-3.
     # (Indicates URL 404s or tier-cache collision — not a genuine data divergence.)
@@ -600,6 +685,12 @@ def main() -> None:
     parser.add_argument("--champions-usage-api-docs", default="",
                         metavar="URL",
                         help="pokekipe.com OpenAPI spec URL for endpoint discovery")
+    parser.add_argument("--champions-tournament-data-url", default="",
+                        metavar="URL",
+                        help="pikalytics.com Champions tournament data URL (Reg M-B archetypes)")
+    parser.add_argument("--champions-regmb-ranked-data-url", default="",
+                        metavar="URL",
+                        help="pikalytics.com Reg M-B ranked ladder data URL (Reg M-B usage)")
     args = parser.parse_args()
 
     src_label = str(EXPORTS_DIR) if EXPORTS_DIR else "(not set - using files already in dest)"
@@ -624,6 +715,13 @@ def main() -> None:
         fetch_champions_usage(
             usage_url=args.champions_usage_url or "https://pokekipe.com/champions/vgc2026regma",
             api_docs=args.champions_usage_api_docs or "https://pokekipe.com/openapi.json",
+        )
+
+    if args.champions_tournament_data_url or args.champions_regmb_ranked_data_url:
+        print("[prepare_competitive_data] Fetching Champions Reg M-B (live)...")
+        fetch_champions_regmb(
+            ranked_url=args.champions_regmb_ranked_data_url,
+            tournament_url=args.champions_tournament_data_url,
         )
 
     if args.champions_rules_url:
