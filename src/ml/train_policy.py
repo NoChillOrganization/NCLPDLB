@@ -185,6 +185,8 @@ DOUBLES_FORMATS = {
     # Champions Doubles
     "gen9championsvgc2026regma",
     "gen9championsvgc2026regmabo3",
+    "gen9championsvgc2026regmb",
+    "gen9championsvgc2026regmbbo3",
 }
 
 # Some formats use the same Showdown battle mechanics as a base format.
@@ -197,8 +199,11 @@ TRAINING_FORMAT_ALIASES: dict[str, str] = {
     # the closest standard format so battles can actually start.
     "gen9championsou"             : "gen9ou",
     "gen9championsbssregma"       : "gen9ou",
+    "gen9championsbssregmb"       : "gen9ou",
     "gen9championsvgc2026regma"   : "gen9vgc2026regi",
     "gen9championsvgc2026regmabo3": "gen9vgc2026regi",
+    "gen9championsvgc2026regmb"   : "gen9vgc2026regi",
+    "gen9championsvgc2026regmbbo3": "gen9vgc2026regi",
 }
 
 PPO_HYPERPARAMS: dict[str, Any] = {
