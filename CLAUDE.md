@@ -13,7 +13,12 @@ Project notes, issues, and documentation live in the **No Chill Draft League Vau
 - **Python 3.12** (CI target; 3.11+ supported locally) with `discord.py 2.x` (slash commands via `app_commands`)
 - **Pydantic v2** for all data models; `pydantic-settings` for config from `.env`
 - **gspread** (sync, run in executor) for Google Sheets; **aiosqlite** for local SQLite
-- **stable-baselines3 (PPO)** + **poke-env** for the RL battle agent (`/spar`)
+- **Two ML stacks coexist** for the battle agent:
+  - **PPO/stable-baselines3 + poke-env** — per-format self-play (`/spar`, `train_policy.py`,
+    `train_all.py`; CI `train-models.yml`). README marks this legacy, but it's still trained/shipped.
+  - **Transformer + MCTS (AlphaZero-style)** — `BattleTransformer` policy/value model via MCTS
+    ladder self-play (`run_training.py`, `self_play.py`, `mcts.py`, `trainer.py`; CI
+    `train-transformer.yml`). Dashboard + FastAPI at `127.0.0.1:8080`.
 - **PyInstaller** for producing the standalone `.exe` (spec: `src/bot/NCLPDLB.spec`)
 
 ## Commands
@@ -40,8 +45,21 @@ python -m venv .venv
 # Run all tests (skip slow performance tests)
 .venv/Scripts/python -m pytest tests/ --ignore=tests/performance -q
 
+# CI entrypoint (wrapper os._exit()s after run to avoid interpreter-shutdown
+# hangs from leaked native child procs)
+.venv/Scripts/python scripts/ci_pytest.py -m "not integration"
+
 # Run a single test file
 .venv/Scripts/python -m pytest tests/unit/test_draft_service.py -v
+
+# Run a single test
+.venv/Scripts/python -m pytest tests/unit/test_battle_env.py::test_name
+
+# Filter by name pattern
+.venv/Scripts/python -m pytest -k pattern
+
+# Integration marker — requires a live local Showdown server (Node, port 8000)
+.venv/Scripts/python -m pytest -m integration
 
 # Run tests with coverage (default — see pytest.ini)
 .venv/Scripts/python -m pytest tests/ --ignore=tests/performance
@@ -49,7 +67,7 @@ python -m venv .venv
 # Lint / format / type-check
 .venv/Scripts/python -m ruff check src/ tests/
 .venv/Scripts/python -m ruff format src/ tests/   # auto-format
-.venv/Scripts/python -m mypy src/                 # type-check
+.venv/Scripts/python -m mypy src/                 # type-check (authoritative; pyrightconfig.json sets typeCheckingMode: "off" — config-only, not enforced)
 
 # Seed Pokemon data (one-time setup — fetches 1,025 mons from PokéAPI)
 .venv/Scripts/python scripts/seed_pokemon_data.py
@@ -64,10 +82,25 @@ python -m venv .venv
 .venv/Scripts/python scripts/setup_ml_sheet.py
 
 # Train ML policy (all formats, ~8-12 hours; requires local Showdown server)
-.venv/Scripts/python src/ml/train_all.py
+.venv/Scripts/python -m src.ml.train_all
+
+# Train a single format (PPO/stable-baselines3)
+.venv/Scripts/python -m src.ml.train_policy --format gen9ou --timesteps 500000
+
+# Run Transformer+MCTS live-ladder trainer + dashboard
+.venv/Scripts/python -m src.ml.run_training --port 8080
+
+# Scrape replays for BC pre-training
+.venv/Scripts/python -m src.ml.replay_scraper --format gen9ou --pages 50 --min-rating 1600
+
+# Behavioural Cloning pre-training from scraped replays
+.venv/Scripts/python -m src.ml.pretrain data/replays/gen9ou --format gen9ou --output bc_actor.pt
 
 # Build standalone .exe
 cd src/bot && pyinstaller NCLPDLB.spec
+
+# Windows one-click bot launcher (wraps .venv\Scripts\python src\bot\main.py)
+run_bot.bat
 
 # Force Discord command re-sync without restarting the bot
 .venv/Scripts/python scripts/sync_commands.py
@@ -84,6 +117,8 @@ cd src/bot && pyinstaller NCLPDLB.spec
 **`actions-runner/` at repo root is the self-hosted CI runner installation.** Do not edit files inside it; they are runner binaries and config, not project source.
 
 **Draft state is not persisted across bot restarts.** In-progress drafts live only in `_active_drafts` in memory — a restart loses them. See Key Design Decisions below.
+
+**Observation-space break (ISS-007/008).** `OBS_DIM` changed 48→78 in `battle_env.py`; `OBS_DIM_DOUBLES = 140`. Checkpoints trained before the change are incompatible and must be retrained. (Source: `STATUS.md`, `docs/design/ISS-007*`, `ISS-008*`.)
 
 ## Architecture
 
@@ -122,7 +157,7 @@ src/
     hooks/
       hook-pydantic.py   — PyInstaller hook; suppresses pydantic V1 compat warning on Python 3.14+
   ml/
-    battle_env.py        — Gymnasium wrapper (observation + action space defined here)
+    battle_env.py        — Gymnasium wrapper (OBS_DIM=78, OBS_DIM_DOUBLES=140, N_ACTIONS_GEN9=26)
     train_policy.py      — PPO training loop for a single format
     train_all.py         — Trains all formats sequentially
     train_matchup.py     — Matchup metric training
@@ -134,7 +169,8 @@ src/
     showdown_player.py   — poke-env player that uses the trained PPO model for /spar
     replay_parser.py     — Parses Showdown replay JSON
     replay_scraper.py    — Scrapes replay URLs from Showdown
-    feature_extractor.py — Custom SB3 feature extractor
+    feature_extractor.py — BattleRecord → numpy team/state features (the SB3 feature extractor
+                           itself is `BattleTransformerExtractor` inside train_policy.py)
     teambuilder.py       — Constructs Showdown team strings for RL agents
     training_doctor.py   — Diagnoses training health
     showdown_client.py   — 3-layer WebSocket client for Showdown (P1)
@@ -147,6 +183,20 @@ src/
     type_chart.py        — Gen 9 type effectiveness chart
     showdown_modes.py    — Format/mode definitions for Showdown battles
 ```
+
+### ML Format Routing
+
+Four structures govern which ML format goes where — central to any ML format work:
+
+- **`FORMAT_TEAMS`** (`src/ml/teams.py`) — format → curated Showdown team strings; consumed by
+  `RotatingTeambuilder` and `--team-format`.
+- **`TRAINING_FORMAT_ALIASES`** (`src/ml/train_policy.py:195`) — maps unsupported formats (BO3
+  series, Champions) to a real trainable format (e.g. `gen9championsou→gen9ou`,
+  `gen9championsvgc2026regma→gen9vgc2026regi`, `gen9championsvgc2026regmb→gen9vgc2026regi`),
+  since poke-env/the server can't run them directly.
+- **`DOUBLES_FORMATS`** (`src/ml/train_policy.py:168`) — formats routed to `BattleDoubleEnv`.
+- **`TRAINING_MAP`** (`src/ml/train_all.py:58`) — the canonical format list; mirrors the
+  `train-models.yml` CI matrix. `SPAR_FORMATS` (bot) derives from it.
 
 ### Key Design Decisions
 
@@ -161,6 +211,18 @@ src/
 **ML requires a local Showdown server.** `battle_env.py` connects to `ws://localhost:8000`. See `scripts/setup_showdown_server.md` for setup. Training is independent of the Discord bot.
 
 **ML training API is loopback-only.** `run_training.py`/`api.py` bind to `127.0.0.1` by default and support optional bearer-token auth via `TRAIN_API_TOKEN` env var. Don't change the default bind address without adding auth in front of it.
+
+### CI Workflows
+
+5 workflows in `.github/workflows/`:
+- `tests.yml` — unit test matrix (Python 3.11-3.14) + integration job
+- `train-models.yml` — PPO format training matrix, self-hosted Windows runner
+- `train-transformer.yml` — offline MCTS self-play smoke test
+- `codeql.yml` — CodeQL security scanning
+- `dependency-submission.yml` — dependency graph submission
+
+Dependabot blocks minor/major auto-PRs for `poke-env`/`stable-baselines3`/`torch` (tight
+coupling + CPU wheel requirement).
 
 ### Configuration (`.env`)
 
@@ -185,3 +247,4 @@ Shared test data lives in `tests/fixtures/`.
 `pytest.ini` sets `asyncio_mode = auto` and default coverage across `src/`.
 Performance tests (`tests/performance/locustfile.py`) are excluded from normal runs.
 The `conftest.py` at root and `tests/conftest.py` provide shared fixtures.
+CI enforces a coverage gate of ≥80% on `src.ml.self_play`.

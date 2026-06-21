@@ -3,14 +3,15 @@ name: Train ML Models
 # ─────────────────────────────────────────────────────────────────────────────
 # Pokemon Competitive ML Model
 # Build an ML pipeline for the formats in this matrix using Gen 9 Smogon,
-# Gen 9 Smogon Doubles, and Pokemon Champions data.  (rev. 2026-06-09)
+# Gen 9 Smogon Doubles, and Pokemon Champions data.  (rev. 2026-06-20)
 #
 # Formats:
 #   gen9randombattle, gen9ou, gen9nationaldex, gen9monotype, gen9anythinggoes,
 #   gen9ubers, gen9uu, gen9ru, gen9nu, gen9pu, gen9zu, gen9lc,
 #   gen9doublesou, gen9randomdoublesbattle, gen9doublesubers, gen9doublesuu,
-#   gen9championsou, gen9championsbssregma,
-#   gen9championsvgc2026regma, gen9championsvgc2026regmabo3
+#   gen9championsou, gen9championsbssregma, gen9championsbssregmb,
+#   gen9championsvgc2026regma, gen9championsvgc2026regmabo3,
+#   gen9championsvgc2026regmb, gen9championsvgc2026regmbbo3
 #
 # Per-format meta artifacts: format_meta.json · rules.json · top_usage.csv
 #
@@ -25,11 +26,11 @@ name: Train ML Models
 #   Random Doubles. Smogon Singles and Smogon Doubles are separate ecosystems.
 # ── Pokemon Champions ───────────────────────────────────────────────────────
 #   Champions formats only; SV VGC phased out.
-#   Champions OU, Champions BSS Reg M-A, Champions VGC Reg M-A (Bo1 / Bo3).
+#   Champions OU, Champions BSS Reg M-A/M-B, Champions VGC Reg M-A/M-B (Bo1 / Bo3).
 #   Doubles, bring 4 of 6, Level 50. Species Clause, Item Clause,
 #   Mega Evolutions legal. Paldea Dex #001-375, #388-392.
-#   Champions VGC uses Reg M-A only — do NOT use SV VGC Regulations A-J or
-#   Regulation I.
+#   Champions VGC uses Reg M-A and Reg M-B only — do NOT use SV VGC Regulations
+#   A-J or Regulation I.
 #
 # Tasks: format legality classification · team recommendation from partial
 #   teams · team archetype classification · usage prediction · cross-format
@@ -87,6 +88,8 @@ env:
     top_team_archetypes.csv
     champions_reg_ma_usage.csv
     champions_reg_ma_archetypes.csv
+    champions_reg_mb_usage.csv
+    champions_reg_mb_archetypes.csv
     vgc_formats.csv
     limitless_vgc_usage.csv
   # Deprecated SV VGC Regulation I files — removed before seeding.
@@ -133,7 +136,9 @@ jobs:
           #      TRAINING_FORMAT_ALIASES, train_policy.py:198-201)
           - { format: gen9championsou,              team_format: gen9championsou,              timesteps: 500000, train_timeout: 160 }
           - { format: gen9championsbssregma,        team_format: gen9championsbssregma,        timesteps: 500000, train_timeout: 160 }
+          - { format: gen9championsbssregmb,        team_format: gen9championsbssregmb,        timesteps: 500000, train_timeout: 160 }
           - { format: gen9championsvgc2026regma,    team_format: gen9championsvgc2026regma,    timesteps: 300000, train_timeout: 230 }
+          - { format: gen9championsvgc2026regmb,    team_format: gen9championsvgc2026regmb,    timesteps: 300000, train_timeout: 230 }
           - { format: gen9championsvgc2026regmabo3, team_format: gen9championsvgc2026regmabo3, timesteps: 300000, train_timeout: 230 }
           - { format: gen9championsvgc2026regmb,    team_format: gen9championsvgc2026regmb,    timesteps: 300000, train_timeout: 230 }
           - { format: gen9championsvgc2026regmbbo3, team_format: gen9championsvgc2026regmbbo3, timesteps: 300000, train_timeout: 230 }
@@ -251,6 +256,8 @@ jobs:
               --champions-online-events-url "https://play.limitlesstcg.com/tournaments/completed?game=VGC" \
               --champions-major-events-url "https://labmaus.net/" \
               --champions-usage-url "https://pokekipe.com/champions/vgc2026regma" \
+              --champions-tournament-data-url "https://www.pikalytics.com/pokedex/championstournaments" \
+              --champions-regmb-ranked-data-url "https://www.pikalytics.com/pokedex/battledataregmbs3" \
               --champions-usage-api-docs "https://pokekipe.com/openapi.json" \
               || echo "Competitive data seeding failed — check logs above"
           else
@@ -506,7 +513,7 @@ jobs:
           try:
               from src.ml.battle_env import OBS_DIM, OBS_DIM_DOUBLES, N_ACTIONS_GEN9
           except Exception:
-              OBS_DIM, OBS_DIM_DOUBLES, N_ACTIONS_GEN9 = 78, 80, 26
+              OBS_DIM, OBS_DIM_DOUBLES, N_ACTIONS_GEN9 = 78, 140, 26
           from stable_baselines3 import PPO
           import gymnasium as gym, numpy as np
           from gymnasium.spaces import Box, Discrete, MultiDiscrete
