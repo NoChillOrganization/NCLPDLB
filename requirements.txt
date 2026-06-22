@@ -48,7 +48,7 @@ ruff>=0.15.18
 mypy>=2.1.0
 
 # Machine Learning — data pipeline
-numpy>=2.5.0
+numpy>=2.4.6,<2.5.0  # 2.5.0 requires Python >=3.12; CI matrix includes 3.11
 scikit-learn>=1.9.0
 pandas>=3.0.3
 
