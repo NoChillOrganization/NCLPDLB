@@ -1,0 +1,183 @@
+Arcanine-Hisui @ Heavy-Duty Boots
+Ability: Rock Head
+Tera Type: Rock
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Flare Blitz
+- Head Smash
+- Close Combat
+- Extreme Speed
+
+Feraligatr @ Life Orb
+Ability: Sheer Force
+Tera Type: Water
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Waterfall
+- Ice Punch
+- Crunch
+- Dragon Dance
+
+Reuniclus @ Life Orb
+Ability: Magic Guard
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Shadow Ball
+- Focus Blast
+- Trick Room
+
+Slowking @ Assault Vest
+Ability: Regenerator
+Tera Type: Water
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Surf
+- Future Sight
+- Flamethrower
+- Ice Beam
+
+Tinkaton @ Rocky Helmet
+Ability: Mold Breaker
+Tera Type: Fairy
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Gigaton Hammer
+- Knock Off
+- Stealth Rock
+- Thunder Wave
+
+Decidueye-Hisui @ Choice Band
+Ability: Scrappy
+Tera Type: Ghost
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Triple Arrows
+- Leaf Blade
+- Close Combat
+- U-turn
+
+---
+Slowbro @ Heavy-Duty Boots
+Ability: Regenerator
+Tera Type: Water
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Surf
+- Future Sight
+- Slack Off
+- Thunder Wave
+
+Scream Tail @ Leftovers
+Ability: Protosynthesis
+Tera Type: Fairy
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Wish
+- Protect
+- Dazzling Gleam
+- Encore
+
+Tinkaton @ Rocky Helmet
+Ability: Mold Breaker
+Tera Type: Fairy
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Gigaton Hammer
+- Knock Off
+- Stealth Rock
+- Thunder Wave
+
+Wo-Chien @ Leftovers
+Ability: Tablets of Ruin
+Tera Type: Grass
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Leech Seed
+- Giga Drain
+- Ruination
+- Ingrain
+
+Reuniclus @ Life Orb
+Ability: Magic Guard
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Shadow Ball
+- Focus Blast
+- Trick Room
+
+Sinistcha @ Leftovers
+Ability: Hospitality
+Tera Type: Grass
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Matcha Gotcha
+- Shadow Ball
+- Strength Sap
+- Calm Mind
+
+---
+Decidueye-Hisui @ Choice Band
+Ability: Scrappy
+Tera Type: Ghost
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Triple Arrows
+- Leaf Blade
+- Close Combat
+- U-turn
+
+Magnezone @ Choice Scarf
+Ability: Magnet Pull
+Tera Type: Electric
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Thunderbolt
+- Flash Cannon
+- Volt Switch
+- Thunder Wave
+
+Sinistcha @ Leftovers
+Ability: Hospitality
+Tera Type: Grass
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Matcha Gotcha
+- Shadow Ball
+- Strength Sap
+- Calm Mind
+
+Arcanine-Hisui @ Heavy-Duty Boots
+Ability: Rock Head
+Tera Type: Rock
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Flare Blitz
+- Head Smash
+- Close Combat
+- Extreme Speed
+
+Azumarill @ Assault Vest
+Ability: Huge Power
+Tera Type: Water
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Liquidation
+- Play Rough
+- Aqua Jet
+- Knock Off
+
+Fezandipiti @ Heavy-Duty Boots
+Ability: Toxic Chain
+Tera Type: Poison
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Poison Jab
+- Roost
+- Toxic
+- Taunt

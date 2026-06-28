@@ -344,54 +344,6 @@ else:  # pragma: no cover
             raise ImportError("stable-baselines3 is required for BattleTransformerExtractor")
 
 
-# ── Self-play callback ────────────────────────────────────────────────────────
-
-class SelfPlayCallback(BaseCallback):
-    """
-    Every `swap_every` steps:
-      1. Save the latest agent weights to <save_dir>/latest.zip
-      2. Signal the opponent player to reload from that checkpoint
-
-    NOTE: This callback is unused in the current MCTS training path (train_policy uses
-    CurriculumCallback + MCTSPlayer directly). Retained for potential PPO self-play revival.
-    """
-
-    def __init__(
-        self,
-        opponent_player: "SelfPlayOpponent",
-        save_dir: Path,
-        swap_every: int = DEFAULT_SWAP_EVERY,
-        verbose: int = 0,
-    ) -> None:
-        super().__init__(verbose=verbose)
-        self.opponent_player  = opponent_player
-        self.save_dir         = save_dir
-        self.swap_every       = swap_every
-        self._last_swap       = 0
-        self._swap_count      = 0
-
-    def _on_step(self) -> bool:
-        if self.num_timesteps - self._last_swap >= self.swap_every:
-            self._save_and_swap()
-            self._last_swap = self.num_timesteps
-        return True
-
-    def _save_and_swap(self) -> None:
-        self._swap_count += 1
-        ckpt_path = self.save_dir / f"swap_{self._swap_count:04d}.zip"
-        latest_path = self.save_dir / "latest.zip"
-
-        self.model.save(str(ckpt_path))
-        self.model.save(str(latest_path))
-        self.opponent_player.load_policy(latest_path)
-
-        if self.verbose:
-            log.info(
-                f"[SelfPlay] Swap #{self._swap_count} at step "
-                f"{self.num_timesteps}: saved {ckpt_path.name}"
-            )
-
-
 # ── Curriculum callback ───────────────────────────────────────────────────────
 
 from collections import deque  # noqa: E402 (after SB3 guard)
@@ -410,7 +362,7 @@ class CurriculumCallback(BaseCallback):
 
     Phase 2 — selfplay:
         Every `swap_every` steps we save a new checkpoint and reload it into
-        the opponent, keeping a rolling-lag opponent just like SelfPlayCallback.
+        the opponent, keeping a rolling-lag opponent.
     """
 
     def __init__(

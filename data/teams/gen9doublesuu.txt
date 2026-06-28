@@ -1,0 +1,186 @@
+Dusclops @ Eviolite
+Ability: Pressure
+Tera Type: Ghost
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 0 Atk / 0 Spe
+- Night Shade
+- Will-O-Wisp
+- Trick Room
+- Pain Split
+
+Garganacl @ Sitrus Berry
+Ability: Purifying Salt
+Tera Type: Rock
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+IVs: 0 Spe
+- Rock Slide
+- Body Press
+- Salt Cure
+- Protect
+
+Scrafty @ Assault Vest
+Ability: Intimidate
+Tera Type: Dark
+EVs: 252 HP / 252 Atk / 4 SpD
+Brave Nature
+IVs: 0 Spe
+- Drain Punch
+- Knock Off
+- Ice Punch
+- High Jump Kick
+
+Slowking @ Assault Vest
+Ability: Regenerator
+Tera Type: Water
+EVs: 252 HP / 4 SpA / 252 SpD
+Sassy Nature
+IVs: 0 Spe
+- Surf
+- Flamethrower
+- Future Sight
+- Ice Beam
+
+Mimikyu @ Life Orb
+Ability: Disguise
+Tera Type: Fairy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Play Rough
+- Shadow Sneak
+- Swords Dance
+- Protect
+
+Sylveon @ Choice Specs
+Ability: Pixilate
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Hyper Voice
+- Moonblast
+- Shadow Ball
+- Protect
+
+---
+Jumpluff @ Leftovers
+Ability: Infiltrator
+Tera Type: Grass
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+- Tailwind
+- Sleep Powder
+- Encore
+- Protect
+
+Talonflame @ Life Orb
+Ability: Gale Wings
+Tera Type: Flying
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Brave Bird
+- Flare Blitz
+- Quick Attack
+- Protect
+
+Arcanine-Hisui @ Choice Band
+Ability: Rock Head
+Tera Type: Rock
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Head Smash
+- Flare Blitz
+- Close Combat
+- Extreme Speed
+
+Tsareena @ Assault Vest
+Ability: Queenly Majesty
+Tera Type: Grass
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Power Whip
+- High Jump Kick
+- Triple Axel
+- Rapid Spin
+
+Klefki @ Light Clay
+Ability: Prankster
+Tera Type: Steel
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Light Screen
+- Reflect
+- Thunder Wave
+- Fairy Lock
+
+Dusclops @ Eviolite
+Ability: Frisk
+Tera Type: Ghost
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 0 Spe
+- Will-O-Wisp
+- Trick Room
+- Pain Split
+- Night Shade
+
+---
+Jumpluff @ Focus Sash
+Ability: Infiltrator
+Tera Type: Grass
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+- Tailwind
+- Sleep Powder
+- Encore
+- Protect
+
+Sylveon @ Choice Specs
+Ability: Pixilate
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Hyper Voice
+- Moonblast
+- Shadow Ball
+- Protect
+
+Scrafty @ Assault Vest
+Ability: Moxie
+Tera Type: Dark
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Drain Punch
+- Knock Off
+- Ice Punch
+- High Jump Kick
+
+Garganacl @ Leftovers
+Ability: Purifying Salt
+Tera Type: Rock
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Rock Slide
+- Body Press
+- Wide Guard
+- Protect
+
+Tsareena @ Choice Band
+Ability: Queenly Majesty
+Tera Type: Grass
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Power Whip
+- High Jump Kick
+- Triple Axel
+- U-turn
+
+Mimikyu @ Life Orb
+Ability: Disguise
+Tera Type: Ghost
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Play Rough
+- Shadow Claw
+- Shadow Sneak
+- Protect

@@ -1,0 +1,304 @@
+Ogerpon-Wellspring @ Wellspring Mask
+Ability: Water Absorb
+Tera Type: Water
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Ivy Cudgel
+- Horn Leech
+- Follow Me
+- Protect
+
+Rillaboom @ Assault Vest
+Ability: Grassy Surge
+Tera Type: Grass
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Grassy Glide
+- U-turn
+- Wood Hammer
+- Fake Out
+
+Iron Valiant @ Booster Energy
+Ability: Quark Drive
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Moonblast
+- Dazzling Gleam
+- Shadow Ball
+- Protect
+
+Amoonguss @ Rocky Helmet
+Ability: Regenerator
+Tera Type: Grass
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Spore
+- Pollen Puff
+- Rage Powder
+- Protect
+
+Landorus-Therian @ Choice Scarf
+Ability: Intimidate
+Tera Type: Ground
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Earthquake
+- Rock Slide
+- U-turn
+- Protect
+
+Heatran @ Safety Goggles
+Ability: Flash Fire
+Tera Type: Steel
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Heat Wave
+- Flash Cannon
+- Earth Power
+- Protect
+---
+Ogerpon-Wellspring @ Wellspring Mask
+Ability: Water Absorb
+Tera Type: Water
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Ivy Cudgel
+- Horn Leech
+- Follow Me
+- Spiky Shield
+
+Kingambit @ Black Glasses
+Ability: Supreme Overlord
+Tera Type: Flying
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Protect
+
+Incineroar @ Sitrus Berry
+Ability: Intimidate
+Tera Type: Fire
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Fake Out
+- Flare Blitz
+- Knock Off
+- Protect
+
+Rillaboom @ Assault Vest
+Ability: Grassy Surge
+Tera Type: Grass
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Grassy Glide
+- U-turn
+- Wood Hammer
+- Fake Out
+
+Iron Bundle @ Choice Scarf
+Ability: Quark Drive
+Tera Type: Ice
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Hydro Pump
+- Freeze-Dry
+- U-turn
+- Icy Wind
+
+Tornadus @ Focus Sash
+Ability: Prankster
+Tera Type: Flying
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+- Tailwind
+- Rain Dance
+- Taunt
+- Hurricane
+---
+Hatterene @ Misty Seed
+Ability: Magic Bounce
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Mystical Fire
+- Trick Room
+- Healing Wish
+
+Ursaluna @ Flame Orb
+Ability: Guts
+Tera Type: Normal
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+IVs: 0 Spe
+- Facade
+- Headlong Rush
+- Crunch
+- Protect
+
+Porygon2 @ Eviolite
+Ability: Download
+Tera Type: Normal
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Tri Attack
+- Shadow Ball
+- Trick Room
+- Protect
+
+Amoonguss @ Rocky Helmet
+Ability: Regenerator
+Tera Type: Grass
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Spore
+- Pollen Puff
+- Rage Powder
+- Protect
+
+Iron Hands @ Assault Vest
+Ability: Quark Drive
+Tera Type: Electric
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+IVs: 0 Spe
+- Wild Charge
+- Close Combat
+- Fake Out
+- Drain Punch
+
+Indeedee-F @ Psychic Seed
+Ability: Psychic Surge
+Tera Type: Psychic
+EVs: 252 HP / 4 SpA / 252 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Follow Me
+- Trick Room
+- Helping Hand
+---
+Tornadus @ Focus Sash
+Ability: Prankster
+Tera Type: Flying
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+- Tailwind
+- Rain Dance
+- Taunt
+- Hurricane
+
+Sylveon @ Choice Specs
+Ability: Pixilate
+Tera Type: Fairy
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+- Hyper Voice
+- Psychic
+- Shadow Ball
+- Protect
+
+Kingambit @ Black Glasses
+Ability: Supreme Overlord
+Tera Type: Flying
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Protect
+
+Garchomp @ Life Orb
+Ability: Rough Skin
+Tera Type: Dragon
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Earthquake
+- Dragon Claw
+- Scale Shot
+- Protect
+
+Rillaboom @ Assault Vest
+Ability: Grassy Surge
+Tera Type: Grass
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Grassy Glide
+- U-turn
+- Wood Hammer
+- Fake Out
+
+Gholdengo @ Choice Specs
+Ability: Good as Gold
+Tera Type: Ghost
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Focus Blast
+- Trick
+---
+Torkoal @ Heat Rock
+Ability: Drought
+Tera Type: Fire
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Heat Wave
+- Earth Power
+- Stealth Rock
+- Protect
+
+Venusaur @ Focus Sash
+Ability: Chlorophyll
+Tera Type: Grass
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Solar Beam
+- Sludge Bomb
+- Sleep Powder
+- Protect
+
+Landorus-Therian @ Choice Scarf
+Ability: Intimidate
+Tera Type: Ground
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Earthquake
+- Rock Slide
+- U-turn
+- Protect
+
+Amoonguss @ Rocky Helmet
+Ability: Regenerator
+Tera Type: Grass
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Spore
+- Pollen Puff
+- Rage Powder
+- Protect
+
+Gholdengo @ Choice Specs
+Ability: Good as Gold
+Tera Type: Ghost
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Focus Blast
+- Trick
+
+Incineroar @ Sitrus Berry
+Ability: Intimidate
+Tera Type: Fire
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Fake Out
+- Flare Blitz
+- Knock Off
+- Protect

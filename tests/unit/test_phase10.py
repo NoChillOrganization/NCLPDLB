@@ -25,11 +25,15 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+# data_pipeline.py moved to scripts/ — add it to the path so the import resolves
+SCRIPTS_DIR = PROJECT_ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 FIXTURES_DIR = PROJECT_ROOT / "tests" / "fixtures"
 
 # ---------------------------------------------------------------------------
-# Imports from data_pipeline (lives at project root, not in src/)
+# Imports from data_pipeline (lives in scripts/, not in src/)
 # ---------------------------------------------------------------------------
 from data_pipeline import (  # noqa: E402
     ALL_FORMATS,

@@ -1,0 +1,184 @@
+Lycanroc-Dusk @ Choice Band
+Ability: Tough Claws
+Tera Type: Rock
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Stone Edge
+- Close Combat
+- Accelerock
+- Fire Fang
+
+Tsareena @ Heavy-Duty Boots
+Ability: Queenly Majesty
+Tera Type: Grass
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Power Whip
+- Rapid Spin
+- Triple Axel
+- High Jump Kick
+
+Passimian @ Choice Scarf
+Ability: Receiver
+Tera Type: Fighting
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Close Combat
+- U-turn
+- Knock Off
+- Rock Slide
+
+Basculegion @ Choice Band
+Ability: Swift Swim
+Tera Type: Water
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Wave Crash
+- Crunch
+- Aqua Jet
+- Shadow Ball
+
+Bruxish @ Life Orb
+Ability: Strong Jaw
+Tera Type: Water
+EVs: 252 Atk / 4 SpA / 252 Spe
+Jolly Nature
+- Psychic Fangs
+- Crunch
+- Aqua Jet
+- Ice Fang
+
+Klawf @ Sitrus Berry
+Ability: Anger Shell
+Tera Type: Rock
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Stone Edge
+- Knock Off
+- X-Scissor
+- Stealth Rock
+
+---
+Medicham @ Choice Band
+Ability: Pure Power
+Tera Type: Fighting
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- High Jump Kick
+- Zen Headbutt
+- Ice Punch
+- Bullet Punch
+
+Reuniclus @ Life Orb
+Ability: Magic Guard
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Shadow Ball
+- Focus Blast
+- Trick Room
+
+Hariyama @ Assault Vest
+Ability: Guts
+Tera Type: Fighting
+EVs: 252 HP / 252 Atk / 4 SpD
+Brave Nature
+IVs: 0 Spe
+- Close Combat
+- Knock Off
+- Bullet Punch
+- Earthquake
+
+Lycanroc-Dusk @ Choice Band
+Ability: Tough Claws
+Tera Type: Rock
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Stone Edge
+- Close Combat
+- Accelerock
+- Fire Fang
+
+Toedscruel @ Big Root
+Ability: Mycelium Might
+Tera Type: Grass
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Rapid Spin
+- Leech Seed
+- Giga Drain
+- Earth Power
+
+Araquanid @ Choice Band
+Ability: Water Bubble
+Tera Type: Water
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+- Liquidation
+- Leech Life
+- Lunge
+- Poison Jab
+
+---
+Lycanroc-Midnight @ Choice Scarf
+Ability: No Guard
+Tera Type: Rock
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Stone Edge
+- Close Combat
+- Fire Fang
+- Thunder Fang
+
+Zangoose @ Toxic Orb
+Ability: Toxic Boost
+Tera Type: Normal
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Facade
+- Quick Attack
+- Close Combat
+- Knock Off
+
+Magneton @ Eviolite
+Ability: Analytic
+Tera Type: Electric
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Thunderbolt
+- Flash Cannon
+- Volt Switch
+- Thunder Wave
+
+Tsareena @ Heavy-Duty Boots
+Ability: Queenly Majesty
+Tera Type: Grass
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Power Whip
+- Knock Off
+- Rapid Spin
+- U-turn
+
+Crabominable @ Choice Band
+Ability: Iron Fist
+Tera Type: Fighting
+EVs: 252 HP / 252 Atk / 4 SpD
+Brave Nature
+IVs: 0 Spe
+- Ice Hammer
+- Close Combat
+- Thunder Punch
+- Earthquake
+
+Mimikyu @ Life Orb
+Ability: Disguise
+Tera Type: Ghost
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Play Rough
+- Shadow Sneak
+- Swords Dance
+- Shadow Claw

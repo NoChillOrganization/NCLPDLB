@@ -1,0 +1,187 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+Tera Type: Water
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Surf
+- Aqua Ring
+- Protect
+- Scald
+
+Jolteon @ Choice Specs
+Ability: Volt Absorb
+Tera Type: Electric
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Thunderbolt
+- Volt Switch
+- Shadow Ball
+- Thunder Wave
+
+Sylveon @ Choice Specs
+Ability: Pixilate
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Hyper Voice
+- Shadow Ball
+- Psychic
+- Psyshock
+
+Flareon @ Leftovers
+Ability: Flash Fire
+Tera Type: Fire
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Flare Blitz
+- Quick Attack
+- Wish
+- Protect
+
+Espeon @ Life Orb
+Ability: Magic Bounce
+Tera Type: Psychic
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Psyshock
+- Shadow Ball
+- Dazzling Gleam
+- Calm Mind
+
+Florges @ Leftovers
+Ability: Flower Veil
+Tera Type: Fairy
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Moonblast
+- Synthesis
+- Wish
+- Calm Mind
+
+---
+Reuniclus @ Life Orb
+Ability: Magic Guard
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Shadow Ball
+- Focus Blast
+- Trick Room
+
+Palossand @ Leftovers
+Ability: Water Compaction
+Tera Type: Ghost
+EVs: 252 HP / 4 SpA / 252 SpD
+Sassy Nature
+IVs: 0 Spe
+- Shadow Ball
+- Earth Power
+- Stealth Rock
+- Shore Up
+
+Flareon @ Choice Band
+Ability: Flash Fire
+Tera Type: Fire
+EVs: 252 HP / 252 Atk / 4 SpD
+Brave Nature
+IVs: 0 Spe
+- Flare Blitz
+- Quick Attack
+- Body Slam
+- Dig
+
+Sableye @ Leftovers
+Ability: Prankster
+Tera Type: Dark
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Spe
+- Foul Play
+- Will-O-Wisp
+- Recover
+- Taunt
+
+Araquanid @ Rocky Helmet
+Ability: Water Bubble
+Tera Type: Water
+EVs: 248 HP / 8 Atk / 252 Def
+Relaxed Nature
+IVs: 0 Spe
+- Liquidation
+- Leech Life
+- Wide Guard
+- Poison Jab
+
+Glaceon @ Choice Specs
+Ability: Ice Body
+Tera Type: Ice
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Blizzard
+- Shadow Ball
+- Water Pulse
+- Icy Wind
+
+---
+Sandslash-Alola @ Icicle Plate
+Ability: Slush Rush
+Tera Type: Ice
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Icicle Crash
+- Iron Head
+- Swords Dance
+- Rapid Spin
+
+Beartic @ Choice Band
+Ability: Swift Swim
+Tera Type: Ice
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Icicle Crash
+- Superpower
+- Liquidation
+- Aqua Jet
+
+Qwilfish-Hisui @ Black Sludge
+Ability: Poison Point
+Tera Type: Dark
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Barb Barrage
+- Spikes
+- Toxic Spikes
+- Haze
+
+Misdreavus @ Eviolite
+Ability: Levitate
+Tera Type: Ghost
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Shadow Ball
+- Hex
+- Will-O-Wisp
+- Pain Split
+
+Leafeon @ Life Orb
+Ability: Chlorophyll
+Tera Type: Grass
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Leaf Blade
+- Knock Off
+- Synthesis
+- Swords Dance
+
+Clefairy @ Eviolite
+Ability: Magic Guard
+Tera Type: Fairy
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Moonblast
+- Moonlight
+- Thunder Wave
+- Stealth Rock
