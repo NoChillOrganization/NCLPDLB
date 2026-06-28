@@ -1,0 +1,203 @@
+Mienfoo @ Eviolite
+Ability: Regenerator
+Level: 5
+Tera Type: Fighting
+EVs: 196 Atk / 36 Def / 36 SpD / 236 Spe
+Jolly Nature
+- High Jump Kick
+- Knock Off
+- U-turn
+- Fake Out
+
+Pawniard @ Eviolite
+Ability: Defiant
+Level: 5
+Tera Type: Dark
+EVs: 236 Atk / 36 Def / 236 Spe
+Adamant Nature
+- Iron Head
+- Night Slash
+- Sucker Punch
+- Stealth Rock
+
+Ralts @ Life Orb
+Ability: Trace
+Level: 5
+Tera Type: Psychic
+EVs: 236 SpA / 36 SpD / 236 Spe
+Timid Nature
+- Psychic
+- Shadow Ball
+- Dazzling Gleam
+- Calm Mind
+
+Larvitar @ Eviolite
+Ability: Guts
+Level: 5
+Tera Type: Rock
+EVs: 236 Atk / 36 Def / 236 Spe
+Adamant Nature
+- Stone Edge
+- Earthquake
+- Dragon Dance
+- Crunch
+
+Elekid @ Life Orb
+Ability: Static
+Level: 5
+Tera Type: Electric
+EVs: 236 SpA / 36 SpD / 236 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Cross Chop
+- Psychic
+
+Slowpoke @ Eviolite
+Ability: Regenerator
+Level: 5
+Tera Type: Water
+EVs: 36 HP / 236 SpA / 236 SpD
+Quiet Nature
+- Surf
+- Psychic
+- Fire Blast
+- Slack Off
+
+---
+Timburr @ Eviolite
+Ability: Guts
+Level: 5
+Tera Type: Fighting
+EVs: 236 HP / 236 Atk / 36 SpD
+Brave Nature
+IVs: 0 Spe
+- Drain Punch
+- Knock Off
+- Mach Punch
+- Bulk Up
+
+Drifloon @ Oran Berry
+Ability: Unburden
+Level: 5
+Tera Type: Flying
+EVs: 36 HP / 236 SpA / 236 Spe
+Modest Nature
+- Shadow Ball
+- Thunderbolt
+- Will-O-Wisp
+- Trick Room
+
+Bronzor @ Eviolite
+Ability: Levitate
+Level: 5
+Tera Type: Steel
+EVs: 228 HP / 60 Def / 188 SpD
+Sassy Nature
+IVs: 0 Atk / 0 Spe
+- Trick Room
+- Gyro Ball
+- Flash Cannon
+- Stealth Rock
+
+Munchlax @ Eviolite
+Ability: Thick Fat
+Level: 5
+Tera Type: Normal
+EVs: 196 HP / 116 Def / 196 SpD
+Sassy Nature
+IVs: 0 Spe
+- Body Slam
+- Earthquake
+- Fire Punch
+- Curse
+
+Magnemite @ Eviolite
+Ability: Magnet Pull
+Level: 5
+Tera Type: Electric
+EVs: 196 HP / 236 SpA / 76 SpD
+Quiet Nature
+IVs: 0 Spe
+- Thunderbolt
+- Flash Cannon
+- Volt Switch
+- Thunder Wave
+
+Cottonee @ Eviolite
+Ability: Prankster
+Level: 5
+Tera Type: Grass
+EVs: 196 HP / 36 Def / 236 SpD / 36 Spe
+Bold Nature
+- Giga Drain
+- Encore
+- Stun Spore
+- Memento
+
+---
+Dratini @ Eviolite
+Ability: Marvel Scale
+Level: 5
+Tera Type: Dragon
+EVs: 196 HP / 236 Atk / 76 Spe
+Adamant Nature
+- Extreme Speed
+- Dragon Dance
+- Wrap
+- Aqua Tail
+
+Snorunt @ Eviolite
+Ability: Ice Body
+Level: 5
+Tera Type: Ice
+EVs: 236 SpA / 36 SpD / 236 Spe
+Timid Nature
+- Blizzard
+- Shadow Ball
+- Spikes
+- Ice Shard
+
+Litleo @ Life Orb
+Ability: Unnerve
+Level: 5
+Tera Type: Fire
+EVs: 236 SpA / 36 SpD / 236 Spe
+Timid Nature
+- Fire Blast
+- Hyper Voice
+- Flamethrower
+- Facade
+
+Pawniard @ Eviolite
+Ability: Defiant
+Level: 5
+Tera Type: Dark
+EVs: 236 Atk / 36 Def / 236 Spe
+Adamant Nature
+- Sucker Punch
+- Iron Head
+- Night Slash
+- Stealth Rock
+
+Doduo @ Choice Scarf
+Ability: Early Bird
+Level: 5
+Tera Type: Flying
+EVs: 236 Atk / 36 Def / 236 Spe
+Jolly Nature
+- Brave Bird
+- Quick Attack
+- Knock Off
+- Body Slam
+
+Elekid @ Life Orb
+Ability: Static
+Level: 5
+Tera Type: Electric
+EVs: 236 SpA / 36 SpD / 236 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Cross Chop
+- Psychic

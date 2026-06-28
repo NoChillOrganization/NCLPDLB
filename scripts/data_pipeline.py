@@ -23,9 +23,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Paths — all computed from this file's location (project root)
+# Paths — project root is the parent of scripts/ (this file lives in scripts/)
 # ---------------------------------------------------------------------------
-PROJECT_ROOT = Path(__file__).parent
+PROJECT_ROOT = Path(__file__).parent.parent
 DATA_DIR     = PROJECT_ROOT / "data"
 REPLAYS_DIR  = DATA_DIR / "replays"
 ML_DIR       = DATA_DIR / "ml"

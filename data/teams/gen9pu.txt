@@ -1,0 +1,187 @@
+Ambipom @ Life Orb
+Ability: Technician
+Tera Type: Normal
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Double Hit
+- Fake Out
+- Last Resort
+- Knock Off
+
+Floatzel @ Choice Scarf
+Ability: Swift Swim
+Tera Type: Water
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Waterfall
+- Crunch
+- Ice Punch
+- Aqua Jet
+
+Wigglytuff @ Leftovers
+Ability: Cute Charm
+Tera Type: Normal
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Hyper Voice
+- Rest
+- Protect
+- Thunder Wave
+
+Dunsparce @ Leftovers
+Ability: Serene Grace
+Tera Type: Normal
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Body Slam
+- Glare
+- Roost
+- Stealth Rock
+
+Appletun @ Leftovers
+Ability: Thick Fat
+Tera Type: Grass
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+- Dragon Pulse
+- Leech Seed
+- Recover
+- Apple Acid
+
+Granbull @ Assault Vest
+Ability: Intimidate
+Tera Type: Fairy
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Play Rough
+- Earthquake
+- Close Combat
+- Thunder Wave
+
+---
+Oranguru @ Leftovers
+Ability: Inner Focus
+Tera Type: Psychic
+EVs: 252 HP / 4 SpA / 252 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Trick Room
+- Instruct
+- Encore
+
+Munchlax @ Eviolite
+Ability: Thick Fat
+Tera Type: Normal
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 0 Spe
+- Body Slam
+- Rest
+- Protect
+- Amnesia
+
+Flareon @ Choice Band
+Ability: Flash Fire
+Tera Type: Fire
+EVs: 252 HP / 252 Atk / 4 SpD
+Brave Nature
+IVs: 0 Spe
+- Flare Blitz
+- Quick Attack
+- Body Slam
+- Dig
+
+Furret @ Choice Band
+Ability: Frisk
+Tera Type: Normal
+EVs: 252 HP / 252 Atk / 4 SpD
+Brave Nature
+IVs: 0 Spe
+- Body Slam
+- Knock Off
+- Facade
+- Sucker Punch
+
+Granbull @ Flame Orb
+Ability: Quick Feet
+Tera Type: Fairy
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+IVs: 0 Spe
+- Play Rough
+- Close Combat
+- Earthquake
+- Fire Punch
+
+Decidueye-Hisui @ Leftovers
+Ability: Scrappy
+Tera Type: Ghost
+EVs: 252 HP / 252 Atk / 4 SpD
+Brave Nature
+IVs: 0 Spe
+- Triple Arrows
+- Leaf Blade
+- Close Combat
+- Shadow Sneak
+
+---
+Floatzel @ Life Orb
+Ability: Swift Swim
+Tera Type: Water
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Waterfall
+- Ice Punch
+- Crunch
+- Aqua Jet
+
+Sunflora @ Choice Specs
+Ability: Chlorophyll
+Tera Type: Grass
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+- Solar Beam
+- Sludge Bomb
+- Earth Power
+- Weather Ball
+
+Ambipom @ Normal Gem
+Ability: Technician
+Tera Type: Normal
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Fake Out
+- Knock Off
+- Double Hit
+- Low Sweep
+
+Dedenne @ Leftovers
+Ability: Cheek Pouch
+Tera Type: Electric
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Nuzzle
+- Volt Switch
+- Thunderbolt
+- Super Fang
+
+Wigglytuff @ Leftovers
+Ability: Competitive
+Tera Type: Fairy
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Hyper Voice
+- Stealth Rock
+- Thunder Wave
+- Wish
+
+Smeargle @ Focus Sash
+Ability: Own Tempo
+Tera Type: Normal
+EVs: 252 HP / 4 Def / 252 Spe
+Timid Nature
+- Encore
+- Sticky Web
+- Stealth Rock
+- Spikes

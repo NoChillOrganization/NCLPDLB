@@ -56,20 +56,6 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-# ── Windows asyncio fix ───────────────────────────────────────────────────────
-
-def _apply_windows_event_loop_fix() -> None:
-    """No-op on all supported Pythons.
-
-    ProactorEventLoop has been the Windows default since Python 3.8, so this
-    used to just re-apply the default via the (now-deprecated, removed in
-    3.16) event-loop-policy API. Kept as a no-op function — rather than
-    deleting it outright — so callers and tests don't need to change if a
-    real loop-construction workaround is ever needed again.
-    """
-    return
-
-
 # ── Dependency checks ─────────────────────────────────────────────────────────
 
 def _check_dependencies() -> list[str]:
@@ -100,8 +86,6 @@ def _run_self_play_in_thread(
     This keeps the asyncio poke-env self-play on a separate event loop from
     the uvicorn FastAPI server, avoiding event-loop sharing issues on Windows.
     """
-    _apply_windows_event_loop_fix()
-
     new_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(new_loop)
     try:
@@ -134,8 +118,6 @@ def main(
 
     Self-play only runs when the dashboard sets status="running" via POST /start.
     """
-    _apply_windows_event_loop_fix()
-
     # ── 1. Check dependencies ────────────────────────────────────────────
     missing = _check_dependencies()
     if missing:

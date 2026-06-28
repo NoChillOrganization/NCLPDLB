@@ -1,0 +1,183 @@
+Dunsparce @ Leftovers
+Ability: Serene Grace
+Tera Type: Normal
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Body Slam
+- Glare
+- Roost
+- Stealth Rock
+
+Wigglytuff @ Leftovers
+Ability: Cute Charm
+Tera Type: Normal
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Hyper Voice
+- Thunder Wave
+- Wish
+- Protect
+
+Girafarig @ Life Orb
+Ability: Inner Focus
+Tera Type: Psychic
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Psychic
+- Shadow Ball
+- Nasty Plot
+- Thunderbolt
+
+Swalot @ Black Sludge
+Ability: Liquid Ooze
+Tera Type: Poison
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Sludge Bomb
+- Pain Split
+- Protect
+- Toxic
+
+Oranguru @ Leftovers
+Ability: Inner Focus
+Tera Type: Psychic
+EVs: 252 HP / 4 SpA / 252 SpD
+Careful Nature
+- Foul Play
+- Rest
+- Protect
+- Sleep Talk
+
+Granbull @ Assault Vest
+Ability: Intimidate
+Tera Type: Fairy
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Play Rough
+- Earthquake
+- Close Combat
+- Thunder Wave
+
+---
+Plusle @ Life Orb
+Ability: Plus
+Tera Type: Electric
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Thunderbolt
+- Nasty Plot
+- Grass Knot
+- Volt Switch
+
+Minun @ Life Orb
+Ability: Minus
+Tera Type: Electric
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Thunderbolt
+- Nasty Plot
+- Grass Knot
+- Volt Switch
+
+Swalot @ Black Sludge
+Ability: Sticky Hold
+Tera Type: Poison
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Sludge Bomb
+- Encore
+- Pain Split
+- Toxic
+
+Chimecho @ Leftovers
+Ability: Levitate
+Tera Type: Psychic
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Psychic
+- Heal Bell
+- Wish
+- Protect
+
+Delibird @ Life Orb
+Ability: Hustle
+Tera Type: Ice
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Icy Wind
+- Ice Shard
+- Aerial Ace
+- Quick Attack
+
+Furret @ Choice Scarf
+Ability: Frisk
+Tera Type: Normal
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Body Slam
+- Knock Off
+- Sucker Punch
+- U-turn
+
+---
+Oranguru @ Leftovers
+Ability: Inner Focus
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Trick Room
+- Instruct
+- Encore
+
+Girafarig @ Choice Specs
+Ability: Early Bird
+Tera Type: Normal
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Psychic
+- Shadow Ball
+- Thunderbolt
+- Nasty Plot
+
+Granbull @ Flame Orb
+Ability: Quick Feet
+Tera Type: Fairy
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+IVs: 0 Spe
+- Play Rough
+- Close Combat
+- Earthquake
+- Fire Punch
+
+Delibird @ Life Orb
+Ability: Hustle
+Tera Type: Ice
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Icy Wind
+- Ice Shard
+- Aerial Ace
+- Quick Attack
+
+Furret @ Silk Scarf
+Ability: Frisk
+Tera Type: Normal
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Body Slam
+- Facade
+- Sucker Punch
+- Knock Off
+
+Dunsparce @ Leftovers
+Ability: Serene Grace
+Tera Type: Normal
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Body Slam
+- Headbutt
+- Stealth Rock
+- Roost
