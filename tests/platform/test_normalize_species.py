@@ -3,7 +3,6 @@ import pytest
 from src.platform.normalize.species import (
     FORM_OVERRIDES,
     FUZZY_CUTOFF,
-    SpeciesMatch,
     _build_slug_set,
     best_species_match,
     canonicalize_species,
