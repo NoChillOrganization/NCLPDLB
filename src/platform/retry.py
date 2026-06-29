@@ -145,6 +145,7 @@ async def _demo() -> None:
     try:
         await retry_async(slow, max_tries=10, base_delay=0.0, deadline=past)
     except aiohttp.ServerConnectionError:
+        # Expected: deadline is already expired, so the transient error is re-raised.
         pass
     assert len(call_log) == 1, call_log  # deadline caught before second attempt
 
