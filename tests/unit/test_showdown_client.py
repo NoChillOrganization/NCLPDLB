@@ -27,24 +27,6 @@ def _make_fake_ws(messages: list[str] | None = None):
     return ws
 
 
-# ── windows_event_loop_fix ─────────────────────────────────────────────────────
-
-def test_windows_event_loop_fix_noop_on_non_windows():
-    from src.ml.showdown_client import windows_event_loop_fix
-    with patch.object(sys, "platform", "linux"):
-        windows_event_loop_fix()  # must not raise
-
-
-def test_windows_event_loop_fix_noop_on_windows():
-    from src.ml.showdown_client import windows_event_loop_fix
-    # No-op on every platform now (Proactor is the Windows default since
-    # 3.8); must not touch the event loop policy API, removed in 3.16.
-    with patch.object(sys, "platform", "win32"), \
-         patch("asyncio.set_event_loop_policy") as mock_set:
-        windows_event_loop_fix()
-        mock_set.assert_not_called()
-
-
 # ── ShowdownConnection ─────────────────────────────────────────────────────────
 
 class TestShowdownConnection:

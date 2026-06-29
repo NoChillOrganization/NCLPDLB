@@ -2,7 +2,6 @@
 Tests for src/ml/run_training.py — training orchestrator helpers.
 
 Covers:
-  - _apply_windows_event_loop_fix()
   - _check_dependencies()
   - _parse_args()
   - _run_self_play_in_thread() error path
@@ -25,29 +24,11 @@ import runpy  # noqa: E402
 import threading  # noqa: E402
 
 from src.ml.run_training import (  # noqa: E402
-    _apply_windows_event_loop_fix,
     _check_dependencies,
     _parse_args,
     _run_self_play_in_thread,
     main,
 )
-
-
-# ── _apply_windows_event_loop_fix ─────────────────────────────────────────────
-
-class TestApplyWindowsEventLoopFix:
-    def test_runs_without_error_on_non_windows(self):
-        # On macOS/Linux sys.platform != "win32", function is a no-op
-        _apply_windows_event_loop_fix()  # should not raise
-
-    def test_noop_on_windows(self):
-        # Function is a no-op on every platform now (Proactor is the
-        # Windows default since 3.8); it must not touch the event loop
-        # policy API, which was removed in Python 3.16.
-        with patch("sys.platform", "win32"), \
-             patch("asyncio.set_event_loop_policy") as mock_set:
-            _apply_windows_event_loop_fix()
-            mock_set.assert_not_called()
 
 
 # ── _check_dependencies ───────────────────────────────────────────────────────
@@ -148,8 +129,7 @@ class TestRunSelfPlayInThread:
         loop_obj = MagicMock()
         loop_obj.run_forever = AsyncMock(side_effect=RuntimeError("boom"))
 
-        with patch("src.ml.run_training._apply_windows_event_loop_fix"), \
-             patch("src.ml.api.update_state") as mock_update:
+        with patch("src.ml.api.update_state") as mock_update:
             _run_self_play_in_thread(loop_obj)
             mock_update.assert_called_with(status="error")
 
@@ -158,16 +138,14 @@ class TestRunSelfPlayInThread:
         loop_obj = MagicMock()
         loop_obj.run_forever = AsyncMock(return_value=None)
 
-        with patch("src.ml.run_training._apply_windows_event_loop_fix"):
-            _run_self_play_in_thread(loop_obj)  # should not raise
+        _run_self_play_in_thread(loop_obj)  # should not raise
 
     def test_error_path_import_fails_is_swallowed(self):
         """When run_forever() raises AND api import fails, outer except: pass is hit."""
         loop_obj = MagicMock()
         loop_obj.run_forever = AsyncMock(side_effect=RuntimeError("boom"))
 
-        with patch("src.ml.run_training._apply_windows_event_loop_fix"), \
-             patch.dict("sys.modules", {"src.ml.api": None}):
+        with patch.dict("sys.modules", {"src.ml.api": None}):
             _run_self_play_in_thread(loop_obj)  # must not raise
 
 
@@ -192,7 +170,6 @@ def _make_main_patches(model_exists=False, missing_deps=None, settings_username=
     return (
         mock_model, mock_buffer, mock_trainer, mock_stats, mock_loop, mock_thread,
         [
-            patch("src.ml.run_training._apply_windows_event_loop_fix"),
             patch("src.ml.run_training._check_dependencies",
                   return_value=missing_deps or []),
             patch("src.ml.transformer_model.build_default_model", return_value=mock_model),
@@ -236,8 +213,8 @@ class TestMain:
         with ExitStack() as stack:
             mocks = [stack.enter_context(p) for p in patches]
             main()
-        # load_model (index 3) should have been called
-        mocks[3].assert_called_once()
+        # load_model (index 2) should have been called
+        mocks[2].assert_called_once()
 
     def test_main_builds_model_when_file_missing(self):
         from contextlib import ExitStack
@@ -245,8 +222,8 @@ class TestMain:
         with ExitStack() as stack:
             mocks = [stack.enter_context(p) for p in patches]
             main()
-        # build_default_model (index 2) should have been called
-        mocks[2].assert_called_once()
+        # build_default_model (index 1) should have been called
+        mocks[1].assert_called_once()
 
     def test_main_logs_warning_for_missing_deps(self):
         self._run_main(missing_deps=["poke_env"])
@@ -270,7 +247,7 @@ class TestMain:
         _, _, _, _, _, _, patches = _make_main_patches()
         # spec=[] → any attribute access raises AttributeError → caught by except
         mock_bad_settings = MagicMock(spec=[])
-        patches[10] = patch("src.config.settings", mock_bad_settings)
+        patches[9] = patch("src.config.settings", mock_bad_settings)
         with ExitStack() as stack:
             for p in patches:
                 stack.enter_context(p)
@@ -287,7 +264,7 @@ class TestMain:
         """If the initial update_state call raises, main continues."""
         from contextlib import ExitStack
         _, _, _, _, _, _, patches = _make_main_patches()
-        patches[9] = patch("src.ml.api.update_state", side_effect=Exception("api down"))
+        patches[8] = patch("src.ml.api.update_state", side_effect=Exception("api down"))
         with ExitStack() as stack:
             for p in patches:
                 stack.enter_context(p)
@@ -300,7 +277,7 @@ class TestMain:
         mock_loop.run_game = AsyncMock(return_value={"games": 1})
         mock_loop.mcts_config = MagicMock()
         _, _, _, _, _, _, patches = _make_main_patches()
-        patches[7] = patch("src.ml.self_play.SelfPlayLoop", return_value=mock_loop)
+        patches[6] = patch("src.ml.self_play.SelfPlayLoop", return_value=mock_loop)
 
         with ExitStack() as stack:
             for p in patches:

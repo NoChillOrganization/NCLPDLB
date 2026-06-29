@@ -176,13 +176,15 @@ def test_teambuilder_smoke():
 
 def test_teams_structure():
     """Level 2: FORMAT_TEAMS has 10+ formats, each with at least one team; GEN9OU has 5+."""
-    from src.ml.teams import FORMAT_TEAMS, GEN9OU
+    from src.ml.teams import FORMAT_TEAMS
 
     assert len(FORMAT_TEAMS) >= 10, f"Expected 10+ formats, got {len(FORMAT_TEAMS)}"
     for fmt, teams in FORMAT_TEAMS.items():
         assert len(teams) > 0, f"FORMAT_TEAMS['{fmt}'] is empty"
 
-    assert len(GEN9OU) >= 5, f"Expected 5+ GEN9OU teams, got {len(GEN9OU)}"
+    assert len(FORMAT_TEAMS["gen9ou"]) >= 5, (
+        f"Expected 5+ gen9ou teams, got {len(FORMAT_TEAMS['gen9ou'])}"
+    )
 
 
 def test_teams_showdown_format():
