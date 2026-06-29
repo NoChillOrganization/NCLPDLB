@@ -247,3 +247,40 @@ async def mark_raw_processed(conn: asyncpg.Connection, *, raw_id: int, normalize
         "UPDATE raw_ingest SET status = 'normalized', processed_at = now(), normalizer_version = $2 WHERE id = $1",
         raw_id, normalizer_version,
     )
+
+
+async def mark_raw_error(conn: asyncpg.Connection, *, raw_id: int) -> None:
+    """Flip raw_ingest.status to 'error' when a normalize step fails permanently."""
+    await conn.execute(
+        "UPDATE raw_ingest SET status = 'error', processed_at = now() WHERE id = $1",
+        raw_id,
+    )
+
+
+async def to_dead_letter(
+    conn: asyncpg.Connection,
+    *,
+    source: str,
+    route: str,
+    natural_key: str | None,
+    payload: dict | None,
+    error: str,
+    ingest_run_id: int | None = None,
+) -> None:
+    """Append one failure record to dead_letter (durable, operator-reviewable sink).
+
+    Append-only by design — re-running the same batch may add another row.
+    The idempotency guarantee lives in land_raw (ON CONFLICT DO NOTHING), not here.
+    """
+    await conn.execute(
+        """
+        INSERT INTO dead_letter (source_id, route, natural_key, payload, error, ingest_run_id)
+        SELECT id, $2, $3, $4::jsonb, $5, $6 FROM source WHERE name = $1
+        """,
+        source,
+        route,
+        natural_key,
+        json.dumps(payload) if payload is not None else None,
+        error,
+        ingest_run_id,
+    )
