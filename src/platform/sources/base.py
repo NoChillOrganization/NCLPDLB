@@ -15,4 +15,4 @@ class SourceAdapter(Protocol):
     source: str  # matches `source.name` row
 
     async def fetch(self, **kwargs) -> Iterable[RawRecord]:
-        ...
+        pass
