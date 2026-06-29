@@ -1,0 +1,78 @@
+name: Sync Dry-Run (main)
+
+# Full real sync against a throwaway Postgres — proves the migrate→fetch→upsert path
+# end-to-end. Double invocation asserts idempotency (second run lands 0 new raw rows).
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/platform/**'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dryrun:
+    name: Real sync against ephemeral Postgres
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nclpdlb_platform
+        ports:
+          - '5432:5432'
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PLATFORM_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nclpdlb_platform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Smogon sync (first pass)
+        run: >
+          python -m src.platform.sync_smogon
+          --period 2026-05
+          --formats gen9vgc2025regi
+          --cutoff 1500
+
+      - name: Run Smogon sync (second pass — rerun-safety assertion)
+        # Second run must succeed and report 0 newly landed raw rows (idempotent).
+        # The sync prints stats; if errored > 0 it indicates a normalization failure.
+        run: >
+          python -m src.platform.sync_smogon
+          --period 2026-05
+          --formats gen9vgc2025regi
+          --cutoff 1500
+
+      - name: Assert idempotency via raw_ingest count
+        # Counts raw_ingest rows; second sync above must not have increased it.
+        # ponytail: uses psql from postgres client tools (pre-installed on ubuntu-latest).
+        run: |
+          COUNT=$(psql "$PLATFORM_DATABASE_URL" -t -c "SELECT COUNT(*) FROM raw_ingest;")
+          echo "raw_ingest rows after both passes: $COUNT"
+          # Smogon syncs 1 row per format per period. Two passes → still 1 row (idempotent).
+          if [ "$COUNT" -ne 1 ]; then
+            echo "ERROR: expected 1 raw_ingest row (idempotent), got $COUNT"
+            exit 1
+          fi
+        env:
+          PGPASSWORD: postgres

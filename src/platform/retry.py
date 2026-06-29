@@ -32,6 +32,19 @@ class Permanent(Exception):
     """Wrap any cause in this to suppress retry and re-raise immediately."""
 
 
+class RateLimited(Transient):
+    """Raised by get_json when a 429 carries a Retry-After header.
+
+    retry_async uses retry_after (seconds) as the sleep floor so the caller
+    obeys the server's own back-off window instead of guessing.
+    # ponytail: delta-seconds only; add RFC-7231 HTTP-date parse if needed.
+    """
+
+    def __init__(self, retry_after: float | None) -> None:
+        self.retry_after = retry_after
+        super().__init__("rate limited")
+
+
 def is_transient(exc: BaseException) -> bool:
     """Return True for conditions that may resolve on a subsequent attempt.
 
@@ -92,8 +105,12 @@ async def retry_async(
         if deadline is not None and time.monotonic() >= deadline:
             break
 
-        # Full-jitter: random in [0, base_delay * 2**attempt]
-        delay = random.uniform(0, base_delay * (2 ** attempt))
+        # Full-jitter: random in [0, base_delay * 2**attempt].
+        # If the exception carries a Retry-After hint, use it as the floor
+        # so we honour the server's own back-off window.
+        # Note: `exc` is deleted by Python after the except block; use last_exc.
+        hint = getattr(last_exc, "retry_after", None)
+        delay = max(random.uniform(0, base_delay * (2 ** attempt)), hint or 0.0)
         await asyncio.sleep(delay)
 
     # Deadline exceeded mid-loop

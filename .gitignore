@@ -106,6 +106,7 @@ data/ml/**
 !.planning/HANDOFF.json
 !data/ml/**/*.json
 !data/replays/**/*.json
+!tests/fixtures/*.json
 
 # Zips / archives (large binaries — use releases)
 *.zip

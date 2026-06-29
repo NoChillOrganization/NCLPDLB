@@ -15,6 +15,8 @@ as callables so this module stays import-free of individual normalizers.
 from __future__ import annotations
 
 import json
+import sys
+import time
 from collections.abc import Iterable
 from typing import Any, Awaitable, Callable
 
@@ -22,6 +24,27 @@ import asyncpg
 
 from src.platform.sources.base import RawRecord
 from src.platform.store.repositories import land_raw, mark_raw_error, to_dead_letter
+
+
+async def dry_run_normalize(records: Iterable[RawRecord]) -> dict[str, int]:
+    """Validate adapter records in memory — no DB writes.
+
+    Checks each RawRecord has a non-empty natural_key and non-empty payload.
+    Returns the same stats shape as land_and_normalize for consistent dry-run output.
+    Exits non-zero downstream if any record is malformed (parser regression gate).
+    """
+    fetched = normalized = errored = 0
+    for rec in records:
+        fetched += 1
+        try:
+            if not rec.natural_key:
+                raise ValueError("empty natural_key")
+            if not rec.payload:
+                raise ValueError("empty payload")
+            normalized += 1
+        except Exception:
+            errored += 1
+    return {"fetched": fetched, "normalized": normalized, "errored": errored}
 
 
 async def land_and_normalize(
@@ -122,18 +145,25 @@ async def with_ingest_run(
         """,
         source, route, mode,
     )
+    t0 = time.monotonic()
     try:
         stats = await fn()
+        duration = round(time.monotonic() - t0, 2)
         await conn.execute(
             """
             UPDATE ingest_run
                SET status = 'ok', finished_at = now(), stats = $2::jsonb
              WHERE id = $1
             """,
-            run_id, json.dumps(stats),
+            run_id, json.dumps({**stats, "sync_duration_seconds": duration}),
         )
-        return stats
+        print(json.dumps({
+            "event": "ingest_run_ok", "source": source, "route": route, "mode": mode,
+            "run_id": run_id, "duration_secs": duration, **stats,
+        }), file=sys.stderr)
+        return {**stats, "sync_duration_seconds": duration}
     except Exception as exc:
+        duration = round(time.monotonic() - t0, 2)
         error_msg = f"{type(exc).__name__}: {exc}"
         await conn.execute(
             """
@@ -141,8 +171,12 @@ async def with_ingest_run(
                SET status = 'error', finished_at = now(), stats = $2::jsonb
              WHERE id = $1
             """,
-            run_id, json.dumps({"error": error_msg}),
+            run_id, json.dumps({"error": error_msg, "sync_duration_seconds": duration}),
         )
+        print(json.dumps({
+            "event": "ingest_run_error", "source": source, "route": route, "mode": mode,
+            "run_id": run_id, "duration_secs": duration, "error": error_msg,
+        }), file=sys.stderr)
         # Route exhausted/unrecoverable failures to dead_letter for operator review.
         # payload=None at run level — we don't have a single record to blame here.
         await to_dead_letter(

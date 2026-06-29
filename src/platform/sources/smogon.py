@@ -7,6 +7,7 @@ import aiohttp
 
 from src.platform.sources.base import RawRecord
 from src.platform.sources.http import get_json
+from src.platform.throttle import get_limiter
 
 STATS_URL = "https://www.smogon.com/stats/{period}/chaos/{format}-{cutoff}.json"
 
@@ -21,10 +22,11 @@ class SmogonAdapter:
         in that snapshot (matches usage_snapshot's one-row-per-format-period-cutoff grain).
         """
         records = []
+        limiter = get_limiter(self.source)
         async with aiohttp.ClientSession() as session:
             for fmt in formats:
                 url = STATS_URL.format(period=period, format=fmt, cutoff=cutoff)
-                data = await get_json(session, url, timeout=30.0)
+                data = await get_json(session, url, timeout=30.0, limiter=limiter)
                 if isinstance(data, dict) and "data" in data:
                     records.append(RawRecord(
                         route="usage", natural_key=f"{fmt}-{cutoff}-{period}", payload=data, url=url,
