@@ -11,10 +11,8 @@ Three orchestrators enforce parent-before-child ordering and idempotency:
   - ingest_tournament_batch()  — tournament_event → tournament_team → team_member / match
 
 Conflict-key notes:
-  - tournament_team (event_id, placement, player_external_id) and match's key contain NULLable
-    cols; Postgres NULL != NULL so duplicate rows slip through ON CONFLICT when keys are NULL.
-    A future 0003_*.sql should add COALESCE-based unique indexes. For now callers must ensure
-    non-null keys or accept that NULL-keyed rows accumulate.
+  - tournament_team and match use COALESCE-based functional unique indexes (0005_dedup_indexes.sql)
+    so NULL-keyed rows deduplicate correctly on re-run. ON CONFLICT uses expression form.
   - replay_team has no unique constraint — full-rebuild (delete + insert) is used instead.
   - replay_move has a unique but move_name/player_slot are nullable → full-rebuild also used.
 """
@@ -32,17 +30,29 @@ def _build_insert_sql(
     columns: list[str],
     *,
     conflict_cols: list[str] | None = None,
+    conflict_target: str | None = None,
     update_cols: list[str] | None = None,
     jsonb_cols: set[str] | None = None,
 ) -> str:
-    """Return parametric INSERT SQL for executemany (positional $1..$n placeholders)."""
+    """Return parametric INSERT SQL for executemany (positional $1..$n placeholders).
+
+    conflict_target, when supplied, overrides conflict_cols for the ON CONFLICT clause.
+    Use it for functional unique indexes where COALESCE expressions are needed.
+    """
     jsonb_cols = jsonb_cols or set()
     placeholders = ", ".join(
         f"${i + 1}::jsonb" if col in jsonb_cols else f"${i + 1}"
         for i, col in enumerate(columns)
     )
     sql = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
-    if conflict_cols:
+    if conflict_target is not None:
+        clause = f"ON CONFLICT ({conflict_target})"
+        if update_cols:
+            updates = ", ".join(f"{c} = EXCLUDED.{c}" for c in update_cols)
+            sql += f" {clause} DO UPDATE SET {updates}"
+        else:
+            sql += f" {clause} DO NOTHING"
+    elif conflict_cols:
         conflict_clause = f"ON CONFLICT ({', '.join(conflict_cols)})"
         if update_cols:
             updates = ", ".join(f"{c} = EXCLUDED.{c}" for c in update_cols)
@@ -59,6 +69,7 @@ async def bulk_upsert(
     rows: list[tuple],
     *,
     conflict_cols: list[str] | None = None,
+    conflict_target: str | None = None,
     update_cols: list[str] | None = None,
     jsonb_cols: set[str] | None = None,
     chunk: int = 1000,
@@ -68,6 +79,7 @@ async def bulk_upsert(
 
     Returns total row count attempted (not affected — executemany can't RETURNING).
     JSONB columns: caller must pre-serialize to str; SQL casts via ::jsonb.
+    conflict_target overrides conflict_cols for functional unique index expressions.
     """
     if not rows:
         return 0
@@ -75,6 +87,7 @@ async def bulk_upsert(
         table,
         columns,
         conflict_cols=conflict_cols,
+        conflict_target=conflict_target,
         update_cols=update_cols,
         jsonb_cols=jsonb_cols,
     )
@@ -93,6 +106,7 @@ async def bulk_upsert_returning(
     rows: list[tuple],
     *,
     conflict_cols: list[str],
+    conflict_target: str | None = None,
     update_cols: list[str],
     key_cols: list[str],
     col_types: dict[str, str],
@@ -107,6 +121,8 @@ async def bulk_upsert_returning(
 
     col_types must supply a Postgres array type per column, e.g.:
         {"source_id": "int[]", "replay_id": "text[]", "period": "date[]", "payload": "jsonb[]"}
+
+    conflict_target overrides conflict_cols for functional unique index expressions.
     """
     if not rows:
         return {}
@@ -121,7 +137,10 @@ async def bulk_upsert_returning(
     )
     col_list = ", ".join(columns)
     # Build: INSERT INTO t (c1,c2,...) SELECT * FROM unnest($1::t1[],$2::t2[],...)
-    conflict_clause = f"ON CONFLICT ({', '.join(conflict_cols)})"
+    if conflict_target is not None:
+        conflict_clause = f"ON CONFLICT ({conflict_target})"
+    else:
+        conflict_clause = f"ON CONFLICT ({', '.join(conflict_cols)})"
     updates = ", ".join(f"{c} = EXCLUDED.{c}" for c in update_cols)
     returning = f"{return_col}, {', '.join(key_cols)}"
 
@@ -647,6 +666,7 @@ async def ingest_tournament_batch(
             ],
             team_rows,
             conflict_cols=["event_id", "placement", "player_external_id"],
+            conflict_target="event_id, COALESCE(placement, -1), COALESCE(player_external_id, '')",
             update_cols=["player_name", "wins", "losses", "raw_ingest_id"],
             key_cols=["event_id", "placement", "player_external_id"],
             col_types={
@@ -819,7 +839,7 @@ async def ingest_tournament_batch(
                 "raw_ingest_id",
             ],
             match_rows,
-            conflict_cols=["event_id", "round", "player1_team_id", "player2_team_id"],
+            conflict_target="event_id, COALESCE(round, -1), COALESCE(player1_team_id, -1), COALESCE(player2_team_id, -1)",
             update_cols=[
                 "winner_team_id",
                 "score",

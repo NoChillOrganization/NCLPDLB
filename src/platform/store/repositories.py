@@ -56,6 +56,14 @@ async def resolve_species(
     return row["canonical_species_id"] if row else None
 
 
+async def resolve_source_id(conn: asyncpg.Connection, *, source: str) -> int:
+    """Return the integer primary key for a source name. Raises if not found."""
+    row = await conn.fetchrow("SELECT id FROM source WHERE name = $1", source)
+    if row is None:
+        raise ValueError(f"Unknown source: {source!r}")
+    return row["id"]
+
+
 async def upsert_canonical_species(
     conn: asyncpg.Connection,
     *,
@@ -342,7 +350,7 @@ async def upsert_tournament_team(
         """
         INSERT INTO tournament_team (event_id, placement, player_name, player_external_id, wins, losses, raw_ingest_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (event_id, placement, player_external_id) DO UPDATE SET
+        ON CONFLICT (event_id, COALESCE(placement, -1), COALESCE(player_external_id, '')) DO UPDATE SET
             player_name = EXCLUDED.player_name, wins = EXCLUDED.wins, losses = EXCLUDED.losses,
             raw_ingest_id = EXCLUDED.raw_ingest_id
         RETURNING id
