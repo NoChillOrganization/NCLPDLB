@@ -24,6 +24,27 @@ from src.platform.sources.base import RawRecord
 from src.platform.store.repositories import land_raw, mark_raw_error, to_dead_letter
 
 
+async def dry_run_normalize(records: Iterable[RawRecord]) -> dict[str, int]:
+    """Validate adapter records in memory — no DB writes.
+
+    Checks each RawRecord has a non-empty natural_key and non-empty payload.
+    Returns the same stats shape as land_and_normalize for consistent dry-run output.
+    Exits non-zero downstream if any record is malformed (parser regression gate).
+    """
+    fetched = normalized = errored = 0
+    for rec in records:
+        fetched += 1
+        try:
+            if not rec.natural_key:
+                raise ValueError("empty natural_key")
+            if not rec.payload:
+                raise ValueError("empty payload")
+            normalized += 1
+        except Exception:
+            errored += 1
+    return {"fetched": fetched, "normalized": normalized, "errored": errored}
+
+
 async def land_and_normalize(
     conn: asyncpg.Connection,
     *,

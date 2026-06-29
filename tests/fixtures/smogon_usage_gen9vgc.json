@@ -1,0 +1,62 @@
+{
+    "info": {
+        "metagame": "gen9vgc2025regi",
+        "cutoff": 1500,
+        "cutoff deviation": 0,
+        "team type": null,
+        "number of battles": 12345
+    },
+    "data": {
+        "Urshifu-Rapid-Strike": {
+            "Raw count": 4200,
+            "usage": 0.3402,
+            "Abilities": {"Unseen Fist": 1.0},
+            "Items": {"Choice Band": 0.48, "Life Orb": 0.31, "Assault Vest": 0.21},
+            "Spreads": {
+                "Jolly:252/252/0/0/4/0": 0.42,
+                "Adamant:252/252/0/0/4/0": 0.28
+            },
+            "Moves": {
+                "Surging Strikes": 0.96,
+                "Close Combat": 0.85,
+                "Aqua Jet": 0.72,
+                "Protect": 0.64
+            },
+            "Teammates": {"Flutter Mane": 0.38, "Rillaboom": 0.29}
+        },
+        "Flutter Mane": {
+            "Raw count": 3950,
+            "usage": 0.3198,
+            "Abilities": {"Protosynthesis": 1.0},
+            "Items": {"Choice Specs": 0.52, "Booster Energy": 0.28, "Life Orb": 0.20},
+            "Spreads": {
+                "Timid:252/0/4/252/0/0": 0.55,
+                "Modest:252/0/4/252/0/0": 0.35
+            },
+            "Moves": {
+                "Moonblast": 0.94,
+                "Shadow Ball": 0.88,
+                "Mystical Fire": 0.61,
+                "Protect": 0.57
+            },
+            "Teammates": {"Urshifu-Rapid-Strike": 0.38, "Rillaboom": 0.32}
+        },
+        "Rillaboom": {
+            "Raw count": 3600,
+            "usage": 0.2915,
+            "Abilities": {"Grassy Surge": 1.0},
+            "Items": {"Assault Vest": 0.61, "Choice Band": 0.24},
+            "Spreads": {
+                "Adamant:252/252/0/0/4/0": 0.45,
+                "Brave:252/252/4/0/0/0": 0.28
+            },
+            "Moves": {
+                "Grassy Glide": 0.98,
+                "Fake Out": 0.92,
+                "Wood Hammer": 0.74,
+                "U-turn": 0.51
+            },
+            "Teammates": {"Flutter Mane": 0.32, "Urshifu-Rapid-Strike": 0.29}
+        }
+    }
+}

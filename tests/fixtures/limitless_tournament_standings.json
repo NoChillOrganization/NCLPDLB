@@ -1,0 +1,45 @@
+[
+    {
+        "placing": 1,
+        "name": "Ash Ketchum",
+        "player": "ash_k",
+        "country": "US",
+        "decklist": [
+            {
+                "id": 887,
+                "name": "Zacian-Crowned",
+                "item": "Rusted Sword",
+                "ability": "Intrepid Sword",
+                "attacks": ["Behemoth Blade", "Close Combat", "Sacred Sword", "Protect"],
+                "nature": "Adamant",
+                "tera_type": "Fairy"
+            },
+            {
+                "id": 144,
+                "name": "Articuno",
+                "item": "Icy Rock",
+                "ability": "Pressure",
+                "attacks": ["Blizzard", "Hurricane", "Ice Beam", "Protect"],
+                "nature": "Modest",
+                "tera_type": "Ice"
+            }
+        ]
+    },
+    {
+        "placing": 2,
+        "name": "Misty Williams",
+        "player": "misty_w",
+        "country": "US",
+        "decklist": [
+            {
+                "id": 382,
+                "name": "Kyogre",
+                "item": "Choice Scarf",
+                "ability": "Drizzle",
+                "attacks": ["Water Spout", "Origin Pulse", "Ice Beam", "Thunder"],
+                "nature": "Timid",
+                "tera_type": "Water"
+            }
+        ]
+    }
+]
