@@ -1,4 +1,5 @@
 """Asyncpg pool + plain-SQL migration runner."""
+
 import hashlib
 from pathlib import Path
 
@@ -33,7 +34,10 @@ async def migrate() -> list[str]:
             "CREATE TABLE IF NOT EXISTS schema_migration "
             "(filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())"
         )
-        applied = {r["filename"] for r in await conn.fetch("SELECT filename FROM schema_migration")}
+        applied = {
+            r["filename"]
+            for r in await conn.fetch("SELECT filename FROM schema_migration")
+        }
         ran = []
         for path in sorted(MIGRATIONS_DIR.glob("*.sql")):
             if path.name in applied:

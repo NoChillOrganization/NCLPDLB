@@ -22,11 +22,11 @@ Windows notes
   Python 3.8+ uses ProactorEventLoop by default on Windows which supports
   asyncio sub-processes and WebSockets.  No event-loop workaround needed.
 """
+
 from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 from typing import Awaitable, Callable
 
 log = logging.getLogger(__name__)
@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 try:
     import websockets
     import websockets.exceptions
+
     WS_OK = True
 except ImportError:  # pragma: no cover
     WS_OK = False
@@ -43,6 +44,7 @@ except ImportError:  # pragma: no cover
 
 
 # ── Layer 1: Connection ───────────────────────────────────────────────────────
+
 
 class ShowdownConnection:
     """
@@ -164,6 +166,7 @@ class ShowdownConnection:
 
 # ── Layer 2: Message Handler ──────────────────────────────────────────────────
 
+
 class ShowdownMessageHandler:
     """
     Layer 2 — Showdown protocol message parsing and dispatching.
@@ -224,9 +227,7 @@ class ShowdownMessageHandler:
                 try:
                     await cb(room, payload)
                 except Exception as exc:
-                    self._log.warning(
-                        "Callback error for %r: %s", msg_type, exc
-                    )
+                    self._log.warning("Callback error for %r: %s", msg_type, exc)
 
     # ── Internal callbacks ──────────────────────────────────────────────
 
@@ -236,6 +237,7 @@ class ShowdownMessageHandler:
 
 
 # ── Layer 3: Commander ────────────────────────────────────────────────────────
+
 
 class ShowdownCommander:
     """
@@ -266,13 +268,16 @@ class ShowdownCommander:
             # Public server: exchange challstr + credentials for an assertion token
             import aiohttp
             import urllib.parse
+
             login_url = "https://play.pokemonshowdown.com/~~showdown/action.php"
-            payload = urllib.parse.urlencode({
-                "act": "login",
-                "name": username,
-                "pass": password,
-                "challstr": challstr,
-            })
+            payload = urllib.parse.urlencode(
+                {
+                    "act": "login",
+                    "name": username,
+                    "pass": password,
+                    "challstr": challstr,
+                }
+            )
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
@@ -284,6 +289,7 @@ class ShowdownCommander:
                         raw = await resp.text()
                 # Response is "]" + JSON
                 import json as _json
+
                 data = _json.loads(raw.lstrip("]"))
                 assertion = data.get("assertion", "")
             except Exception as exc:
@@ -348,6 +354,7 @@ class ShowdownCommander:
 
 
 # ── Composite: single-account client ─────────────────────────────────────────
+
 
 class ShowdownClient:
     """
@@ -414,7 +421,9 @@ class ShowdownClient:
         """
         await self.connection.connect()
         try:
-            await asyncio.wait_for(self._get_login_event().wait(), timeout=login_timeout)
+            await asyncio.wait_for(
+                self._get_login_event().wait(), timeout=login_timeout
+            )
         except asyncio.TimeoutError:
             self._log.warning(
                 "Login confirmation not received within %.1fs — proceeding anyway",
@@ -462,6 +471,7 @@ class ShowdownClient:
 
 
 # ── Composite: two-account pool ───────────────────────────────────────────────
+
 
 class ShowdownClientPool:
     """

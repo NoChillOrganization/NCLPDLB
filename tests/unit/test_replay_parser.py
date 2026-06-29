@@ -27,6 +27,7 @@ Covers uncovered lines:
   502       — parse_replay_dir: max_count slicing
   504-507   — parse_replay_dir: error handling
 """
+
 from __future__ import annotations
 
 import json
@@ -49,6 +50,7 @@ from src.ml.replay_parser import (
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _minimal_log(winner: str = "Alice", p1: str = "Alice", p2: str = "Bob") -> str:
     return (
         f"|player|p1|{p1}\n"
@@ -63,8 +65,13 @@ def _minimal_log(winner: str = "Alice", p1: str = "Alice", p2: str = "Bob") -> s
     )
 
 
-def _write_replay(tmp_path: Path, name: str = "battle.json", winner: str = "Alice",
-                  rating: int = 1000, extra_log: str = "") -> Path:
+def _write_replay(
+    tmp_path: Path,
+    name: str = "battle.json",
+    winner: str = "Alice",
+    rating: int = 1000,
+    extra_log: str = "",
+) -> Path:
     data = {
         "id": name.replace(".json", ""),
         "formatid": "gen9ou",
@@ -78,19 +85,34 @@ def _write_replay(tmp_path: Path, name: str = "battle.json", winner: str = "Alic
 
 # ── BattleRecord.to_dict() ────────────────────────────────────────────────────
 
+
 class TestBattleRecordToDict:
     def test_to_dict_returns_dict(self):
         """Line 98: to_dict() body."""
-        record = parse_log(_minimal_log(), replay_id="abc", format="gen9ou", rating=1500)
+        record = parse_log(
+            _minimal_log(), replay_id="abc", format="gen9ou", rating=1500
+        )
         d = record.to_dict()
         assert isinstance(d, dict)
 
     def test_to_dict_keys(self):
         record = parse_log(_minimal_log())
         d = record.to_dict()
-        required = {"replay_id", "format", "rating", "p1_name", "p2_name",
-                    "winner", "winner_name", "p1_team", "p2_team",
-                    "total_turns", "p1_fainted", "p2_fainted", "turns"}
+        required = {
+            "replay_id",
+            "format",
+            "rating",
+            "p1_name",
+            "p2_name",
+            "winner",
+            "winner_name",
+            "p1_team",
+            "p2_team",
+            "total_turns",
+            "p1_fainted",
+            "p2_fainted",
+            "turns",
+        }
         assert required.issubset(d.keys())
 
     def test_to_dict_turns_is_list(self):
@@ -109,13 +131,16 @@ class TestBattleRecordToDict:
                 assert "slot" in evt
 
     def test_to_dict_json_serializable(self):
-        record = parse_log(_minimal_log(), replay_id="xyz", format="gen9ou", rating=1000)
+        record = parse_log(
+            _minimal_log(), replay_id="xyz", format="gen9ou", rating=1000
+        )
         d = record.to_dict()
         serialized = json.dumps(d)  # should not raise
         assert "xyz" in serialized
 
 
 # ── _extract_species ──────────────────────────────────────────────────────────
+
 
 class TestExtractSpecies:
     def test_with_slot_prefix(self):
@@ -134,12 +159,13 @@ class TestExtractSpecies:
 
 # ── _parse_hp ─────────────────────────────────────────────────────────────────
 
+
 class TestParseHp:
     def test_normal_format(self):
         cur, mx, pct = _parse_hp("201/397")
         assert cur == 201
         assert mx == 397
-        assert abs(pct - 201/397) < 0.001
+        assert abs(pct - 201 / 397) < 0.001
 
     def test_faint_string(self):
         cur, mx, pct = _parse_hp("0 fnt")
@@ -179,10 +205,13 @@ class TestParseHp:
 
 # ── process_line early returns ────────────────────────────────────────────────
 
+
 class TestProcessLineEarlyReturns:
     def test_non_pipe_line_ignored(self):
         """Line 212: lines not starting with | are skipped."""
-        log_text = "This is not a pipe line\n|player|p1|Alice\n|player|p2|Bob\n|win|Alice"
+        log_text = (
+            "This is not a pipe line\n|player|p1|Alice\n|player|p2|Bob\n|win|Alice"
+        )
         record = parse_log(log_text)
         assert record.p1_name == "Alice"
 
@@ -194,12 +223,13 @@ class TestProcessLineEarlyReturns:
 
 # ── Handler guards (short parts) ─────────────────────────────────────────────
 
+
 class TestHandlerGuards:
     def test_on_player_short_parts(self):
         """Line 249: |player|p1 without name — only 3 parts after split."""
         log_text = "|player|p1\n|win|Alice"
         record = parse_log(log_text)
-        assert record.p1_name == ""   # not set because guard triggered
+        assert record.p1_name == ""  # not set because guard triggered
 
     def test_on_poke_short_parts(self):
         """Line 259: |poke|p1 without species."""
@@ -244,10 +274,13 @@ class TestHandlerGuards:
 
 # ── _on_switch slot matching ──────────────────────────────────────────────────
 
+
 class TestSwitchHandler:
     def test_slot_regex_no_match_returns_early(self):
         """Line 286: slot_raw doesn't match _SLOT_RE."""
-        log_text = "|player|p1|Alice\n|turn|1\n|switch|BADSLOT|Garchomp|342/342\n|win|Alice"
+        log_text = (
+            "|player|p1|Alice\n|turn|1\n|switch|BADSLOT|Garchomp|342/342\n|win|Alice"
+        )
         record = parse_log(log_text)
         assert record.p1_team == []
 
@@ -278,14 +311,12 @@ class TestSwitchHandler:
 
 # ── _on_heal ─────────────────────────────────────────────────────────────────
 
+
 class TestOnHeal:
     def test_heal_event_recorded(self):
         """Lines 340-345: _on_heal handler."""
         log_text = (
-            "|player|p1|Alice\n"
-            "|turn|1\n"
-            "|-heal|p1a: Garchomp|342/342\n"
-            "|win|Alice\n"
+            "|player|p1|Alice\n|turn|1\n|-heal|p1a: Garchomp|342/342\n|win|Alice\n"
         )
         record = parse_log(log_text)
         events = [e for t in record.turns for e in t.events if e.kind == "heal"]
@@ -296,15 +327,11 @@ class TestOnHeal:
 
 # ── _on_status ────────────────────────────────────────────────────────────────
 
+
 class TestOnStatus:
     def test_status_event_recorded(self):
         """Lines 351-356: _on_status handler."""
-        log_text = (
-            "|player|p1|Alice\n"
-            "|turn|1\n"
-            "|-status|p1a: Garchomp|brn\n"
-            "|win|Alice\n"
-        )
+        log_text = "|player|p1|Alice\n|turn|1\n|-status|p1a: Garchomp|brn\n|win|Alice\n"
         record = parse_log(log_text)
         events = [e for t in record.turns for e in t.events if e.kind == "status"]
         assert len(events) == 1
@@ -314,14 +341,12 @@ class TestOnStatus:
 
 # ── _on_boost ─────────────────────────────────────────────────────────────────
 
+
 class TestOnBoost:
     def test_boost_event_recorded(self):
         """Lines 362-373: _on_boost handler."""
         log_text = (
-            "|player|p1|Alice\n"
-            "|turn|1\n"
-            "|-boost|p1a: Garchomp|atk|2\n"
-            "|win|Alice\n"
+            "|player|p1|Alice\n|turn|1\n|-boost|p1a: Garchomp|atk|2\n|win|Alice\n"
         )
         record = parse_log(log_text)
         events = [e for t in record.turns for e in t.events if e.kind == "boost"]
@@ -330,10 +355,7 @@ class TestOnBoost:
 
     def test_unboost_event_negative(self):
         log_text = (
-            "|player|p1|Alice\n"
-            "|turn|1\n"
-            "|-unboost|p1a: Garchomp|spe|1\n"
-            "|win|Alice\n"
+            "|player|p1|Alice\n|turn|1\n|-unboost|p1a: Garchomp|spe|1\n|win|Alice\n"
         )
         record = parse_log(log_text)
         events = [e for t in record.turns for e in t.events if e.kind == "boost"]
@@ -363,6 +385,7 @@ class TestOnBoost:
 
 # ── _on_faint p2 ─────────────────────────────────────────────────────────────
 
+
 class TestOnFaintP2:
     def test_p2_faint_increments_counter(self):
         """Line 388: elif player == 'p2' branch."""
@@ -378,17 +401,13 @@ class TestOnFaintP2:
         assert record.p1_fainted == 0
 
     def test_p1_faint_increments_p1_counter(self):
-        log_text = (
-            "|player|p1|Alice\n"
-            "|turn|1\n"
-            "|faint|p1a: Garchomp\n"
-            "|win|Alice\n"
-        )
+        log_text = "|player|p1|Alice\n|turn|1\n|faint|p1a: Garchomp\n|win|Alice\n"
         record = parse_log(log_text)
         assert record.p1_fainted == 1
 
 
 # ── _on_tera ─────────────────────────────────────────────────────────────────
+
 
 class TestOnTera:
     def test_tera_event_recorded(self):
@@ -414,6 +433,7 @@ class TestOnTera:
 
 # ── _on_win branches ─────────────────────────────────────────────────────────
 
+
 class TestOnWinBranches:
     def test_p1_wins(self):
         """Line 410: winner_name == p1_name."""
@@ -434,6 +454,7 @@ class TestOnWinBranches:
 
 # ── _on_tie ───────────────────────────────────────────────────────────────────
 
+
 class TestOnTie:
     def test_tie_sets_winner(self):
         """Lines 416-417: _on_tie handler."""
@@ -443,6 +464,7 @@ class TestOnTie:
 
 
 # ── parse_replay_file ─────────────────────────────────────────────────────────
+
 
 class TestParseReplayFile:
     def test_reads_and_parses(self, tmp_path):
@@ -456,7 +478,7 @@ class TestParseReplayFile:
     def test_winner_detected(self, tmp_path):
         path = _write_replay(tmp_path, "game.json", winner="Alice")
         record = parse_replay_file(path)
-        assert record.winner == "p1"   # Alice is p1
+        assert record.winner == "p1"  # Alice is p1
 
     def test_formatid_preferred_over_format(self, tmp_path):
         data = {
@@ -473,6 +495,7 @@ class TestParseReplayFile:
 
 
 # ── parse_replay_dir ──────────────────────────────────────────────────────────
+
 
 class TestParseReplayDir:
     def test_parses_all_files(self, tmp_path):
@@ -514,44 +537,55 @@ class TestParseReplayDir:
 
 # ── Team ordering (M12 fix) ───────────────────────────────────────────────────
 
+
 class TestTeamAlphabeticalOrder:
     """p1_team / p2_team must always be alphabetically sorted (Branch 1 fix)."""
 
     def _parse(self, log_lines: list[str]) -> BattleRecord:
         from src.ml.replay_parser import parse_replay_json
+
         log = "\n".join(log_lines)
-        return parse_replay_json({
-            "id": "test-sort",
-            "format": "gen9ou",
-            "rating": 1500,
-            "p1": "Alice", "p2": "Bob",
-            "log": log,
-        })
+        return parse_replay_json(
+            {
+                "id": "test-sort",
+                "format": "gen9ou",
+                "rating": 1500,
+                "p1": "Alice",
+                "p2": "Bob",
+                "log": log,
+            }
+        )
 
     def test_team_preview_sorted(self):
         """|poke| lines in non-alphabetical order → p1_team still sorted."""
-        record = self._parse([
-            "|poke|p1|Zygarde, M",
-            "|poke|p1|Arvalis, M",
-            "|poke|p1|Mewtwo",
-        ])
+        record = self._parse(
+            [
+                "|poke|p1|Zygarde, M",
+                "|poke|p1|Arvalis, M",
+                "|poke|p1|Mewtwo",
+            ]
+        )
         assert record.p1_team == sorted(record.p1_team)
 
     def test_first_seen_switch_sorted(self):
         """Species revealed via |switch| (no team preview) → sorted."""
-        record = self._parse([
-            "|turn|1",
-            "|switch|p1a: Zygarde|Zygarde, L50|250/250",
-            "|switch|p1a: Corviknight|Corviknight, L50|250/250",
-        ])
+        record = self._parse(
+            [
+                "|turn|1",
+                "|switch|p1a: Zygarde|Zygarde, L50|250/250",
+                "|switch|p1a: Corviknight|Corviknight, L50|250/250",
+            ]
+        )
         assert record.p1_team == sorted(record.p1_team)
 
     def test_team_dedup_and_sorted(self):
         """Duplicate |poke| entries deduplicated and list remains sorted."""
-        record = self._parse([
-            "|poke|p1|Garchomp",
-            "|poke|p1|Blissey",
-            "|poke|p1|Garchomp",  # duplicate
-        ])
+        record = self._parse(
+            [
+                "|poke|p1|Garchomp",
+                "|poke|p1|Blissey",
+                "|poke|p1|Garchomp",  # duplicate
+            ]
+        )
         assert record.p1_team.count("Garchomp") == 1
         assert record.p1_team == sorted(record.p1_team)

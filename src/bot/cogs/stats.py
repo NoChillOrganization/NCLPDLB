@@ -1,6 +1,7 @@
 """
 Stats Cog — Team analytics, battle simulation, ELO, Showdown replays, video uploads, /spar.
 """
+
 import logging
 from pathlib import Path
 from src.bot.cogs.admin import _create_background_task
@@ -15,53 +16,59 @@ from src.ml.train_all import TRAINING_MAP
 from src.services.analytics_service import AnalyticsService
 from src.services.battle_sim import BattleSimService
 from src.services.elo_service import EloService
-from src.services.video_service import ALLOWED_MIME_TYPES, MAX_FILE_SIZE_MB, VideoService
+from src.services.video_service import (
+    ALLOWED_MIME_TYPES,
+    MAX_FILE_SIZE_MB,
+    VideoService,
+)
 
 log = logging.getLogger(__name__)
 
 REPLAY_DOMAIN = "replay.pokemonshowdown.com"
 
 # Derived from TRAINING_MAP — single source of truth with train-models.yml.
-SPAR_FORMATS = [fmt for fmt, (train_fmt, _) in TRAINING_MAP.items() if train_fmt is not None]
+SPAR_FORMATS = [
+    fmt for fmt, (train_fmt, _) in TRAINING_MAP.items() if train_fmt is not None
+]
 
 _FORMAT_DISPLAY = {
     # Random Battle
-    "gen9randombattle"       : "Gen 9 Random Battle",
-    "gen9monorandom"         : "Gen 9 Monotype Random",
+    "gen9randombattle": "Gen 9 Random Battle",
+    "gen9monorandom": "Gen 9 Monotype Random",
     "gen9randomdoublesbattle": "Gen 9 Random Doubles",
-    "gen7randombattle"       : "Gen 7 Random Battle",
-    "gen6randombattle"       : "Gen 6 Random Battle",
+    "gen7randombattle": "Gen 7 Random Battle",
+    "gen6randombattle": "Gen 6 Random Battle",
     # Smogon Singles
-    "gen9ou"                 : "Gen 9 OU",
-    "gen9ubers"              : "Gen 9 Ubers",
-    "gen9uu"                 : "Gen 9 UU",
-    "gen9ru"                 : "Gen 9 RU",
-    "gen9nu"                 : "Gen 9 NU",
-    "gen9pu"                 : "Gen 9 PU",
-    "gen9zu"                 : "Gen 9 ZU",
-    "gen9lc"                 : "Gen 9 LC",
-    "gen9monotype"           : "Gen 9 Monotype",
-    "gen9nationaldex"        : "Gen 9 National Dex",
-    "gen9anythinggoes"       : "Gen 9 Anything Goes",
+    "gen9ou": "Gen 9 OU",
+    "gen9ubers": "Gen 9 Ubers",
+    "gen9uu": "Gen 9 UU",
+    "gen9ru": "Gen 9 RU",
+    "gen9nu": "Gen 9 NU",
+    "gen9pu": "Gen 9 PU",
+    "gen9zu": "Gen 9 ZU",
+    "gen9lc": "Gen 9 LC",
+    "gen9monotype": "Gen 9 Monotype",
+    "gen9nationaldex": "Gen 9 National Dex",
+    "gen9anythinggoes": "Gen 9 Anything Goes",
     # Smogon Doubles
-    "gen9doublesou"          : "Gen 9 Doubles OU",
-    "gen9doublesubers"       : "Gen 9 Doubles Ubers",
-    "gen9doublesuu"          : "Gen 9 Doubles UU",
-    "gen9doublesnu"          : "Gen 9 Doubles NU",
+    "gen9doublesou": "Gen 9 Doubles OU",
+    "gen9doublesubers": "Gen 9 Doubles Ubers",
+    "gen9doublesuu": "Gen 9 Doubles UU",
+    "gen9doublesnu": "Gen 9 Doubles NU",
     # VGC 2025
-    "gen9vgc2025regg"        : "VGC 2025 Reg G",
-    "gen9vgc2025regh"        : "VGC 2025 Reg H",
-    "gen9vgc2025regi"        : "VGC 2025 Reg I",
-    "gen9vgc2025reggbo3"     : "VGC 2025 Reg G (Bo3)",
-    "gen9vgc2025reghbo3"     : "VGC 2025 Reg H (Bo3)",
-    "gen9vgc2025regibo3"     : "VGC 2025 Reg I (Bo3)",
+    "gen9vgc2025regg": "VGC 2025 Reg G",
+    "gen9vgc2025regh": "VGC 2025 Reg H",
+    "gen9vgc2025regi": "VGC 2025 Reg I",
+    "gen9vgc2025reggbo3": "VGC 2025 Reg G (Bo3)",
+    "gen9vgc2025reghbo3": "VGC 2025 Reg H (Bo3)",
+    "gen9vgc2025regibo3": "VGC 2025 Reg I (Bo3)",
     # VGC 2026
-    "gen9vgc2026regi"             : "VGC 2026 Reg I",
-    "gen9vgc2026regibo3"          : "VGC 2026 Reg I (Bo3)",
+    "gen9vgc2026regi": "VGC 2026 Reg I",
+    "gen9vgc2026regibo3": "VGC 2026 Reg I (Bo3)",
     # Champions
-    "gen9championsou"             : "Champions OU",
-    "gen9championsbssregma"       : "Champions BSS Reg M-A",
-    "gen9championsvgc2026regma"   : "Champions VGC 2026 Reg M-A",
+    "gen9championsou": "Champions OU",
+    "gen9championsbssregma": "Champions BSS Reg M-A",
+    "gen9championsvgc2026regma": "Champions VGC 2026 Reg M-A",
     "gen9championsvgc2026regmabo3": "Champions VGC 2026 Reg M-A (Bo3)",
 }
 
@@ -90,7 +97,9 @@ class StatsCog(commands.Cog, name="Stats"):
         self.elo = EloService()
 
     # ── /analysis ─────────────────────────────────────────────
-    @app_commands.command(name="analysis", description="Full team analysis: coverage, weaknesses, roles")
+    @app_commands.command(
+        name="analysis", description="Full team analysis: coverage, weaknesses, roles"
+    )
     @require_role(ROLE_COACH)
     @app_commands.describe(user="Player to analyze (leave blank for yourself)")
     async def analysis(
@@ -108,11 +117,15 @@ class StatsCog(commands.Cog, name="Stats"):
             title=f"Team Analysis — {target.display_name}",
             color=discord.Color.blurple(),
         )
-        embed.add_field(name="Type Coverage", value=report.coverage_summary, inline=False)
+        embed.add_field(
+            name="Type Coverage", value=report.coverage_summary, inline=False
+        )
         embed.add_field(name="Weaknesses", value=report.weakness_summary, inline=False)
         embed.add_field(name="Speed Tiers", value=report.speed_summary, inline=False)
         embed.add_field(name="Team Archetype", value=report.archetype, inline=True)
-        embed.add_field(name="Threat Score", value=str(report.threat_score), inline=True)
+        embed.add_field(
+            name="Threat Score", value=str(report.threat_score), inline=True
+        )
         embed.set_footer(text="Based on Smogon OU + VGC competitive data")
         await interaction.followup.send(embed=embed)
 
@@ -140,14 +153,22 @@ class StatsCog(commands.Cog, name="Stats"):
             color=discord.Color.gold(),
         )
         embed.add_field(name="Advantage", value=result.advantage_summary, inline=False)
-        embed.add_field(name=f"{player1.display_name} Threats", value=result.p1_threats, inline=True)
-        embed.add_field(name=f"{player2.display_name} Threats", value=result.p2_threats, inline=True)
+        embed.add_field(
+            name=f"{player1.display_name} Threats", value=result.p1_threats, inline=True
+        )
+        embed.add_field(
+            name=f"{player2.display_name} Threats", value=result.p2_threats, inline=True
+        )
         embed.add_field(name="Type Advantages", value=result.type_summary, inline=False)
-        embed.set_footer(text="Simulation based on base stats + type matchups. Not a guarantee!")
+        embed.set_footer(
+            text="Simulation based on base stats + type matchups. Not a guarantee!"
+        )
         await interaction.followup.send(embed=embed)
 
     # ── /standings ────────────────────────────────────────────
-    @app_commands.command(name="standings", description="Show league standings and ELO ratings")
+    @app_commands.command(
+        name="standings", description="Show league standings and ELO ratings"
+    )
     @require_role(ROLE_COACH)
     async def standings(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
@@ -158,7 +179,7 @@ class StatsCog(commands.Cog, name="Stats"):
         lines = []
         medals = ["🥇", "🥈", "🥉"]
         for i, player in enumerate(standings):
-            medal = medals[i] if i < 3 else f"`{i+1}.`"
+            medal = medals[i] if i < 3 else f"`{i + 1}.`"
             lines.append(
                 f"{medal} **{player.display_name}** — {player.wins}W/{player.losses}L — ELO: **{player.elo}**"
             )
@@ -170,13 +191,19 @@ class StatsCog(commands.Cog, name="Stats"):
         await interaction.followup.send(embed=embed)
 
     # ── /replay submit ────────────────────────────────────────
-    @app_commands.command(name="replay", description="Submit a Pokemon Showdown replay link for a match")
+    @app_commands.command(
+        name="replay", description="Submit a Pokemon Showdown replay link for a match"
+    )
     @require_role(ROLE_COACH)
-    @app_commands.describe(url="Pokemon Showdown replay URL (replay.pokemonshowdown.com/...)")
+    @app_commands.describe(
+        url="Pokemon Showdown replay URL (replay.pokemonshowdown.com/...)"
+    )
     async def replay(self, interaction: discord.Interaction, url: str) -> None:
         await interaction.response.defer()
         if REPLAY_DOMAIN not in url:
-            await interaction.followup.send(f"Please provide a valid {REPLAY_DOMAIN} link.", ephemeral=True)
+            await interaction.followup.send(
+                f"Please provide a valid {REPLAY_DOMAIN} link.", ephemeral=True
+            )
             return
         result = await self.battle_sim.parse_replay(
             guild_id=str(interaction.guild_id),
@@ -190,15 +217,23 @@ class StatsCog(commands.Cog, name="Stats"):
                 color=discord.Color.green(),
                 url=url,
             )
-            embed.add_field(name="Player 1 Team", value=", ".join(result.p1_team), inline=False)
-            embed.add_field(name="Player 2 Team", value=", ".join(result.p2_team), inline=False)
+            embed.add_field(
+                name="Player 1 Team", value=", ".join(result.p1_team), inline=False
+            )
+            embed.add_field(
+                name="Player 2 Team", value=", ".join(result.p2_team), inline=False
+            )
             embed.set_footer(text="Match result recorded. ELO updated.")
             await interaction.followup.send(embed=embed)
         else:
-            await interaction.followup.send(f"Replay error: {result.error}", ephemeral=True)
+            await interaction.followup.send(
+                f"Replay error: {result.error}", ephemeral=True
+            )
 
     # ── /match upload ─────────────────────────────────────────
-    @app_commands.command(name="match-upload", description="Upload a capture card video of your match")
+    @app_commands.command(
+        name="match-upload", description="Upload a capture card video of your match"
+    )
     @require_role(ROLE_COACH)
     @app_commands.describe(
         video=f"Video file (MP4, MOV, AVI) — max {MAX_FILE_SIZE_MB}MB",
@@ -232,15 +267,21 @@ class StatsCog(commands.Cog, name="Stats"):
                 description=f"**vs {opponent.display_name}**\n{notes}",
                 color=discord.Color.green(),
             )
-            embed.add_field(name="Video URL", value=result.public_url or "Private (league members only)")
+            embed.add_field(
+                name="Video URL",
+                value=result.public_url or "Private (league members only)",
+            )
             embed.set_footer(text=f"Video ID: {result.video_id}")
             await interaction.followup.send(embed=embed)
         else:
-            await interaction.followup.send(f"Upload failed: {result.error}", ephemeral=True)
-
+            await interaction.followup.send(
+                f"Upload failed: {result.error}", ephemeral=True
+            )
 
     # ── /pokemon ──────────────────────────────────────────────
-    @app_commands.command(name="pokemon", description="Look up a Pokemon's stats and competitive info")
+    @app_commands.command(
+        name="pokemon", description="Look up a Pokemon's stats and competitive info"
+    )
     @require_role(ROLE_COACH)
     @app_commands.describe(name="Pokemon name (e.g. Garchomp, Rotom-Wash)")
     async def pokemon_lookup(self, interaction: discord.Interaction, name: str) -> None:
@@ -268,9 +309,13 @@ class StatsCog(commands.Cog, name="Stats"):
         )
         embed.add_field(name="Base Stats", value=stat_line, inline=False)
         if mon.abilities:
-            embed.add_field(name="Abilities", value=", ".join(mon.abilities), inline=True)
+            embed.add_field(
+                name="Abilities", value=", ".join(mon.abilities), inline=True
+            )
         if mon.hidden_ability:
-            embed.add_field(name="Hidden Ability", value=mon.hidden_ability, inline=True)
+            embed.add_field(
+                name="Hidden Ability", value=mon.hidden_ability, inline=True
+            )
         flags = []
         if mon.is_legendary:
             flags.append("Legendary")
@@ -279,16 +324,16 @@ class StatsCog(commands.Cog, name="Stats"):
         if mon.is_paradox:
             flags.append("Paradox")
         if flags:
-            embed.add_field(name="Classification", value=" · ".join(flags), inline=False)
+            embed.add_field(
+                name="Classification", value=" · ".join(flags), inline=False
+            )
         console = mon.console_legal
         legal_line = " · ".join(
-            f"{k.upper()} {'✅' if v else '❌'}"
-            for k, v in console.items()
+            f"{k.upper()} {'✅' if v else '❌'}" for k, v in console.items()
         )
         embed.add_field(name="Console Legality", value=legal_line, inline=False)
         embed.set_footer(text=f"Speed tier: {mon.speed_tier}")
         await interaction.followup.send(embed=embed)
-
 
     # ── /spar ─────────────────────────────────────────────────
     @app_commands.command(
@@ -313,6 +358,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
         # Check if a trained model is available for this format
         from src.ml.showdown_player import best_model_for_format
+
         model_path = best_model_for_format(fmt)
 
         if model_path is None:
@@ -325,13 +371,16 @@ class StatsCog(commands.Cog, name="Stats"):
                 ),
                 color=discord.Color.orange(),
             )
-            embed.set_footer(text="Run: python -m src.ml.train_policy --format gen9randombattle")
+            embed.set_footer(
+                text="Run: python -m src.ml.train_policy --format gen9randombattle"
+            )
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
         # Bot Showdown credentials from settings
         try:
             from src.config import settings
+
             bot_username = getattr(settings, "showdown_username", None)
             bot_password = getattr(settings, "showdown_password", None)
         except Exception:
@@ -392,7 +441,9 @@ class StatsCog(commands.Cog, name="Stats"):
             ),
             color=discord.Color.yellow(),
         )
-        embed_waiting.set_footer(text="Battle will begin once you accept. Timeout: 5 min.")
+        embed_waiting.set_footer(
+            text="Battle will begin once you accept. Timeout: 5 min."
+        )
         await interaction.followup.send(embed=embed_waiting)
 
         # Run the challenge in the background so Discord doesn't time out
@@ -408,15 +459,21 @@ class StatsCog(commands.Cog, name="Stats"):
         )
 
     @spar.error
-    async def spar_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
+    async def spar_error(
+        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+    ) -> None:
         msg = str(error)
         try:
             if not interaction.response.is_done():
-                await interaction.response.send_message(f"Spar error: {msg}", ephemeral=True)
+                await interaction.response.send_message(
+                    f"Spar error: {msg}", ephemeral=True
+                )
             else:
                 await interaction.followup.send(f"Spar error: {msg}", ephemeral=True)
         except discord.NotFound:
-            log.warning("[/spar] Interaction expired before error could be reported: %s", msg)
+            log.warning(
+                "[/spar] Interaction expired before error could be reported: %s", msg
+            )
 
 
 async def _run_spar_challenge(
@@ -430,6 +487,7 @@ async def _run_spar_challenge(
     """Background task: run a live spar challenge and post the result."""
     try:
         from src.ml.showdown_player import BotChallenger
+
         challenger = BotChallenger(
             model_path=model_path,
             fmt=fmt,
@@ -440,13 +498,17 @@ async def _run_spar_challenge(
         result = await challenger.challenge_user(target_username, timeout=360)
 
         winner_label = (
-            f"**{bot_username}** (Bot)" if result["winner"] == "bot"
-            else f"**{target_username}** (You)" if result["winner"] == "opponent"
+            f"**{bot_username}** (Bot)"
+            if result["winner"] == "bot"
+            else f"**{target_username}** (You)"
+            if result["winner"] == "opponent"
             else "Tie"
         )
         color = (
-            discord.Color.red() if result["winner"] == "bot"
-            else discord.Color.green() if result["winner"] == "opponent"
+            discord.Color.red()
+            if result["winner"] == "bot"
+            else discord.Color.green()
+            if result["winner"] == "opponent"
             else discord.Color.greyple()
         )
         embed = discord.Embed(
@@ -456,7 +518,9 @@ async def _run_spar_challenge(
         )
         embed.add_field(name="Format", value=fmt, inline=True)
         embed.add_field(name="Turns", value=str(result["turns"]), inline=True)
-        embed.set_footer(text="GG! Use /analysis to review your team's strengths and weaknesses.")
+        embed.set_footer(
+            text="GG! Use /analysis to review your team's strengths and weaknesses."
+        )
         # Challenge + battle can exceed the ~15-min interaction webhook TTL — use DM.
         await interaction.user.send(embed=embed)
 

@@ -12,6 +12,7 @@ Usage
   tb = RotatingTeambuilder(FORMAT_TEAMS["gen9ou"])
   env = BattleEnv(battle_format="gen9ou", team=tb, ...)
 """
+
 from __future__ import annotations
 import threading
 

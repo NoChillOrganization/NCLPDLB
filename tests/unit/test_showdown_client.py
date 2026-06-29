@@ -3,15 +3,16 @@ Unit tests for src/ml/showdown_client.py — all three layers + composites.
 
 We never open a real WebSocket; every network call is mocked.
 """
+
 from __future__ import annotations
 
 import asyncio
-import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_fake_ws(messages: list[str] | None = None):
     """Return an async-iterable mock WebSocket."""
@@ -20,7 +21,7 @@ def _make_fake_ws(messages: list[str] | None = None):
     ws.close = AsyncMock()
 
     async def _aiter(self):
-        for m in (messages or []):
+        for m in messages or []:
             yield m
 
     ws.__aiter__ = _aiter
@@ -29,10 +30,11 @@ def _make_fake_ws(messages: list[str] | None = None):
 
 # ── ShowdownConnection ─────────────────────────────────────────────────────────
 
-class TestShowdownConnection:
 
+class TestShowdownConnection:
     def _make(self, url="ws://localhost:8000/showdown/websocket", name="test"):
         from src.ml.showdown_client import ShowdownConnection
+
         return ShowdownConnection(url=url, name=name)
 
     def test_initial_state(self):
@@ -51,12 +53,16 @@ class TestShowdownConnection:
         conn = self._make()
         fake_ws = _make_fake_ws()
 
-        with patch("src.ml.showdown_client.WS_OK", True), \
-             patch("src.ml.showdown_client.websockets") as mock_ws_mod:
+        with (
+            patch("src.ml.showdown_client.WS_OK", True),
+            patch("src.ml.showdown_client.websockets") as mock_ws_mod,
+        ):
             mock_ws_mod.connect = MagicMock(return_value=fake_ws)
+
             # asyncio.wait_for with a coroutine — wrap properly
             async def _fake_wait_for(coro, timeout):
                 return fake_ws
+
             with patch("asyncio.wait_for", side_effect=_fake_wait_for):
                 await conn.connect(timeout=5.0)
 
@@ -76,15 +82,19 @@ class TestShowdownConnection:
 
     async def test_connect_raises_connection_error_on_timeout(self):
         conn = self._make()
-        with patch("src.ml.showdown_client.WS_OK", True), \
-             patch("asyncio.wait_for", side_effect=asyncio.TimeoutError):
+        with (
+            patch("src.ml.showdown_client.WS_OK", True),
+            patch("asyncio.wait_for", side_effect=asyncio.TimeoutError),
+        ):
             with pytest.raises(ConnectionError, match="Timed out"):
                 await conn.connect()
 
     async def test_connect_raises_connection_error_on_other_exc(self):
         conn = self._make()
-        with patch("src.ml.showdown_client.WS_OK", True), \
-             patch("asyncio.wait_for", side_effect=OSError("refused")):
+        with (
+            patch("src.ml.showdown_client.WS_OK", True),
+            patch("asyncio.wait_for", side_effect=OSError("refused")),
+        ):
             with pytest.raises(ConnectionError, match="Could not connect"):
                 await conn.connect()
 
@@ -170,6 +180,7 @@ class TestShowdownConnection:
 
     async def test_recv_loop_handles_connection_closed(self):
         import websockets.exceptions as wse
+
         conn = self._make()
         conn._connected = True
 
@@ -216,10 +227,11 @@ class TestShowdownConnection:
 
 # ── ShowdownMessageHandler ─────────────────────────────────────────────────────
 
-class TestShowdownMessageHandler:
 
+class TestShowdownMessageHandler:
     def _make(self):
         from src.ml.showdown_client import ShowdownMessageHandler
+
         return ShowdownMessageHandler(name="test")
 
     async def test_on_and_off(self):
@@ -304,10 +316,11 @@ class TestShowdownMessageHandler:
 
 # ── ShowdownCommander ──────────────────────────────────────────────────────────
 
-class TestShowdownCommander:
 
+class TestShowdownCommander:
     def _make(self):
         from src.ml.showdown_client import ShowdownConnection, ShowdownCommander
+
         conn = ShowdownConnection(name="test")
         conn.send_raw = AsyncMock()
         return ShowdownCommander(conn), conn
@@ -365,10 +378,16 @@ class TestShowdownCommander:
 
 # ── ShowdownClient ─────────────────────────────────────────────────────────────
 
-class TestShowdownClient:
 
-    def _make(self, username="Alice", password="", url="ws://localhost:8000/showdown/websocket"):
+class TestShowdownClient:
+    def _make(
+        self,
+        username="Alice",
+        password="",
+        url="ws://localhost:8000/showdown/websocket",
+    ):
         from src.ml.showdown_client import ShowdownClient
+
         client = ShowdownClient(username=username, password=password, url=url)
         # Stub out network layer
         client.connection.connect = AsyncMock()
@@ -466,10 +485,11 @@ class TestShowdownClient:
 
 # ── ShowdownClientPool ─────────────────────────────────────────────────────────
 
-class TestShowdownClientPool:
 
+class TestShowdownClientPool:
     def _make(self):
         from src.ml.showdown_client import ShowdownClientPool
+
         pool = ShowdownClientPool(
             username_a="AccountA",
             username_b="AccountB",
@@ -488,6 +508,7 @@ class TestShowdownClientPool:
 
     def test_accounts_created_with_correct_usernames(self):
         from src.ml.showdown_client import ShowdownClientPool
+
         pool = ShowdownClientPool()
         assert pool.account_a.username == "AccountA"
         assert pool.account_b.username == "AccountB"
@@ -506,7 +527,9 @@ class TestShowdownClientPool:
 
     async def test_disconnect_ignores_individual_errors(self):
         pool = self._make()
-        pool.account_a.connection.disconnect = AsyncMock(side_effect=RuntimeError("gone"))
+        pool.account_a.connection.disconnect = AsyncMock(
+            side_effect=RuntimeError("gone")
+        )
         await pool.disconnect()  # must not raise
 
     async def test_context_manager(self):

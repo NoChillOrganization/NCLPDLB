@@ -32,6 +32,7 @@ Usage:
         --champions-regmb-ranked-data-url https://www.pikalytics.com/pokedex/battledataregmbs3
     COMPETITIVE_EXPORTS_DIR=/some/other/path python scripts/prepare_competitive_data.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -52,6 +53,7 @@ if hasattr(sys.stderr, "reconfigure"):
 # httpx for live URL fetchers; graceful fallback if unavailable.
 try:
     import httpx as _httpx
+
     _HTTPX_AVAILABLE = True
 except ImportError:
     _HTTPX_AVAILABLE = False
@@ -94,8 +96,10 @@ SOURCE_FILES = [
 _STATS_MONTH_PRIMARY = "2026-04"
 _STATS_MONTH_FALLBACK = "2026-03"
 
+
 def _tier_url(tier: str, month: str, elo: int = 1500) -> str:
     return f"https://www.smogon.com/stats/{month}/gen9{tier}-{elo}.txt"
+
 
 TIER_STATS_URLS: dict[str, list[str]] = {
     # OU: no 1760 file exists; 1695 is the highest available cut
@@ -125,24 +129,24 @@ TIER_STATS_URLS: dict[str, list[str]] = {
 # exists, and meta is optional/non-fatal — training proceeds without it.
 # SV VGC (gen9vgc2026regi/bo3) removed — format phased out.
 FORMAT_TIER_MAP: dict[str, str] = {
-    "gen9ou":             "ou",
-    "gen9ubers":          "ubers",
-    "gen9uu":             "uu",
-    "gen9ru":             "ru",
-    "gen9nu":             "nu",
-    "gen9pu":             "pu",
-    "gen9zu":             "zu",
-    "gen9lc":             "lc",
-    "gen9nationaldex":    "ou",       # no separate file; OU is best proxy
-    "gen9monotype":       "ou",
-    "gen9anythinggoes":   "ubers",
+    "gen9ou": "ou",
+    "gen9ubers": "ubers",
+    "gen9uu": "uu",
+    "gen9ru": "ru",
+    "gen9nu": "nu",
+    "gen9pu": "pu",
+    "gen9zu": "zu",
+    "gen9lc": "lc",
+    "gen9nationaldex": "ou",  # no separate file; OU is best proxy
+    "gen9monotype": "ou",
+    "gen9anythinggoes": "ubers",
     # Champions formats
-    "gen9championsou":              "ou",
-    "gen9championsbssregma":        "bssregi",
-    "gen9championsbssregmb":        "bssregi",
-    "gen9championsvgc2026regma":    "champions",
+    "gen9championsou": "ou",
+    "gen9championsbssregma": "bssregi",
+    "gen9championsbssregmb": "bssregi",
+    "gen9championsvgc2026regma": "champions",
     "gen9championsvgc2026regmabo3": "champions",
-    "gen9championsvgc2026regmb":    "championsmb",
+    "gen9championsvgc2026regmb": "championsmb",
     "gen9championsvgc2026regmbbo3": "championsmb",
 }
 
@@ -164,7 +168,9 @@ def _fetch_smogon_stats(tier: str) -> list[dict]:
     for url in urls:
         try:
             print(f"  [FETCH] {tier} <- {url}")
-            req = urllib.request.Request(url, headers={"User-Agent": "NCLPDLB/1.0 (competitive data seeder)"})
+            req = urllib.request.Request(
+                url, headers={"User-Agent": "NCLPDLB/1.0 (competitive data seeder)"}
+            )
             with urllib.request.urlopen(req, timeout=15) as resp:
                 text = resp.read().decode("utf-8")
             break
@@ -172,7 +178,10 @@ def _fetch_smogon_stats(tier: str) -> list[dict]:
             print(f"  [WARN]  {tier} {url} failed: {exc}")
 
     if text is None:
-        print(f"  [WARN]  No stats available for tier '{tier}' - skipping", file=sys.stderr)
+        print(
+            f"  [WARN]  No stats available for tier '{tier}' - skipping",
+            file=sys.stderr,
+        )
         _tier_cache[tier] = []
         return []
 
@@ -184,11 +193,13 @@ def _fetch_smogon_stats(tier: str) -> list[dict]:
             line,
         )
         if m:
-            rows.append({
-                "rank":      m.group(1),
-                "pokemon":   m.group(2).strip(),
-                "usage_pct": m.group(3) + "%",
-            })
+            rows.append(
+                {
+                    "rank": m.group(1),
+                    "pokemon": m.group(2).strip(),
+                    "usage_pct": m.group(3) + "%",
+                }
+            )
 
     _tier_cache[tier] = rows
     return rows
@@ -204,7 +215,9 @@ def copy_source_files() -> int:
 
     if EXPORTS_DIR is None:
         present = sum(1 for f in SOURCE_FILES if (DEST_DIR / f).exists())
-        print(f"  [SKIP] COMPETITIVE_EXPORTS_DIR not set - {present}/{len(SOURCE_FILES)} files already in {DEST_DIR}")
+        print(
+            f"  [SKIP] COMPETITIVE_EXPORTS_DIR not set - {present}/{len(SOURCE_FILES)} files already in {DEST_DIR}"
+        )
         return present
 
     import shutil
@@ -254,7 +267,9 @@ def _top10_from_csv(filename: str) -> list[dict]:
     return top10
 
 
-def _load_champions_archetypes(filename: str = "champions_reg_ma_archetypes.csv") -> list[dict]:
+def _load_champions_archetypes(
+    filename: str = "champions_reg_ma_archetypes.csv",
+) -> list[dict]:
     """Load top archetypes from a Champions archetypes CSV.
 
     Columns: rank, core, size, usage_pct, win_pct, avg_rating
@@ -275,6 +290,7 @@ def _load_champions_archetypes(filename: str = "champions_reg_ma_archetypes.csv"
 # ── Live-URL fetchers ─────────────────────────────────────────────────────────
 # All functions are non-fatal: any exception → warn + keep bundled CSV.
 
+
 def fetch_smogon_usage(api_base: str, stats_index: str) -> None:
     """Refresh smogon_tier_*.csv files from the pkmn.github.io Smogon mirror.
 
@@ -291,7 +307,9 @@ def fetch_smogon_usage(api_base: str, stats_index: str) -> None:
         resp.raise_for_status()
         months = sorted(re.findall(r'href="(\d{4}-\d{2})/"', resp.text))
         if not months:
-            print(f"  [WARN] No month directories found at {stats_index} — skipping Smogon fetch")
+            print(
+                f"  [WARN] No month directories found at {stats_index} — skipping Smogon fetch"
+            )
             return
         latest_month = months[-1]
         print(f"  [SMOGON] Latest month: {latest_month}")
@@ -312,7 +330,9 @@ def fetch_smogon_usage(api_base: str, stats_index: str) -> None:
                     except Exception:
                         continue
                 if not fetched:
-                    print(f"  [WARN] Smogon {tier}: no JSON found at {api_base}/{latest_month}/")
+                    print(
+                        f"  [WARN] Smogon {tier}: no JSON found at {api_base}/{latest_month}/"
+                    )
                     continue
 
                 data = r.json()
@@ -324,7 +344,10 @@ def fetch_smogon_usage(api_base: str, stats_index: str) -> None:
 
                 rows_out = sorted(
                     [
-                        {"pokemon": name, "usage_pct": f"{stats.get('usage', 0) * 100:.4f}%"}
+                        {
+                            "pokemon": name,
+                            "usage_pct": f"{stats.get('usage', 0) * 100:.4f}%",
+                        }
                         for name, stats in pokemon_data.items()
                     ],
                     key=lambda x: float(x["usage_pct"].rstrip("%")),
@@ -381,10 +404,16 @@ def fetch_champions_usage(usage_url: str, api_docs: str) -> None:
         usage_data: list | None = None
         if usage_endpoint:
             try:
-                r = _httpx.get(f"{api_base_url}{usage_endpoint}", timeout=20, follow_redirects=True)
+                r = _httpx.get(
+                    f"{api_base_url}{usage_endpoint}", timeout=20, follow_redirects=True
+                )
                 r.raise_for_status()
                 body = r.json()
-                usage_data = body if isinstance(body, list) else body.get("data") or body.get("results")
+                usage_data = (
+                    body
+                    if isinstance(body, list)
+                    else body.get("data") or body.get("results")
+                )
             except Exception as exc:
                 print(f"  [WARN] Champions usage API call failed: {exc}")
 
@@ -396,32 +425,56 @@ def fetch_champions_usage(usage_url: str, api_docs: str) -> None:
                 pokemon = item.get("pokemon") or item.get("name") or item.get("mon", "")
                 if not pokemon:
                     continue
-                rows_out.append({
-                    "rank":       item.get("rank", i),
-                    "tier":       item.get("tier", ""),
-                    "pokemon":    pokemon,
-                    "usage_pct":  item.get("usage_pct") or item.get("usage", ""),
-                    "win_pct":    item.get("win_pct") or item.get("winrate", ""),
-                    "avg_rating": item.get("avg_rating") or item.get("rating", ""),
-                })
+                rows_out.append(
+                    {
+                        "rank": item.get("rank", i),
+                        "tier": item.get("tier", ""),
+                        "pokemon": pokemon,
+                        "usage_pct": item.get("usage_pct") or item.get("usage", ""),
+                        "win_pct": item.get("win_pct") or item.get("winrate", ""),
+                        "avg_rating": item.get("avg_rating") or item.get("rating", ""),
+                    }
+                )
             if rows_out:
                 csv_path = DEST_DIR / "champions_reg_ma_usage.csv"
                 with csv_path.open("w", newline="", encoding="utf-8") as f:
-                    writer = csv.DictWriter(f, fieldnames=["rank", "tier", "pokemon", "usage_pct", "win_pct", "avg_rating"])
+                    writer = csv.DictWriter(
+                        f,
+                        fieldnames=[
+                            "rank",
+                            "tier",
+                            "pokemon",
+                            "usage_pct",
+                            "win_pct",
+                            "avg_rating",
+                        ],
+                    )
                     writer.writeheader()
                     writer.writerows(rows_out)
-                print(f"  [CHAMPIONS] Usage: {len(rows_out)} pokemon → champions_reg_ma_usage.csv")
+                print(
+                    f"  [CHAMPIONS] Usage: {len(rows_out)} pokemon → champions_reg_ma_usage.csv"
+                )
         else:
-            print("  [INFO] Champions usage: API data unavailable — keeping bundled CSV")
+            print(
+                "  [INFO] Champions usage: API data unavailable — keeping bundled CSV"
+            )
 
         # Fetch archetypes data.
         archetypes_data: list | None = None
         if archetypes_endpoint:
             try:
-                r = _httpx.get(f"{api_base_url}{archetypes_endpoint}", timeout=20, follow_redirects=True)
+                r = _httpx.get(
+                    f"{api_base_url}{archetypes_endpoint}",
+                    timeout=20,
+                    follow_redirects=True,
+                )
                 r.raise_for_status()
                 body = r.json()
-                archetypes_data = body if isinstance(body, list) else body.get("data") or body.get("results")
+                archetypes_data = (
+                    body
+                    if isinstance(body, list)
+                    else body.get("data") or body.get("results")
+                )
             except Exception as exc:
                 print(f"  [WARN] Champions archetypes API call failed: {exc}")
 
@@ -433,21 +486,35 @@ def fetch_champions_usage(usage_url: str, api_docs: str) -> None:
                 core = item.get("core") or item.get("team") or item.get("archetype", "")
                 if not core:
                     continue
-                rows_out.append({
-                    "rank":       item.get("rank", i),
-                    "core":       core,
-                    "size":       item.get("size", ""),
-                    "usage_pct":  item.get("usage_pct") or item.get("usage", ""),
-                    "win_pct":    item.get("win_pct") or item.get("winrate", ""),
-                    "avg_rating": item.get("avg_rating") or item.get("rating", ""),
-                })
+                rows_out.append(
+                    {
+                        "rank": item.get("rank", i),
+                        "core": core,
+                        "size": item.get("size", ""),
+                        "usage_pct": item.get("usage_pct") or item.get("usage", ""),
+                        "win_pct": item.get("win_pct") or item.get("winrate", ""),
+                        "avg_rating": item.get("avg_rating") or item.get("rating", ""),
+                    }
+                )
             if rows_out:
                 csv_path = DEST_DIR / "champions_reg_ma_archetypes.csv"
                 with csv_path.open("w", newline="", encoding="utf-8") as f:
-                    writer = csv.DictWriter(f, fieldnames=["rank", "core", "size", "usage_pct", "win_pct", "avg_rating"])
+                    writer = csv.DictWriter(
+                        f,
+                        fieldnames=[
+                            "rank",
+                            "core",
+                            "size",
+                            "usage_pct",
+                            "win_pct",
+                            "avg_rating",
+                        ],
+                    )
                     writer.writeheader()
                     writer.writerows(rows_out)
-                print(f"  [CHAMPIONS] Archetypes: {len(rows_out)} → champions_reg_ma_archetypes.csv")
+                print(
+                    f"  [CHAMPIONS] Archetypes: {len(rows_out)} → champions_reg_ma_archetypes.csv"
+                )
     except Exception as exc:
         print(f"  [WARN] Champions usage fetch failed: {exc}")
 
@@ -473,24 +540,47 @@ def fetch_champions_regmb(ranked_url: str, tournament_url: str) -> None:
                 html = r.text
                 # Best-effort: pokemon name + adjacent usage percentage.
                 for i, m in enumerate(
-                    re.finditer(r'data-pokemon="([A-Za-z0-9\-]+)"[^>]*>.*?([\d.]+)%', html), 1
+                    re.finditer(
+                        r'data-pokemon="([A-Za-z0-9\-]+)"[^>]*>.*?([\d.]+)%', html
+                    ),
+                    1,
                 ):
-                    usage_rows.append({
-                        "rank": i, "tier": "regmb", "pokemon": m.group(1),
-                        "usage_pct": m.group(2), "win_pct": "", "avg_rating": "",
-                    })
+                    usage_rows.append(
+                        {
+                            "rank": i,
+                            "tier": "regmb",
+                            "pokemon": m.group(1),
+                            "usage_pct": m.group(2),
+                            "win_pct": "",
+                            "avg_rating": "",
+                        }
+                    )
             except Exception as exc:
                 print(f"  [WARN] Champions Reg M-B ranked fetch failed: {exc}")
 
         if usage_rows:
             csv_path = DEST_DIR / "champions_reg_mb_usage.csv"
             with csv_path.open("w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=["rank", "tier", "pokemon", "usage_pct", "win_pct", "avg_rating"])
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=[
+                        "rank",
+                        "tier",
+                        "pokemon",
+                        "usage_pct",
+                        "win_pct",
+                        "avg_rating",
+                    ],
+                )
                 writer.writeheader()
                 writer.writerows(usage_rows)
-            print(f"  [CHAMPIONS] Reg M-B usage: {len(usage_rows)} pokemon → champions_reg_mb_usage.csv")
+            print(
+                f"  [CHAMPIONS] Reg M-B usage: {len(usage_rows)} pokemon → champions_reg_mb_usage.csv"
+            )
         else:
-            print("  [INFO] Champions Reg M-B usage: no parseable rows — keeping bundled CSV")
+            print(
+                "  [INFO] Champions Reg M-B usage: no parseable rows — keeping bundled CSV"
+            )
 
         archetype_rows: list[dict] = []
         if tournament_url:
@@ -501,22 +591,42 @@ def fetch_champions_regmb(ranked_url: str, tournament_url: str) -> None:
                 for i, m in enumerate(
                     re.finditer(r'data-core="([^"]+)"[^>]*>.*?([\d.]+)%', html), 1
                 ):
-                    archetype_rows.append({
-                        "rank": i, "core": m.group(1), "size": "",
-                        "usage_pct": m.group(2), "win_pct": "", "avg_rating": "",
-                    })
+                    archetype_rows.append(
+                        {
+                            "rank": i,
+                            "core": m.group(1),
+                            "size": "",
+                            "usage_pct": m.group(2),
+                            "win_pct": "",
+                            "avg_rating": "",
+                        }
+                    )
             except Exception as exc:
                 print(f"  [WARN] Champions Reg M-B tournament fetch failed: {exc}")
 
         if archetype_rows:
             csv_path = DEST_DIR / "champions_reg_mb_archetypes.csv"
             with csv_path.open("w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=["rank", "core", "size", "usage_pct", "win_pct", "avg_rating"])
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=[
+                        "rank",
+                        "core",
+                        "size",
+                        "usage_pct",
+                        "win_pct",
+                        "avg_rating",
+                    ],
+                )
                 writer.writeheader()
                 writer.writerows(archetype_rows)
-            print(f"  [CHAMPIONS] Reg M-B archetypes: {len(archetype_rows)} → champions_reg_mb_archetypes.csv")
+            print(
+                f"  [CHAMPIONS] Reg M-B archetypes: {len(archetype_rows)} → champions_reg_mb_archetypes.csv"
+            )
         else:
-            print("  [INFO] Champions Reg M-B archetypes: no parseable rows — keeping bundled CSV")
+            print(
+                "  [INFO] Champions Reg M-B archetypes: no parseable rows — keeping bundled CSV"
+            )
     except Exception as exc:
         print(f"  [WARN] Champions Reg M-B fetch failed: {exc}")
 
@@ -530,12 +640,19 @@ def fetch_champions_rules(rules_url: str) -> None:
         r = _httpx.get(rules_url, timeout=15, follow_redirects=True)
         r.raise_for_status()
         # Extract regulation name mentions for corroboration logging.
-        regs_found = re.findall(r'Reg(?:ulation)?\s*[A-Z][-\s]?[A-Z]?', r.text, re.IGNORECASE)
-        reg_set = sorted({re.sub(r'\s+', ' ', x.strip()) for x in regs_found})
-        print(f"  [CHAMPIONS] Rules page fetched ({len(r.text)} chars); regulations found: {reg_set or '(none parsed)'}")
+        regs_found = re.findall(
+            r"Reg(?:ulation)?\s*[A-Z][-\s]?[A-Z]?", r.text, re.IGNORECASE
+        )
+        reg_set = sorted({re.sub(r"\s+", " ", x.strip()) for x in regs_found})
+        print(
+            f"  [CHAMPIONS] Rules page fetched ({len(r.text)} chars); regulations found: {reg_set or '(none parsed)'}"
+        )
         # Warn if Regulation I is mentioned — would indicate stale rules page.
         if any("reg i" in x.lower() or "regulation i" in x.lower() for x in reg_set):
-            print("  [WARN] Champions rules page mentions Regulation I — verify page is current Reg M-A", file=sys.stderr)
+            print(
+                "  [WARN] Champions rules page mentions Regulation I — verify page is current Reg M-A",
+                file=sys.stderr,
+            )
     except Exception as exc:
         print(f"  [WARN] Champions rules fetch failed: {exc}")
 
@@ -553,9 +670,11 @@ def fetch_events(online_url: str, major_url: str) -> None:
             r = _httpx.get(online_url, timeout=20, follow_redirects=True)
             r.raise_for_status()
             # Rough count of tournament rows from limitlesstcg.com table HTML.
-            count = len(re.findall(r'<tr\b', r.text, re.IGNORECASE))
+            count = len(re.findall(r"<tr\b", r.text, re.IGNORECASE))
             print(f"  [EVENTS] Online events page fetched — ~{max(0, count - 1)} rows")
-            events.append({"source": "limitlesstcg", "url": online_url, "approx_rows": count})
+            events.append(
+                {"source": "limitlesstcg", "url": online_url, "approx_rows": count}
+            )
         except Exception as exc:
             print(f"  [WARN] Online events fetch failed: {exc}")
 
@@ -563,7 +682,7 @@ def fetch_events(online_url: str, major_url: str) -> None:
         try:
             r = _httpx.get(major_url, timeout=20, follow_redirects=True)
             r.raise_for_status()
-            count = len(re.findall(r'<tr\b', r.text, re.IGNORECASE))
+            count = len(re.findall(r"<tr\b", r.text, re.IGNORECASE))
             print(f"  [EVENTS] Major events page fetched — ~{max(0, count - 1)} rows")
             events.append({"source": "labmaus", "url": major_url, "approx_rows": count})
         except Exception as exc:
@@ -582,6 +701,7 @@ def fetch_events(online_url: str, major_url: str) -> None:
 
 
 # ── Core pipeline ─────────────────────────────────────────────────────────────
+
 
 def build_format_configs() -> None:
     """Emit data/competitive/format_meta.json with per-format meta summaries."""
@@ -664,36 +784,65 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     # All flags optional — absent means use bundled CSVs unchanged (offline parity).
-    parser.add_argument("--smogon-stats-index", default="",
-                        metavar="URL",
-                        help="Smogon stats index URL for month discovery (e.g. https://www.smogon.com/stats/)")
-    parser.add_argument("--smogon-api-base", default="",
-                        metavar="URL",
-                        help="pkmn.github.io Smogon stats mirror base URL")
-    parser.add_argument("--champions-rules-url", default="",
-                        metavar="URL",
-                        help="Champions Reg M-A rules URL (victoryroad.pro)")
-    parser.add_argument("--champions-online-events-url", default="",
-                        metavar="URL",
-                        help="Online events URL (e.g. limitlesstcg.com/tournaments/completed)")
-    parser.add_argument("--champions-major-events-url", default="",
-                        metavar="URL",
-                        help="Major events URL (e.g. labmaus.net)")
-    parser.add_argument("--champions-usage-url", default="",
-                        metavar="URL",
-                        help="Champions VGC usage stats URL (pokekipe.com)")
-    parser.add_argument("--champions-usage-api-docs", default="",
-                        metavar="URL",
-                        help="pokekipe.com OpenAPI spec URL for endpoint discovery")
-    parser.add_argument("--champions-tournament-data-url", default="",
-                        metavar="URL",
-                        help="pikalytics.com Champions tournament data URL (Reg M-B archetypes)")
-    parser.add_argument("--champions-regmb-ranked-data-url", default="",
-                        metavar="URL",
-                        help="pikalytics.com Reg M-B ranked ladder data URL (Reg M-B usage)")
+    parser.add_argument(
+        "--smogon-stats-index",
+        default="",
+        metavar="URL",
+        help="Smogon stats index URL for month discovery (e.g. https://www.smogon.com/stats/)",
+    )
+    parser.add_argument(
+        "--smogon-api-base",
+        default="",
+        metavar="URL",
+        help="pkmn.github.io Smogon stats mirror base URL",
+    )
+    parser.add_argument(
+        "--champions-rules-url",
+        default="",
+        metavar="URL",
+        help="Champions Reg M-A rules URL (victoryroad.pro)",
+    )
+    parser.add_argument(
+        "--champions-online-events-url",
+        default="",
+        metavar="URL",
+        help="Online events URL (e.g. limitlesstcg.com/tournaments/completed)",
+    )
+    parser.add_argument(
+        "--champions-major-events-url",
+        default="",
+        metavar="URL",
+        help="Major events URL (e.g. labmaus.net)",
+    )
+    parser.add_argument(
+        "--champions-usage-url",
+        default="",
+        metavar="URL",
+        help="Champions VGC usage stats URL (pokekipe.com)",
+    )
+    parser.add_argument(
+        "--champions-usage-api-docs",
+        default="",
+        metavar="URL",
+        help="pokekipe.com OpenAPI spec URL for endpoint discovery",
+    )
+    parser.add_argument(
+        "--champions-tournament-data-url",
+        default="",
+        metavar="URL",
+        help="pikalytics.com Champions tournament data URL (Reg M-B archetypes)",
+    )
+    parser.add_argument(
+        "--champions-regmb-ranked-data-url",
+        default="",
+        metavar="URL",
+        help="pikalytics.com Reg M-B ranked ladder data URL (Reg M-B usage)",
+    )
     args = parser.parse_args()
 
-    src_label = str(EXPORTS_DIR) if EXPORTS_DIR else "(not set - using files already in dest)"
+    src_label = (
+        str(EXPORTS_DIR) if EXPORTS_DIR else "(not set - using files already in dest)"
+    )
     print(f"[prepare_competitive_data] Source: {src_label}")
     print(f"[prepare_competitive_data] Dest  : {DEST_DIR}\n")
 
@@ -713,8 +862,10 @@ def main() -> None:
     if args.champions_usage_url or args.champions_usage_api_docs:
         print("[prepare_competitive_data] Fetching Champions usage (live)...")
         fetch_champions_usage(
-            usage_url=args.champions_usage_url or "https://pokekipe.com/champions/vgc2026regma",
-            api_docs=args.champions_usage_api_docs or "https://pokekipe.com/openapi.json",
+            usage_url=args.champions_usage_url
+            or "https://pokekipe.com/champions/vgc2026regma",
+            api_docs=args.champions_usage_api_docs
+            or "https://pokekipe.com/openapi.json",
         )
 
     if args.champions_tournament_data_url or args.champions_regmb_ranked_data_url:

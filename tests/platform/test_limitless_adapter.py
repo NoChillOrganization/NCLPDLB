@@ -13,10 +13,14 @@ FIXTURES = Path(__file__).parent.parent / "fixtures"
 async def test_fetch_by_ids_from_fixture():
     """Happy path: fetch tournament by ID, returns structured RawRecord."""
     details = json.loads((FIXTURES / "limitless_tournament_details.json").read_text())
-    standings = json.loads((FIXTURES / "limitless_tournament_standings.json").read_text())
+    standings = json.loads(
+        (FIXTURES / "limitless_tournament_standings.json").read_text()
+    )
 
-    with patch("src.platform.sources.limitless.get_json",
-               new=AsyncMock(side_effect=[details, standings])):
+    with patch(
+        "src.platform.sources.limitless.get_json",
+        new=AsyncMock(side_effect=[details, standings]),
+    ):
         records = list(await LimitlessAdapter().fetch(ids=["fixture-regional-2026"]))
 
     assert len(records) == 1
@@ -34,11 +38,15 @@ async def test_fetch_by_ids_from_fixture():
 @pytest.mark.asyncio
 async def test_fetch_multiple_ids():
     details = json.loads((FIXTURES / "limitless_tournament_details.json").read_text())
-    standings = json.loads((FIXTURES / "limitless_tournament_standings.json").read_text())
+    standings = json.loads(
+        (FIXTURES / "limitless_tournament_standings.json").read_text()
+    )
 
     # Two tournaments: details+standings for each
-    with patch("src.platform.sources.limitless.get_json",
-               new=AsyncMock(side_effect=[details, standings, details, standings])):
+    with patch(
+        "src.platform.sources.limitless.get_json",
+        new=AsyncMock(side_effect=[details, standings, details, standings]),
+    ):
         records = list(await LimitlessAdapter().fetch(ids=["t1", "t2"]))
 
     assert len(records) == 2
@@ -49,8 +57,9 @@ async def test_fetch_multiple_ids():
 @pytest.mark.asyncio
 async def test_fetch_skips_missing_details():
     """None details (404) → tournament skipped entirely."""
-    with patch("src.platform.sources.limitless.get_json",
-               new=AsyncMock(return_value=None)):
+    with patch(
+        "src.platform.sources.limitless.get_json", new=AsyncMock(return_value=None)
+    ):
         records = list(await LimitlessAdapter().fetch(ids=["missing-id"]))
 
     assert records == []
@@ -61,8 +70,10 @@ async def test_fetch_empty_standings_still_produces_record():
     """Missing standings → empty list in payload, record still created."""
     details = json.loads((FIXTURES / "limitless_tournament_details.json").read_text())
 
-    with patch("src.platform.sources.limitless.get_json",
-               new=AsyncMock(side_effect=[details, None])):
+    with patch(
+        "src.platform.sources.limitless.get_json",
+        new=AsyncMock(side_effect=[details, None]),
+    ):
         records = list(await LimitlessAdapter().fetch(ids=["t1"]))
 
     assert len(records) == 1

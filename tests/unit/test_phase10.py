@@ -9,6 +9,7 @@ All other 10 tests must be GREEN after Plan 01.
 CRITICAL: Do NOT import from src.config — Settings() raises ValidationError
 without a .env file. Use PROJECT_ROOT computed from __file__ directly.
 """
+
 from __future__ import annotations
 
 import json
@@ -65,7 +66,9 @@ def test_all_formats_constant():
     assert "draftleague" in ALL_FORMATS, "draftleague missing from ALL_FORMATS"
     # Verify all 10 VGC regulations are present
     vgc_formats = [f for f in ALL_FORMATS if "vgc" in f]
-    assert len(vgc_formats) == 10, f"Expected 10 VGC formats, got {len(vgc_formats)}: {vgc_formats}"
+    assert len(vgc_formats) == 10, (
+        f"Expected 10 VGC formats, got {len(vgc_formats)}: {vgc_formats}"
+    )
 
 
 def test_pipeline_cli_mocked():
@@ -82,7 +85,9 @@ def test_pipeline_cli_mocked():
     parser.add_argument("--min-rating", type=int, default=1500)
 
     # Single format selection
-    args = parser.parse_args(["--formats", "gen9ou", "--pages", "1", "--min-rating", "1500"])
+    args = parser.parse_args(
+        ["--formats", "gen9ou", "--pages", "1", "--min-rating", "1500"]
+    )
     formats = args.formats if "all" not in args.formats else ALL_FORMATS
     assert "gen9ou" in formats
     assert args.pages == 1
@@ -109,9 +114,10 @@ def test_sparse_format_warning(caplog):
                 SPARSE_WARN_THRESHOLD,
             )
 
-    assert any("sparse" in record.message.lower() or str(scraped) in record.message
-               for record in caplog.records), \
-        f"Expected WARNING in caplog, got: {caplog.records}"
+    assert any(
+        "sparse" in record.message.lower() or str(scraped) in record.message
+        for record in caplog.records
+    ), f"Expected WARNING in caplog, got: {caplog.records}"
     # Must not raise
     assert SPARSE_WARN_THRESHOLD == 200
 
@@ -150,22 +156,22 @@ def test_skip_format_logic():
                 "timestamp": "2026-01-01T00:00:00+00:00",
             }
         }
-        manifest_path.write_text(
-            json.dumps(manifest_data, indent=2), encoding="utf-8"
-        )
+        manifest_path.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
 
         # Create all 4 .npy files
         for npy in ["X_team.npy", "y_team.npy", "X_state.npy", "y_state.npy"]:
             np.save(fmt_ml_dir / npy, np.array([]))
 
         # With all 4 .npy files and matching manifest — should skip
-        assert should_skip_format(fmt, ml_dir, replays_dir) is True, \
+        assert should_skip_format(fmt, ml_dir, replays_dir) is True, (
             "should_skip_format should return True when manifest + .npy files match replay count"
+        )
 
         # Remove one .npy file — should NOT skip
         (fmt_ml_dir / "X_state.npy").unlink()
-        assert should_skip_format(fmt, ml_dir, replays_dir) is False, \
+        assert should_skip_format(fmt, ml_dir, replays_dir) is False, (
             "should_skip_format should return False when a .npy file is missing"
+        )
 
 
 # ===========================================================================
@@ -255,9 +261,7 @@ def test_vgc_fixture_parses():
     data = json.loads(fixture_path.read_text(encoding="utf-8"))
     rec = parse_replay_json(data)
 
-    assert rec.winner == "p1", (
-        f"Expected winner == 'p1' (TrainerA), got '{rec.winner}'"
-    )
+    assert rec.winner == "p1", f"Expected winner == 'p1' (TrainerA), got '{rec.winner}'"
     assert rec.format == "gen9vgc2024regh", (
         f"Expected rec.format == 'gen9vgc2024regh' (from formatid), got '{rec.format}'. "
         "RED until Plan 02 fixes parse_replay_json to prefer formatid."

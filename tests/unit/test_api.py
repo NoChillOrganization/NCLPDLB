@@ -1,6 +1,7 @@
 """
 Tests for src/ml/api.py — get_state, update_state, and all FastAPI routes.
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -16,14 +17,21 @@ from src.ml.api import app, get_state, update_state  # noqa: E402
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture(autouse=True)
 def reset_state():
     """Restore _STATE to defaults before each test."""
     defaults = {
-        "games": 0, "wins": 0, "losses": 0, "ties": 0,
-        "winrate": 0.0, "status": "stopped",
-        "mcts_sims": 30, "train_steps": 0,
-        "buffer_size": 0, "last_loss": None,
+        "games": 0,
+        "wins": 0,
+        "losses": 0,
+        "ties": 0,
+        "winrate": 0.0,
+        "status": "stopped",
+        "mcts_sims": 30,
+        "train_steps": 0,
+        "buffer_size": 0,
+        "last_loss": None,
     }
     with api_module._STATE_LOCK:
         api_module._STATE.update(defaults)
@@ -37,6 +45,7 @@ def client():
 
 # ── get_state / update_state ──────────────────────────────────────────────────
 
+
 class TestGetState:
     def test_returns_dict(self):
         state = get_state()
@@ -44,8 +53,18 @@ class TestGetState:
 
     def test_default_keys_present(self):
         state = get_state()
-        for key in ("games", "wins", "losses", "ties", "winrate",
-                    "status", "mcts_sims", "train_steps", "buffer_size", "last_loss"):
+        for key in (
+            "games",
+            "wins",
+            "losses",
+            "ties",
+            "winrate",
+            "status",
+            "mcts_sims",
+            "train_steps",
+            "buffer_size",
+            "last_loss",
+        ):
             assert key in state
 
     def test_returns_snapshot_not_reference(self):
@@ -87,6 +106,7 @@ class TestUpdateState:
 
 # ── GET /stats ────────────────────────────────────────────────────────────────
 
+
 class TestRouteStats:
     def test_returns_200(self, client):
         r = client.get("/stats")
@@ -107,13 +127,16 @@ class TestRouteStats:
 
 # ── GET / (dashboard) ────────────────────────────────────────────────────────
 
+
 class TestRouteDashboard:
     def test_404_when_dashboard_html_missing(self, client, tmp_path):
         """When dashboard.html doesn't exist the route raises 404."""
         non_existent = tmp_path / "dashboard.html"
         with patch("src.ml.api.Path") as mock_path_cls:
             # Make Path(__file__).parent / "dashboard.html" return a path that doesn't exist
-            mock_path_cls.return_value.parent.__truediv__ = lambda self, other: non_existent
+            mock_path_cls.return_value.parent.__truediv__ = lambda self, other: (
+                non_existent
+            )
             r = client.get("/")
         assert r.status_code == 404
 
@@ -128,6 +151,7 @@ class TestRouteDashboard:
 
 
 # ── POST /start ───────────────────────────────────────────────────────────────
+
 
 class TestRouteStart:
     def test_starts_when_stopped(self, client):
@@ -155,6 +179,7 @@ class TestRouteStart:
 
 # ── POST /stop ────────────────────────────────────────────────────────────────
 
+
 class TestRouteStop:
     def test_stop_sets_status_stopped(self, client):
         update_state(status="running")
@@ -173,6 +198,7 @@ class TestRouteStop:
 
 
 # ── POST /config ──────────────────────────────────────────────────────────────
+
 
 class TestRouteConfig:
     def test_updates_mcts_sims(self, client):

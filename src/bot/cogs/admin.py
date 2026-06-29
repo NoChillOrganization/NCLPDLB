@@ -1,6 +1,7 @@
 """
 Admin Cog — Commissioner and admin override commands.
 """
+
 import asyncio
 import logging
 import sys
@@ -33,7 +34,11 @@ def _create_background_task(coro) -> asyncio.Task:
 
 def _log_task_exception(task: asyncio.Task) -> None:
     if not task.cancelled() and task.exception() is not None:
-        log.error("Background task raised an exception: %s", task.exception(), exc_info=task.exception())
+        log.error(
+            "Background task raised an exception: %s",
+            task.exception(),
+            exc_info=task.exception(),
+        )
 
 
 def is_commissioner():
@@ -46,33 +51,50 @@ class AdminCog(commands.Cog, name="Admin"):
         self.bot = bot
         self.draft_service = DraftService()
 
-    @app_commands.command(name="admin-skip", description="Force-skip a player's turn (moderator+)")
+    @app_commands.command(
+        name="admin-skip", description="Force-skip a player's turn (moderator+)"
+    )
     @app_commands.describe(user="Player to skip")
     @require_role(ROLE_MOD)
-    async def admin_skip(self, interaction: discord.Interaction, user: discord.Member) -> None:
+    async def admin_skip(
+        self, interaction: discord.Interaction, user: discord.Member
+    ) -> None:
         await interaction.response.defer()
         result = await self.draft_service.force_skip(
             guild_id=str(interaction.guild_id),
             player_id=str(user.id),
         )
-        await interaction.followup.send(f"Skipped {user.display_name}'s turn. Next: {result.next_player}")
+        await interaction.followup.send(
+            f"Skipped {user.display_name}'s turn. Next: {result.next_player}"
+        )
 
-    @app_commands.command(name="admin-pause", description="Pause the active draft (moderator+)")
+    @app_commands.command(
+        name="admin-pause", description="Pause the active draft (moderator+)"
+    )
     @require_role(ROLE_MOD)
     async def admin_pause(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         await self.draft_service.pause_draft(str(interaction.guild_id))
         await interaction.followup.send("Draft paused.")
 
-    @app_commands.command(name="admin-resume", description="Resume a paused draft (moderator+)")
+    @app_commands.command(
+        name="admin-resume", description="Resume a paused draft (moderator+)"
+    )
     @require_role(ROLE_MOD)
     async def admin_resume(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         await self.draft_service.resume_draft(str(interaction.guild_id))
         await interaction.followup.send("Draft resumed!")
 
-    @app_commands.command(name="admin-override-pick", description="Override a pick in-memory (moderator+) — ⚠ run /sheet-result to persist")
-    @app_commands.describe(user="Player whose pick to change", old_pokemon="Pokemon to remove", new_pokemon="Pokemon to add")
+    @app_commands.command(
+        name="admin-override-pick",
+        description="Override a pick in-memory (moderator+) — ⚠ run /sheet-result to persist",
+    )
+    @app_commands.describe(
+        user="Player whose pick to change",
+        old_pokemon="Pokemon to remove",
+        new_pokemon="Pokemon to add",
+    )
     @require_role(ROLE_MOD)
     async def admin_override_pick(
         self,
@@ -93,12 +115,19 @@ class AdminCog(commands.Cog, name="Admin"):
         )
 
     # ── /admin-sync ────────────────────────────────────────────
-    @app_commands.command(name="admin-sync", description="Sync slash commands with Discord (push new/updated commands)")
-    @app_commands.describe(scope="guild = instant (test guild only), global = up to 1 hour to propagate everywhere")
-    @app_commands.choices(scope=[
-        app_commands.Choice(name="guild (instant)", value="guild"),
-        app_commands.Choice(name="global (up to 1 hour)", value="global"),
-    ])
+    @app_commands.command(
+        name="admin-sync",
+        description="Sync slash commands with Discord (push new/updated commands)",
+    )
+    @app_commands.describe(
+        scope="guild = instant (test guild only), global = up to 1 hour to propagate everywhere"
+    )
+    @app_commands.choices(
+        scope=[
+            app_commands.Choice(name="guild (instant)", value="guild"),
+            app_commands.Choice(name="global (up to 1 hour)", value="global"),
+        ]
+    )
     @is_commissioner()
     async def admin_sync(
         self,
@@ -148,7 +177,9 @@ class AdminCog(commands.Cog, name="Admin"):
         # ── 1. git pull ─────────────────────────────────────────
         try:
             proc = await asyncio.create_subprocess_exec(
-                "git", "pull", "--ff-only",
+                "git",
+                "pull",
+                "--ff-only",
                 cwd=str(project_root),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
@@ -166,6 +197,7 @@ class AdminCog(commands.Cog, name="Admin"):
 
         # ── 2. Reload cogs ──────────────────────────────────────
         from src.bot.main import COGS
+
         reload_results: list[str] = []
         for cog in COGS:
             try:
@@ -180,27 +212,39 @@ class AdminCog(commands.Cog, name="Admin"):
             if interaction.guild:
                 interaction.client.tree.copy_global_to(guild=interaction.guild)
                 synced = await interaction.client.tree.sync(guild=interaction.guild)
-                lines.append(f"✅ **Commands synced** — {len(synced)} command(s) to this server")
+                lines.append(
+                    f"✅ **Commands synced** — {len(synced)} command(s) to this server"
+                )
             else:
                 synced = await interaction.client.tree.sync()
-                lines.append(f"✅ **Commands synced** — {len(synced)} command(s) globally")
+                lines.append(
+                    f"✅ **Commands synced** — {len(synced)} command(s) globally"
+                )
         except discord.HTTPException as exc:
             retry = getattr(exc, "retry_after", None)
             hint = f" Retry after {retry:.0f}s." if retry else ""
-            lines.append(f"❌ **Command sync failed** (HTTP {exc.status}).{hint} `{exc.text}`")
+            lines.append(
+                f"❌ **Command sync failed** (HTTP {exc.status}).{hint} `{exc.text}`"
+            )
         except Exception as exc:
             lines.append(f"❌ **Command sync failed**: `{exc}`")
 
         await interaction.followup.send("\n\n".join(lines), ephemeral=True)
 
     # ── /admin-reset ───────────────────────────────────────────
-    @app_commands.command(name="admin-reset", description="Reset the current draft (CANNOT BE UNDONE)")
+    @app_commands.command(
+        name="admin-reset", description="Reset the current draft (CANNOT BE UNDONE)"
+    )
     @is_commissioner()
     async def admin_reset(self, interaction: discord.Interaction) -> None:
         # Confirm via button
-        view = ConfirmResetView(guild_id=str(interaction.guild_id), draft_service=self.draft_service)
+        view = ConfirmResetView(
+            guild_id=str(interaction.guild_id), draft_service=self.draft_service
+        )
         await interaction.response.send_message(
-            "⚠️ Are you sure you want to reset the draft? This cannot be undone.", view=view, ephemeral=True
+            "⚠️ Are you sure you want to reset the draft? This cannot be undone.",
+            view=view,
+            ephemeral=True,
         )
 
     # ── /admin-train ───────────────────────────────────────────
@@ -245,7 +289,9 @@ class AdminCog(commands.Cog, name="Admin"):
                 wait=True,
             )
         except discord.NotFound:
-            log.warning("[admin-train] followup.send got 10062 (interaction expired); continuing without channel embed")
+            log.warning(
+                "[admin-train] followup.send got 10062 (interaction expired); continuing without channel embed"
+            )
             try:
                 await interaction.user.send(
                     "⚠️ Couldn't post the training status embed (Discord interaction expired), "
@@ -255,7 +301,14 @@ class AdminCog(commands.Cog, name="Admin"):
                 pass
 
         _create_background_task(
-            _run_training(interaction, format, timesteps, force, channel_msg=status_msg, server="showdown")
+            _run_training(
+                interaction,
+                format,
+                timesteps,
+                force,
+                channel_msg=status_msg,
+                server="showdown",
+            )
         )
 
     @admin_train.autocomplete("format")
@@ -292,7 +345,8 @@ class AdminCog(commands.Cog, name="Admin"):
         total = len([f for f, e in TRAINING_MAP.items() if e[0] is not None])
         results_dir = Path(__file__).parents[3] / "data" / "ml" / "results"
         already_done = sum(
-            1 for fmt in TRAINING_MAP
+            1
+            for fmt in TRAINING_MAP
             if skip_existing and _model_exists(results_dir, fmt)
         )
         to_train = total - already_done
@@ -304,7 +358,9 @@ class AdminCog(commands.Cog, name="Admin"):
                 wait=True,
             )
         except discord.NotFound:
-            log.warning("[admin-train-all] followup.send got 10062 (interaction expired); continuing without channel embed")
+            log.warning(
+                "[admin-train-all] followup.send got 10062 (interaction expired); continuing without channel embed"
+            )
             try:
                 await interaction.user.send(
                     "⚠️ Couldn't post the train-all status embed in the channel (Discord interaction expired), "
@@ -315,8 +371,11 @@ class AdminCog(commands.Cog, name="Admin"):
 
         _create_background_task(
             _run_training_all(
-                interaction, timesteps, force=not skip_existing,
-                channel_msg=status_msg, server="showdown",
+                interaction,
+                timesteps,
+                force=not skip_existing,
+                channel_msg=status_msg,
+                server="showdown",
             )
         )
 
@@ -368,9 +427,11 @@ class AdminCog(commands.Cog, name="Admin"):
         host, port = "127.0.0.1", 8000
         reachable = False
         try:
+
             def _check():
                 with socket.create_connection((host, port), 3):
                     pass
+
             await asyncio.get_running_loop().run_in_executor(None, _check)
             reachable = True
         except OSError:
@@ -400,23 +461,34 @@ class AdminCog(commands.Cog, name="Admin"):
 
         await interaction.response.defer(ephemeral=True)
         repo = settings.github_repo
-        headers: dict[str, str] = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+        headers: dict[str, str] = {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
         if settings.github_token.get_secret_value():
-            headers["Authorization"] = f"Bearer {settings.github_token.get_secret_value()}"
+            headers["Authorization"] = (
+                f"Bearer {settings.github_token.get_secret_value()}"
+            )
 
         try:
-            async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=30) as client:
+            async with httpx.AsyncClient(
+                headers=headers, follow_redirects=True, timeout=30
+            ) as client:
                 resp = await client.get(f"https://api.github.com/repos/{repo}/releases")
                 resp.raise_for_status()
                 releases = resp.json()
         except Exception as exc:
-            await interaction.followup.send(f"❌ GitHub API error: `{exc}`", ephemeral=True)
+            await interaction.followup.send(
+                f"❌ GitHub API error: `{exc}`", ephemeral=True
+            )
             return
 
         ml = [r for r in releases if r["tag_name"].startswith("ml-models-r")]
         ml.sort(key=lambda r: r["created_at"], reverse=True)
         if not ml:
-            await interaction.followup.send("No `ml-models-r*` releases found.", ephemeral=True)
+            await interaction.followup.send(
+                "No `ml-models-r*` releases found.", ephemeral=True
+            )
             return
 
         lines = [
@@ -428,7 +500,9 @@ class AdminCog(commands.Cog, name="Admin"):
             description="\n".join(lines),
             color=discord.Color.blurple(),
         )
-        embed.set_footer(text="Pass a tag to /admin-pull-models release: to pin a specific release")
+        embed.set_footer(
+            text="Pass a tag to /admin-pull-models release: to pin a specific release"
+        )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── /admin-cancel-pull ────────────────────────────────────
@@ -446,27 +520,35 @@ class AdminCog(commands.Cog, name="Admin"):
                 task.cancel()
                 cancelled += 1
         if cancelled:
-            await interaction.followup.send(f"✅ Cancelled {cancelled} in-flight pull task(s).", ephemeral=True)
+            await interaction.followup.send(
+                f"✅ Cancelled {cancelled} in-flight pull task(s).", ephemeral=True
+            )
         else:
-            await interaction.followup.send("No active pull tasks to cancel.", ephemeral=True)
+            await interaction.followup.send(
+                "No active pull tasks to cancel.", ephemeral=True
+            )
 
     # ── /admin-set-repo ───────────────────────────────────────
     @app_commands.command(
         name="admin-set-repo",
         description="Override the GitHub repo used for model downloads (format: owner/repo)",
     )
-    @app_commands.describe(repo="GitHub repository in owner/repo format (e.g. MyOrg/MyRepo)")
+    @app_commands.describe(
+        repo="GitHub repository in owner/repo format (e.g. MyOrg/MyRepo)"
+    )
     @is_commissioner()
     async def admin_set_repo(self, interaction: discord.Interaction, repo: str) -> None:
         await interaction.response.defer(ephemeral=True)
         if "/" not in repo or repo.count("/") != 1:
             await interaction.followup.send(
-                "❌ Invalid format. Use `owner/repo` (e.g. `NoChillModeOnline/NCLPDLB`).", ephemeral=True
+                "❌ Invalid format. Use `owner/repo` (e.g. `NoChillModeOnline/NCLPDLB`).",
+                ephemeral=True,
             )
             return
         settings.github_repo = repo  # type: ignore[assignment]
         await interaction.followup.send(
-            f"✅ GitHub repo set to `{repo}` for this session. Restart the bot to revert.", ephemeral=True
+            f"✅ GitHub repo set to `{repo}` for this session. Restart the bot to revert.",
+            ephemeral=True,
         )
 
 
@@ -477,24 +559,28 @@ class ConfirmResetView(discord.ui.View):
         self.draft_service = draft_service
 
     @discord.ui.button(label="Confirm Reset", style=discord.ButtonStyle.danger)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def confirm(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await self.draft_service.reset_draft(self.guild_id)
         await interaction.response.send_message("Draft has been reset.", ephemeral=True)
         self.stop()
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def cancel(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await interaction.response.send_message("Reset cancelled.", ephemeral=True)
         self.stop()
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────
 
+
 def _model_exists(results_dir: Path, fmt: str) -> bool:
     """Check if a trained model exists for a format (checks per-format subdir and flat root)."""
-    return (
-        any((results_dir / fmt).glob(f"{fmt}_*.zip"))
-        or any(results_dir.glob(f"{fmt}_*.zip"))
+    return any((results_dir / fmt).glob(f"{fmt}_*.zip")) or any(
+        results_dir.glob(f"{fmt}_*.zip")
     )
 
 
@@ -508,6 +594,7 @@ async def _try_edit(msg: discord.Message | None, embed: discord.Embed) -> None:
 
 
 # ── Background training tasks ─────────────────────────────────────────────────
+
 
 async def _run_training(
     interaction: discord.Interaction,
@@ -528,8 +615,10 @@ async def _run_training(
       5. DM final result embed.
     """
     from src.ml.training_doctor import (
-        apply_all_fixes, diagnose_output,
-        parse_timestep_progress, preflight_check,
+        apply_all_fixes,
+        diagnose_output,
+        parse_timestep_progress,
+        preflight_check,
     )
 
     project_root = Path(__file__).parents[3]
@@ -537,13 +626,17 @@ async def _run_training(
 
     # ── 0. Whitelist validation ─────────────────────────────────────
     if fmt not in TRAINING_MAP:
-        await interaction.user.send(f"❌ Unknown format `{fmt}`. Valid formats: {', '.join(TRAINING_MAP)}")
+        await interaction.user.send(
+            f"❌ Unknown format `{fmt}`. Valid formats: {', '.join(TRAINING_MAP)}"
+        )
         return
 
     # ── 1. Preflight ────────────────────────────────────────────────
-    issues = preflight_check(fmt, save_dir, python_exe=sys.executable, server_mode=server)
+    issues = preflight_check(
+        fmt, save_dir, python_exe=sys.executable, server_mode=server
+    )
     blocking = [i for i in issues if not i["fixable"]]
-    fixable  = [i for i in issues if i["fixable"]]
+    fixable = [i for i in issues if i["fixable"]]
 
     if fixable:
         fix_lines = "\n".join(f"• {e['description']}" for e in fixable)
@@ -586,14 +679,20 @@ async def _run_training(
         # Send initial progress DM
         progress_embed = _build_progress_embed(fmt, 0, timesteps, attempt)
         try:
-            dm_msg: discord.Message | None = await interaction.user.send(embed=progress_embed)
+            dm_msg: discord.Message | None = await interaction.user.send(
+                embed=progress_embed
+            )
         except Exception:
             dm_msg = None
 
         cmd = [
-            sys.executable, "-m", "src.ml.train_all",
-            "--formats", fmt,
-            "--timesteps", str(timesteps),
+            sys.executable,
+            "-m",
+            "src.ml.train_all",
+            "--formats",
+            fmt,
+            "--timesteps",
+            str(timesteps),
         ]
         if force:
             cmd.append("--force")
@@ -624,7 +723,9 @@ async def _run_training(
                 # Edit progress embed every 60 s (both channel and DM)
                 now = asyncio.get_running_loop().time()
                 if now - last_edit_time >= 60:
-                    prog_embed = _build_progress_embed(fmt, latest_steps, timesteps, attempt)
+                    prog_embed = _build_progress_embed(
+                        fmt, latest_steps, timesteps, attempt
+                    )
                     await _try_edit(dm_msg, prog_embed)
                     await _try_edit(channel_msg, prog_embed)
                     last_edit_time = now
@@ -641,7 +742,9 @@ async def _run_training(
 
         # ── 3. Success ──────────────────────────────────────────────
         if ok:
-            done_embed = _build_progress_embed(fmt, timesteps, timesteps, attempt, done=True)
+            done_embed = _build_progress_embed(
+                fmt, timesteps, timesteps, attempt, done=True
+            )
             await _try_edit(dm_msg, done_embed)
             await _try_edit(channel_msg, done_embed)
             result_embed = discord.Embed(
@@ -658,7 +761,9 @@ async def _run_training(
         # ── 4. Failure → diagnose + fix ─────────────────────────────
         errors = diagnose_output(output)
         if not errors:
-            errors = [{"type": "UNKNOWN", "description": "Unknown failure", "fixable": False}]
+            errors = [
+                {"type": "UNKNOWN", "description": "Unknown failure", "fixable": False}
+            ]
 
         err_lines = "\n".join(f"• [{e['type']}] {e['description']}" for e in errors)
         fixable_errors = [e for e in errors if e.get("fixable")]
@@ -676,11 +781,16 @@ async def _run_training(
                 )
             except Exception:
                 pass
-            log.info(f"[admin-train] {fmt}: attempt {attempt} failed, applied fixes, retrying")
+            log.info(
+                f"[admin-train] {fmt}: attempt {attempt} failed, applied fixes, retrying"
+            )
             continue  # retry
 
         # No fix possible — final failure
-        await _try_edit(channel_msg, _build_progress_embed(fmt, latest_steps, timesteps, attempt, failed=True))
+        await _try_edit(
+            channel_msg,
+            _build_progress_embed(fmt, latest_steps, timesteps, attempt, failed=True),
+        )
         snippet = output[-1200:]
         fail_embed = discord.Embed(
             title="❌ Training Failed",
@@ -717,16 +827,18 @@ async def _run_training_all(
 
     results_dir = project_root / "data" / "ml" / "results"
     formats_to_run = [
-        fmt for fmt, entry in TRAINING_MAP.items()
-        if entry[0] is not None
-        and (force or not _model_exists(results_dir, fmt))
+        fmt
+        for fmt, entry in TRAINING_MAP.items()
+        if entry[0] is not None and (force or not _model_exists(results_dir, fmt))
     ]
     skipped_count = len(TRAINING_MAP) - len(formats_to_run)
 
     # Check server once before starting
     issues = preflight_check(
         formats_to_run[0] if formats_to_run else "gen9randombattle",
-        save_dir, sys.executable, server_mode=server,
+        save_dir,
+        sys.executable,
+        server_mode=server,
     )
     blocking = [i for i in issues if not i["fixable"]]
     if blocking:
@@ -762,9 +874,13 @@ async def _run_training_all(
     for fmt in formats_to_run:
         log.info(f"[admin-train-all] starting {fmt}")
         cmd = [
-            sys.executable, "-m", "src.ml.train_all",
-            "--formats", fmt,
-            "--timesteps", str(timesteps),
+            sys.executable,
+            "-m",
+            "src.ml.train_all",
+            "--formats",
+            fmt,
+            "--timesteps",
+            str(timesteps),
         ]
         if force:
             cmd.append("--force")
@@ -775,14 +891,24 @@ async def _run_training_all(
         latest_steps = 0
 
         # Update channel bar to show current format starting
-        await _try_edit(channel_msg, _build_queue_embed(
-            len(formats_to_run), skipped_count, timesteps,
-            current_fmt=fmt, current_steps=0, n_done=n_done, n_failed=n_failed,
-        ))
+        await _try_edit(
+            channel_msg,
+            _build_queue_embed(
+                len(formats_to_run),
+                skipped_count,
+                timesteps,
+                current_fmt=fmt,
+                current_steps=0,
+                n_done=n_done,
+                n_failed=n_failed,
+            ),
+        )
 
         progress_embed = _build_progress_embed(fmt, 0, timesteps, attempt=1)
         try:
-            dm_msg: discord.Message | None = await interaction.user.send(embed=progress_embed)
+            dm_msg: discord.Message | None = await interaction.user.send(
+                embed=progress_embed
+            )
         except Exception:
             dm_msg = None
 
@@ -805,12 +931,22 @@ async def _run_training_all(
                     latest_steps = steps
                 now = asyncio.get_running_loop().time()
                 if now - last_edit_time >= 60:
-                    await _try_edit(dm_msg, _build_progress_embed(fmt, latest_steps, timesteps, attempt=1))
-                    await _try_edit(channel_msg, _build_queue_embed(
-                        len(formats_to_run), skipped_count, timesteps,
-                        current_fmt=fmt, current_steps=latest_steps,
-                        n_done=n_done, n_failed=n_failed,
-                    ))
+                    await _try_edit(
+                        dm_msg,
+                        _build_progress_embed(fmt, latest_steps, timesteps, attempt=1),
+                    )
+                    await _try_edit(
+                        channel_msg,
+                        _build_queue_embed(
+                            len(formats_to_run),
+                            skipped_count,
+                            timesteps,
+                            current_fmt=fmt,
+                            current_steps=latest_steps,
+                            n_done=n_done,
+                            n_failed=n_failed,
+                        ),
+                    )
                     last_edit_time = now
 
             await proc.wait()
@@ -822,9 +958,17 @@ async def _run_training_all(
             collected.append(f"Exception: {exc}")
 
         # Update DM progress bar to final state
-        await _try_edit(dm_msg, _build_progress_embed(
-            fmt, timesteps if ok else latest_steps, timesteps, attempt=1, done=ok, failed=not ok
-        ))
+        await _try_edit(
+            dm_msg,
+            _build_progress_embed(
+                fmt,
+                timesteps if ok else latest_steps,
+                timesteps,
+                attempt=1,
+                done=ok,
+                failed=not ok,
+            ),
+        )
 
         results[fmt] = "done" if ok else "failed"
         if ok:
@@ -835,6 +979,7 @@ async def _run_training_all(
 
         if not ok:
             from src.ml.training_doctor import diagnose_output, apply_all_fixes
+
             output = "\n".join(collected)
             errors = diagnose_output(output)
             fixable = [e for e in errors if e.get("fixable")]
@@ -849,10 +994,17 @@ async def _run_training_all(
     n_fail = sum(1 for s in results.values() if "fail" in s)
 
     # Update channel status bar to final state
-    await _try_edit(channel_msg, _build_queue_embed(
-        len(formats_to_run), skipped_count, timesteps,
-        n_done=n_ok, n_failed=n_fail, done=True,
-    ))
+    await _try_edit(
+        channel_msg,
+        _build_queue_embed(
+            len(formats_to_run),
+            skipped_count,
+            timesteps,
+            n_done=n_ok,
+            n_failed=n_fail,
+            done=True,
+        ),
+    )
 
     summary_embed = discord.Embed(
         title="Train-All Complete" if n_fail == 0 else "Train-All Finished With Errors",
@@ -869,6 +1021,7 @@ async def _run_training_all(
 
 
 # ── Embed builders ────────────────────────────────────────────────────────────
+
 
 def _build_queue_embed(
     total_to_train: int,
@@ -887,7 +1040,11 @@ def _build_queue_embed(
     n_remaining = max(total_to_train - n_done - n_failed, 0)
 
     if done:
-        title = "✅ Train-All Complete" if n_failed == 0 else f"⚠️ Train-All Finished ({n_failed} failed)"
+        title = (
+            "✅ Train-All Complete"
+            if n_failed == 0
+            else f"⚠️ Train-All Finished ({n_failed} failed)"
+        )
         color = discord.Color.green() if n_failed == 0 else discord.Color.orange()
     elif current_fmt:
         title = f"⚙️ Training {n_done + 1}/{total_to_train} — `{current_fmt}`"
@@ -907,7 +1064,9 @@ def _build_queue_embed(
             "",
         ]
 
-    queue_summary = f"**Queue:** {n_done} done · {n_failed} failed · {n_remaining} remaining"
+    queue_summary = (
+        f"**Queue:** {n_done} done · {n_failed} failed · {n_remaining} remaining"
+    )
     if already_skipped:
         queue_summary += f" · {already_skipped} skipped"
     lines.append(queue_summary)
@@ -946,10 +1105,7 @@ def _build_progress_embed(
         title = f"⚙️ Training — `{fmt}`"
         color = discord.Color.blurple()
 
-    desc = (
-        f"{bar}\n"
-        f"**{current:,}** / **{total:,}** steps ({pct:.1f}%)\n"
-    )
+    desc = f"{bar}\n**{current:,}** / **{total:,}** steps ({pct:.1f}%)\n"
     if not done and not failed:
         desc += "\n_Updates every 60 seconds. You'll get a DM when done._"
 
@@ -1000,7 +1156,9 @@ async def _pull_models(
     formats_to_download = [fmt] if fmt else list(TRAINING_MAP.keys())
 
     try:
-        async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=300) as client:
+        async with httpx.AsyncClient(
+            headers=headers, follow_redirects=True, timeout=300
+        ) as client:
             # Resolve release
             # Treat "latest" (typed literally) the same as omitting the tag —
             # both fall through to find the newest ml-models-r* release.
@@ -1010,12 +1168,12 @@ async def _pull_models(
                     f"https://api.github.com/repos/{repo}/releases/tags/{release_tag}"
                 )
             else:
-                resp = await client.get(
-                    f"https://api.github.com/repos/{repo}/releases"
-                )
+                resp = await client.get(f"https://api.github.com/repos/{repo}/releases")
                 resp.raise_for_status()
                 releases = resp.json()
-                ml_releases = [r for r in releases if r["tag_name"].startswith("ml-models-r")]
+                ml_releases = [
+                    r for r in releases if r["tag_name"].startswith("ml-models-r")
+                ]
                 ml_releases.sort(key=lambda r: r["created_at"], reverse=True)
                 if not ml_releases:
                     await interaction.followup.send(
@@ -1086,7 +1244,9 @@ async def _pull_models(
         await interaction.user.send(embed=embed)
     except discord.HTTPException as exc:
         # Embed still too large or malformed — fall back to a safe plain summary.
-        log.warning(f"[admin-pull-models] embed send failed ({exc}); sending plain summary")
+        log.warning(
+            f"[admin-pull-models] embed send failed ({exc}); sending plain summary"
+        )
         fallback = f"**Model Download — {tag}**\n{ok} downloaded, {fail} skipped/failed"
         try:
             await interaction.followup.send(fallback, ephemeral=True)

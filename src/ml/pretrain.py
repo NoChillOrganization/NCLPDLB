@@ -27,6 +27,7 @@ Usage
 
 Requires: pip install imitation stable-baselines3 torch
 """
+
 from __future__ import annotations
 
 import logging
@@ -42,12 +43,17 @@ log = logging.getLogger(__name__)
 
 # ── Action-mapping gap thresholds ─────────────────────────────────────────────
 
-WARN_THRESHOLD  = 0.05   # 5 %  — log warning
-ABORT_THRESHOLD = 0.15   # 15 % — raise RuntimeError unless force=True
+WARN_THRESHOLD = 0.05  # 5 %  — log warning
+ABORT_THRESHOLD = 0.15  # 15 % — raise RuntimeError unless force=True
 
 # String status IDs matching battle_env's Status enum values
 _STATUS_STR_IDS: dict[str, int] = {
-    "brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6,
+    "brn": 1,
+    "par": 2,
+    "slp": 3,
+    "frz": 4,
+    "psn": 5,
+    "tox": 6,
 }
 
 # Boost stats in the same order as build_observation() in battle_env.py
@@ -55,6 +61,7 @@ _BOOST_STATS = ["atk", "def", "spa", "spd", "spe", "accuracy"]
 
 
 # ── Gap tracking ──────────────────────────────────────────────────────────────
+
 
 def check_mapping_gap(unmappable: int, total: int, force: bool = False) -> float:
     """
@@ -98,6 +105,7 @@ def check_mapping_gap(unmappable: int, total: int, force: bool = False) -> float
 
 # ── Observation builder (no poke-env required) ────────────────────────────────
 
+
 def build_obs_from_snapshot(
     snapshot: "TurnSnapshot",
     player: str = "p1",
@@ -130,22 +138,28 @@ def build_obs_from_snapshot(
     np.ndarray
         float32 array of shape (OBS_DIM,).
     """
-    from src.ml.battle_env import MOVE_FEATS, N_MOVES, OBS_DIM, TEAM_SIZE, _stable_species_id
+    from src.ml.battle_env import (
+        MOVE_FEATS,
+        N_MOVES,
+        OBS_DIM,
+        TEAM_SIZE,
+        _stable_species_id,
+    )
 
     obs = np.zeros(OBS_DIM, dtype=np.float32)
     idx = 0
 
     opp = "p2" if player == "p1" else "p1"
-    my_slot  = f"{player}a"
+    my_slot = f"{player}a"
     opp_slot = f"{opp}a"
-    my_active  = snapshot.p1_active if player == "p1" else snapshot.p2_active
+    my_active = snapshot.p1_active if player == "p1" else snapshot.p2_active
     opp_active = snapshot.p2_active if player == "p1" else snapshot.p1_active
-    my_team_list  = (p1_team or []) if player == "p1" else (p2_team or [])
+    my_team_list = (p1_team or []) if player == "p1" else (p2_team or [])
     opp_team_list = (p2_team or []) if player == "p1" else (p1_team or [])
 
     # Derive HP, status, boosts from events within this turn
-    hp_by_slot: dict[str, float]           = {}
-    status_by_slot: dict[str, int]         = {}
+    hp_by_slot: dict[str, float] = {}
+    status_by_slot: dict[str, int] = {}
     boosts_by_slot: dict[str, dict[str, int]] = {}
 
     for event in snapshot.events:
@@ -200,7 +214,9 @@ def build_obs_from_snapshot(
 
     # ── My team HP (6 dims) ────────────────────────────────────────
     for i in range(TEAM_SIZE):
-        if i < len(my_team_list) and _base_name(my_team_list[i]) == _base_name(my_active):
+        if i < len(my_team_list) and _base_name(my_team_list[i]) == _base_name(
+            my_active
+        ):
             obs[idx] = hp_by_slot.get(my_slot, 1.0)
         else:
             obs[idx] = 1.0  # benched HP unknown — assume full
@@ -208,7 +224,9 @@ def build_obs_from_snapshot(
 
     # ── Opponent team HP (6 dims) ──────────────────────────────────
     for i in range(TEAM_SIZE):
-        if i < len(opp_team_list) and _base_name(opp_team_list[i]) == _base_name(opp_active):
+        if i < len(opp_team_list) and _base_name(opp_team_list[i]) == _base_name(
+            opp_active
+        ):
             obs[idx] = hp_by_slot.get(opp_slot, 1.0)
         else:
             obs[idx] = 1.0
@@ -247,6 +265,7 @@ def build_obs_from_snapshot(
 
 # ── Action resolver ───────────────────────────────────────────────────────────
 
+
 class ActionResolver:
     """
     Maps parsed BattleRecord turns into (obs, action_idx) pairs for BC training.
@@ -261,12 +280,12 @@ class ActionResolver:
     """
 
     def __init__(self, player: str = "p1") -> None:
-        self._player   = player
-        self._slot     = f"{player}a"
+        self._player = player
+        self._slot = f"{player}a"
         # Per-species discovered moveset, ordered by first appearance
         self._movesets: dict[str, list[str]] = {}
         self._unmappable = 0
-        self._total      = 0
+        self._total = 0
 
     @property
     def unmappable(self) -> int:
@@ -302,8 +321,9 @@ class ActionResolver:
 
         pairs: list[tuple[np.ndarray, int]] = []
         for snap in record.turns:
-            obs    = build_obs_from_snapshot(snap, player=self._player,
-                                             p1_team=p1_team, p2_team=p2_team)
+            obs = build_obs_from_snapshot(
+                snap, player=self._player, p1_team=p1_team, p2_team=p2_team
+            )
             action = self._action_for_turn(snap, slot_map)
             self._total += 1
             if action is None:
@@ -313,7 +333,9 @@ class ActionResolver:
         return pairs
 
     def resolve_soft(
-        self, record: "BattleRecord", n_actions: int = 26,
+        self,
+        record: "BattleRecord",
+        n_actions: int = 26,
     ) -> list[tuple[np.ndarray, np.ndarray]]:
         """
         Like resolve() but switch actions (0-5) use a uniform 1/6 soft label
@@ -332,8 +354,9 @@ class ActionResolver:
 
         pairs: list[tuple[np.ndarray, np.ndarray]] = []
         for snap in record.turns:
-            obs    = build_obs_from_snapshot(snap, player=self._player,
-                                             p1_team=p1_team, p2_team=p2_team)
+            obs = build_obs_from_snapshot(
+                snap, player=self._player, p1_team=p1_team, p2_team=p2_team
+            )
             action = self._action_for_turn(snap, slot_map)
             self._total += 1
             if action is None:
@@ -343,7 +366,7 @@ class ActionResolver:
             if action <= 5:
                 label[:6] = 1.0 / 6.0  # uniform over switch slots
             else:
-                label[action] = 1.0     # hard one-hot for moves
+                label[action] = 1.0  # hard one-hot for moves
             pairs.append((obs, label))
         return pairs
 
@@ -397,6 +420,7 @@ class ActionResolver:
 
 # ── Full BC pipeline ──────────────────────────────────────────────────────────
 
+
 def pretrain(
     replay_dir: Path,
     fmt: str,
@@ -434,8 +458,8 @@ def pretrain(
     from src.ml.battle_env import N_ACTIONS_GEN9, OBS_DIM
     from src.ml.replay_parser import parse_replay_dir as _parse_dir
 
-    replay_dir   = Path(replay_dir)
-    output_path  = Path(output_path)
+    replay_dir = Path(replay_dir)
+    output_path = Path(output_path)
 
     log.info("[pretrain] Parsing replays in %s ...", replay_dir)
     records = _parse_dir(replay_dir)
@@ -451,7 +475,9 @@ def pretrain(
     check_mapping_gap(resolver.unmappable, resolver.total, force=force)
     log.info(
         "[pretrain] %d (obs, action) pairs from %d turns (%d unmappable, %.1f%% gap)",
-        len(all_pairs), resolver.total, resolver.unmappable,
+        len(all_pairs),
+        resolver.total,
+        resolver.unmappable,
         resolver.unmappable / resolver.total * 100 if resolver.total else 0.0,
     )
 
@@ -460,27 +486,36 @@ def pretrain(
             "No mappable (obs, action) pairs found — verify replay format and player slot."
         )
 
-    obs_arr  = np.stack([p[0] for p in all_pairs]).astype(np.float32)
-    act_arr  = np.array([p[1] for p in all_pairs], dtype=np.int64)
+    obs_arr = np.stack([p[0] for p in all_pairs]).astype(np.float32)
+    act_arr = np.array([p[1] for p in all_pairs], dtype=np.int64)
     # Imitation Transitions requires next_obs, dones, infos — use dummies
     next_obs = np.zeros_like(obs_arr)
-    dones    = np.zeros(len(obs_arr), dtype=bool)
-    infos    = np.array([{}] * len(obs_arr))
+    dones = np.zeros(len(obs_arr), dtype=bool)
+    infos = np.array([{}] * len(obs_arr))
 
     obs_space = Box(low=-1.0, high=2.0, shape=(OBS_DIM,), dtype=np.float32)
     act_space = Discrete(N_ACTIONS_GEN9)
 
     transitions = Transitions(
-        obs=obs_arr, acts=act_arr, next_obs=next_obs, dones=dones, infos=infos,
+        obs=obs_arr,
+        acts=act_arr,
+        next_obs=next_obs,
+        dones=dones,
+        infos=infos,
     )
 
     # Minimal dummy env so PPO can build the policy network
     from gymnasium import Env as _Env
+
     class _DummyEnv(_Env):
         observation_space = obs_space
-        action_space      = act_space
-        def reset(self, **_kw):  return np.zeros(OBS_DIM, dtype=np.float32), {}
-        def step(self, _a):      return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
+        action_space = act_space
+
+        def reset(self, **_kw):
+            return np.zeros(OBS_DIM, dtype=np.float32), {}
+
+        def step(self, _a):
+            return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
 
     ppo = PPO("MlpPolicy", _DummyEnv())
     bc_trainer = BC(
@@ -497,7 +532,8 @@ def pretrain(
 
     # Save actor-only weights; exclude value head so PPO can load with strict=False
     actor_weights = {
-        k: v for k, v in ppo.policy.state_dict().items()
+        k: v
+        for k, v in ppo.policy.state_dict().items()
         if not k.startswith("value_net") and not k.startswith("mlp_extractor.value_net")
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -516,18 +552,29 @@ if __name__ == "__main__":  # pragma: no cover
     ap = argparse.ArgumentParser(
         description="BC pre-train a PPO policy from Showdown replay JSON files"
     )
-    ap.add_argument("replay_dir", type=Path,
-                    help="Directory of replay JSON files (e.g. data/replays/gen9ou)")
-    ap.add_argument("--format",     required=True,
-                    help="Format string (e.g. gen9ou)")
-    ap.add_argument("--output",     type=Path, default=Path("bc_actor.pt"),
-                    help="Output path for BC actor weights (default: bc_actor.pt)")
-    ap.add_argument("--epochs",     type=int,  default=10,
-                    help="BC training epochs (default: 10)")
-    ap.add_argument("--batch-size", type=int,  default=64,
-                    help="BC mini-batch size (default: 64)")
-    ap.add_argument("--force",      action="store_true",
-                    help="Bypass 15%% action-mapping gap abort for research runs")
+    ap.add_argument(
+        "replay_dir",
+        type=Path,
+        help="Directory of replay JSON files (e.g. data/replays/gen9ou)",
+    )
+    ap.add_argument("--format", required=True, help="Format string (e.g. gen9ou)")
+    ap.add_argument(
+        "--output",
+        type=Path,
+        default=Path("bc_actor.pt"),
+        help="Output path for BC actor weights (default: bc_actor.pt)",
+    )
+    ap.add_argument(
+        "--epochs", type=int, default=10, help="BC training epochs (default: 10)"
+    )
+    ap.add_argument(
+        "--batch-size", type=int, default=64, help="BC mini-batch size (default: 64)"
+    )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="Bypass 15%% action-mapping gap abort for research runs",
+    )
     args = ap.parse_args()
 
     try:

@@ -5,6 +5,7 @@ Covers:
   - SharedStats: record(), winrate, snapshot(), thread-safety
   - LadderLoop: __init__(), _make_player() error paths, run_forever() logic
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -24,6 +25,7 @@ from src.ml.mcts import MCTSConfig  # noqa: E402
 
 
 # ── SharedStats ───────────────────────────────────────────────────────────────
+
 
 class TestSharedStatsInit:
     def test_initial_values_are_zero(self):
@@ -157,6 +159,7 @@ class TestSharedStatsThreadSafety:
 
 # ── LadderLoop ────────────────────────────────────────────────────────────────
 
+
 def _make_loop(**kwargs) -> LadderLoop:
     defaults = dict(
         model=MagicMock(),
@@ -224,8 +227,10 @@ class TestLadderLoopMakePlayer:
     @pytest.mark.asyncio
     async def test_raises_runtime_error_when_poke_env_unavailable(self):
         loop = _make_loop(username="Bot")
-        with patch("src.ml.self_play.POKE_ENV_OK", False), \
-             patch("src.ml.self_play.POKE_ENV_AVAILABLE", False):
+        with (
+            patch("src.ml.self_play.POKE_ENV_OK", False),
+            patch("src.ml.self_play.POKE_ENV_AVAILABLE", False),
+        ):
             with pytest.raises(RuntimeError, match="poke-env is required"):
                 await loop._make_player()
 
@@ -240,6 +245,7 @@ class TestLadderLoopMakePlayer:
 
 # ── LadderLoop.run_forever ────────────────────────────────────────────────────
 
+
 class TestLadderLoopRunForever:
     @pytest.mark.asyncio
     async def test_runs_one_game_and_stops_at_max_games(self):
@@ -248,8 +254,10 @@ class TestLadderLoopRunForever:
         loop.run_game = AsyncMock(return_value=snapshot)
 
         # get_state is imported locally inside run_forever from src.ml.api
-        with patch("src.ml.api.get_state", return_value={"status": "running"}), \
-             patch("src.ml.api.update_state"):
+        with (
+            patch("src.ml.api.get_state", return_value={"status": "running"}),
+            patch("src.ml.api.update_state"),
+        ):
             await loop.run_forever(max_games=1)
 
         loop.run_game.assert_called_once()
@@ -271,9 +279,11 @@ class TestLadderLoopRunForever:
                 return {"status": "stopped"}
             return {"status": "running"}
 
-        with patch("src.ml.api.get_state", side_effect=_state_sequence), \
-             patch("src.ml.api.update_state"), \
-             patch("asyncio.sleep", new_callable=AsyncMock):
+        with (
+            patch("src.ml.api.get_state", side_effect=_state_sequence),
+            patch("src.ml.api.update_state"),
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             await loop.run_forever(max_games=1)
 
         loop.run_game.assert_called_once()
@@ -283,8 +293,10 @@ class TestLadderLoopRunForever:
         loop = _make_loop()
         loop.run_game = AsyncMock(side_effect=asyncio.CancelledError)
 
-        with patch("src.ml.api.get_state", return_value={"status": "running"}), \
-             patch("src.ml.api.update_state"):
+        with (
+            patch("src.ml.api.get_state", return_value={"status": "running"}),
+            patch("src.ml.api.update_state"),
+        ):
             # Should complete without propagating CancelledError
             await loop.run_forever(max_games=5)
 
@@ -298,9 +310,11 @@ class TestLadderLoopRunForever:
         # First call raises; second succeeds
         loop.run_game = AsyncMock(side_effect=[RuntimeError("network"), snapshot])
 
-        with patch("src.ml.api.get_state", return_value={"status": "running"}), \
-             patch("src.ml.api.update_state"), \
-             patch("asyncio.sleep", new_callable=AsyncMock):
+        with (
+            patch("src.ml.api.get_state", return_value={"status": "running"}),
+            patch("src.ml.api.update_state"),
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             await loop.run_forever(max_games=1)
 
         assert loop.run_game.call_count == 2
@@ -309,15 +323,22 @@ class TestLadderLoopRunForever:
     async def test_triggers_training_after_train_every_games(self):
         loop = _make_loop(train_every=2)
         mock_trainer = MagicMock()
-        mock_trainer.train_epochs.return_value = {"step": 1, "policy_loss": 0.1, "value_loss": 0.1, "total_loss": 0.2}
+        mock_trainer.train_epochs.return_value = {
+            "step": 1,
+            "policy_loss": 0.1,
+            "value_loss": 0.1,
+            "total_loss": 0.2,
+        }
         mock_trainer.save = MagicMock()
         loop.trainer = mock_trainer
 
         snapshot = {"games": 1, "wins": 1, "losses": 0, "ties": 0, "winrate": 1.0}
         loop.run_game = AsyncMock(return_value=snapshot)
 
-        with patch("src.ml.api.get_state", return_value={"status": "running"}), \
-             patch("src.ml.api.update_state"):
+        with (
+            patch("src.ml.api.get_state", return_value={"status": "running"}),
+            patch("src.ml.api.update_state"),
+        ):
             await loop.run_forever(max_games=2)
 
         mock_trainer.train_epochs.assert_called_once()
@@ -327,13 +348,16 @@ class TestLadderLoopRunForever:
 
 # ── SelfPlayLoop alias ────────────────────────────────────────────────────────
 
+
 class TestSelfPlayLoopAlias:
     def test_selfplayloop_is_alias_for_ladderloop(self):
         from src.ml.self_play import SelfPlayLoop
+
         assert SelfPlayLoop is LadderLoop
 
 
 # ── LadderLoop._make_player (new-player path) ──────────────────────────────────
+
 
 class TestMakePlayerCreatesNew:
     @pytest.mark.asyncio
@@ -344,10 +368,12 @@ class TestMakePlayerCreatesNew:
         mock_player = MagicMock()
         mock_player_cls = MagicMock(return_value=mock_player)
 
-        with patch("src.ml.self_play.POKE_ENV_OK", True), \
-             patch("src.ml.self_play.POKE_ENV_AVAILABLE", True), \
-             patch("src.ml.self_play.MCTSPlayer", mock_player_cls), \
-             patch("asyncio.sleep", new_callable=AsyncMock):
+        with (
+            patch("src.ml.self_play.POKE_ENV_OK", True),
+            patch("src.ml.self_play.POKE_ENV_AVAILABLE", True),
+            patch("src.ml.self_play.MCTSPlayer", mock_player_cls),
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             result = await loop._make_player()
 
         assert result is mock_player
@@ -360,14 +386,17 @@ class TestMakePlayerCreatesNew:
         cached = MagicMock()
         loop._player = cached
 
-        with patch("src.ml.self_play.POKE_ENV_OK", True), \
-             patch("src.ml.self_play.POKE_ENV_AVAILABLE", True):
+        with (
+            patch("src.ml.self_play.POKE_ENV_OK", True),
+            patch("src.ml.self_play.POKE_ENV_AVAILABLE", True),
+        ):
             result = await loop._make_player()
 
         assert result is cached
 
 
 # ── LadderLoop.run_game ────────────────────────────────────────────────────────
+
 
 class TestRunGame:
     def _loop_with_mock_player(self, outcome: str = "tie"):
@@ -414,6 +443,7 @@ class TestRunGame:
 
 # ── run_forever except: pass branches ─────────────────────────────────────────
 
+
 class TestRunForeverExceptionBranches:
     @pytest.mark.asyncio
     async def test_get_state_raises_is_swallowed(self):
@@ -422,8 +452,10 @@ class TestRunForeverExceptionBranches:
         snapshot = {"games": 1, "wins": 1, "losses": 0, "ties": 0, "winrate": 1.0}
         loop.run_game = AsyncMock(return_value=snapshot)
 
-        with patch("src.ml.api.get_state", side_effect=RuntimeError("api down")), \
-             patch("src.ml.api.update_state"):
+        with (
+            patch("src.ml.api.get_state", side_effect=RuntimeError("api down")),
+            patch("src.ml.api.update_state"),
+        ):
             await loop.run_forever(max_games=1)
 
         loop.run_game.assert_called_once()
@@ -442,8 +474,10 @@ class TestRunForeverExceptionBranches:
             call_count += 1
             raise RuntimeError("state update failed")
 
-        with patch("src.ml.api.get_state", return_value={"status": "running"}), \
-             patch("src.ml.api.update_state", side_effect=_update_side_effect):
+        with (
+            patch("src.ml.api.get_state", return_value={"status": "running"}),
+            patch("src.ml.api.update_state", side_effect=_update_side_effect),
+        ):
             await loop.run_forever(max_games=1)
 
         loop.run_game.assert_called_once()
@@ -454,7 +488,10 @@ class TestRunForeverExceptionBranches:
         loop = _make_loop(train_every=1)
         mock_trainer = MagicMock()
         mock_trainer.train_epochs.return_value = {
-            "step": 1, "policy_loss": 0.1, "value_loss": 0.1, "total_loss": 0.2
+            "step": 1,
+            "policy_loss": 0.1,
+            "value_loss": 0.1,
+            "total_loss": 0.2,
         }
         mock_trainer.save = MagicMock()
         loop.trainer = mock_trainer
@@ -470,14 +507,17 @@ class TestRunForeverExceptionBranches:
             if len(update_calls) > 1:
                 raise RuntimeError("train state update failed")
 
-        with patch("src.ml.api.get_state", return_value={"status": "running"}), \
-             patch("src.ml.api.update_state", side_effect=_update_side_effect):
+        with (
+            patch("src.ml.api.get_state", return_value={"status": "running"}),
+            patch("src.ml.api.update_state", side_effect=_update_side_effect),
+        ):
             await loop.run_forever(max_games=1)
 
         mock_trainer.train_epochs.assert_called_once()
 
 
 # ── MCTSPlayer ─────────────────────────────────────────────────────────────────
+
 
 class TestMCTSPlayer:
     """Tests for MCTSPlayer — requires poke-env installed (POKE_ENV_OK=True)."""
@@ -518,8 +558,14 @@ class TestMCTSPlayer:
 
         with patch("poke_env.player.player.Player.__init__", return_value=None):
             p = MCTSPlayer.__new__(MCTSPlayer)
-            MCTSPlayer.__init__(p, model=model, mcts_config=cfg,
-                                replay_buffer=buf, stats=stats, name="Bot")
+            MCTSPlayer.__init__(
+                p,
+                model=model,
+                mcts_config=cfg,
+                replay_buffer=buf,
+                stats=stats,
+                name="Bot",
+            )
 
         assert p._model is model
         assert p._mcts_config is cfg
@@ -533,6 +579,7 @@ class TestMCTSPlayer:
 
     def test_choose_move_success_records_experience(self):
         import numpy as np
+
         p = self._make_player()
         battle = MagicMock()
         battle.battle_tag = "tag-1"
@@ -541,10 +588,12 @@ class TestMCTSPlayer:
         legal_mask = np.zeros(10, dtype=bool)
         mcts_stats = {"action_probs": {0: 0.8, 1: 0.2}}
 
-        with patch("src.ml.battle_env.build_observation", return_value=obs), \
-             patch("src.ml.self_play._build_legal_mask", return_value=legal_mask), \
-             patch("src.ml.self_play.run_mcts", return_value=(0, mcts_stats)), \
-             patch.object(p, "_action_to_move", return_value="move_order"):
+        with (
+            patch("src.ml.battle_env.build_observation", return_value=obs),
+            patch("src.ml.self_play._build_legal_mask", return_value=legal_mask),
+            patch("src.ml.self_play.run_mcts", return_value=(0, mcts_stats)),
+            patch.object(p, "_action_to_move", return_value="move_order"),
+        ):
             result = p.choose_move(battle)
 
         assert result == "move_order"
@@ -557,7 +606,9 @@ class TestMCTSPlayer:
         battle = MagicMock()
         p.choose_random_move = MagicMock(return_value="random_order")
 
-        with patch("src.ml.battle_env.build_observation", side_effect=RuntimeError("obs error")):
+        with patch(
+            "src.ml.battle_env.build_observation", side_effect=RuntimeError("obs error")
+        ):
             result = p.choose_move(battle)
 
         assert result == "random_order"
@@ -566,15 +617,18 @@ class TestMCTSPlayer:
     def test_battle_finished_callback_win(self):
         p = self._make_player()
         import numpy as np
+
         battle = MagicMock()
         battle.battle_tag = "tag-win"
         battle.won = True
         battle.lost = False
-        p._turn_obs  = {"tag-win": [np.zeros(10)]}
+        p._turn_obs = {"tag-win": [np.zeros(10)]}
         p._turn_acts = {"tag-win": [0]}
         p._turn_probs = {"tag-win": [None]}
 
-        with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
+        with patch(
+            "poke_env.player.player.Player._battle_finished_callback", return_value=None
+        ):
             p._battle_finished_callback(battle)
 
         p._replay_buffer.add_game.assert_called_once()
@@ -585,15 +639,18 @@ class TestMCTSPlayer:
     def test_battle_finished_callback_loss(self):
         p = self._make_player()
         import numpy as np
+
         battle = MagicMock()
         battle.battle_tag = "tag-loss"
         battle.won = False
         battle.lost = True
-        p._turn_obs  = {"tag-loss": [np.zeros(10)]}
+        p._turn_obs = {"tag-loss": [np.zeros(10)]}
         p._turn_acts = {"tag-loss": [0]}
         p._turn_probs = {"tag-loss": [None]}
 
-        with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
+        with patch(
+            "poke_env.player.player.Player._battle_finished_callback", return_value=None
+        ):
             p._battle_finished_callback(battle)
 
         args = p._replay_buffer.add_game.call_args[0]
@@ -602,15 +659,18 @@ class TestMCTSPlayer:
     def test_battle_finished_callback_tie(self):
         p = self._make_player()
         import numpy as np
+
         battle = MagicMock()
         battle.battle_tag = "tag-tie"
         battle.won = False
         battle.lost = False
-        p._turn_obs  = {"tag-tie": [np.zeros(10)]}
+        p._turn_obs = {"tag-tie": [np.zeros(10)]}
         p._turn_acts = {"tag-tie": [0]}
         p._turn_probs = {"tag-tie": [None]}
 
-        with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
+        with patch(
+            "poke_env.player.player.Player._battle_finished_callback", return_value=None
+        ):
             p._battle_finished_callback(battle)
 
         args = p._replay_buffer.add_game.call_args[0]
@@ -621,7 +681,9 @@ class TestMCTSPlayer:
         battle = MagicMock()
         battle.battle_tag = "tag-empty"
 
-        with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
+        with patch(
+            "poke_env.player.player.Player._battle_finished_callback", return_value=None
+        ):
             p._battle_finished_callback(battle)
 
         p._replay_buffer.add_game.assert_not_called()
@@ -629,16 +691,19 @@ class TestMCTSPlayer:
     def test_battle_finished_callback_buffer_error_swallowed(self):
         p = self._make_player()
         import numpy as np
+
         battle = MagicMock()
         battle.battle_tag = "tag-err"
         battle.won = True
         battle.lost = False
-        p._turn_obs  = {"tag-err": [np.zeros(10)]}
+        p._turn_obs = {"tag-err": [np.zeros(10)]}
         p._turn_acts = {"tag-err": [0]}
         p._turn_probs = {"tag-err": [None]}
         p._replay_buffer.add_game.side_effect = RuntimeError("buffer full")
 
-        with patch("poke_env.player.player.Player._battle_finished_callback", return_value=None):
+        with patch(
+            "poke_env.player.player.Player._battle_finished_callback", return_value=None
+        ):
             p._battle_finished_callback(battle)  # must not raise
 
     def test_action_to_move_success(self):
@@ -647,8 +712,10 @@ class TestMCTSPlayer:
         battle = MagicMock()
         mock_order = MagicMock()
 
-        with patch("poke_env.environment.singles_env.SinglesEnv.action_to_order",
-                   return_value=mock_order):
+        with patch(
+            "poke_env.environment.singles_env.SinglesEnv.action_to_order",
+            return_value=mock_order,
+        ):
             result = p._action_to_move(0, battle)
 
         assert result is mock_order
@@ -658,8 +725,10 @@ class TestMCTSPlayer:
         p.choose_random_move = MagicMock(return_value="random")
         battle = MagicMock()
 
-        with patch("poke_env.environment.singles_env.SinglesEnv.action_to_order",
-                   return_value=None):
+        with patch(
+            "poke_env.environment.singles_env.SinglesEnv.action_to_order",
+            return_value=None,
+        ):
             result = p._action_to_move(0, battle)
 
         assert result == "random"
@@ -669,8 +738,10 @@ class TestMCTSPlayer:
         p.choose_random_move = MagicMock(return_value="random")
         battle = MagicMock()
 
-        with patch("poke_env.environment.singles_env.SinglesEnv.action_to_order",
-                   side_effect=Exception("no order")):
+        with patch(
+            "poke_env.environment.singles_env.SinglesEnv.action_to_order",
+            side_effect=Exception("no order"),
+        ):
             result = p._action_to_move(0, battle)
 
         assert result == "random"

@@ -4,6 +4,7 @@ Tests for src/ml/train_matchup.py
 Covers: _embed_team_matrix, train_format, predict_matchup, train_combined.
 Uses real numpy + sklearn (both installed) with tiny synthetic datasets.
 """
+
 from __future__ import annotations
 
 import json
@@ -26,6 +27,7 @@ VOCAB_SIZE = 20
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_team_data(n: int, vocab_size: int = VOCAB_SIZE, seed: int = 0):
     rng = np.random.default_rng(seed)
@@ -73,6 +75,7 @@ def _write_model_pkl(
 
 # ── _embed_team_matrix ────────────────────────────────────────────────────────
 
+
 class TestEmbedTeamMatrix:
     def test_output_shape(self):
         X = np.zeros((10, 12), dtype=np.int32)
@@ -94,8 +97,8 @@ class TestEmbedTeamMatrix:
 
     def test_different_teams_no_overlap(self):
         X = np.zeros((5, 12), dtype=np.int32)
-        X[:, :6] = np.arange(1, 7)    # p1: species 1–6
-        X[:, 6:] = np.arange(7, 13)   # p2: species 7–12
+        X[:, :6] = np.arange(1, 7)  # p1: species 1–6
+        X[:, 6:] = np.arange(7, 13)  # p2: species 7–12
         result = _embed_team_matrix(X, vocab_size=15)
         overlap_col = result[:, -1]
         np.testing.assert_array_equal(overlap_col, 0.0)
@@ -123,6 +126,7 @@ class TestEmbedTeamMatrix:
 
 
 # ── train_format ──────────────────────────────────────────────────────────────
+
 
 class TestTrainFormat:
     def test_missing_data_returns_empty(self, tmp_path):
@@ -177,11 +181,13 @@ class TestTrainFormat:
 
 # ── predict_matchup ───────────────────────────────────────────────────────────
 
+
 class TestPredictMatchup:
     def test_no_model_raises_file_not_found(self, tmp_path):
         with pytest.raises(FileNotFoundError, match="No trained model"):
-            predict_matchup(["pikachu"] * 6, ["charmander"] * 6,
-                            fmt="gen9ou", ml_dir=tmp_path)
+            predict_matchup(
+                ["pikachu"] * 6, ["charmander"] * 6, fmt="gen9ou", ml_dir=tmp_path
+            )
 
     def test_returns_probability_dict(self, tmp_path):
         fmt_dir = tmp_path / "gen9ou"
@@ -234,7 +240,8 @@ class TestPredictMatchup:
         _write_model_pkl(fmt_dir, "gen9ou", write_vocab=False)
         # model was trained with vocab_size, but inference can still run
         result = predict_matchup(
-            ["unknown_mon"] * 6, ["other_mon"] * 6,
+            ["unknown_mon"] * 6,
+            ["other_mon"] * 6,
             fmt="gen9ou",
             ml_dir=tmp_path,
         )
@@ -255,6 +262,7 @@ class TestPredictMatchup:
 
 
 # ── train_combined ────────────────────────────────────────────────────────────
+
 
 class TestTrainCombined:
     def test_no_data_returns_empty(self, tmp_path):

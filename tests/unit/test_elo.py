@@ -1,6 +1,7 @@
 """
 Unit tests for EloService — rating calculations, matchmaking, standings.
 """
+
 import pytest
 from unittest.mock import patch
 
@@ -10,14 +11,18 @@ from src.config import settings
 
 # ── Pure ELO math ─────────────────────────────────────────────
 
+
 def test_equal_ratings_expect_50_percent():
     assert expected_score(1000, 1000) == pytest.approx(0.5)
+
 
 def test_higher_rating_expects_win():
     assert expected_score(1200, 1000) > 0.5
 
+
 def test_lower_rating_expects_loss():
     assert expected_score(800, 1000) < 0.5
+
 
 def test_new_rating_win_increases_rating():
     old = 1000
@@ -25,17 +30,20 @@ def test_new_rating_win_increases_rating():
     result = new_rating(old, exp, 1.0, 32)
     assert result > old
 
+
 def test_new_rating_loss_decreases_rating():
     old = 1000
     exp = expected_score(1000, 1000)
     result = new_rating(old, exp, 0.0, 32)
     assert result < old
 
+
 def test_upset_win_gives_large_gain():
     """Beating a much higher-rated player gives more ELO."""
     underdog_gain = new_rating(800, expected_score(800, 1200), 1.0, 32) - 800
     expected_gain = new_rating(1000, expected_score(1000, 1000), 1.0, 32) - 1000
     assert underdog_gain > expected_gain
+
 
 def test_k_factor_scales_change():
     old = 1000
@@ -47,12 +55,15 @@ def test_k_factor_scales_change():
 
 # ── EloService ────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_record_match_updates_both_players():
     svc = EloService()
-    with patch.object(svc, "_save_player"), \
-         patch.object(svc, "_save_player_to_db"), \
-         patch("src.services.elo_service.sheets") as mock_sheets:
+    with (
+        patch.object(svc, "_save_player"),
+        patch.object(svc, "_save_player_to_db"),
+        patch("src.services.elo_service.sheets") as mock_sheets,
+    ):
         mock_sheets.find_row.return_value = None
 
         result = await svc.record_match("guild1", "winner1", "loser1")
@@ -65,9 +76,11 @@ async def test_record_match_updates_both_players():
 async def test_record_match_sum_elo_conserved():
     """ELO gained by winner ≈ ELO lost by loser (near conservation)."""
     svc = EloService()
-    with patch.object(svc, "_save_player"), \
-         patch.object(svc, "_save_player_to_db"), \
-         patch("src.services.elo_service.sheets") as mock_sheets:
+    with (
+        patch.object(svc, "_save_player"),
+        patch.object(svc, "_save_player_to_db"),
+        patch("src.services.elo_service.sheets") as mock_sheets,
+    ):
         mock_sheets.find_row.return_value = None
 
         result = await svc.record_match("guild2", "w", "l")
@@ -99,6 +112,7 @@ async def test_standings_sorted_by_elo():
 @pytest.mark.asyncio
 async def test_default_elo_is_configured_value():
     import src.services.elo_service as elo_mod
+
     elo_mod._elo_cache.clear()
 
     svc = EloService()
@@ -111,16 +125,21 @@ async def test_default_elo_is_configured_value():
 
 # ── _get_player loads from sheets when record exists ──────────
 
+
 @pytest.mark.asyncio
 async def test_get_player_loads_from_sheets():
     import src.services.elo_service as elo_mod
+
     elo_mod._elo_cache.clear()
 
     svc = EloService()
     with patch("src.services.elo_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = {
-            "player_id": "pS", "player_name": "Sheets Guy",
-            "elo": 1200, "wins": 5, "losses": 2,
+            "player_id": "pS",
+            "player_name": "Sheets Guy",
+            "elo": 1200,
+            "wins": 5,
+            "losses": 2,
         }
         player = await svc._get_player("guild5", "pS")
 
@@ -131,16 +150,32 @@ async def test_get_player_loads_from_sheets():
 
 # ── get_standings loads from sheets when cache empty ──────────
 
+
 @pytest.mark.asyncio
 async def test_get_standings_loads_from_sheets():
     import src.services.elo_service as elo_mod
+
     elo_mod._elo_cache.clear()
 
     svc = EloService()
     with patch("src.services.elo_service.sheets") as mock_sheets:
         mock_sheets.get_standings.return_value = [
-            {"player_id": "pA", "player_name": "Alice", "elo": 1100, "wins": 3, "losses": 1, "streak": 2},
-            {"player_id": "pB", "player_name": "Bob",   "elo": 900,  "wins": 1, "losses": 3, "streak": 0},
+            {
+                "player_id": "pA",
+                "player_name": "Alice",
+                "elo": 1100,
+                "wins": 3,
+                "losses": 1,
+                "streak": 2,
+            },
+            {
+                "player_id": "pB",
+                "player_name": "Bob",
+                "elo": 900,
+                "wins": 1,
+                "losses": 3,
+                "streak": 0,
+            },
         ]
         result = await svc.get_standings("guild6")
 
@@ -150,11 +185,15 @@ async def test_get_standings_loads_from_sheets():
 
 # ── _save_player calls sheets.upsert_standing ─────────────────
 
+
 @pytest.mark.asyncio
 async def test_save_player_calls_upsert():
     from src.data.models import PlayerElo
+
     svc = EloService()
-    player = PlayerElo(player_id="pX", guild_id="g1", display_name="Xavier", elo=1050, wins=4, losses=1)
+    player = PlayerElo(
+        player_id="pX", guild_id="g1", display_name="Xavier", elo=1050, wins=4, losses=1
+    )
 
     with patch("src.services.elo_service.sheets") as mock_sheets:
         await svc._save_player(player)
@@ -167,33 +206,43 @@ async def test_save_player_calls_upsert():
 
 # ── record_match updates display names when provided ──────────
 
+
 @pytest.mark.asyncio
 async def test_record_match_sets_display_names():
     """winner_name and loser_name are applied to player records (lines 75, 77)."""
     svc = EloService()
-    with patch.object(svc, "_save_player"), \
-         patch.object(svc, "_save_player_to_db"), \
-         patch("src.services.elo_service.sheets") as mock_sheets:
+    with (
+        patch.object(svc, "_save_player"),
+        patch.object(svc, "_save_player_to_db"),
+        patch("src.services.elo_service.sheets") as mock_sheets,
+    ):
         mock_sheets.find_row.return_value = None
         _ = await svc.record_match(
-            "guild_dn", "w1", "l1",
-            winner_name="Alice", loser_name="Bob",
+            "guild_dn",
+            "w1",
+            "l1",
+            winner_name="Alice",
+            loser_name="Bob",
         )
 
     import src.services.elo_service as elo_mod
+
     assert elo_mod._elo_cache["guild_dn"]["w1"].display_name == "Alice"
     assert elo_mod._elo_cache["guild_dn"]["l1"].display_name == "Bob"
 
 
 # ── NCLP-006: SQLite ELO write-through ───────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_record_match_writes_to_sqlite():
     """record_match should persist both players to SQLite (NCLP-006)."""
     svc = EloService()
-    with patch.object(svc, "_save_player"), \
-         patch.object(svc, "_save_player_to_db") as mock_db, \
-         patch("src.services.elo_service.sheets") as mock_sheets:
+    with (
+        patch.object(svc, "_save_player"),
+        patch.object(svc, "_save_player_to_db") as mock_db,
+        patch("src.services.elo_service.sheets") as mock_sheets,
+    ):
         mock_sheets.find_row.return_value = None
         mock_db.return_value = None
         await svc.record_match("guild_db", "w", "l")
@@ -207,11 +256,19 @@ async def test_record_match_writes_to_sqlite():
 async def test_restore_ratings_from_db_populates_cache():
     """restore_ratings_from_db should fill _elo_cache from SQLite rows (NCLP-006)."""
     import src.services.elo_service as elo_mod
+
     elo_mod._elo_cache.clear()
 
     rows = [
-        {"guild_id": "g1", "player_id": "pA", "elo": 1150, "wins": 6,
-         "losses": 2, "streak": 3, "display_name": "Alice"},
+        {
+            "guild_id": "g1",
+            "player_id": "pA",
+            "elo": 1150,
+            "wins": 6,
+            "losses": 2,
+            "streak": 3,
+            "display_name": "Alice",
+        },
     ]
     svc = EloService()
     with patch("src.services.elo_service.load_all_elo", return_value=rows):

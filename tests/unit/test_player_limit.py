@@ -1,6 +1,7 @@
 """
 Unit tests — 16-player draft pool hard cap.
 """
+
 import pytest
 from unittest.mock import patch
 

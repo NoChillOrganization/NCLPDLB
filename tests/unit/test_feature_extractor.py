@@ -10,6 +10,7 @@ Covers uncovered lines: 88, 99-106, 168-176, 184, 216, 249, 331
   - state_features() skipping ties/unknowns (line 249)
   - build_dataset() min_rating filter (line 331)
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -26,6 +27,7 @@ from src.ml.replay_parser import BattleRecord, TurnSnapshot, BattleEvent
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_record(winner: str = "p1", rating: int = 1000) -> BattleRecord:
     return BattleRecord(
@@ -46,13 +48,16 @@ def _make_record(winner: str = "p1", rating: int = 1000) -> BattleRecord:
 def _make_turn_record(winner: str = "p1") -> BattleRecord:
     """Record with one turn containing events for state_features tests."""
     evt = BattleEvent(kind="move", slot="p1a", detail="Earthquake", hp_after=-1.0)
-    snap = TurnSnapshot(turn_number=1, events=[evt], p1_active="Garchomp", p2_active="Dragonite")
+    snap = TurnSnapshot(
+        turn_number=1, events=[evt], p1_active="Garchomp", p2_active="Dragonite"
+    )
     rec = _make_record(winner=winner)
     rec.turns = [snap]
     return rec
 
 
 # ── Vocabulary.token() ────────────────────────────────────────────────────────
+
 
 class TestVocabularyToken:
     def test_in_bounds_returns_token(self):
@@ -82,6 +87,7 @@ class TestVocabularyToken:
 
 
 # ── Vocabulary.save() + .load() round-trip ───────────────────────────────────
+
 
 class TestVocabularySaveLoad:
     def test_load_restores_token2id(self, tmp_path):
@@ -129,6 +135,7 @@ class TestVocabularySaveLoad:
 
 # ── FeatureExtractor.load() ───────────────────────────────────────────────────
 
+
 class TestFeatureExtractorLoad:
     def test_load_restores_species_vocab(self, tmp_path):
         """Lines 168-176: FeatureExtractor.load() classmethod."""
@@ -168,6 +175,7 @@ class TestFeatureExtractorLoad:
 
 # ── FeatureExtractor.load_or_create() when files exist ───────────────────────
 
+
 class TestLoadOrCreate:
     def test_returns_fresh_when_no_files(self, tmp_path):
         ext = FeatureExtractor.load_or_create(tmp_path)
@@ -197,6 +205,7 @@ class TestLoadOrCreate:
 
 # ── team_features() skip ties/unknowns ───────────────────────────────────────
 
+
 class TestTeamFeaturesSkipNonWinners:
     def test_tie_record_skipped(self):
         """Line 216: continue when winner == 'tie'."""
@@ -221,7 +230,7 @@ class TestTeamFeaturesSkipNonWinners:
             _make_record(winner="unknown"),
         ]
         X, y = ext.team_features(records)
-        assert X.shape[0] == 2   # only the p1 and p2 records
+        assert X.shape[0] == 2  # only the p1 and p2 records
 
     def test_all_ties_returns_empty_arrays(self):
         ext = FeatureExtractor()
@@ -232,6 +241,7 @@ class TestTeamFeaturesSkipNonWinners:
 
 
 # ── state_features() skip ties/unknowns ──────────────────────────────────────
+
 
 class TestStateFeaturesSkipNonWinners:
     def test_tie_record_skipped(self):
@@ -256,10 +266,11 @@ class TestStateFeaturesSkipNonWinners:
             _make_turn_record(winner="p2"),
         ]
         X, y = ext.state_features(records)
-        assert X.shape[0] == 2   # one turn per p1/p2 record
+        assert X.shape[0] == 2  # one turn per p1/p2 record
 
 
 # ── build_dataset() min_rating filter ────────────────────────────────────────
+
 
 class TestBuildDatasetMinRating:
     def test_min_rating_filters_low_rated(self, tmp_path):
@@ -269,9 +280,11 @@ class TestBuildDatasetMinRating:
         output_dir = tmp_path / "output"
 
         high_rec = _make_record(winner="p1", rating=2000)
-        low_rec  = _make_record(winner="p2", rating=500)
+        low_rec = _make_record(winner="p2", rating=500)
 
-        with patch("src.ml.replay_parser.parse_replay_dir", return_value=[high_rec, low_rec]):
+        with patch(
+            "src.ml.replay_parser.parse_replay_dir", return_value=[high_rec, low_rec]
+        ):
             result = build_dataset(replay_dir, output_dir, min_rating=1500)
 
         # Only high_rec passes filter → 1 row in X_team
@@ -304,6 +317,7 @@ class TestBuildDatasetMinRating:
 
 
 # ── FeatureExtractor.freeze() and frozen add branches ────────────────────────
+
 
 class TestFreeze:
     def test_freeze_sets_frozen(self):
@@ -347,6 +361,7 @@ class TestFreeze:
 
 # ── _team_vector() padding branch (line 223) ─────────────────────────────────
 
+
 class TestTeamVectorPadding:
     def test_short_team_pads_to_team_size(self):
         """Line 223: ids.append(UNKNOWN_ID) when team has fewer than TEAM_SIZE mons."""
@@ -367,6 +382,7 @@ class TestTeamVectorPadding:
 
 
 # ── _species_to_id_normalized (lines 340-346) ─────────────────────────────────
+
 
 class TestSpeciesToIdNormalized:
     def test_none_returns_zero(self):
@@ -404,9 +420,12 @@ class TestSpeciesToIdNormalized:
         """Regression for H11: _species_to_id_normalized must delegate to MD5-based
         _stable_species_id so values are identical across processes (no salted hash)."""
         from src.ml.battle_env import _stable_species_id
+
         ext = FeatureExtractor()
         for species in ("garchomp", "pikachu", "tyranitar", "toxapex"):
-            assert ext._species_to_id_normalized(species) == _stable_species_id(species), (
+            assert ext._species_to_id_normalized(species) == _stable_species_id(
+                species
+            ), (
                 f"Determinism mismatch for {species!r}: "
                 f"feature_extractor returned {ext._species_to_id_normalized(species)!r}, "
                 f"battle_env returned {_stable_species_id(species)!r}"
@@ -415,11 +434,14 @@ class TestSpeciesToIdNormalized:
 
 # ── state_features() faint event tracking (lines 379, 381-383) ───────────────
 
+
 class TestStateFeaturesEventTracking:
     def test_faint_event_sets_hp_to_zero(self):
         """Lines 381-383: faint event sets hp[slot] = 0.0 and increments fainted count."""
         faint_evt = BattleEvent(kind="faint", slot="p1a", detail="", hp_after=-1.0)
-        move_evt = BattleEvent(kind="move", slot="p1a", detail="Earthquake", hp_after=-1.0)
+        move_evt = BattleEvent(
+            kind="move", slot="p1a", detail="Earthquake", hp_after=-1.0
+        )
         snap = TurnSnapshot(
             turn_number=1,
             events=[move_evt, faint_evt],
@@ -453,10 +475,13 @@ class TestStateFeaturesEventTracking:
 
 # ── build_vocab_from_records() move event branch (lines 177-179) ──────────────
 
+
 class TestBuildVocabFromRecords:
     def test_move_events_added_to_move_vocab(self):
         """Lines 177-179: move events in turns populate move_vocab."""
-        move_evt = BattleEvent(kind="move", slot="p1a", detail="Earthquake", hp_after=-1.0)
+        move_evt = BattleEvent(
+            kind="move", slot="p1a", detail="Earthquake", hp_after=-1.0
+        )
         snap = TurnSnapshot(
             turn_number=1,
             events=[move_evt],

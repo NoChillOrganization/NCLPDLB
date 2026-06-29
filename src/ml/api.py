@@ -21,6 +21,7 @@ Usage
   # Via run_training.py (recommended):
   python -m src.ml.run_training --port 8080
 """
+
 from __future__ import annotations
 
 import logging
@@ -38,11 +39,12 @@ try:
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse, JSONResponse
     from pydantic import BaseModel, Field
+
     FASTAPI_OK = True
 except ImportError:  # pragma: no cover
     FASTAPI_OK = False
-    FastAPI = None       # type: ignore
-    BaseModel = object   # type: ignore
+    FastAPI = None  # type: ignore
+    BaseModel = object  # type: ignore
 
 
 # ── Global training state ─────────────────────────────────────────────────────
@@ -50,16 +52,16 @@ except ImportError:  # pragma: no cover
 _STATE_LOCK = threading.Lock()
 
 _STATE: dict[str, Any] = {
-    "games":     0,
-    "wins":      0,
-    "losses":    0,
-    "ties":      0,
-    "winrate":   0.0,
-    "status":    "stopped",   # "stopped" | "running" | "error"
+    "games": 0,
+    "wins": 0,
+    "losses": 0,
+    "ties": 0,
+    "winrate": 0.0,
+    "status": "stopped",  # "stopped" | "running" | "error"
     "mcts_sims": 0,
     "train_steps": 0,
     "buffer_size": 0,
-    "last_loss":   None,
+    "last_loss": None,
 }
 
 # Handle to the running training coroutine / thread (set by run_training.py)
@@ -102,7 +104,9 @@ if FASTAPI_OK:
 
     def _require_token(x_train_token: str | None = Header(default=None)) -> None:
         if _TRAIN_TOKEN and x_train_token != _TRAIN_TOKEN:
-            raise HTTPException(status_code=401, detail="Invalid or missing X-Train-Token")
+            raise HTTPException(
+                status_code=401, detail="Invalid or missing X-Train-Token"
+            )
 
     # ── Request / response models ────────────────────────────────────────
 
@@ -148,7 +152,9 @@ if FASTAPI_OK:
         return JSONResponse({"ok": True, "message": "Training stopped"})
 
     @app.post("/config")
-    def route_config(req: ConfigRequest, _: None = Depends(_require_token)) -> JSONResponse:
+    def route_config(
+        req: ConfigRequest, _: None = Depends(_require_token)
+    ) -> JSONResponse:
         """Update runtime configuration."""
         update_state(mcts_sims=req.mcts_sims)
         log.info("[API] Config updated: mcts_sims=%d", req.mcts_sims)
@@ -158,6 +164,5 @@ else:  # pragma: no cover
     # Stub so imports don't crash when fastapi is not installed
     app = None  # type: ignore
     log.warning(
-        "FastAPI not installed — API server disabled. "
-        "Run: pip install fastapi uvicorn"
+        "FastAPI not installed — API server disabled. Run: pip install fastapi uvicorn"
     )

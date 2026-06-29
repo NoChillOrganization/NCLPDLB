@@ -1,6 +1,7 @@
 """
 Team Service — Roster management, trades, Showdown import/export, console legality.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -68,17 +69,23 @@ class TeamService:
         if key in _roster_cache:
             return _roster_cache[key]
 
-        record = await asyncio.to_thread(sheets.find_row, Tab.TEAM_TEMPLATE, "player_id", player_id)
+        record = await asyncio.to_thread(
+            sheets.find_row, Tab.TEAM_TEMPLATE, "player_id", player_id
+        )
         if not record or str(record.get("guild_id")) != guild_id:
             return None
 
         import json
+
         try:
             pokemon_names: list[str] = json.loads(record.get("pokemon_list", "[]"))
             if not isinstance(pokemon_names, list):
                 pokemon_names = []
         except (json.JSONDecodeError, TypeError):
-            log.warning("Invalid pokemon_list JSON for player %s — defaulting to empty", player_id)
+            log.warning(
+                "Invalid pokemon_list JSON for player %s — defaulting to empty",
+                player_id,
+            )
             pokemon_names = []
         pokemon_list = [p for name in pokemon_names if (p := pokemon_db.find(name))]
 
@@ -112,17 +119,18 @@ class TeamService:
         _roster_cache[key] = roster
 
         # Persist to Team Page Template tab
-        slots = [
-            (p.name, getattr(p, "tera_type", "")) for p in roster.pokemon
-        ]
-        await asyncio.to_thread(sheets.upsert_team_page, {
-            "player_id": player_id,
-            "player_name": player_name,
-            "team_name": team_name,
-            "team_logo_url": team_logo_url,
-            "pool": pool,
-            "slots": slots,
-        })
+        slots = [(p.name, getattr(p, "tera_type", "")) for p in roster.pokemon]
+        await asyncio.to_thread(
+            sheets.upsert_team_page,
+            {
+                "player_id": player_id,
+                "player_name": player_name,
+                "team_name": team_name,
+                "team_logo_url": team_logo_url,
+                "pool": pool,
+                "slots": slots,
+            },
+        )
         log.info(f"Team registered: {team_name} (pool {pool}) for player {player_id}")
         return roster
 
@@ -142,13 +150,19 @@ class TeamService:
         if not to_team:
             return TradeResult(success=False, error="That player doesn't have a team.")
 
-        offer_mon = next((p for p in from_team.pokemon if p.name.lower() == offering.lower()), None)
-        request_mon = next((p for p in to_team.pokemon if p.name.lower() == requesting.lower()), None)
+        offer_mon = next(
+            (p for p in from_team.pokemon if p.name.lower() == offering.lower()), None
+        )
+        request_mon = next(
+            (p for p in to_team.pokemon if p.name.lower() == requesting.lower()), None
+        )
 
         if not offer_mon:
             return TradeResult(success=False, error=f"You don't have {offering}.")
         if not request_mon:
-            return TradeResult(success=False, error=f"Opponent doesn't have {requesting}.")
+            return TradeResult(
+                success=False, error=f"Opponent doesn't have {requesting}."
+            )
 
         trade = Trade(
             trade_id=str(uuid.uuid4())[:8],
@@ -159,23 +173,28 @@ class TeamService:
             pokemon_received=request_mon.name,
             status="pending",
         )
-        await asyncio.to_thread(sheets.save_transaction, {
-            "transaction_id": trade.trade_id,
-            "league_id": guild_id,   # stored so accept/decline can locate rosters
-            "type": "trade",
-            "from_player_id": from_player,
-            "from_player_name": "",
-            "to_player_id": to_player,
-            "to_player_name": "",
-            "pokemon_given": trade.pokemon_given,
-            "pokemon_received": trade.pokemon_received,
-            "status": "pending",
-            "approved_by": "",
-        })
+        await asyncio.to_thread(
+            sheets.save_transaction,
+            {
+                "transaction_id": trade.trade_id,
+                "league_id": guild_id,  # stored so accept/decline can locate rosters
+                "type": "trade",
+                "from_player_id": from_player,
+                "from_player_name": "",
+                "to_player_id": to_player,
+                "to_player_name": "",
+                "pokemon_given": trade.pokemon_given,
+                "pokemon_received": trade.pokemon_received,
+                "status": "pending",
+                "approved_by": "",
+            },
+        )
         return TradeResult(success=True, trade_id=trade.trade_id)
 
     async def accept_trade(self, player_id: str, trade_id: str) -> TradeResult:
-        record = await asyncio.to_thread(sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id)
+        record = await asyncio.to_thread(
+            sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id
+        )
         if not record:
             return TradeResult(success=False, error="Trade not found.")
         if str(record.get("to_player_id")) != player_id:
@@ -214,20 +233,34 @@ class TeamService:
         # the trade was NOT committed durably (H1).
         from_slots = [(p.name, getattr(p, "tera_type", "")) for p in from_team.pokemon]
         to_slots = [(p.name, getattr(p, "tera_type", "")) for p in to_team.pokemon]
-        await asyncio.to_thread(sheets.upsert_team_page, {
-            "player_id": from_player_id, "guild_id": guild_id, "slots": from_slots,
-        })
-        await asyncio.to_thread(sheets.upsert_team_page, {
-            "player_id": player_id, "guild_id": guild_id, "slots": to_slots,
-        })
+        await asyncio.to_thread(
+            sheets.upsert_team_page,
+            {
+                "player_id": from_player_id,
+                "guild_id": guild_id,
+                "slots": from_slots,
+            },
+        )
+        await asyncio.to_thread(
+            sheets.upsert_team_page,
+            {
+                "player_id": player_id,
+                "guild_id": guild_id,
+                "slots": to_slots,
+            },
+        )
 
         # Mark accepted only after rosters are committed
         record["status"] = "accepted"
         await asyncio.to_thread(sheets.save_transaction, record)
-        return TradeResult(success=True, summary=f"Trade complete! {given} ↔ {received}")
+        return TradeResult(
+            success=True, summary=f"Trade complete! {given} ↔ {received}"
+        )
 
     async def decline_trade(self, player_id: str, trade_id: str) -> TradeResult:
-        record = await asyncio.to_thread(sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id)
+        record = await asyncio.to_thread(
+            sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id
+        )
         if not record:
             return TradeResult(success=False, error="Trade not found.")
         if str(record.get("to_player_id")) != player_id:
@@ -265,27 +298,49 @@ class TeamService:
                 current_name = ""
                 continue
 
-            skip_prefixes = ("-", "Ability:", "EVs:", "IVs:", "Level", "Shiny", "Happiness", "Gigantamax", "Tera Type:")
-            if any(line.startswith(p) for p in skip_prefixes) or line.endswith("Nature"):
+            skip_prefixes = (
+                "-",
+                "Ability:",
+                "EVs:",
+                "IVs:",
+                "Level",
+                "Shiny",
+                "Happiness",
+                "Gigantamax",
+                "Tera Type:",
+            )
+            if any(line.startswith(p) for p in skip_prefixes) or line.endswith(
+                "Nature"
+            ):
                 continue
 
             if current_name == "":
                 # Handle: "Nickname (Pokemon) @ Item" or "Pokemon @ Item"
                 # Allow colons in species names (e.g. "Type: Null") by not stopping at ":"
-                match = re.match(r"^(?:[\w\s'-]+\s+\()?([A-Za-z][A-Za-z\-'.: ]+?)(?:\s*\)|\s*@|$)", line)
+                match = re.match(
+                    r"^(?:[\w\s'-]+\s+\()?([A-Za-z][A-Za-z\-'.: ]+?)(?:\s*\)|\s*@|$)",
+                    line,
+                )
                 if match:
                     current_name = match.group(1).strip()
                     pokemon = pokemon_db.find(current_name)
                     if pokemon:
                         pokemon_list.append(pokemon)
                     else:
-                        log.warning(f"Pokemon not found during import: '{current_name}'")
+                        log.warning(
+                            f"Pokemon not found during import: '{current_name}'"
+                        )
 
         if not pokemon_list:
-            return ImportResult(success=False, error="No valid Pokemon found. Check the Showdown export format.")
+            return ImportResult(
+                success=False,
+                error="No valid Pokemon found. Check the Showdown export format.",
+            )
 
         key = self._cache_key(guild_id, player_id, format_key)
-        roster = _roster_cache.get(key) or TeamRoster(player_id=player_id, guild_id=guild_id)
+        roster = _roster_cache.get(key) or TeamRoster(
+            player_id=player_id, guild_id=guild_id
+        )
         roster.pokemon = pokemon_list
         _roster_cache[key] = roster
 
@@ -305,10 +360,14 @@ class TeamService:
             lines.append("")
         return "\n".join(lines)
 
-    async def check_legality(self, pokemon_name: str, game_format: str) -> LegalityResult:
+    async def check_legality(
+        self, pokemon_name: str, game_format: str
+    ) -> LegalityResult:
         pokemon = pokemon_db.find(pokemon_name)
         if not pokemon:
-            return LegalityResult(legal=False, reason=f"'{pokemon_name}' not found in database.")
+            return LegalityResult(
+                legal=False, reason=f"'{pokemon_name}' not found in database."
+            )
 
         if game_format == "vgc":
             legal = pokemon.vgc_legal

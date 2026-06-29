@@ -1,4 +1,5 @@
 """Tests for src/bot/cogs/ml.py — MLCog and helper functions."""
+
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -8,6 +9,7 @@ from src.bot.cogs.ml import MLCog, _build_stats_table, _fmt_pct, _fmt_ckpt
 
 
 # ── Pure helper tests ──────────────────────────────────────────────────────────
+
 
 def test_fmt_pct_none():
     assert _fmt_pct(None) == "—"
@@ -45,8 +47,11 @@ def test_build_stats_table_empty():
 def test_build_stats_table_renders_rows():
     rows = [
         {
-            "format": "gen9ou", "battles": 50, "win_rate": 0.6,
-            "last_checkpoint": "model.zip", "last_step": "1000",
+            "format": "gen9ou",
+            "battles": 50,
+            "win_rate": 0.6,
+            "last_checkpoint": "model.zip",
+            "last_step": "1000",
             "last_trained": "2026-01-15 12:00:00",
         }
     ]
@@ -61,8 +66,11 @@ def test_build_stats_table_renders_rows():
 def test_build_stats_table_truncates_timestamp():
     rows = [
         {
-            "format": "gen9ou", "battles": 1, "win_rate": 1.0,
-            "last_checkpoint": "—", "last_step": "—",
+            "format": "gen9ou",
+            "battles": 1,
+            "win_rate": 1.0,
+            "last_checkpoint": "—",
+            "last_step": "—",
             "last_trained": "2026-05-21 10:30:00",
         }
     ]
@@ -72,6 +80,7 @@ def test_build_stats_table_truncates_timestamp():
 
 
 # ── MLCog tests ────────────────────────────────────────────────────────────────
+
 
 def make_interaction():
     interaction = MagicMock()
@@ -112,8 +121,10 @@ async def test_ml_stats_sheets_disabled(cog):
     interaction = make_interaction()
     mock_ls = MagicMock()
     mock_ls.enabled = False
-    with patch("src.bot.cogs.ml._SHEETS_AVAILABLE", True), \
-         patch("src.bot.cogs.ml.learning_sheets", mock_ls):
+    with (
+        patch("src.bot.cogs.ml._SHEETS_AVAILABLE", True),
+        patch("src.bot.cogs.ml.learning_sheets", mock_ls),
+    ):
         await call_ml_stats(cog, interaction)
     interaction.followup.send.assert_called_once()
     assert interaction.followup.send.call_args.kwargs.get("ephemeral") is True
@@ -125,8 +136,10 @@ async def test_ml_stats_empty_cache(cog):
     mock_ls = MagicMock()
     mock_ls.enabled = True
     cog._stats_cache = []
-    with patch("src.bot.cogs.ml._SHEETS_AVAILABLE", True), \
-         patch("src.bot.cogs.ml.learning_sheets", mock_ls):
+    with (
+        patch("src.bot.cogs.ml._SHEETS_AVAILABLE", True),
+        patch("src.bot.cogs.ml.learning_sheets", mock_ls),
+    ):
         await call_ml_stats(cog, interaction)
     interaction.followup.send.assert_called_once()
     embed = interaction.followup.send.call_args.kwargs.get("embed")
@@ -141,13 +154,18 @@ async def test_ml_stats_with_data(cog):
     mock_ls.enabled = True
     cog._stats_cache = [
         {
-            "format": "gen9ou", "battles": 10, "win_rate": 0.7,
-            "last_checkpoint": "model.zip", "last_step": "500",
+            "format": "gen9ou",
+            "battles": 10,
+            "win_rate": 0.7,
+            "last_checkpoint": "model.zip",
+            "last_step": "500",
             "last_trained": "2026-05-21",
         }
     ]
-    with patch("src.bot.cogs.ml._SHEETS_AVAILABLE", True), \
-         patch("src.bot.cogs.ml.learning_sheets", mock_ls):
+    with (
+        patch("src.bot.cogs.ml._SHEETS_AVAILABLE", True),
+        patch("src.bot.cogs.ml.learning_sheets", mock_ls),
+    ):
         await call_ml_stats(cog, interaction)
     embed = interaction.followup.send.call_args.kwargs.get("embed")
     assert embed is not None
@@ -165,8 +183,10 @@ async def test_ml_stats_refresh_triggers_cache_update(cog):
     mock_ls.enabled = True
     mock_ls.get_stats_table.return_value = []
     cog._stats_cache = []
-    with patch("src.bot.cogs.ml._SHEETS_AVAILABLE", True), \
-         patch("src.bot.cogs.ml.learning_sheets", mock_ls):
+    with (
+        patch("src.bot.cogs.ml._SHEETS_AVAILABLE", True),
+        patch("src.bot.cogs.ml.learning_sheets", mock_ls),
+    ):
         loop = asyncio.get_event_loop()
         with patch.object(loop, "run_in_executor", new=AsyncMock(return_value=[])):
             await call_ml_stats(cog, interaction, refresh=True)

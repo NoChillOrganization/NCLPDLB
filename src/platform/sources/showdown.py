@@ -1,4 +1,5 @@
 """Showdown replay adapter. Fetches replay JSON by id or via ladder search. No disk writes."""
+
 from __future__ import annotations
 
 from typing import Iterable
@@ -49,7 +50,9 @@ class ShowdownAdapter:
             if ids is not None:
                 await self._fetch_by_ids(session, limiter, ids, records)
             elif format is not None:
-                await self._fetch_ladder(session, limiter, format, pages, min_rating, records)
+                await self._fetch_ladder(
+                    session, limiter, format, pages, min_rating, records
+                )
         return records
 
     async def _fetch_by_ids(
@@ -63,9 +66,14 @@ class ShowdownAdapter:
             url = REPLAY_URL.format(id=replay_id)
             data = await get_json(session, url, limiter=limiter)
             if isinstance(data, dict):
-                records.append(RawRecord(
-                    route="replay", natural_key=replay_id, payload=data, url=url,
-                ))
+                records.append(
+                    RawRecord(
+                        route="replay",
+                        natural_key=replay_id,
+                        payload=data,
+                        url=url,
+                    )
+                )
 
     async def _fetch_ladder(
         self,
@@ -79,7 +87,10 @@ class ShowdownAdapter:
         collected_ids: list[str] = []
         for page in range(1, pages + 1):
             results = await get_json(
-                session, SEARCH_URL, params={"format": format, "page": page}, limiter=limiter,
+                session,
+                SEARCH_URL,
+                params={"format": format, "page": page},
+                limiter=limiter,
             )
             if not results:
                 break

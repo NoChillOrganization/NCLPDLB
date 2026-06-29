@@ -22,6 +22,7 @@ Key layout discoveries (from inspect_writable_tabs.py):
 
 Uses gspread synchronously (run in executor for async contexts).
 """
+
 from __future__ import annotations
 
 import logging
@@ -44,6 +45,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
+
 def UTC_NOW() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -64,48 +66,58 @@ def _with_retry(fn, *args, max_tries: int = 5, **kwargs):
                 pass
             if status not in (429, 503) or attempt == max_tries - 1:
                 raise
-            delay = (2 ** attempt) + _random.uniform(0, 1)
+            delay = (2**attempt) + _random.uniform(0, 1)
             log.warning(
                 "Sheets API rate-limit (HTTP %s) — retrying in %.1fs (attempt %d/%d)",
-                status, delay, attempt + 1, max_tries,
+                status,
+                delay,
+                attempt + 1,
+                max_tries,
             )
             _time.sleep(delay)
         except requests.exceptions.RequestException as exc:
             if attempt == max_tries - 1:
                 raise
-            delay = (2 ** attempt) + _random.uniform(0, 1)
+            delay = (2**attempt) + _random.uniform(0, 1)
             log.warning(
                 "Sheets transport error (%s) — retrying in %.1fs (attempt %d/%d)",
-                exc, delay, attempt + 1, max_tries,
+                exc,
+                delay,
+                attempt + 1,
+                max_tries,
             )
             _time.sleep(delay)
 
 
 # ── Tab names (exact Unicode match to spreadsheet) ─────────────────────────────
 
+
 class Tab:
-    SETUP         = "Setup"
-    RULES         = "Rules"
-    COVER         = "Cover"
-    DRAFT         = "Draft"
-    DRAFT_BOARD   = "Draft Board"
-    POOL_A        = "Pool A Board"
-    POOL_B        = "Pool B Board"
-    SCHEDULE      = "Schedule"
-    MATCH_STATS   = "Match Stats"    # visual template — read-only via get_match_results()
-    MATCH_RECORDS = "Match Records"  # flat tab: match/replay/video rows written by the bot
-    STANDINGS     = "Standings"      # visual template — read-only via get_standings_visual()
-    ELO_DATA      = "ELO Data"       # flat tab: ELO records written/read by EloService
+    SETUP = "Setup"
+    RULES = "Rules"
+    COVER = "Cover"
+    DRAFT = "Draft"
+    DRAFT_BOARD = "Draft Board"
+    POOL_A = "Pool A Board"
+    POOL_B = "Pool B Board"
+    SCHEDULE = "Schedule"
+    MATCH_STATS = "Match Stats"  # visual template — read-only via get_match_results()
+    MATCH_RECORDS = (
+        "Match Records"  # flat tab: match/replay/video rows written by the bot
+    )
+    STANDINGS = "Standings"  # visual template — read-only via get_standings_visual()
+    ELO_DATA = "ELO Data"  # flat tab: ELO records written/read by EloService
     POKEMON_STATS = "Pokémon Stats"
-    MVP_RACE      = "MVP Race"
-    TRANSACTIONS  = "Transactions"
-    PLAYOFFS      = "Playoffs"
-    POKEDEX       = "Pokédex"
+    MVP_RACE = "MVP Race"
+    TRANSACTIONS = "Transactions"
+    PLAYOFFS = "Playoffs"
+    POKEDEX = "Pokédex"
     TEAM_TEMPLATE = "Team Page Template"
-    DATA          = "Data"
+    DATA = "Data"
 
 
 # ── Helper: column letter ↔ number ─────────────────────────────────────────────
+
 
 def _col_letter(n: int) -> str:
     result = ""
@@ -123,6 +135,7 @@ def _col_num(s: str) -> int:
 
 
 # ── Client ─────────────────────────────────────────────────────────────────────
+
 
 class SheetsClient:
     """Singleton Google Sheets client for the No Chill League spreadsheet."""
@@ -145,7 +158,9 @@ class SheetsClient:
             )
         creds = Credentials.from_service_account_file(str(creds_path), scopes=SCOPES)
         self._client = gspread.authorize(creds)
-        self._spreadsheet = self._client.open_by_key(settings.google_sheets_spreadsheet_id)
+        self._spreadsheet = self._client.open_by_key(
+            settings.google_sheets_spreadsheet_id
+        )
         log.info(f"Connected to Google Sheets: '{self._spreadsheet.title}'")
 
     @property
@@ -196,7 +211,9 @@ class SheetsClient:
         ws = self.get_tab(tab_name)
         _with_retry(ws.update, [[value]], cell, value_input_option="USER_ENTERED")
 
-    def _append_to_range(self, ws: gspread.Worksheet, range_: str, row: list[Any]) -> None:
+    def _append_to_range(
+        self, ws: gspread.Worksheet, range_: str, row: list[Any]
+    ) -> None:
         """Append a row using USER_ENTERED so formulas are evaluated."""
         ws.append_row(row, value_input_option="USER_ENTERED", table_range=range_)
 
@@ -212,7 +229,9 @@ class SheetsClient:
         ws = self.get_tab(tab_name, create=True)
         _with_retry(ws.update, f"A{row_num}", [row_data])
 
-    def upsert_row(self, tab_name: str, key_col: str, key_val: str, row_data: list) -> None:
+    def upsert_row(
+        self, tab_name: str, key_col: str, key_val: str, row_data: list
+    ) -> None:
         """Insert or update a row matched by key_col == key_val (positional write).
 
         Uses ws.find() to locate the row (H10) instead of get_all_records().
@@ -297,7 +316,9 @@ class SheetsClient:
         cell = _with_retry(ws.find, str(value), in_column=col_idx)
         if cell is None:
             return None
-        row_vals = (_with_retry(ws.row_values, cell.row) + [""] * len(headers))[: len(headers)]
+        row_vals = (_with_retry(ws.row_values, cell.row) + [""] * len(headers))[
+            : len(headers)
+        ]
         return dict(zip(headers, row_vals))
 
     def find_rows(self, tab_name: str, col: str, value: str) -> list[dict]:
@@ -316,9 +337,12 @@ class SheetsClient:
     def save_league_setup(self, data: dict) -> None:
         """Write editable Setup values."""
         row_data = [
-            data.get("league_id", ""), data.get("server_id", ""),
-            data.get("league_name", ""), data.get("commissioner_id", ""),
-            data.get("commissioner_name", ""), UTC_NOW(),
+            data.get("league_id", ""),
+            data.get("server_id", ""),
+            data.get("league_name", ""),
+            data.get("commissioner_id", ""),
+            data.get("commissioner_name", ""),
+            UTC_NOW(),
         ]
         self.upsert_row(Tab.SETUP, "server_id", data.get("server_id", ""), row_data)
 
@@ -334,11 +358,17 @@ class SheetsClient:
     def upsert_standing(self, standing: dict) -> None:
         """Insert or update an ELO standing row in the flat ELO Data tab."""
         row_data = [
-            standing.get("player_id", ""), standing.get("player_name", ""),
-            standing.get("elo", ""), standing.get("wins", ""),
-            standing.get("losses", ""), standing.get("streak", ""), UTC_NOW(),
+            standing.get("player_id", ""),
+            standing.get("player_name", ""),
+            standing.get("elo", ""),
+            standing.get("wins", ""),
+            standing.get("losses", ""),
+            standing.get("streak", ""),
+            UTC_NOW(),
         ]
-        self.upsert_row(Tab.ELO_DATA, "player_id", standing.get("player_id", ""), row_data)
+        self.upsert_row(
+            Tab.ELO_DATA, "player_id", standing.get("player_id", ""), row_data
+        )
 
     # ── Schedule tab ──────────────────────────────────────────────────────────
     #
@@ -360,31 +390,37 @@ class SheetsClient:
                 continue
             if len(row) < 13:
                 row = row + [""] * (13 - len(row))
-            coach1  = row[6].strip()
+            coach1 = row[6].strip()
             result1 = row[7].strip()
-            score1  = row[8].strip()
-            vs_     = row[9].strip()
-            score2  = row[10].strip()
+            score1 = row[8].strip()
+            vs_ = row[9].strip()
+            score2 = row[10].strip()
             result2 = row[11].strip()
-            coach2  = row[12].strip()
+            coach2 = row[12].strip()
             if coach1 and vs_ == "vs.":
-                matches.append({
-                    "week":    current_week,
-                    "coach1":  coach1,
-                    "result1": result1,
-                    "score1":  score1,
-                    "score2":  score2,
-                    "result2": result2,
-                    "coach2":  coach2,
-                })
+                matches.append(
+                    {
+                        "week": current_week,
+                        "coach1": coach1,
+                        "result1": result1,
+                        "score1": score1,
+                        "score2": score2,
+                        "result2": result2,
+                        "coach2": coach2,
+                    }
+                )
         return matches
 
     def save_schedule_match(self, match: dict) -> None:
         """Write a scheduled match row."""
         row_data = [
-            match.get("match_id", ""), match.get("week", ""),
-            match.get("player1_id", ""), match.get("player1_name", ""),
-            match.get("player2_id", ""), match.get("player2_name", ""), UTC_NOW(),
+            match.get("match_id", ""),
+            match.get("week", ""),
+            match.get("player1_id", ""),
+            match.get("player1_name", ""),
+            match.get("player2_id", ""),
+            match.get("player2_name", ""),
+            UTC_NOW(),
         ]
         self.upsert_row(Tab.SCHEDULE, "match_id", match.get("match_id", ""), row_data)
 
@@ -404,24 +440,30 @@ class SheetsClient:
             if week is not None and f"#{week}" not in wlabel:
                 continue
             match_start = wrow + 1
-            match_raw = self._get_range(Tab.MATCH_STATS, f"E{match_start}:K{match_start + 80}")
+            match_raw = self._get_range(
+                Tab.MATCH_STATS, f"E{match_start}:K{match_start + 80}"
+            )
             i = 0
             while i < len(match_raw):
                 row = match_raw[i]
-                coach1  = row[0].strip() if len(row) > 0 else ""
+                coach1 = row[0].strip() if len(row) > 0 else ""
                 result1 = row[2].strip() if len(row) > 2 else ""
                 result2 = row[6].strip() if len(row) > 6 else ""
-                coach2  = row[7].strip() if len(row) > 7 else ""
+                coach2 = row[7].strip() if len(row) > 7 else ""
                 if coach1 and result1 in {"W", "L", "DF", ""}:
-                    winner = coach1 if result1 == "W" else (coach2 if result2 == "W" else "")
-                    results.append({
-                        "week":    wlabel,
-                        "coach1":  coach1,
-                        "coach2":  coach2,
-                        "winner":  winner,
-                        "result1": result1,
-                        "result2": result2,
-                    })
+                    winner = (
+                        coach1 if result1 == "W" else (coach2 if result2 == "W" else "")
+                    )
+                    results.append(
+                        {
+                            "week": wlabel,
+                            "coach1": coach1,
+                            "coach2": coach2,
+                            "winner": winner,
+                            "result1": result1,
+                            "result2": result2,
+                        }
+                    )
                     i += 9
                 else:
                     i += 1
@@ -430,30 +472,47 @@ class SheetsClient:
     def save_match_stats(self, match: dict) -> None:
         """Write match stats row to the flat Match Records tab."""
         row_data = [
-            match.get("match_id", ""), match.get("league_id", ""),
-            str(match.get("p1_team", [])), str(match.get("p2_team", [])), UTC_NOW(),
+            match.get("match_id", ""),
+            match.get("league_id", ""),
+            str(match.get("p1_team", [])),
+            str(match.get("p2_team", [])),
+            UTC_NOW(),
         ]
-        self.upsert_row(Tab.MATCH_RECORDS, "match_id", match.get("match_id", ""), row_data)
+        self.upsert_row(
+            Tab.MATCH_RECORDS, "match_id", match.get("match_id", ""), row_data
+        )
 
     def save_replay(self, replay: dict) -> None:
         """Append a replay row to the flat Match Records tab, keyed by replay_id."""
         row_data = [
-            replay.get("replay_id", ""), replay.get("match_id", ""),
-            replay.get("url", ""), replay.get("winner", ""),
-            str(replay.get("p1_team", [])), str(replay.get("p2_team", [])),
-            str(replay.get("turns", "")), replay.get("timestamp", UTC_NOW()),
+            replay.get("replay_id", ""),
+            replay.get("match_id", ""),
+            replay.get("url", ""),
+            replay.get("winner", ""),
+            str(replay.get("p1_team", [])),
+            str(replay.get("p2_team", [])),
+            str(replay.get("turns", "")),
+            replay.get("timestamp", UTC_NOW()),
         ]
-        self.upsert_row(Tab.MATCH_RECORDS, "replay_id", replay.get("replay_id", ""), row_data)
+        self.upsert_row(
+            Tab.MATCH_RECORDS, "replay_id", replay.get("replay_id", ""), row_data
+        )
 
     def save_video(self, video: dict) -> None:
         """Append a video entry to the flat Match Records tab, keyed by video_id."""
         row_data = [
-            video.get("video_id", ""), video.get("match_id", ""),
-            video.get("uploader_id", ""), video.get("opponent_id", ""),
-            video.get("storage_url", ""), video.get("thumbnail_url", ""),
-            video.get("notes", ""), video.get("timestamp", UTC_NOW()),
+            video.get("video_id", ""),
+            video.get("match_id", ""),
+            video.get("uploader_id", ""),
+            video.get("opponent_id", ""),
+            video.get("storage_url", ""),
+            video.get("thumbnail_url", ""),
+            video.get("notes", ""),
+            video.get("timestamp", UTC_NOW()),
         ]
-        self.upsert_row(Tab.MATCH_RECORDS, "video_id", video.get("video_id", ""), row_data)
+        self.upsert_row(
+            Tab.MATCH_RECORDS, "video_id", video.get("video_id", ""), row_data
+        )
 
     # ── Transactions tab ──────────────────────────────────────────────────────
     #
@@ -469,37 +528,48 @@ class SheetsClient:
         for row in raw:
             if not row or not row[0].strip():
                 continue
-            transactions.append({
-                "number":   row[0].strip() if len(row) > 0 else "",
-                "week":     row[1].strip() if len(row) > 1 else "",
-                "event":    row[2].strip() if len(row) > 2 else "",
-                "coach1":   row[3].strip() if len(row) > 3 else "",
-                "pokemon1": row[4].strip() if len(row) > 4 else "",
-                "pokemon2": row[6].strip() if len(row) > 6 else "",
-                "coach2":   row[8].strip() if len(row) > 8 else "",
-                "notes":    row[9].strip() if len(row) > 9 else "",
-            })
+            transactions.append(
+                {
+                    "number": row[0].strip() if len(row) > 0 else "",
+                    "week": row[1].strip() if len(row) > 1 else "",
+                    "event": row[2].strip() if len(row) > 2 else "",
+                    "coach1": row[3].strip() if len(row) > 3 else "",
+                    "pokemon1": row[4].strip() if len(row) > 4 else "",
+                    "pokemon2": row[6].strip() if len(row) > 6 else "",
+                    "coach2": row[8].strip() if len(row) > 8 else "",
+                    "notes": row[9].strip() if len(row) > 9 else "",
+                }
+            )
         return transactions
 
     def save_transaction(self, txn: dict) -> None:
         """Append a transaction row."""
         row_data = [
-            txn.get("transaction_id", ""), txn.get("week", ""),
-            txn.get("type", ""), txn.get("from_player_name", txn.get("coach1", "")),
+            txn.get("transaction_id", ""),
+            txn.get("week", ""),
+            txn.get("type", ""),
+            txn.get("from_player_name", txn.get("coach1", "")),
             txn.get("pokemon_given", txn.get("pokemon1", "")),
             txn.get("pokemon_received", txn.get("pokemon2", "")),
             txn.get("to_player_name", txn.get("coach2", "")),
-            txn.get("status", ""), UTC_NOW(),
+            txn.get("status", ""),
+            UTC_NOW(),
         ]
-        self.upsert_row(Tab.TRANSACTIONS, "transaction_id", txn.get("transaction_id", ""), row_data)
+        self.upsert_row(
+            Tab.TRANSACTIONS, "transaction_id", txn.get("transaction_id", ""), row_data
+        )
 
     # ── Draft tab ─────────────────────────────────────────────────────────────
 
     def save_pick(self, pick: dict) -> None:
         """Append a draft pick row."""
         row_data = [
-            pick.get("pick_id", ""), pick.get("draft_id", ""), pick.get("player_id", ""),
-            pick.get("pokemon_name", ""), pick.get("round", ""), pick.get("pick_number", ""),
+            pick.get("pick_id", ""),
+            pick.get("draft_id", ""),
+            pick.get("player_id", ""),
+            pick.get("pokemon_name", ""),
+            pick.get("round", ""),
+            pick.get("pick_number", ""),
             UTC_NOW(),
         ]
         self.upsert_row(Tab.DRAFT, "pick_id", pick.get("pick_id", ""), row_data)
@@ -514,8 +584,11 @@ class SheetsClient:
         """Insert or update a player's roster in the pool board tab."""
         tab = Tab.POOL_A if pool == "A" else Tab.POOL_B
         row_data = [
-            player.get("player_id", ""), player.get("player_name", ""),
-            player.get("team_name", ""), ",".join(pokemon), UTC_NOW(),
+            player.get("player_id", ""),
+            player.get("player_name", ""),
+            player.get("team_name", ""),
+            ",".join(pokemon),
+            UTC_NOW(),
         ]
         self.upsert_row(tab, "player_id", player.get("player_id", ""), row_data)
 
@@ -536,15 +609,26 @@ class SheetsClient:
         for p in pokemon_list:
             stats = p.get("base_stats", {})
             types = p.get("types", ["", ""])
-            rows.append([
-                p.get("national_dex", ""), p.get("name", ""),
-                types[0] if len(types) > 0 else "", types[1] if len(types) > 1 else "",
-                stats.get("hp", 0), stats.get("atk", 0), stats.get("def", 0),
-                stats.get("spa", 0), stats.get("spd", 0), stats.get("spe", 0),
-                p.get("showdown_tier", ""), p.get("generation", ""),
-                p.get("is_legendary", False), p.get("is_mythical", False),
-                p.get("vgc_legal", False), p.get("sprite_url", ""),
-            ])
+            rows.append(
+                [
+                    p.get("national_dex", ""),
+                    p.get("name", ""),
+                    types[0] if len(types) > 0 else "",
+                    types[1] if len(types) > 1 else "",
+                    stats.get("hp", 0),
+                    stats.get("atk", 0),
+                    stats.get("def", 0),
+                    stats.get("spa", 0),
+                    stats.get("spd", 0),
+                    stats.get("spe", 0),
+                    p.get("showdown_tier", ""),
+                    p.get("generation", ""),
+                    p.get("is_legendary", False),
+                    p.get("is_mythical", False),
+                    p.get("vgc_legal", False),
+                    p.get("sprite_url", ""),
+                ]
+            )
 
         ws.append_rows(rows, value_input_option="USER_ENTERED")
         log.info(f"Pokédex tab populated with {len(rows)} Pokémon")
@@ -563,8 +647,14 @@ class SheetsClient:
         ws = self.get_tab(Tab.RULES, create=True)
         e_col = ws.col_values(5)  # column E
         next_row = len(e_col) + 1
-        text = f"[{category}] {title}: {description}" if category else f"{title}: {description}"
-        ws.update([["✵", text]], f"D{next_row}:E{next_row}", value_input_option="USER_ENTERED")
+        text = (
+            f"[{category}] {title}: {description}"
+            if category
+            else f"{title}: {description}"
+        )
+        ws.update(
+            [["✵", text]], f"D{next_row}:E{next_row}", value_input_option="USER_ENTERED"
+        )
         log.info(f"Rule appended at row {next_row}")
 
     # ── MVP Race tab ──────────────────────────────────────────────────────────
@@ -577,10 +667,12 @@ class SheetsClient:
             if len(row) >= 10:
                 for v in row:
                     if v and "+" in v and "in" in v:
-                        results.append({
-                            "coach": row[0].strip() if row else "",
-                            "record": v.strip(),
-                        })
+                        results.append(
+                            {
+                                "coach": row[0].strip() if row else "",
+                                "record": v.strip(),
+                            }
+                        )
                         break
         return results
 
@@ -589,19 +681,28 @@ class SheetsClient:
         ws = self.get_tab(Tab.MVP_RACE, create=True)
         ws.resize(rows=max(1, len(mvp_entries) + 1))
         for entry in mvp_entries:
-            ws.append_row([
-                entry.get("rank", ""), entry.get("player_id", ""),
-                entry.get("mvp_pokemon", ""), entry.get("mvp_count", ""),
-            ], value_input_option="USER_ENTERED")
+            ws.append_row(
+                [
+                    entry.get("rank", ""),
+                    entry.get("player_id", ""),
+                    entry.get("mvp_pokemon", ""),
+                    entry.get("mvp_count", ""),
+                ],
+                value_input_option="USER_ENTERED",
+            )
 
     # ── Pokémon Stats tab ─────────────────────────────────────────────────────
 
     def update_pokemon_stat(self, stat: dict) -> None:
         """Insert or update a Pokémon stat row."""
         row_data = [
-            stat.get("stat_id", ""), stat.get("pokemon", ""),
-            stat.get("wins", ""), stat.get("losses", ""),
-            stat.get("kills", ""), stat.get("deaths", ""), UTC_NOW(),
+            stat.get("stat_id", ""),
+            stat.get("pokemon", ""),
+            stat.get("wins", ""),
+            stat.get("losses", ""),
+            stat.get("kills", ""),
+            stat.get("deaths", ""),
+            UTC_NOW(),
         ]
         self.upsert_row(Tab.POKEMON_STATS, "stat_id", stat.get("stat_id", ""), row_data)
 
@@ -610,11 +711,16 @@ class SheetsClient:
     def save_playoff_match(self, match: dict) -> None:
         """Write a playoff match row."""
         row_data = [
-            match.get("bracket_id", ""), match.get("round", ""),
-            match.get("match_number", ""), match.get("player1_id", ""),
-            match.get("player2_id", ""), UTC_NOW(),
+            match.get("bracket_id", ""),
+            match.get("round", ""),
+            match.get("match_number", ""),
+            match.get("player1_id", ""),
+            match.get("player2_id", ""),
+            UTC_NOW(),
         ]
-        self.upsert_row(Tab.PLAYOFFS, "bracket_id", match.get("bracket_id", ""), row_data)
+        self.upsert_row(
+            Tab.PLAYOFFS, "bracket_id", match.get("bracket_id", ""), row_data
+        )
 
     # ── Team page (individual coach tabs) ─────────────────────────────────────
 
@@ -636,13 +742,14 @@ class SheetsClient:
         for a partial update — fields absent from team dict are preserved.
         """
         import json as _json
+
         slots = team.get("slots", [])
         pokemon_names = [name for name, _tera in slots] if slots else []
         record: dict[str, Any] = {
-            "player_id":     team.get("player_id", ""),
-            "guild_id":      team.get("guild_id", ""),
-            "pokemon_list":  _json.dumps(pokemon_names),
-            "updated_at":    UTC_NOW(),
+            "player_id": team.get("player_id", ""),
+            "guild_id": team.get("guild_id", ""),
+            "pokemon_list": _json.dumps(pokemon_names),
+            "updated_at": UTC_NOW(),
         }
         # Only include optional display fields when provided by the caller
         for field in ("player_name", "team_name", "team_logo_url", "pool"):
@@ -654,9 +761,13 @@ class SheetsClient:
 
     # ── Data tab ──────────────────────────────────────────────────────────────
 
-    def set_data(self, key: str, value: str, type_: str = "string", description: str = "") -> None:
+    def set_data(
+        self, key: str, value: str, type_: str = "string", description: str = ""
+    ) -> None:
         """Upsert a key-value pair in the Data tab."""
-        self.upsert_row(Tab.DATA, "key", key, [key, value, type_, description, UTC_NOW()])
+        self.upsert_row(
+            Tab.DATA, "key", key, [key, value, type_, description, UTC_NOW()]
+        )
 
     def get_data_value(self, label: str) -> str | None:
         """Read a labelled value from the Data tab."""
@@ -675,18 +786,35 @@ sheets = SheetsClient()
 # ── Master learning spreadsheet ────────────────────────────────────────────────
 
 REPLAY_HEADERS = [
-    "Timestamp", "Format", "Battle ID", "Bot", "Opponent",
-    "Opponent Type", "Winner", "Turns", "KO Count", "Team",
-    "Checkpoint", "Training Step", "Replay URL",
+    "Timestamp",
+    "Format",
+    "Battle ID",
+    "Bot",
+    "Opponent",
+    "Opponent Type",
+    "Winner",
+    "Turns",
+    "KO Count",
+    "Team",
+    "Checkpoint",
+    "Training Step",
+    "Replay URL",
 ]
 
 TRAINING_RUN_HEADERS = [
-    "Timestamp", "Format", "Phase", "Checkpoint", "Training Step",
-    "Win Rate", "Episodes", "Mean Reward", "Notes",
+    "Timestamp",
+    "Format",
+    "Phase",
+    "Checkpoint",
+    "Training Step",
+    "Win Rate",
+    "Episodes",
+    "Mean Reward",
+    "Notes",
 ]
 
 _WINNER_COL = REPLAY_HEADERS.index("Winner")
-_FORMAT_COL  = REPLAY_HEADERS.index("Format")
+_FORMAT_COL = REPLAY_HEADERS.index("Format")
 
 
 class LearningSheets:
@@ -722,7 +850,9 @@ class LearningSheets:
             raise FileNotFoundError(f"Google credentials not found: {creds_path}")
         creds = Credentials.from_service_account_file(str(creds_path), scopes=SCOPES)
         self._client = gspread.authorize(creds)
-        self._spreadsheet = self._client.open_by_key(settings.ml_learning_spreadsheet_id)
+        self._spreadsheet = self._client.open_by_key(
+            settings.ml_learning_spreadsheet_id
+        )
         log.info(f"Connected to learning spreadsheet: '{self._spreadsheet.title}'")
 
     @property
@@ -737,7 +867,9 @@ class LearningSheets:
         try:
             return self.spreadsheet.worksheet("Replays")
         except gspread.WorksheetNotFound:
-            ws = self.spreadsheet.add_worksheet(title="Replays", rows=10000, cols=len(REPLAY_HEADERS))
+            ws = self.spreadsheet.add_worksheet(
+                title="Replays", rows=10000, cols=len(REPLAY_HEADERS)
+            )
             ws.append_row(REPLAY_HEADERS, value_input_option="USER_ENTERED")
             log.info("Created 'Replays' tab in learning spreadsheet")
             return ws
@@ -747,7 +879,9 @@ class LearningSheets:
         try:
             return self.spreadsheet.worksheet(tab)
         except gspread.WorksheetNotFound:
-            ws = self.spreadsheet.add_worksheet(title=tab, rows=10000, cols=len(REPLAY_HEADERS))
+            ws = self.spreadsheet.add_worksheet(
+                title=tab, rows=10000, cols=len(REPLAY_HEADERS)
+            )
             ws.append_row(REPLAY_HEADERS, value_input_option="USER_ENTERED")
             log.info(f"Created '{tab}' tab in learning spreadsheet")
             return ws
@@ -819,20 +953,25 @@ class LearningSheets:
             return
         try:
             ws = self._get_training_runs_sheet()
-            ws.append_row([
-                UTC_NOW(),
-                data.get("format", ""),
-                data.get("phase", ""),
-                data.get("checkpoint", ""),
-                data.get("training_step", ""),
-                data.get("win_rate", ""),
-                data.get("episodes", ""),
-                data.get("mean_reward", ""),
-                data.get("notes", ""),
-            ], value_input_option="USER_ENTERED")
+            ws.append_row(
+                [
+                    UTC_NOW(),
+                    data.get("format", ""),
+                    data.get("phase", ""),
+                    data.get("checkpoint", ""),
+                    data.get("training_step", ""),
+                    data.get("win_rate", ""),
+                    data.get("episodes", ""),
+                    data.get("mean_reward", ""),
+                    data.get("notes", ""),
+                ],
+                value_input_option="USER_ENTERED",
+            )
             log.info(
                 "[LearningSheets] Saved training run: fmt=%s step=%s win_rate=%s",
-                data.get("format", ""), data.get("training_step", ""), data.get("win_rate", ""),
+                data.get("format", ""),
+                data.get("training_step", ""),
+                data.get("win_rate", ""),
             )
         except Exception as exc:
             log.warning(f"Failed to save training run: {exc}")
@@ -850,7 +989,9 @@ class LearningSheets:
             if not data_rows:
                 return None
             recent = data_rows[-last_n:]
-            wins = sum(1 for r in recent if len(r) > _WINNER_COL and r[_WINNER_COL] == "bot")
+            wins = sum(
+                1 for r in recent if len(r) > _WINNER_COL and r[_WINNER_COL] == "bot"
+            )
             return wins / len(recent)
         except Exception as exc:
             log.warning(f"Failed to read win rate for {fmt}: {exc}")
@@ -913,17 +1054,21 @@ class LearningSheets:
 
         for fmt, rows in sorted(formats_seen.items()):
             recent = rows[-100:]
-            wins = sum(1 for r in recent if len(r) > _WINNER_COL and r[_WINNER_COL] == "bot")
+            wins = sum(
+                1 for r in recent if len(r) > _WINNER_COL and r[_WINNER_COL] == "bot"
+            )
             win_rate = wins / len(recent) if recent else 0.0
             tr = training_by_fmt.get(fmt, {})
-            stats.append({
-                "format":          fmt,
-                "battles":         len(rows),
-                "win_rate":        win_rate,
-                "last_checkpoint": tr.get("Checkpoint", "—"),
-                "last_step":       tr.get("Training Step", "—"),
-                "last_trained":    tr.get("Timestamp", "—"),
-            })
+            stats.append(
+                {
+                    "format": fmt,
+                    "battles": len(rows),
+                    "win_rate": win_rate,
+                    "last_checkpoint": tr.get("Checkpoint", "—"),
+                    "last_step": tr.get("Training Step", "—"),
+                    "last_trained": tr.get("Timestamp", "—"),
+                }
+            )
         return stats
 
 

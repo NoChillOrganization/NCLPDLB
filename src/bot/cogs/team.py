@@ -1,6 +1,7 @@
 """
 Team Cog — Roster management, trades, Showdown import/export, console legality.
 """
+
 import re
 
 import discord
@@ -56,7 +57,9 @@ class ShowdownImportModal(discord.ui.Modal, title="Import Showdown Team"):
                 ephemeral=True,
             )
         else:
-            await interaction.followup.send(f"Import failed: {result.error}", ephemeral=True)
+            await interaction.followup.send(
+                f"Import failed: {result.error}", ephemeral=True
+            )
 
 
 class TeamCog(commands.Cog, name="Team"):
@@ -83,13 +86,18 @@ class TeamCog(commands.Cog, name="Team"):
             player_id=str(target.id),
         )
         if not roster:
-            await interaction.followup.send(f"{target.display_name} has no team yet.", ephemeral=True)
+            await interaction.followup.send(
+                f"{target.display_name} has no team yet.", ephemeral=True
+            )
             return
         view = TeamEmbedView(roster=roster, owner=target)
         await interaction.followup.send(embed=view.build_embed(), view=view)
 
     # ── /team-register ───────────────────────────────────────
-    @app_commands.command(name="team-register", description="Register your team name and logo for the league")
+    @app_commands.command(
+        name="team-register",
+        description="Register your team name and logo for the league",
+    )
     @require_role(ROLE_COACH)
     @app_commands.describe(
         team_name="Your team name",
@@ -105,13 +113,20 @@ class TeamCog(commands.Cog, name="Team"):
     ) -> None:
         logo_url = ""
         if logo:
-            if logo.content_type not in ("image/png", "image/jpeg", "image/gif", "image/webp"):
+            if logo.content_type not in (
+                "image/png",
+                "image/jpeg",
+                "image/gif",
+                "image/webp",
+            ):
                 await interaction.response.send_message(
                     "❌ Logo must be a PNG, JPG, GIF, or WebP image.", ephemeral=True
                 )
                 return
             if logo.size > 8 * 1024 * 1024:
-                await interaction.response.send_message("❌ Logo must be under 8 MB.", ephemeral=True)
+                await interaction.response.send_message(
+                    "❌ Logo must be under 8 MB.", ephemeral=True
+                )
                 return
             logo_url = logo.url
 
@@ -124,7 +139,9 @@ class TeamCog(commands.Cog, name="Team"):
             team_logo_url=logo_url,
             pool=pool.upper(),
         )
-        embed = discord.Embed(title=f"✅ {team_name} Registered!", color=discord.Color.green())
+        embed = discord.Embed(
+            title=f"✅ {team_name} Registered!", color=discord.Color.green()
+        )
         embed.add_field(name="Pool", value=pool.upper())
         if logo_url:
             embed.set_thumbnail(url=logo_url)
@@ -173,7 +190,9 @@ class TeamCog(commands.Cog, name="Team"):
                 ),
                 color=discord.Color.orange(),
             )
-            embed.set_footer(text=f"Trade ID: {result.trade_id} | Use /trade-accept or /trade-decline")
+            embed.set_footer(
+                text=f"Trade ID: {result.trade_id} | Use /trade-accept or /trade-decline"
+            )
             await interaction.followup.send(embed=embed)
             try:
                 await target.send(
@@ -185,13 +204,19 @@ class TeamCog(commands.Cog, name="Team"):
             except discord.Forbidden:
                 pass
         else:
-            await interaction.followup.send(f"Trade failed: {result.error}", ephemeral=True)
+            await interaction.followup.send(
+                f"Trade failed: {result.error}", ephemeral=True
+            )
 
     # ── /trade-accept ────────────────────────────────────────
-    @app_commands.command(name="trade-accept", description="Accept a pending trade offer")
+    @app_commands.command(
+        name="trade-accept", description="Accept a pending trade offer"
+    )
     @require_role(ROLE_COACH)
     @app_commands.describe(trade_id="Trade ID to accept")
-    async def trade_accept(self, interaction: discord.Interaction, trade_id: str) -> None:
+    async def trade_accept(
+        self, interaction: discord.Interaction, trade_id: str
+    ) -> None:
         await interaction.response.defer()
         result = await self.team_service.accept_trade(
             player_id=str(interaction.user.id),
@@ -200,20 +225,28 @@ class TeamCog(commands.Cog, name="Team"):
         if result.success:
             await interaction.followup.send(f"✅ Trade accepted! {result.summary}")
         else:
-            await interaction.followup.send(f"❌ Trade error: {result.error}", ephemeral=True)
+            await interaction.followup.send(
+                f"❌ Trade error: {result.error}", ephemeral=True
+            )
 
     # ── /trade-decline ───────────────────────────────────────
-    @app_commands.command(name="trade-decline", description="Decline a pending trade offer")
+    @app_commands.command(
+        name="trade-decline", description="Decline a pending trade offer"
+    )
     @require_role(ROLE_COACH)
     @app_commands.describe(trade_id="Trade ID to decline")
-    async def trade_decline(self, interaction: discord.Interaction, trade_id: str) -> None:
+    async def trade_decline(
+        self, interaction: discord.Interaction, trade_id: str
+    ) -> None:
         await interaction.response.defer(ephemeral=True)
         result = await self.team_service.decline_trade(
             player_id=str(interaction.user.id),
             trade_id=trade_id,
         )
         if result.success:
-            await interaction.followup.send(f"Trade `{trade_id}` declined.", ephemeral=True)
+            await interaction.followup.send(
+                f"Trade `{trade_id}` declined.", ephemeral=True
+            )
         else:
             await interaction.followup.send(f"❌ {result.error}", ephemeral=True)
 
@@ -258,11 +291,18 @@ class TeamCog(commands.Cog, name="Team"):
         pokemon_preview: list[str] = []
         for line in showdown_text.strip().splitlines():
             line = line.strip()
-            if not line or line.startswith("-") or line.startswith("Ability:") or \
-                    line.startswith("EVs:") or line.startswith("IVs:") or \
-                    line.endswith("Nature") or line.startswith("Level") or \
-                    line.startswith("Shiny") or line.startswith("Happiness") or \
-                    line.startswith("Tera Type:"):
+            if (
+                not line
+                or line.startswith("-")
+                or line.startswith("Ability:")
+                or line.startswith("EVs:")
+                or line.startswith("IVs:")
+                or line.endswith("Nature")
+                or line.startswith("Level")
+                or line.startswith("Shiny")
+                or line.startswith("Happiness")
+                or line.startswith("Tera Type:")
+            ):
                 continue
             # First line of a new Pokemon block — may have "@ Item"
             if re.match(r"^[A-Za-z]", line):
@@ -294,7 +334,9 @@ class TeamCog(commands.Cog, name="Team"):
         ][:25]
 
     # ── /teamexport ──────────────────────────────────────────
-    @app_commands.command(name="teamexport", description="Export your team in Pokemon Showdown format")
+    @app_commands.command(
+        name="teamexport", description="Export your team in Pokemon Showdown format"
+    )
     @require_role(ROLE_COACH)
     async def teamexport(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
@@ -305,6 +347,7 @@ class TeamCog(commands.Cog, name="Team"):
         payload = f"Your team in Showdown format:\n```\n{export}\n```"
         if len(payload) > 1990:
             import io
+
             await interaction.followup.send(
                 "Team export (attached as file):",
                 file=discord.File(io.BytesIO(export.encode()), filename="team.txt"),
@@ -314,20 +357,30 @@ class TeamCog(commands.Cog, name="Team"):
             await interaction.followup.send(payload, ephemeral=True)
 
     # ── /legality ────────────────────────────────────────────
-    @app_commands.command(name="legality", description="Check if a Pokemon is legal in a specific game")
+    @app_commands.command(
+        name="legality", description="Check if a Pokemon is legal in a specific game"
+    )
     @require_role(ROLE_COACH)
-    @app_commands.describe(pokemon="Pokemon to check", game="Game to check legality for")
-    @app_commands.choices(game=[
-        app_commands.Choice(name="Scarlet/Violet", value="sv"),
-        app_commands.Choice(name="Sword/Shield", value="swsh"),
-        app_commands.Choice(name="BDSP", value="bdsp"),
-        app_commands.Choice(name="Legends: Arceus", value="legends"),
-        app_commands.Choice(name="Pokemon Showdown (OU)", value="showdown_ou"),
-        app_commands.Choice(name="VGC (Current)", value="vgc"),
-    ])
-    async def legality(self, interaction: discord.Interaction, pokemon: str, game: str) -> None:
+    @app_commands.describe(
+        pokemon="Pokemon to check", game="Game to check legality for"
+    )
+    @app_commands.choices(
+        game=[
+            app_commands.Choice(name="Scarlet/Violet", value="sv"),
+            app_commands.Choice(name="Sword/Shield", value="swsh"),
+            app_commands.Choice(name="BDSP", value="bdsp"),
+            app_commands.Choice(name="Legends: Arceus", value="legends"),
+            app_commands.Choice(name="Pokemon Showdown (OU)", value="showdown_ou"),
+            app_commands.Choice(name="VGC (Current)", value="vgc"),
+        ]
+    )
+    async def legality(
+        self, interaction: discord.Interaction, pokemon: str, game: str
+    ) -> None:
         await interaction.response.defer()
-        result = await self.team_service.check_legality(pokemon_name=pokemon, game_format=game)
+        result = await self.team_service.check_legality(
+            pokemon_name=pokemon, game_format=game
+        )
         color = discord.Color.green() if result.legal else discord.Color.red()
         embed = discord.Embed(
             title=f"{pokemon} — {game.upper()} Legality",

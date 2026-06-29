@@ -2,6 +2,7 @@
 Core data models using Pydantic v2.
 All models are cross-platform and serializable to/from JSON and Google Sheets rows.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -11,6 +12,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 # ── Enums ─────────────────────────────────────────────────────
+
 
 class DraftFormat(str, Enum):
     SNAKE = "snake"
@@ -31,32 +33,32 @@ class DraftStatus(str, Enum):
 class GameFormat(str, Enum):
     SHOWDOWN = "showdown"
     VGC = "vgc"
-    SV = "sv"          # Scarlet/Violet
-    SWSH = "swsh"      # Sword/Shield
-    BDSP = "bdsp"      # Brilliant Diamond/Shining Pearl
+    SV = "sv"  # Scarlet/Violet
+    SWSH = "swsh"  # Sword/Shield
+    BDSP = "bdsp"  # Brilliant Diamond/Shining Pearl
     LEGENDS = "legends"  # Legends: Arceus
 
 
 class TeraType(str, Enum):
-    NORMAL   = "Normal"
-    FIRE     = "Fire"
-    WATER    = "Water"
+    NORMAL = "Normal"
+    FIRE = "Fire"
+    WATER = "Water"
     ELECTRIC = "Electric"
-    GRASS    = "Grass"
-    ICE      = "Ice"
+    GRASS = "Grass"
+    ICE = "Ice"
     FIGHTING = "Fighting"
-    POISON   = "Poison"
-    GROUND   = "Ground"
-    FLYING   = "Flying"
-    PSYCHIC  = "Psychic"
-    BUG      = "Bug"
-    ROCK     = "Rock"
-    GHOST    = "Ghost"
-    DRAGON   = "Dragon"
-    DARK     = "Dark"
-    STEEL    = "Steel"
-    FAIRY    = "Fairy"
-    STELLAR  = "Stellar"   # Added in SV DLC (Tera Captain only)
+    POISON = "Poison"
+    GROUND = "Ground"
+    FLYING = "Flying"
+    PSYCHIC = "Psychic"
+    BUG = "Bug"
+    ROCK = "Rock"
+    GHOST = "Ghost"
+    DRAGON = "Dragon"
+    DARK = "Dark"
+    STEEL = "Steel"
+    FAIRY = "Fairy"
+    STELLAR = "Stellar"  # Added in SV DLC (Tera Captain only)
 
 
 class ShowdownTier(str, Enum):
@@ -72,11 +74,12 @@ class ShowdownTier(str, Enum):
     PU = "PU"
     NFE = "NFE"
     LC = "LC"
-    AG = "AG"          # Anything Goes
+    AG = "AG"  # Anything Goes
     UNTIERED = "Untiered"
 
 
 # ── Pokemon Model ─────────────────────────────────────────────
+
 
 class PokemonStats(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -97,7 +100,7 @@ class PokemonStats(BaseModel):
 class Pokemon(BaseModel):
     national_dex: int = Field(ge=1)
     name: str
-    name_normalized: str = ""   # Lowercase, no special chars (for lookup)
+    name_normalized: str = ""  # Lowercase, no special chars (for lookup)
     types: list[str]
     base_stats: PokemonStats
     abilities: list[str] = []
@@ -113,20 +116,27 @@ class Pokemon(BaseModel):
     vgc_season: str = ""
 
     # Console legality
-    console_legal: dict[str, bool] = Field(default_factory=lambda: {
-        "sv": False, "swsh": False, "bdsp": False, "legends": False
-    })
+    console_legal: dict[str, bool] = Field(
+        default_factory=lambda: {
+            "sv": False,
+            "swsh": False,
+            "bdsp": False,
+            "legends": False,
+        }
+    )
 
     # Draft data
     tier_points: int = Field(default=1, ge=1)
-    smogon_strategy: str = ""   # Role description
-    sprite_url: str = ""        # Animated GIF — Showdown ani/{name}.gif
+    smogon_strategy: str = ""  # Role description
+    sprite_url: str = ""  # Animated GIF — Showdown ani/{name}.gif
     sprite_url_shiny: str = ""  # Shiny animated GIF — Showdown ani-shiny/{name}.gif
-    sprite_url_back: str = ""   # Back sprite animated GIF — Showdown ani-back/{name}.gif
+    sprite_url_back: str = ""  # Back sprite animated GIF — Showdown ani-back/{name}.gif
 
     def model_post_init(self, __context: object) -> None:
         if not self.name_normalized:
-            self.name_normalized = self.name.lower().replace(" ", "-").replace("'", "").replace(".", "")
+            self.name_normalized = (
+                self.name.lower().replace(" ", "-").replace("'", "").replace(".", "")
+            )
 
     @computed_field
     @property
@@ -152,6 +162,7 @@ class Pokemon(BaseModel):
 
 # ── Draft Models ──────────────────────────────────────────────
 
+
 class DraftPick(BaseModel):
     pick_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     draft_id: str
@@ -160,10 +171,10 @@ class DraftPick(BaseModel):
     round: int = Field(ge=1)
     pick_number: int = Field(ge=1)
     game_format: GameFormat = GameFormat.SHOWDOWN
-    pool: str = "A"                    # Pool A or B
+    pool: str = "A"  # Pool A or B
     team_name: str = ""
-    tera_type: str = ""                # Tera type assigned at pick time (SV)
-    is_tera_captain: bool = False      # Whether this Pokemon is a Tera Captain
+    tera_type: str = ""  # Tera type assigned at pick time (SV)
+    is_tera_captain: bool = False  # Whether this Pokemon is a Tera Captain
     timestamp: str = ""
 
     @model_validator(mode="after")
@@ -196,29 +207,37 @@ class Draft(BaseModel):
     total_rounds: int = Field(default=6, ge=1)
     timer_seconds: int = Field(default=60, ge=0)
     tier_mode: bool = False
-    max_players: int = Field(default=MAX_PLAYERS_PER_DRAFT, ge=2, le=MAX_PLAYERS_PER_DRAFT)
+    max_players: int = Field(
+        default=MAX_PLAYERS_PER_DRAFT, ge=2, le=MAX_PLAYERS_PER_DRAFT
+    )
     game_format: GameFormat = GameFormat.SHOWDOWN
-    pool: str = "A"                           # Pool A or B
-    team_names: dict[str, str] = {}           # player_id -> team name
-    team_logos: dict[str, str] = {}           # player_id -> logo URL (Discord CDN)
+    pool: str = "A"  # Pool A or B
+    team_names: dict[str, str] = {}  # player_id -> team name
+    team_logos: dict[str, str] = {}  # player_id -> logo URL (Discord CDN)
 
     # Tera Captain rules (SV format)
     tera_captains_per_team: int = Field(default=0, ge=0)
     tera_types_per_captain: int = Field(default=1, ge=1)
 
-    player_order: list[str] = []      # Discord user IDs in pick order
+    player_order: list[str] = []  # Discord user IDs in pick order
     current_round: int = Field(default=1, ge=1)
     current_pick_index: int = Field(default=0, ge=0)
     picks: list[DraftPick] = []
     bans: list[DraftBan] = []
-    budget: dict[str, int] = {}                 # Auction: player_id -> remaining budget
-    current_nomination_id: str = ""             # Auction: Pokémon name currently up for bid
-    nomination_bids: dict[str, dict[str, int]] = {}  # Auction: nomination_id -> {player_id: amount}
+    budget: dict[str, int] = {}  # Auction: player_id -> remaining budget
+    current_nomination_id: str = ""  # Auction: Pokémon name currently up for bid
+    nomination_bids: dict[
+        str, dict[str, int]
+    ] = {}  # Auction: nomination_id -> {player_id: amount}
     created_at: str = ""
 
     @model_validator(mode="after")
     def check_format_consistency(self) -> Draft:
-        if self.format == DraftFormat.AUCTION and self.budget and self.status != DraftStatus.SETUP:
+        if (
+            self.format == DraftFormat.AUCTION
+            and self.budget
+            and self.status != DraftStatus.SETUP
+        ):
             pass  # budget is valid in auction drafts
         if self.tera_captains_per_team > 0 and self.game_format != GameFormat.SV:
             raise ValueError("tera_captains_per_team > 0 requires game_format='sv'")
@@ -252,13 +271,14 @@ class Draft(BaseModel):
 
 # ── Team / Roster ─────────────────────────────────────────────
 
+
 class TeamRoster(BaseModel):
     team_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     player_id: str
     guild_id: str
     league_id: str = ""
     team_name: str = ""
-    team_logo_url: str = ""   # Discord CDN URL for team logo image
+    team_logo_url: str = ""  # Discord CDN URL for team logo image
     pool: str = "A"
     pokemon: list[Pokemon] = []
     game_format: GameFormat = GameFormat.SHOWDOWN
@@ -273,6 +293,7 @@ class TeamRoster(BaseModel):
 
 
 # ── Match / ELO ───────────────────────────────────────────────
+
 
 class MatchResult(BaseModel):
     match_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -303,6 +324,7 @@ class PlayerElo(BaseModel):
 
 
 # ── Trade ─────────────────────────────────────────────────────
+
 
 class Trade(BaseModel):
     trade_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])

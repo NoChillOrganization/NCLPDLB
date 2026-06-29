@@ -2,6 +2,7 @@
 Tests for src/bot/cogs/team.py — 100% coverage of all command handlers,
 ShowdownImportModal, autocomplete, and setup().
 """
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
@@ -14,6 +15,7 @@ from src.bot.cogs.team import (
 
 
 # ── helpers ────────────────────────────────────────────────────────────────────
+
 
 def make_interaction(guild_id="1234", user_id="5678"):
     """Build a minimal mock discord.Interaction."""
@@ -42,8 +44,10 @@ def make_interaction(guild_id="1234", user_id="5678"):
 def make_cog():
     """Build a TeamCog with mocked services."""
     bot = MagicMock()
-    with patch("src.bot.cogs.team.TeamService"), \
-         patch("src.bot.cogs.team.AnalyticsService"):
+    with (
+        patch("src.bot.cogs.team.TeamService"),
+        patch("src.bot.cogs.team.AnalyticsService"),
+    ):
         cog = TeamCog(bot)
     cog.team_service = MagicMock()
     cog.analytics = MagicMock()
@@ -51,6 +55,7 @@ def make_cog():
 
 
 # ── /team ─────────────────────────────────────────────────────────────────────
+
 
 async def test_team_cmd_no_roster_sends_no_team_message():
     """/team: empty roster → ephemeral 'no team yet' message."""
@@ -101,13 +106,16 @@ async def test_team_cmd_defaults_to_self_when_user_is_none():
 
 # ── /team-register ─────────────────────────────────────────────────────────────
 
+
 async def test_team_register_no_logo_sends_embed():
     """/team-register without logo registers and sends confirmation embed."""
     cog = make_cog()
     cog.team_service.register_team = AsyncMock()
 
     interaction = make_interaction()
-    await cog.team_register.callback(cog, interaction, team_name="LandoLords", pool="A", logo=None)
+    await cog.team_register.callback(
+        cog, interaction, team_name="LandoLords", pool="A", logo=None
+    )
 
     cog.team_service.register_team.assert_awaited_once()
     interaction.followup.send.assert_awaited_once()
@@ -126,7 +134,9 @@ async def test_team_register_with_valid_logo_uses_logo_url():
     logo.size = 1024
     logo.url = "https://cdn.example.com/logo.png"
 
-    await cog.team_register.callback(cog, interaction, team_name="DragonForce", pool="B", logo=logo)
+    await cog.team_register.callback(
+        cog, interaction, team_name="DragonForce", pool="B", logo=logo
+    )
 
     call_kwargs = cog.team_service.register_team.call_args[1]
     assert call_kwargs["team_logo_url"] == "https://cdn.example.com/logo.png"
@@ -142,7 +152,9 @@ async def test_team_register_invalid_logo_type_sends_error():
     logo.content_type = "application/pdf"
     logo.size = 1024
 
-    await cog.team_register.callback(cog, interaction, team_name="Team1", pool="A", logo=logo)
+    await cog.team_register.callback(
+        cog, interaction, team_name="Team1", pool="A", logo=logo
+    )
 
     interaction.response.send_message.assert_awaited_once()
     sent_text = interaction.response.send_message.call_args[0][0]
@@ -160,7 +172,9 @@ async def test_team_register_oversized_logo_sends_error():
     logo.content_type = "image/png"
     logo.size = 9 * 1024 * 1024  # 9 MB
 
-    await cog.team_register.callback(cog, interaction, team_name="BigTeam", pool="A", logo=logo)
+    await cog.team_register.callback(
+        cog, interaction, team_name="BigTeam", pool="A", logo=logo
+    )
 
     interaction.response.send_message.assert_awaited_once()
     sent_text = interaction.response.send_message.call_args[0][0]
@@ -174,12 +188,15 @@ async def test_team_register_sends_public_announcement_when_channel_exists():
     cog.team_service.register_team = AsyncMock()
 
     interaction = make_interaction()
-    await cog.team_register.callback(cog, interaction, team_name="PublicTeam", pool="A", logo=None)
+    await cog.team_register.callback(
+        cog, interaction, team_name="PublicTeam", pool="A", logo=None
+    )
 
     interaction.channel.send.assert_awaited_once()
 
 
 # ── /trade ────────────────────────────────────────────────────────────────────
+
 
 async def test_trade_success_sends_embed_and_dms_target():
     """/trade success: embed sent + DM to target player."""
@@ -195,7 +212,9 @@ async def test_trade_success_sends_embed_and_dms_target():
     target.mention = "<@9999>"
     target.send = AsyncMock()
 
-    await cog.trade.callback(cog, interaction, target=target, offer="Garchomp", request="Dragonite")
+    await cog.trade.callback(
+        cog, interaction, target=target, offer="Garchomp", request="Dragonite"
+    )
 
     interaction.followup.send.assert_awaited_once()
     embed_arg = interaction.followup.send.call_args[1]["embed"]
@@ -216,7 +235,9 @@ async def test_trade_failure_sends_error_message():
     target.id = "9999"
     target.send = AsyncMock()
 
-    await cog.trade.callback(cog, interaction, target=target, offer="Pikachu", request="Raichu")
+    await cog.trade.callback(
+        cog, interaction, target=target, offer="Pikachu", request="Raichu"
+    )
 
     sent_text = interaction.followup.send.call_args[0][0]
     assert "Trade failed" in sent_text
@@ -234,14 +255,19 @@ async def test_trade_dm_forbidden_is_silently_ignored():
     target = MagicMock()
     target.id = "9999"
     target.mention = "<@9999>"
-    target.send = AsyncMock(side_effect=discord.Forbidden(MagicMock(status=403), "Cannot DM"))
+    target.send = AsyncMock(
+        side_effect=discord.Forbidden(MagicMock(status=403), "Cannot DM")
+    )
 
     # Should not raise
-    await cog.trade.callback(cog, interaction, target=target, offer="Garchomp", request="Dragonite")
+    await cog.trade.callback(
+        cog, interaction, target=target, offer="Garchomp", request="Dragonite"
+    )
     interaction.followup.send.assert_awaited_once()
 
 
 # ── /trade-accept ─────────────────────────────────────────────────────────────
+
 
 async def test_trade_accept_success_sends_confirmation():
     """/trade-accept success → '✅ Trade accepted' message."""
@@ -277,6 +303,7 @@ async def test_trade_accept_failure_sends_error():
 
 # ── /trade-decline ────────────────────────────────────────────────────────────
 
+
 async def test_trade_decline_success_sends_declined():
     """/trade-decline success → confirmation that trade was declined."""
     cog = make_cog()
@@ -308,6 +335,7 @@ async def test_trade_decline_failure_sends_error():
 
 # ── /teamimport ───────────────────────────────────────────────────────────────
 
+
 async def test_teamimport_non_txt_sends_error():
     """/teamimport: non-.txt attachment → early error."""
     cog = make_cog()
@@ -315,7 +343,9 @@ async def test_teamimport_non_txt_sends_error():
     team_file = MagicMock()
     team_file.filename = "team.docx"
 
-    await cog.teamimport.callback(cog, interaction, format="gen9ou", team_file=team_file)
+    await cog.teamimport.callback(
+        cog, interaction, format="gen9ou", team_file=team_file
+    )
 
     interaction.response.send_message.assert_awaited_once()
     sent_text = interaction.response.send_message.call_args[0][0]
@@ -330,7 +360,9 @@ async def test_teamimport_empty_file_sends_error():
     team_file.filename = "team.txt"
     team_file.read = AsyncMock(return_value=b"   ")
 
-    await cog.teamimport.callback(cog, interaction, format="gen9ou", team_file=team_file)
+    await cog.teamimport.callback(
+        cog, interaction, format="gen9ou", team_file=team_file
+    )
 
     sent_text = interaction.followup.send.call_args[0][0]
     assert "empty" in sent_text.lower()
@@ -360,9 +392,13 @@ async def test_teamimport_valid_file_sends_confirm_view():
     mock_view = MagicMock()
     mock_embed = MagicMock()
 
-    with patch("src.bot.cogs.team.TeamImportConfirmView", return_value=mock_view), \
-         patch("src.bot.cogs.team.build_confirm_embed", return_value=mock_embed):
-        await cog.teamimport.callback(cog, interaction, format="gen9ou", team_file=team_file)
+    with (
+        patch("src.bot.cogs.team.TeamImportConfirmView", return_value=mock_view),
+        patch("src.bot.cogs.team.build_confirm_embed", return_value=mock_embed),
+    ):
+        await cog.teamimport.callback(
+            cog, interaction, format="gen9ou", team_file=team_file
+        )
 
     interaction.followup.send.assert_awaited_once_with(
         embed=mock_embed, view=mock_view, ephemeral=True
@@ -385,14 +421,19 @@ async def test_teamimport_parses_pokemon_names():
         captured_preview.extend(preview)
         return MagicMock()
 
-    with patch("src.bot.cogs.team.TeamImportConfirmView", return_value=MagicMock()), \
-         patch("src.bot.cogs.team.build_confirm_embed", side_effect=capture_preview):
-        await cog.teamimport.callback(cog, interaction, format="gen9ou", team_file=team_file)
+    with (
+        patch("src.bot.cogs.team.TeamImportConfirmView", return_value=MagicMock()),
+        patch("src.bot.cogs.team.build_confirm_embed", side_effect=capture_preview),
+    ):
+        await cog.teamimport.callback(
+            cog, interaction, format="gen9ou", team_file=team_file
+        )
 
     assert any("Garchomp" in p for p in captured_preview)
 
 
 # ── /teamimport autocomplete ──────────────────────────────────────────────────
+
 
 async def test_teamimport_autocomplete_filters_by_current():
     """Autocomplete returns choices matching partial input."""
@@ -409,6 +450,7 @@ async def test_teamimport_autocomplete_filters_by_current():
 async def test_teamimport_autocomplete_empty_returns_up_to_25():
     """Empty current → up to 25 choices."""
     from src.bot.constants import SUPPORTED_FORMATS
+
     cog = make_cog()
     interaction = make_interaction()
 
@@ -427,10 +469,13 @@ async def test_teamimport_autocomplete_no_match_returns_empty():
 
 # ── /teamexport ───────────────────────────────────────────────────────────────
 
+
 async def test_teamexport_sends_showdown_text():
     """/teamexport defers and sends showdown export in a code block."""
     cog = make_cog()
-    cog.team_service.export_showdown = AsyncMock(return_value="Garchomp @ Choice Scarf\n...")
+    cog.team_service.export_showdown = AsyncMock(
+        return_value="Garchomp @ Choice Scarf\n..."
+    )
 
     interaction = make_interaction()
     await cog.teamexport.callback(cog, interaction)
@@ -442,6 +487,7 @@ async def test_teamexport_sends_showdown_text():
 
 
 # ── /legality ─────────────────────────────────────────────────────────────────
+
 
 async def test_legality_legal_pokemon_sends_green_embed():
     """/legality: legal Pokemon → green embed."""
@@ -476,6 +522,7 @@ async def test_legality_illegal_pokemon_sends_red_embed():
 
 
 # ── ShowdownImportModal ───────────────────────────────────────────────────────
+
 
 async def test_showdown_import_modal_success_sends_count():
     """Modal on_submit success → sends '... Pokemon loaded' message."""
@@ -519,6 +566,7 @@ async def test_showdown_import_modal_failure_sends_error():
 
 
 # ── setup ─────────────────────────────────────────────────────────────────────
+
 
 async def test_team_cog_setup_adds_cog():
     """setup() adds TeamCog to the bot."""

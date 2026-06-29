@@ -26,6 +26,7 @@ Usage
       if err["fixable"]:
           ok, msg = apply_fix(err, fmt="gen9ou", save_dir=Path("data/ml/policy"))
 """
+
 from __future__ import annotations
 
 import logging
@@ -110,18 +111,19 @@ _PATTERNS: list[tuple[str, str, str, bool]] = [
 
 # Package name → pip install target
 _DEP_TO_PACKAGE: dict[str, str] = {
-    "numpy":             "numpy",
-    "torch":             "torch",
+    "numpy": "numpy",
+    "torch": "torch",
     "stable_baselines3": "stable-baselines3>=2.2.0",
-    "poke_env":          "poke-env>=0.8.1",
-    "gymnasium":         "gymnasium",
-    "tensorboard":       "tensorboard>=2.16.0",
-    "shimmy":            "shimmy",
-    "cloudpickle":       "cloudpickle",
+    "poke_env": "poke-env>=0.8.1",
+    "gymnasium": "gymnasium",
+    "tensorboard": "tensorboard>=2.16.0",
+    "shimmy": "shimmy",
+    "cloudpickle": "cloudpickle",
 }
 
 
 # ── Preflight checks ──────────────────────────────────────────────────────────
+
 
 def preflight_check(
     fmt: str,
@@ -148,39 +150,48 @@ def preflight_check(
             with socket.create_connection((SHOWDOWN_HOST, SHOWDOWN_PORT), timeout=3):
                 pass
         except OSError:
-            issues.append({
-                "type":        "SHOWDOWN_OFFLINE",
-                "description": (
-                    f"Local Showdown server not reachable at {SHOWDOWN_HOST}:{SHOWDOWN_PORT}.\n"
-                    "Start it with:\n"
-                    "  cd pokemon-showdown && node pokemon-showdown start --no-security"
-                ),
-                "fixable": False,
-            })
+            issues.append(
+                {
+                    "type": "SHOWDOWN_OFFLINE",
+                    "description": (
+                        f"Local Showdown server not reachable at {SHOWDOWN_HOST}:{SHOWDOWN_PORT}.\n"
+                        "Start it with:\n"
+                        "  cd pokemon-showdown && node pokemon-showdown start --no-security"
+                    ),
+                    "fixable": False,
+                }
+            )
 
     # 2. Corrupt checkpoints?
     fmt_dir = save_dir / fmt
     if fmt_dir.exists():
         for zip_path in fmt_dir.glob("*.zip"):
             if _is_corrupt_zip(zip_path):
-                issues.append({
-                    "type":        "CORRUPT_CHECKPOINT",
-                    "description": f"Corrupt checkpoint detected: {zip_path.name}",
-                    "fixable":     True,
-                    "path":        str(zip_path),
-                })
+                issues.append(
+                    {
+                        "type": "CORRUPT_CHECKPOINT",
+                        "description": f"Corrupt checkpoint detected: {zip_path.name}",
+                        "fixable": True,
+                        "path": str(zip_path),
+                    }
+                )
 
     # 3. Core ML deps importable?
-    for mod, pkg in [("numpy", "numpy"), ("stable_baselines3", "stable-baselines3>=2.2.0")]:
+    for mod, pkg in [
+        ("numpy", "numpy"),
+        ("stable_baselines3", "stable-baselines3>=2.2.0"),
+    ]:
         ok = _can_import(exe, mod)
         if not ok:
-            issues.append({
-                "type":        "MISSING_DEP",
-                "description": f"Missing dependency: {mod} (install: pip install {pkg})",
-                "fixable":     True,
-                "module":      mod,
-                "package":     pkg,
-            })
+            issues.append(
+                {
+                    "type": "MISSING_DEP",
+                    "description": f"Missing dependency: {mod} (install: pip install {pkg})",
+                    "fixable": True,
+                    "module": mod,
+                    "package": pkg,
+                }
+            )
 
     # 4. Save directory writable?
     try:
@@ -189,16 +200,19 @@ def preflight_check(
         test_file.write_text("ok")
         test_file.unlink()
     except Exception as exc:
-        issues.append({
-            "type":        "WRITE_ERROR",
-            "description": f"Cannot write to save directory {fmt_dir}: {exc}",
-            "fixable":     False,
-        })
+        issues.append(
+            {
+                "type": "WRITE_ERROR",
+                "description": f"Cannot write to save directory {fmt_dir}: {exc}",
+                "fixable": False,
+            }
+        )
 
     return issues
 
 
 # ── Output diagnosis ──────────────────────────────────────────────────────────
+
 
 def diagnose_output(output: str) -> list[dict]:
     """
@@ -215,9 +229,9 @@ def diagnose_output(output: str) -> list[dict]:
         m = re.search(pattern, output, re.IGNORECASE)
         if m:
             entry: dict = {
-                "type":        err_type,
+                "type": err_type,
                 "description": description,
-                "fixable":     fixable,
+                "fixable": fixable,
             }
             # Extract module name for MISSING_DEP
             if err_type == "MISSING_DEP":
@@ -226,7 +240,7 @@ def diagnose_output(output: str) -> list[dict]:
                 )
                 if mod_match:
                     mod = mod_match.group(1)
-                    entry["module"]  = mod
+                    entry["module"] = mod
                     entry["package"] = _DEP_TO_PACKAGE.get(mod, mod)
                     entry["description"] = f"Missing Python dependency: {mod}"
             found[err_type] = entry
@@ -235,6 +249,7 @@ def diagnose_output(output: str) -> list[dict]:
 
 
 # ── Auto-fix ──────────────────────────────────────────────────────────────────
+
 
 def apply_fix(
     error: dict,
@@ -290,6 +305,7 @@ def apply_all_fixes(
 
 # ── Progress parsing ──────────────────────────────────────────────────────────
 
+
 def parse_timestep_progress(line: str) -> int | None:
     """
     Extract total_timesteps from a stable-baselines3 PPO progress line.
@@ -313,14 +329,16 @@ def make_progress_bar(current: int, total: int, width: int = 20) -> str:
     pct = min(current / total, 1.0) if total > 0 else 0.0
     filled = round(pct * width)
     bar = "█" * filled + "░" * (width - filled)
-    return f"[{bar}] {pct*100:.1f}%"
+    return f"[{bar}] {pct * 100:.1f}%"
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
+
 def _is_corrupt_zip(path: Path) -> bool:
     """Return True if the zip file is empty, truncated, or otherwise corrupt."""
     import zipfile
+
     if path.stat().st_size == 0:
         return True
     try:
@@ -356,7 +374,10 @@ def _fix_corrupt_checkpoints(fmt: str, save_dir: Path) -> tuple[bool, str]:
             except Exception as exc:
                 log.warning(f"[doctor] Could not delete {zip_path}: {exc}")
     if deleted:
-        return True, f"Deleted {len(deleted)} corrupt checkpoint(s): {', '.join(deleted)}"
+        return (
+            True,
+            f"Deleted {len(deleted)} corrupt checkpoint(s): {', '.join(deleted)}",
+        )
     return True, "No checkpoints found to delete — will train from scratch"
 
 

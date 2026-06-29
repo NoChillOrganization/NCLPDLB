@@ -1,39 +1,60 @@
 """
 Unit tests for AnalyticsService — type coverage, weaknesses, archetypes.
 """
+
 from unittest.mock import AsyncMock, MagicMock
 
 from src.data.models import Pokemon, PokemonStats
 from src.services.analytics_service import AnalyticsService, get_type_effectiveness
 
 
-def make_pokemon(name: str, types: list[str], atk=80, spa=80, def_=80, spd=80, spe=80, hp=80,
-                 is_legendary=False, is_mythical=False) -> Pokemon:
+def make_pokemon(
+    name: str,
+    types: list[str],
+    atk=80,
+    spa=80,
+    def_=80,
+    spd=80,
+    spe=80,
+    hp=80,
+    is_legendary=False,
+    is_mythical=False,
+) -> Pokemon:
     return Pokemon(
-        national_dex=1, name=name, types=types,
+        national_dex=1,
+        name=name,
+        types=types,
         base_stats=PokemonStats(hp=hp, atk=atk, def_=def_, spa=spa, spd=spd, spe=spe),
-        generation=1, is_legendary=is_legendary, is_mythical=is_mythical,
+        generation=1,
+        is_legendary=is_legendary,
+        is_mythical=is_mythical,
     )
 
 
 # ── Type Effectiveness ────────────────────────────────────────
 
+
 def test_fire_vs_grass_is_super_effective():
     assert get_type_effectiveness("fire", ["grass"]) == 2.0
+
 
 def test_water_vs_fire_is_super_effective():
     assert get_type_effectiveness("water", ["fire"]) == 2.0
 
+
 def test_normal_vs_ghost_is_immune():
     assert get_type_effectiveness("normal", ["ghost"]) == 0.0
 
+
 def test_electric_vs_ground_is_immune():
     assert get_type_effectiveness("electric", ["ground"]) == 0.0
+
 
 def test_fire_vs_water_grass_double_resistance():
     # Fire vs Water/Grass: 0.5 * 2 = 1.0
     eff = get_type_effectiveness("fire", ["water", "grass"])
     assert eff == 1.0
+
 
 def test_fighting_vs_normal_ghost():
     # Normal takes 2x, Ghost takes 0x → combined 0
@@ -41,6 +62,7 @@ def test_fighting_vs_normal_ghost():
 
 
 # ── Coverage Analysis ─────────────────────────────────────────
+
 
 def test_coverage_identifies_types():
     svc = AnalyticsService()
@@ -85,6 +107,7 @@ def test_no_weakness_with_diverse_team():
 
 # ── Archetype Detection ───────────────────────────────────────
 
+
 def test_trick_room_archetype():
     svc = AnalyticsService()
     team = [make_pokemon(f"Slow{i}", ["psychic"], spe=20) for i in range(6)]
@@ -102,12 +125,16 @@ def test_rain_archetype():
 
 def test_hyper_offense_archetype():
     svc = AnalyticsService()
-    team = [make_pokemon(f"Sweeper{i}", ["dragon"], atk=130, spa=130, spe=120) for i in range(4)]
+    team = [
+        make_pokemon(f"Sweeper{i}", ["dragon"], atk=130, spa=130, spe=120)
+        for i in range(4)
+    ]
     report = svc.analyze_pokemon_list(team)
     assert "Hyper Offense" in report.archetype or report.threat_score > 80
 
 
 # ── Speed Tiers ───────────────────────────────────────────────
+
 
 def test_speed_tiers_sorted_descending():
     svc = AnalyticsService()
@@ -123,9 +150,22 @@ def test_speed_tiers_sorted_descending():
 
 # ── Threat Score ──────────────────────────────────────────────
 
+
 def test_high_bst_gives_high_threat_score():
     svc = AnalyticsService()
-    team = [make_pokemon(f"Legend{i}", ["dragon"], atk=150, spa=150, spe=130, hp=100, def_=120, spd=120) for i in range(4)]
+    team = [
+        make_pokemon(
+            f"Legend{i}",
+            ["dragon"],
+            atk=150,
+            spa=150,
+            spe=130,
+            hp=100,
+            def_=120,
+            spd=120,
+        )
+        for i in range(4)
+    ]
     report = svc.analyze_pokemon_list(team)
     assert report.threat_score > 80
 
@@ -137,6 +177,7 @@ def test_empty_team_returns_zero_threat():
 
 
 # ── Missing archetype branches ────────────────────────────────
+
 
 def test_fire_core_archetype():
     svc = AnalyticsService()
@@ -158,7 +199,12 @@ def test_vgc_restricted_archetype():
 def test_stall_archetype():
     svc = AnalyticsService()
     # avg BST < 450 triggers Stall; use spe=60 to avoid Trick Room (avg_speed < 50)
-    team = [make_pokemon(f"Weak{i}", ["normal"], atk=30, spa=30, spe=60, def_=50, spd=50, hp=50) for i in range(4)]
+    team = [
+        make_pokemon(
+            f"Weak{i}", ["normal"], atk=30, spa=30, spe=60, def_=50, spd=50, hp=50
+        )
+        for i in range(4)
+    ]
     report = svc.analyze_pokemon_list(team)
     assert "Stall" in report.archetype or "Bulky" in report.archetype
 
@@ -166,12 +212,18 @@ def test_stall_archetype():
 def test_balance_archetype():
     svc = AnalyticsService()
     # avg BST between 450 and 530, no other condition triggered, speed > 50
-    team = [make_pokemon(f"Bal{i}", ["normal"], atk=80, spa=70, spe=70, def_=80, spd=80, hp=85) for i in range(4)]
+    team = [
+        make_pokemon(
+            f"Bal{i}", ["normal"], atk=80, spa=70, spe=70, def_=80, spd=80, hp=85
+        )
+        for i in range(4)
+    ]
     report = svc.analyze_pokemon_list(team)
     assert report.archetype == "Balance"
 
 
 # ── Mixed role distribution ────────────────────────────────────
+
 
 def test_wall_role_assigned():
     """Pokemon with def_ > 90 or spd > 90 (but not attacker) gets Wall role."""
@@ -190,6 +242,7 @@ def test_mixed_role_assigned():
 
 
 # ── analyze_team (calls TeamService) ──────────────────────────
+
 
 async def test_analyze_team_with_roster():
     svc = AnalyticsService()

@@ -6,6 +6,7 @@ Includes a /draft-setup wizard that walks the commissioner through
 all configuration questions before writing to the spreadsheet.
 Tera Captain system fully integrated with rules saved to the Rules tab.
 """
+
 from __future__ import annotations
 
 import discord
@@ -18,6 +19,7 @@ from src.data.models import DraftFormat, TeraType
 from src.services.draft_service import DraftService
 
 # ── Setup Wizard Modal ────────────────────────────────────────
+
 
 class DraftSetupModal(discord.ui.Modal, title="Draft League Setup"):
     """Step 1 of the setup wizard — basic league info."""
@@ -97,16 +99,33 @@ class DraftWizardStep2View(discord.ui.View):
         sel = discord.ui.Select(
             placeholder="Draft Format",
             options=[
-                discord.SelectOption(label="Snake Draft", value="snake", description="Alternating pick order each round", default=True),
-                discord.SelectOption(label="Auction Draft", value="auction", description="Bid on Pokemon with a budget"),
-                discord.SelectOption(label="Tiered Draft", value="tiered", description="Point-based tier system"),
-                discord.SelectOption(label="Custom", value="custom", description="Custom rules"),
+                discord.SelectOption(
+                    label="Snake Draft",
+                    value="snake",
+                    description="Alternating pick order each round",
+                    default=True,
+                ),
+                discord.SelectOption(
+                    label="Auction Draft",
+                    value="auction",
+                    description="Bid on Pokemon with a budget",
+                ),
+                discord.SelectOption(
+                    label="Tiered Draft",
+                    value="tiered",
+                    description="Point-based tier system",
+                ),
+                discord.SelectOption(
+                    label="Custom", value="custom", description="Custom rules"
+                ),
             ],
             custom_id="format_select",
         )
+
         async def callback(interaction: discord.Interaction) -> None:
             self.format = sel.values[0]
             await interaction.response.defer()
+
         sel.callback = callback
         return sel
 
@@ -114,21 +133,42 @@ class DraftWizardStep2View(discord.ui.View):
         sel = discord.ui.Select(
             placeholder="Game Mode",
             options=[
-                discord.SelectOption(label="Pokemon Showdown (Online)", value="showdown", description="Browser/PC battles", default=True),
-                discord.SelectOption(label="Scarlet / Violet (Console)", value="sv", description="Nintendo Switch"),
-                discord.SelectOption(label="Sword / Shield (Console)", value="swsh", description="Nintendo Switch"),
-                discord.SelectOption(label="VGC (Double Battles)", value="vgc", description="Official VGC format"),
+                discord.SelectOption(
+                    label="Pokemon Showdown (Online)",
+                    value="showdown",
+                    description="Browser/PC battles",
+                    default=True,
+                ),
+                discord.SelectOption(
+                    label="Scarlet / Violet (Console)",
+                    value="sv",
+                    description="Nintendo Switch",
+                ),
+                discord.SelectOption(
+                    label="Sword / Shield (Console)",
+                    value="swsh",
+                    description="Nintendo Switch",
+                ),
+                discord.SelectOption(
+                    label="VGC (Double Battles)",
+                    value="vgc",
+                    description="Official VGC format",
+                ),
             ],
             custom_id="game_mode_select",
         )
+
         async def callback(interaction: discord.Interaction) -> None:
             self.game_format = sel.values[0]
             await interaction.response.defer()
+
         sel.callback = callback
         return sel
 
     @discord.ui.button(label="Next →", style=discord.ButtonStyle.primary, row=2)
-    async def next_step(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def next_step(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         step2 = {
             "format": self.format,
             "game_format": self.game_format,
@@ -138,7 +178,9 @@ class DraftWizardStep2View(discord.ui.View):
         await interaction.response.send_modal(modal)
 
 
-class DraftWizardStep3Modal(discord.ui.Modal, title="Draft Setup — Tera Captains & Players"):
+class DraftWizardStep3Modal(
+    discord.ui.Modal, title="Draft Setup — Tera Captains & Players"
+):
     """Step 3 — player count, pool split, tera captain rules."""
 
     max_players = discord.ui.TextInput(
@@ -207,19 +249,27 @@ class DraftWizardStep3Modal(discord.ui.Modal, title="Draft Setup — Tera Captai
             if tera_cap > 0
             else "Disabled"
         )
-        pool_line = f"Pool A: {pool_a} · Pool B: {pool_b}" if pool_b > 0 else f"Single pool · {max_p} players"
+        pool_line = (
+            f"Pool A: {pool_a} · Pool B: {pool_b}"
+            if pool_b > 0
+            else f"Single pool · {max_p} players"
+        )
 
         embed = discord.Embed(
             title=f"✅ {config['league_name']} — Draft Created!",
             color=discord.Color.green(),
         )
         embed.add_field(name="Format", value=config["format"].title(), inline=True)
-        embed.add_field(name="Game Mode", value=config["game_format"].upper(), inline=True)
+        embed.add_field(
+            name="Game Mode", value=config["game_format"].upper(), inline=True
+        )
         embed.add_field(name="Rounds", value=str(config["total_rounds"]), inline=True)
         embed.add_field(name="Timer", value=f"{config['timer_seconds']}s", inline=True)
         embed.add_field(name="Players", value=pool_line, inline=False)
         embed.add_field(name="Tera Captains", value=tera_line, inline=False)
-        embed.set_footer(text=f"Draft ID: {draft.draft_id} · Settings saved to spreadsheet Setup tab")
+        embed.set_footer(
+            text=f"Draft ID: {draft.draft_id} · Settings saved to spreadsheet Setup tab"
+        )
 
         await interaction.response.send_message(embed=embed)
 
@@ -241,6 +291,7 @@ class DraftWizardStep3Modal(discord.ui.Modal, title="Draft Setup — Tera Captai
 
 # ── Cancel Confirmation View ──────────────────────────────────
 
+
 class DraftCancelConfirmView(discord.ui.View):
     """Confirmation buttons for /draft-cancel."""
 
@@ -250,7 +301,9 @@ class DraftCancelConfirmView(discord.ui.View):
         self.guild_id = guild_id
 
     @discord.ui.button(label="Yes, Cancel Draft", style=discord.ButtonStyle.danger)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def confirm(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await self.draft_service.reset_draft(self.guild_id)
         self.stop()
         embed = discord.Embed(
@@ -271,15 +324,21 @@ class DraftCancelConfirmView(discord.ui.View):
             )
 
     @discord.ui.button(label="Keep Draft", style=discord.ButtonStyle.secondary)
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def cancel(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         self.stop()
         await interaction.response.edit_message(
-            embed=discord.Embed(description="Cancelled. The draft continues.", color=discord.Color.green()),
+            embed=discord.Embed(
+                description="Cancelled. The draft continues.",
+                color=discord.Color.green(),
+            ),
             view=None,
         )
 
 
 # ── Main Cog ──────────────────────────────────────────────────
+
 
 class DraftCog(commands.Cog, name="Draft"):
     """Commands for managing Pokemon draft sessions."""
@@ -299,7 +358,9 @@ class DraftCog(commands.Cog, name="Draft"):
         await interaction.response.send_modal(DraftSetupModal())
 
     # ── /draft-create (quick create, for power users) ─────────
-    @app_commands.command(name="draft-create", description="Quickly create a draft with options")
+    @app_commands.command(
+        name="draft-create", description="Quickly create a draft with options"
+    )
     @require_role(ROLE_GUILDMASTER)
     @app_commands.describe(
         format="Draft format",
@@ -345,7 +406,8 @@ class DraftCog(commands.Cog, name="Draft"):
         )
         tera_info = (
             f"\n**Tera Captains:** {tera_captains}/team · {tera_types} type(s) each"
-            if tera_captains > 0 else ""
+            if tera_captains > 0
+            else ""
         )
         embed = discord.Embed(
             title="Draft Created!",
@@ -356,7 +418,9 @@ class DraftCog(commands.Cog, name="Draft"):
             ),
             color=discord.Color.green(),
         )
-        embed.set_footer(text=f"Draft ID: {draft.draft_id} | Use /draft-join to register")
+        embed.set_footer(
+            text=f"Draft ID: {draft.draft_id} | Use /draft-join to register"
+        )
         await interaction.followup.send(embed=embed)
 
     # ── /draft-join ───────────────────────────────────────────
@@ -393,7 +457,9 @@ class DraftCog(commands.Cog, name="Draft"):
             await interaction.followup.send(f"❌ {result.error}", ephemeral=True)
 
     # ── /draft-start ──────────────────────────────────────────
-    @app_commands.command(name="draft-start", description="Start the draft (Guildmaster only)")
+    @app_commands.command(
+        name="draft-start", description="Start the draft (Guildmaster only)"
+    )
     @require_role(ROLE_GUILDMASTER)
     async def draft_start(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
@@ -406,8 +472,10 @@ class DraftCog(commands.Cog, name="Draft"):
         async def _on_pick_timeout(guild_id: str, skipped_player_id: str) -> None:
             active = self.draft_service.get_draft(guild_id)
             from src.services.draft_service import DraftStatus
+
             next_mention = (
-                f"<@{active.current_player_id}>" if active and active.current_player_id
+                f"<@{active.current_player_id}>"
+                if active and active.current_player_id
                 else "Draft complete!"
             )
             skip_embed = discord.Embed(
@@ -421,7 +489,9 @@ class DraftCog(commands.Cog, name="Draft"):
                 and active.current_player_id
                 and channel
             ):
-                next_view = DraftPickView(draft=active, bot=bot, on_timeout_cb=_on_pick_timeout)
+                next_view = DraftPickView(
+                    draft=active, bot=bot, on_timeout_cb=_on_pick_timeout
+                )
                 await channel.send(embed=skip_embed, view=next_view)
             elif channel:
                 await channel.send(embed=skip_embed)
@@ -455,9 +525,9 @@ class DraftCog(commands.Cog, name="Draft"):
         tera_type="Tera type (required if this Pokemon is a Tera Captain)",
         is_tera_captain="Mark this Pokemon as your Tera Captain",
     )
-    @app_commands.choices(tera_type=[
-        app_commands.Choice(name=t.value, value=t.value) for t in TeraType
-    ])
+    @app_commands.choices(
+        tera_type=[app_commands.Choice(name=t.value, value=t.value) for t in TeraType]
+    )
     async def pick(
         self,
         interaction: discord.Interaction,
@@ -479,11 +549,16 @@ class DraftCog(commands.Cog, name="Draft"):
                 color=discord.Color.green(),
             )
             embed.set_thumbnail(url=result.pokemon.sprite_url)
-            embed.add_field(name="Types", value=" / ".join(t.capitalize() for t in result.pokemon.types))
+            embed.add_field(
+                name="Types",
+                value=" / ".join(t.capitalize() for t in result.pokemon.types),
+            )
             embed.add_field(name="Tier", value=result.pokemon.showdown_tier)
             if tera_type:
                 captain_tag = " ⭐ **TERA CAPTAIN**" if is_tera_captain else ""
-                embed.add_field(name=f"Tera Type{captain_tag}", value=tera_type, inline=False)
+                embed.add_field(
+                    name=f"Tera Type{captain_tag}", value=tera_type, inline=False
+                )
             embed.set_footer(text=f"Next up — Round {result.round}")
             await interaction.followup.send(embed=embed)
         else:
@@ -523,7 +598,8 @@ class DraftCog(commands.Cog, name="Draft"):
         )
         if result.success:
             await interaction.followup.send(
-                f"Bid of **{amount}** placed! Current high: {result.current_high}", ephemeral=True
+                f"Bid of **{amount}** placed! Current high: {result.current_high}",
+                ephemeral=True,
             )
         else:
             await interaction.followup.send(f"❌ {result.error}", ephemeral=True)
@@ -539,8 +615,12 @@ class DraftCog(commands.Cog, name="Draft"):
             return
         embed = discord.Embed(title="Draft Status", color=discord.Color.blurple())
         embed.add_field(name="Format", value=draft.format.value.title())
-        embed.add_field(name="Mode", value=getattr(draft, "game_format", "showdown").upper())
-        embed.add_field(name="Round", value=f"{draft.current_round}/{draft.total_rounds}")
+        embed.add_field(
+            name="Mode", value=getattr(draft, "game_format", "showdown").upper()
+        )
+        embed.add_field(
+            name="Round", value=f"{draft.current_round}/{draft.total_rounds}"
+        )
         embed.add_field(name="Players", value=str(draft.player_count))
         embed.add_field(name="Total Picks", value=str(draft.total_picks))
         if getattr(draft, "tera_captains_per_team", 0) > 0:
@@ -551,7 +631,10 @@ class DraftCog(commands.Cog, name="Draft"):
         await interaction.followup.send(embed=embed)
 
     # ── /draft-board ──────────────────────────────────────────
-    @app_commands.command(name="draft-board", description="Show the current draft board — all picks so far")
+    @app_commands.command(
+        name="draft-board",
+        description="Show the current draft board — all picks so far",
+    )
     @require_role(ROLE_COACH)
     async def draft_board(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
@@ -560,7 +643,9 @@ class DraftCog(commands.Cog, name="Draft"):
             await interaction.followup.send("No active draft found.", ephemeral=True)
             return
         if not draft.picks:
-            await interaction.followup.send("No picks have been made yet.", ephemeral=True)
+            await interaction.followup.send(
+                "No picks have been made yet.", ephemeral=True
+            )
             return
 
         # Group picks by player
@@ -574,22 +659,33 @@ class DraftCog(commands.Cog, name="Draft"):
         )
         for player_id, picks in by_player.items():
             pick_str = " · ".join(picks)
-            embed.add_field(name=f"<@{player_id}>", value=pick_str or "No picks", inline=False)
+            embed.add_field(
+                name=f"<@{player_id}>", value=pick_str or "No picks", inline=False
+            )
 
         embed.set_footer(
             text=f"{draft.total_picks} picks total · On the clock: "
-            + (f"<@{draft.current_player_id}>" if draft.current_player_id else "Draft complete")
+            + (
+                f"<@{draft.current_player_id}>"
+                if draft.current_player_id
+                else "Draft complete"
+            )
         )
         await interaction.followup.send(embed=embed)
 
     # ── /draft-cancel ─────────────────────────────────────────
-    @app_commands.command(name="draft-cancel", description="Cancel and delete the current draft (Guildmaster only)")
+    @app_commands.command(
+        name="draft-cancel",
+        description="Cancel and delete the current draft (Guildmaster only)",
+    )
     @require_role(ROLE_GUILDMASTER)
     async def draft_cancel(self, interaction: discord.Interaction) -> None:
         """Shows a confirmation prompt before cancelling the draft."""
         draft = await self.draft_service.get_active_draft(str(interaction.guild_id))
         if not draft:
-            await interaction.response.send_message("No active draft to cancel.", ephemeral=True)
+            await interaction.response.send_message(
+                "No active draft to cancel.", ephemeral=True
+            )
             return
 
         embed = discord.Embed(
@@ -603,15 +699,23 @@ class DraftCog(commands.Cog, name="Draft"):
             color=discord.Color.red(),
         )
 
-        view = DraftCancelConfirmView(draft_service=self.draft_service, guild_id=str(interaction.guild_id))
+        view = DraftCancelConfirmView(
+            draft_service=self.draft_service, guild_id=str(interaction.guild_id)
+        )
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @draft_setup.error
     @draft_create.error
     @draft_cancel.error
     @draft_start.error
-    async def draft_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
-        msg = str(error) if isinstance(error, app_commands.CheckFailure) else f"❌ Error: {error}"
+    async def draft_error(
+        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+    ) -> None:
+        msg = (
+            str(error)
+            if isinstance(error, app_commands.CheckFailure)
+            else f"❌ Error: {error}"
+        )
         if interaction.response.is_done():
             await interaction.followup.send(msg, ephemeral=True)
         else:

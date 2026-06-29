@@ -1,6 +1,7 @@
 """
 Team Import Confirm View — shows parsed team preview with Confirm/Cancel buttons.
 """
+
 from __future__ import annotations
 
 import discord

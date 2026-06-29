@@ -19,6 +19,7 @@ Usage:
     record = parse_replay_json(json.load(open("data/replays/gen9ou/abc123.json")))
     # record.winner → "p1" | "p2"; record.total_turns → int
 """
+
 from __future__ import annotations
 
 import bisect
@@ -33,43 +34,47 @@ log = logging.getLogger(__name__)
 
 # ── Domain objects ────────────────────────────────────────────────────────────
 
+
 @dataclass
 class PokemonState:
     """Snapshot of one Pokemon's state at a point in the battle."""
-    species:  str   = ""          # e.g. "Garchomp"
-    player:   str   = ""          # "p1" or "p2"
-    slot:     str   = ""          # "p1a", "p1b" (doubles), etc.
-    hp:       int   = 0           # current HP (absolute, from log if available)
-    max_hp:   int   = 0
-    hp_pct:   float = 1.0         # 0.0–1.0
-    fainted:  bool  = False
-    status:   str   = ""          # "brn", "par", "slp", "frz", "psn", "tox"
-    boosts:   dict[str, int] = field(default_factory=dict)   # atk/def/spa/spd/spe/acc/eva
-    tera_type: str  = ""
-    is_tera:  bool  = False
+
+    species: str = ""  # e.g. "Garchomp"
+    player: str = ""  # "p1" or "p2"
+    slot: str = ""  # "p1a", "p1b" (doubles), etc.
+    hp: int = 0  # current HP (absolute, from log if available)
+    max_hp: int = 0
+    hp_pct: float = 1.0  # 0.0–1.0
+    fainted: bool = False
+    status: str = ""  # "brn", "par", "slp", "frz", "psn", "tox"
+    boosts: dict[str, int] = field(default_factory=dict)  # atk/def/spa/spd/spe/acc/eva
+    tera_type: str = ""
+    is_tera: bool = False
 
 
 @dataclass
 class BattleEvent:
     """One atomic event from the battle log."""
-    kind:     str            # "move", "switch", "damage", "heal", "faint",
-                             # "status", "boost", "weather", "terrain", "tera", "other"
-    turn:     int   = 0
-    slot:     str   = ""     # which Pokemon slot is involved (e.g. "p1a")
-    detail:   str   = ""     # move name, species name, status, etc.
-    target:   str   = ""     # target slot if applicable
-    hp_after: float = -1.0   # hp_pct after event (-1 = not applicable)
-    raw:      str   = ""     # original log line for debugging
+
+    kind: str  # "move", "switch", "damage", "heal", "faint",
+    # "status", "boost", "weather", "terrain", "tera", "other"
+    turn: int = 0
+    slot: str = ""  # which Pokemon slot is involved (e.g. "p1a")
+    detail: str = ""  # move name, species name, status, etc.
+    target: str = ""  # target slot if applicable
+    hp_after: float = -1.0  # hp_pct after event (-1 = not applicable)
+    raw: str = ""  # original log line for debugging
 
 
 @dataclass
 class TurnSnapshot:
     """All events that happened within one turn."""
+
     turn_number: int
-    events:      list[BattleEvent] = field(default_factory=list)
+    events: list[BattleEvent] = field(default_factory=list)
 
     # Active Pokemon at start of this turn
-    p1_active: str = ""   # species name
+    p1_active: str = ""  # species name
     p2_active: str = ""
 
 
@@ -79,39 +84,40 @@ class BattleRecord:
     Fully parsed battle.  This is the main output of the parser and the
     primary input to the feature extractor and ML models.
     """
-    replay_id:   str
-    format:      str
-    rating:      int
-    p1_name:     str
-    p2_name:     str
-    winner:      str    # "p1" | "p2" | "tie" | "unknown"
+
+    replay_id: str
+    format: str
+    rating: int
+    p1_name: str
+    p2_name: str
+    winner: str  # "p1" | "p2" | "tie" | "unknown"
     winner_name: str
 
-    p1_team:     list[str]  # species names in team preview order
-    p2_team:     list[str]
+    p1_team: list[str]  # species names in team preview order
+    p2_team: list[str]
 
-    turns:       list[TurnSnapshot]
+    turns: list[TurnSnapshot]
     total_turns: int
 
     # Derived stats filled in post-parse
-    p1_fainted:  int = 0   # how many of p1's Pokemon fainted
-    p2_fainted:  int = 0
+    p1_fainted: int = 0  # how many of p1's Pokemon fainted
+    p2_fainted: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict (JSON-safe)."""
         return {
-            "replay_id":   self.replay_id,
-            "format":      self.format,
-            "rating":      self.rating,
-            "p1_name":     self.p1_name,
-            "p2_name":     self.p2_name,
-            "winner":      self.winner,
+            "replay_id": self.replay_id,
+            "format": self.format,
+            "rating": self.rating,
+            "p1_name": self.p1_name,
+            "p2_name": self.p2_name,
+            "winner": self.winner,
             "winner_name": self.winner_name,
-            "p1_team":     self.p1_team,
-            "p2_team":     self.p2_team,
+            "p1_team": self.p1_team,
+            "p2_team": self.p2_team,
             "total_turns": self.total_turns,
-            "p1_fainted":  self.p1_fainted,
-            "p2_fainted":  self.p2_fainted,
+            "p1_fainted": self.p1_fainted,
+            "p2_fainted": self.p2_fainted,
             "turns": [
                 {
                     "turn": t.turn_number,
@@ -119,10 +125,10 @@ class BattleRecord:
                     "p2_active": t.p2_active,
                     "events": [
                         {
-                            "kind":     e.kind,
-                            "slot":     e.slot,
-                            "detail":   e.detail,
-                            "target":   e.target,
+                            "kind": e.kind,
+                            "slot": e.slot,
+                            "detail": e.detail,
+                            "target": e.target,
                             "hp_after": e.hp_after,
                         }
                         for e in t.events
@@ -135,13 +141,13 @@ class BattleRecord:
 
 # ── Parser internals ──────────────────────────────────────────────────────────
 
-_HP_RE     = re.compile(r"(\d+)/(\d+)")
+_HP_RE = re.compile(r"(\d+)/(\d+)")
 _HP_PCT_RE = re.compile(r"(\d+(?:\.\d+)?)/100")
-_SLOT_RE   = re.compile(r"^(p[12][a-d]):")   # e.g. "p1a:"
+_SLOT_RE = re.compile(r"^(p[12][a-d]):")  # e.g. "p1a:"
 _SPECIES_RE = re.compile(r"^p[12][a-d]: (.+)$")
 
 STATUS_TOKENS = {"brn", "par", "slp", "frz", "psn", "tox"}
-BOOST_STATS   = {"atk", "def", "spa", "spd", "spe", "accuracy", "evasion"}
+BOOST_STATS = {"atk", "def", "spa", "spd", "spe", "accuracy", "evasion"}
 
 
 def _slot_player(slot: str) -> str:
@@ -186,19 +192,19 @@ class _Parser:
 
     def __init__(self, replay_id: str, format: str, rating: int) -> None:
         self.replay_id = replay_id
-        self.format    = format
-        self.rating    = rating
+        self.format = format
+        self.rating = rating
 
-        self.p1_name   = ""
-        self.p2_name   = ""
-        self.winner    = "unknown"
+        self.p1_name = ""
+        self.p2_name = ""
+        self.winner = "unknown"
         self.winner_name = ""
 
         self.p1_team: list[str] = []
         self.p2_team: list[str] = []
 
         # Track active Pokemon per slot
-        self._active: dict[str, str] = {}   # slot → species
+        self._active: dict[str, str] = {}  # slot → species
 
         # Turn tracking
         self._current_turn = 0
@@ -220,21 +226,21 @@ class _Parser:
         token = parts[1]
 
         dispatch = {
-            "player":   self._on_player,
-            "poke":     self._on_poke,
-            "turn":     self._on_turn,
-            "switch":   self._on_switch,
-            "drag":     self._on_switch,    # forced switch
-            "move":     self._on_move,
-            "-damage":  self._on_damage,
-            "-heal":    self._on_heal,
-            "-status":  self._on_status,
-            "-boost":   self._on_boost,
+            "player": self._on_player,
+            "poke": self._on_poke,
+            "turn": self._on_turn,
+            "switch": self._on_switch,
+            "drag": self._on_switch,  # forced switch
+            "move": self._on_move,
+            "-damage": self._on_damage,
+            "-heal": self._on_heal,
+            "-status": self._on_status,
+            "-boost": self._on_boost,
             "-unboost": self._on_boost,
-            "faint":    self._on_faint,
+            "faint": self._on_faint,
             "-terastallize": self._on_tera,
-            "win":      self._on_win,
-            "tie":      self._on_tie,
+            "win": self._on_win,
+            "tie": self._on_tie,
         }
         handler = dispatch.get(token)
         if handler:
@@ -261,7 +267,7 @@ class _Parser:
         # |poke|p1|Garchomp, M|...  — team preview
         if len(parts) < 4:
             return
-        player  = parts[2]   # "p1" or "p2"
+        player = parts[2]  # "p1" or "p2"
         species = parts[3].split(",")[0].strip()
         if player == "p1":
             if species not in self.p1_team:
@@ -288,7 +294,7 @@ class _Parser:
         m = _SLOT_RE.match(slot_raw)
         if not m:
             return
-        slot    = m.group(1)
+        slot = m.group(1)
         species = parts[3].split(",")[0].strip()
 
         # Update active tracker
@@ -296,7 +302,7 @@ class _Parser:
 
         # If team preview didn't fire (some formats skip it), record species
         player = _slot_player(slot)
-        team   = self.p1_team if player == "p1" else self.p2_team
+        team = self.p1_team if player == "p1" else self.p2_team
         if species not in team:
             bisect.insort(team, species)
 
@@ -304,10 +310,15 @@ class _Parser:
         if len(parts) > 4:
             _, _, hp_pct = _parse_hp(parts[4])
 
-        self._add_event(BattleEvent(
-            kind="switch", slot=slot, detail=species, hp_after=hp_pct,
-            raw="|".join(parts),
-        ))
+        self._add_event(
+            BattleEvent(
+                kind="switch",
+                slot=slot,
+                detail=species,
+                hp_after=hp_pct,
+                raw="|".join(parts),
+            )
+        )
 
     def _on_move(self, parts: list[str]) -> None:
         # |move|p1a: Garchomp|Earthquake|p2a: Iron Hands
@@ -315,17 +326,22 @@ class _Parser:
             return
         slot_raw = parts[2]
         m = _SLOT_RE.match(slot_raw)
-        slot   = m.group(1) if m else slot_raw.rstrip(":")
-        move   = parts[3]
+        slot = m.group(1) if m else slot_raw.rstrip(":")
+        move = parts[3]
         target = ""
         if len(parts) > 4:
             tm = _SLOT_RE.match(parts[4])
             target = tm.group(1) if tm else parts[4]
 
-        self._add_event(BattleEvent(
-            kind="move", slot=slot, detail=move, target=target,
-            raw="|".join(parts),
-        ))
+        self._add_event(
+            BattleEvent(
+                kind="move",
+                slot=slot,
+                detail=move,
+                target=target,
+                raw="|".join(parts),
+            )
+        )
 
     def _on_damage(self, parts: list[str]) -> None:
         # |-damage|p2a: Iron Hands|201/397
@@ -335,9 +351,14 @@ class _Parser:
         m = _SLOT_RE.match(slot_raw)
         slot = m.group(1) if m else ""
         _, _, hp_pct = _parse_hp(parts[3])
-        self._add_event(BattleEvent(
-            kind="damage", slot=slot, hp_after=hp_pct, raw="|".join(parts),
-        ))
+        self._add_event(
+            BattleEvent(
+                kind="damage",
+                slot=slot,
+                hp_after=hp_pct,
+                raw="|".join(parts),
+            )
+        )
 
     def _on_heal(self, parts: list[str]) -> None:
         # |-heal|p1a: Garchomp|342/342
@@ -346,47 +367,67 @@ class _Parser:
         m = _SLOT_RE.match(parts[2])
         slot = m.group(1) if m else ""
         _, _, hp_pct = _parse_hp(parts[3])
-        self._add_event(BattleEvent(
-            kind="heal", slot=slot, hp_after=hp_pct, raw="|".join(parts),
-        ))
+        self._add_event(
+            BattleEvent(
+                kind="heal",
+                slot=slot,
+                hp_after=hp_pct,
+                raw="|".join(parts),
+            )
+        )
 
     def _on_status(self, parts: list[str]) -> None:
         # |-status|p1a: Garchomp|brn
         if len(parts) < 4:  # pragma: no cover
             return
         m = _SLOT_RE.match(parts[2])
-        slot   = m.group(1) if m else ""
+        slot = m.group(1) if m else ""
         status = parts[3]
-        self._add_event(BattleEvent(
-            kind="status", slot=slot, detail=status, raw="|".join(parts),
-        ))
+        self._add_event(
+            BattleEvent(
+                kind="status",
+                slot=slot,
+                detail=status,
+                raw="|".join(parts),
+            )
+        )
 
     def _on_boost(self, parts: list[str]) -> None:
         # |-boost|p1a: Garchomp|atk|2
         if len(parts) < 5:
             return
-        m    = _SLOT_RE.match(parts[2])
+        m = _SLOT_RE.match(parts[2])
         slot = m.group(1) if m else ""
         stat = parts[3]
-        val  = parts[4]
+        val = parts[4]
         sign = -1 if parts[1] == "-unboost" else 1
         try:
             amount = sign * int(val)
         except ValueError:
             amount = 0
-        self._add_event(BattleEvent(
-            kind="boost", slot=slot, detail=f"{stat}:{amount:+d}", raw="|".join(parts),
-        ))
+        self._add_event(
+            BattleEvent(
+                kind="boost",
+                slot=slot,
+                detail=f"{stat}:{amount:+d}",
+                raw="|".join(parts),
+            )
+        )
 
     def _on_faint(self, parts: list[str]) -> None:
         # |faint|p2a: Iron Hands
         if len(parts) < 3:
             return
-        m    = _SLOT_RE.match(parts[2])
+        m = _SLOT_RE.match(parts[2])
         slot = m.group(1) if m else ""
-        self._add_event(BattleEvent(
-            kind="faint", slot=slot, hp_after=0.0, raw="|".join(parts),
-        ))
+        self._add_event(
+            BattleEvent(
+                kind="faint",
+                slot=slot,
+                hp_after=0.0,
+                raw="|".join(parts),
+            )
+        )
         player = _slot_player(slot)
         if player == "p1":
             self.p1_fainted += 1
@@ -397,12 +438,17 @@ class _Parser:
         # |-terastallize|p1a: Garchomp|Dragon
         if len(parts) < 4:
             return
-        m        = _SLOT_RE.match(parts[2])
-        slot     = m.group(1) if m else ""
+        m = _SLOT_RE.match(parts[2])
+        slot = m.group(1) if m else ""
         tera_type = parts[3]
-        self._add_event(BattleEvent(
-            kind="tera", slot=slot, detail=tera_type, raw="|".join(parts),
-        ))
+        self._add_event(
+            BattleEvent(
+                kind="tera",
+                slot=slot,
+                detail=tera_type,
+                raw="|".join(parts),
+            )
+        )
 
     def _on_win(self, parts: list[str]) -> None:
         # |win|username
@@ -446,6 +492,7 @@ class _Parser:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+
 def parse_log(
     log_text: str,
     replay_id: str = "unknown",
@@ -477,9 +524,9 @@ def parse_replay_json(data: dict[str, Any]) -> BattleRecord:
     """
     replay_id = data.get("id", "unknown")
     # Prefer 'formatid' (canonical key e.g. 'gen9vgc2024regh') over 'format' (human-readable '[Gen 9] VGC 2024 Reg H')
-    fmt       = data.get("formatid") or data.get("format", "unknown")
-    rating    = int(data.get("rating", 0) or 0)
-    log_text  = data.get("log", "")
+    fmt = data.get("formatid") or data.get("format", "unknown")
+    rating = int(data.get("rating", 0) or 0)
+    log_text = data.get("log", "")
     return parse_log(log_text, replay_id=replay_id, format=fmt, rating=rating)
 
 

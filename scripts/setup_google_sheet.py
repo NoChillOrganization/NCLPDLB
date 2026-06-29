@@ -7,6 +7,7 @@ Run once after creating a new Google Sheet:
 
 Requires GOOGLE_SHEETS_CREDENTIALS_FILE and GOOGLE_SHEETS_SPREADSHEET_ID in .env
 """
+
 from __future__ import annotations
 
 import sys
@@ -18,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # ── Clock skew fix ────────────────────────────────────────────
 # Shared helper — see scripts/_clock_skew.py for details (M33)
 from _clock_skew import apply_google_clock_skew
+
 apply_google_clock_skew()
 
 import gspread
@@ -27,37 +29,137 @@ from src.data.sheets import Tab
 
 # Column headers for each tab (empty list = visual template, skip header write)
 HEADERS: dict[str, list[str]] = {
-    Tab.SETUP:         ["key", "value", "description"],
-    Tab.RULES:         [],   # visual template — commissioner managed
-    Tab.COVER:         [],   # visual template
-    Tab.DRAFT:         ["pick_number", "round", "player_id", "discord_name", "pokemon_name",
-                        "types", "tier", "tera_type", "game_format", "notes", "timestamp"],
-    Tab.DRAFT_BOARD:   ["player_id", "discord_name", "team_name",
-                        "slot_1", "slot_2", "slot_3", "slot_4", "slot_5", "slot_6",
-                        "slot_7", "slot_8", "slot_9", "slot_10"],
-    Tab.POOL_A:        ["player_id", "discord_name", "team_name",
-                        "slot_1", "slot_2", "slot_3", "slot_4", "slot_5", "slot_6"],
-    Tab.POOL_B:        ["player_id", "discord_name", "team_name",
-                        "slot_1", "slot_2", "slot_3", "slot_4", "slot_5", "slot_6"],
-    Tab.SCHEDULE:      [],   # visual template
-    Tab.MATCH_STATS:   [],   # visual template (168-col)
-    Tab.STANDINGS:     [],   # visual template
-    Tab.POKEMON_STATS: [],   # formula-driven
-    Tab.MVP_RACE:      [],   # formula-driven
-    Tab.TRANSACTIONS:  ["#", "week", "event", "coach1", "pokemon1", "separator",
-                        "pokemon2", "separator2", "coach2", "notes"],
-    Tab.PLAYOFFS:      ["match_id", "round", "player1_id", "player1_name",
-                        "player2_id", "player2_name", "winner_id", "score", "replay_url", "date"],
-    Tab.POKEDEX:       ["github_name", "smogon_name", "pmd_ref", "separator",
-                        "pts", "separator2", "separator3",
-                        "pokemon", "type1", "type2",
-                        "hp", "atk", "def", "spa", "spd", "spe",
-                        "bst_0ev", "bst_252", "bst_252plus", "separator4", "sprite_url"],
-    Tab.TEAM_TEMPLATE: ["team_id", "player_id", "discord_name", "team_name",
-                        "team_logo_url", "color_hex", "league_id", "created_at"],
-    Tab.DATA:          ["match_id", "league_id", "week", "player1_id", "player1_name",
-                        "player2_id", "player2_name", "winner_id", "score",
-                        "replay_url", "video_url", "format", "date", "notes"],
+    Tab.SETUP: ["key", "value", "description"],
+    Tab.RULES: [],  # visual template — commissioner managed
+    Tab.COVER: [],  # visual template
+    Tab.DRAFT: [
+        "pick_number",
+        "round",
+        "player_id",
+        "discord_name",
+        "pokemon_name",
+        "types",
+        "tier",
+        "tera_type",
+        "game_format",
+        "notes",
+        "timestamp",
+    ],
+    Tab.DRAFT_BOARD: [
+        "player_id",
+        "discord_name",
+        "team_name",
+        "slot_1",
+        "slot_2",
+        "slot_3",
+        "slot_4",
+        "slot_5",
+        "slot_6",
+        "slot_7",
+        "slot_8",
+        "slot_9",
+        "slot_10",
+    ],
+    Tab.POOL_A: [
+        "player_id",
+        "discord_name",
+        "team_name",
+        "slot_1",
+        "slot_2",
+        "slot_3",
+        "slot_4",
+        "slot_5",
+        "slot_6",
+    ],
+    Tab.POOL_B: [
+        "player_id",
+        "discord_name",
+        "team_name",
+        "slot_1",
+        "slot_2",
+        "slot_3",
+        "slot_4",
+        "slot_5",
+        "slot_6",
+    ],
+    Tab.SCHEDULE: [],  # visual template
+    Tab.MATCH_STATS: [],  # visual template (168-col)
+    Tab.STANDINGS: [],  # visual template
+    Tab.POKEMON_STATS: [],  # formula-driven
+    Tab.MVP_RACE: [],  # formula-driven
+    Tab.TRANSACTIONS: [
+        "#",
+        "week",
+        "event",
+        "coach1",
+        "pokemon1",
+        "separator",
+        "pokemon2",
+        "separator2",
+        "coach2",
+        "notes",
+    ],
+    Tab.PLAYOFFS: [
+        "match_id",
+        "round",
+        "player1_id",
+        "player1_name",
+        "player2_id",
+        "player2_name",
+        "winner_id",
+        "score",
+        "replay_url",
+        "date",
+    ],
+    Tab.POKEDEX: [
+        "github_name",
+        "smogon_name",
+        "pmd_ref",
+        "separator",
+        "pts",
+        "separator2",
+        "separator3",
+        "pokemon",
+        "type1",
+        "type2",
+        "hp",
+        "atk",
+        "def",
+        "spa",
+        "spd",
+        "spe",
+        "bst_0ev",
+        "bst_252",
+        "bst_252plus",
+        "separator4",
+        "sprite_url",
+    ],
+    Tab.TEAM_TEMPLATE: [
+        "team_id",
+        "player_id",
+        "discord_name",
+        "team_name",
+        "team_logo_url",
+        "color_hex",
+        "league_id",
+        "created_at",
+    ],
+    Tab.DATA: [
+        "match_id",
+        "league_id",
+        "week",
+        "player1_id",
+        "player1_name",
+        "player2_id",
+        "player2_name",
+        "winner_id",
+        "score",
+        "replay_url",
+        "video_url",
+        "format",
+        "date",
+        "notes",
+    ],
 }
 
 SCOPES = [
@@ -68,40 +170,67 @@ SCOPES = [
 
 # Tab order in the spreadsheet
 TAB_ORDER = [
-    Tab.SETUP, Tab.RULES, Tab.COVER,
-    Tab.DRAFT, Tab.DRAFT_BOARD,
-    Tab.POOL_A, Tab.POOL_B,
-    Tab.SCHEDULE, Tab.MATCH_STATS, Tab.STANDINGS,
-    Tab.POKEMON_STATS, Tab.MVP_RACE, Tab.TRANSACTIONS,
-    Tab.PLAYOFFS, Tab.POKEDEX, Tab.TEAM_TEMPLATE, Tab.DATA,
+    Tab.SETUP,
+    Tab.RULES,
+    Tab.COVER,
+    Tab.DRAFT,
+    Tab.DRAFT_BOARD,
+    Tab.POOL_A,
+    Tab.POOL_B,
+    Tab.SCHEDULE,
+    Tab.MATCH_STATS,
+    Tab.STANDINGS,
+    Tab.POKEMON_STATS,
+    Tab.MVP_RACE,
+    Tab.TRANSACTIONS,
+    Tab.PLAYOFFS,
+    Tab.POKEDEX,
+    Tab.TEAM_TEMPLATE,
+    Tab.DATA,
 ]
 
 # Header row background colors (hex) per tab
 TAB_COLORS = {
-    Tab.SETUP:         (0.18, 0.31, 0.56),   # Dark blue
-    Tab.RULES:         (0.56, 0.18, 0.18),   # Dark red
-    Tab.COVER:         (0.18, 0.56, 0.18),   # Dark green
-    Tab.DRAFT:         (0.40, 0.18, 0.56),   # Purple
-    Tab.DRAFT_BOARD:   (0.40, 0.18, 0.56),
-    Tab.POOL_A:        (0.18, 0.45, 0.56),   # Teal
-    Tab.POOL_B:        (0.18, 0.45, 0.56),
-    Tab.SCHEDULE:      (0.56, 0.40, 0.18),   # Orange
-    Tab.MATCH_STATS:   (0.56, 0.40, 0.18),
-    Tab.STANDINGS:     (0.18, 0.56, 0.40),   # Green-teal
+    Tab.SETUP: (0.18, 0.31, 0.56),  # Dark blue
+    Tab.RULES: (0.56, 0.18, 0.18),  # Dark red
+    Tab.COVER: (0.18, 0.56, 0.18),  # Dark green
+    Tab.DRAFT: (0.40, 0.18, 0.56),  # Purple
+    Tab.DRAFT_BOARD: (0.40, 0.18, 0.56),
+    Tab.POOL_A: (0.18, 0.45, 0.56),  # Teal
+    Tab.POOL_B: (0.18, 0.45, 0.56),
+    Tab.SCHEDULE: (0.56, 0.40, 0.18),  # Orange
+    Tab.MATCH_STATS: (0.56, 0.40, 0.18),
+    Tab.STANDINGS: (0.18, 0.56, 0.40),  # Green-teal
     Tab.POKEMON_STATS: (0.30, 0.56, 0.18),
-    Tab.MVP_RACE:      (0.56, 0.53, 0.18),   # Gold
-    Tab.TRANSACTIONS:  (0.56, 0.18, 0.40),   # Pink
-    Tab.PLAYOFFS:      (0.56, 0.30, 0.18),   # Brown-orange
-    Tab.POKEDEX:       (0.18, 0.18, 0.56),   # Navy
+    Tab.MVP_RACE: (0.56, 0.53, 0.18),  # Gold
+    Tab.TRANSACTIONS: (0.56, 0.18, 0.40),  # Pink
+    Tab.PLAYOFFS: (0.56, 0.30, 0.18),  # Brown-orange
+    Tab.POKEDEX: (0.18, 0.18, 0.56),  # Navy
     Tab.TEAM_TEMPLATE: (0.35, 0.18, 0.56),
-    Tab.DATA:          (0.40, 0.40, 0.40),   # Grey
+    Tab.DATA: (0.40, 0.40, 0.40),  # Grey
 }
 
 # Tera types for data validation in Draft tab
 TERA_TYPES = [
-    "Normal", "Fire", "Water", "Electric", "Grass", "Ice",
-    "Fighting", "Poison", "Ground", "Flying", "Psychic",
-    "Bug", "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy", "Stellar",
+    "Normal",
+    "Fire",
+    "Water",
+    "Electric",
+    "Grass",
+    "Ice",
+    "Fighting",
+    "Poison",
+    "Ground",
+    "Flying",
+    "Psychic",
+    "Bug",
+    "Rock",
+    "Ghost",
+    "Dragon",
+    "Dark",
+    "Steel",
+    "Fairy",
+    "Stellar",
 ]
 
 DRAFT_FORMATS = ["snake", "auction", "tiered", "custom"]
@@ -128,7 +257,9 @@ def connect() -> gspread.Spreadsheet:
     return sheet
 
 
-def get_or_create_tab(sheet: gspread.Spreadsheet, name: str, index: int) -> gspread.Worksheet:
+def get_or_create_tab(
+    sheet: gspread.Spreadsheet, name: str, index: int
+) -> gspread.Worksheet:
     existing = {ws.title: ws for ws in sheet.worksheets()}
     if name in existing:
         ws = existing[name]
@@ -136,7 +267,7 @@ def get_or_create_tab(sheet: gspread.Spreadsheet, name: str, index: int) -> gspr
     else:
         ws = sheet.add_worksheet(title=name, rows=1000, cols=30, index=index)
         print(f"  [created]  {name}")
-        time.sleep(0.5)   # Avoid rate limits
+        time.sleep(0.5)  # Avoid rate limits
     return ws
 
 
@@ -157,8 +288,10 @@ def write_headers(ws: gspread.Worksheet, headers: list[str], color: tuple) -> No
             "repeatCell": {
                 "range": {
                     "sheetId": sheet_id,
-                    "startRowIndex": 0, "endRowIndex": 1,
-                    "startColumnIndex": 0, "endColumnIndex": len(headers),
+                    "startRowIndex": 0,
+                    "endRowIndex": 1,
+                    "startColumnIndex": 0,
+                    "endColumnIndex": len(headers),
                 },
                 "cell": {
                     "userEnteredFormat": {
@@ -196,15 +329,19 @@ def write_headers(ws: gspread.Worksheet, headers: list[str], color: tuple) -> No
     ws.spreadsheet.batch_update({"requests": requests})
 
 
-def add_data_validation(ws: gspread.Worksheet, col_index: int, values: list[str], rows: int = 999) -> None:
+def add_data_validation(
+    ws: gspread.Worksheet, col_index: int, values: list[str], rows: int = 999
+) -> None:
     """Add dropdown validation to a column."""
     sheet_id = ws._properties["sheetId"]
     request = {
         "setDataValidation": {
             "range": {
                 "sheetId": sheet_id,
-                "startRowIndex": 1, "endRowIndex": rows + 1,
-                "startColumnIndex": col_index, "endColumnIndex": col_index + 1,
+                "startRowIndex": 1,
+                "endRowIndex": rows + 1,
+                "startColumnIndex": col_index,
+                "endColumnIndex": col_index + 1,
             },
             "rule": {
                 "condition": {
@@ -230,7 +367,9 @@ def setup_draft_tab(ws: gspread.Worksheet) -> None:
     add_data_validation(ws, tera_col, TERA_TYPES)
     if format_col >= 0:
         add_data_validation(ws, format_col, GAME_FORMATS)
-    print(f"    -> Tera type dropdown on col {tera_col + 1} (column {chr(65 + tera_col)})")
+    print(
+        f"    -> Tera type dropdown on col {tera_col + 1} (column {chr(65 + tera_col)})"
+    )
 
 
 def setup_setup_tab(ws: gspread.Worksheet) -> None:
@@ -263,20 +402,26 @@ def add_team_template_image_formula(ws: gspread.Worksheet) -> None:
         return
     request = {
         "updateCells": {
-            "rows": [{
-                "values": [{
-                    "note": (
-                        "Discord CDN URL for team logo.\n"
-                        "Automatically filled by /team-register.\n"
-                        "Use IMAGE() formula in adjacent cell to display."
-                    )
-                }]
-            }],
+            "rows": [
+                {
+                    "values": [
+                        {
+                            "note": (
+                                "Discord CDN URL for team logo.\n"
+                                "Automatically filled by /team-register.\n"
+                                "Use IMAGE() formula in adjacent cell to display."
+                            )
+                        }
+                    ]
+                }
+            ],
             "fields": "note",
             "range": {
                 "sheetId": sheet_id,
-                "startRowIndex": 0, "endRowIndex": 1,
-                "startColumnIndex": logo_col, "endColumnIndex": logo_col + 1,
+                "startRowIndex": 0,
+                "endRowIndex": 1,
+                "startColumnIndex": logo_col,
+                "endColumnIndex": logo_col + 1,
             },
         }
     }
@@ -307,11 +452,17 @@ def main() -> None:
         time.sleep(0.4)  # Stay under Sheets API quota
 
     print(f"\nOK All {len(TAB_ORDER)} tabs ready!")
-    print(f"Spreadsheet URL: https://docs.google.com/spreadsheets/d/{settings.google_sheets_spreadsheet_id}")
+    print(
+        f"Spreadsheet URL: https://docs.google.com/spreadsheets/d/{settings.google_sheets_spreadsheet_id}"
+    )
     print("\nNext steps:")
-    print("  1. Share the spreadsheet with your service account email (from credentials.json)")
+    print(
+        "  1. Share the spreadsheet with your service account email (from credentials.json)"
+    )
     print("  2. Run: python scripts/seed_pokemon_data.py  (fetch all 1025 Pokemon)")
-    print("  3. Run: python -c \"from src.data.sheets import sheets; from scripts.seed_pokemon_data import OUTPUT_FILE; import json; sheets.bulk_write_pokedex(json.load(open(OUTPUT_FILE)))\"")
+    print(
+        '  3. Run: python -c "from src.data.sheets import sheets; from scripts.seed_pokemon_data import OUTPUT_FILE; import json; sheets.bulk_write_pokedex(json.load(open(OUTPUT_FILE)))"'
+    )
     print("  4. Start the bot: python src/bot/main.py")
 
 

@@ -2,6 +2,7 @@
 Central configuration management using pydantic-settings.
 Cross-platform: uses pathlib for all file paths.
 """
+
 import re
 from pathlib import Path
 
@@ -24,9 +25,11 @@ class Settings(BaseSettings):
     discord_token: SecretStr
     discord_client_id: str
     discord_guild_id: str | None = None
-    bot_name: str = "DraftBot"           # Display name shown in presence and embeds
+    bot_name: str = "DraftBot"  # Display name shown in presence and embeds
     bot_status: str = "Pokemon Draft League"  # Activity text shown under bot name
-    sync_commands_on_startup: bool = False   # Set SYNC_COMMANDS_ON_STARTUP=true in .env to force sync
+    sync_commands_on_startup: bool = (
+        False  # Set SYNC_COMMANDS_ON_STARTUP=true in .env to force sync
+    )
 
     # Google Sheets
     google_sheets_credentials_file: Path = PROJECT_ROOT / "credentials.json"
@@ -55,7 +58,9 @@ class Settings(BaseSettings):
     showdown_password: SecretStr = SecretStr("")
 
     # GitHub — used by /admin-pull-models to download trained models from releases
-    github_token: SecretStr = SecretStr("")   # Personal access token (optional for public repos)
+    github_token: SecretStr = SecretStr(
+        ""
+    )  # Personal access token (optional for public repos)
     github_repo: str = "NoChillOrganization/NCLPDLB"
 
     # ML policy models directory
@@ -86,6 +91,7 @@ class Settings(BaseSettings):
 # Lazy-loaded so import-time failures (missing .env) only occur when first accessed.
 class _LazySettings:
     """Defers Settings() construction until first attribute access."""
+
     _real: "Settings | None" = None
 
     def __getattr__(self, name: str) -> object:

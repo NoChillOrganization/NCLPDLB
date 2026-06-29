@@ -10,6 +10,7 @@ Exports:
     VideoUploadResult  — dataclass returned by upload_match_video.
     MAX_FILE_SIZE_MB   — enforcement ceiling (100 MB by default).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -48,30 +49,35 @@ class VideoService:
         if attachment.content_type not in ALLOWED_MIME_TYPES:
             return VideoUploadResult(
                 success=False,
-                error="Unsupported file type. Please upload MP4, MOV, or AVI."
+                error="Unsupported file type. Please upload MP4, MOV, or AVI.",
             )
         if attachment.size > MAX_FILE_SIZE_MB * 1024 * 1024:
             return VideoUploadResult(
                 success=False,
-                error=f"File too large. Max {MAX_FILE_SIZE_MB}MB. Consider uploading to YouTube and sharing the link instead."
+                error=f"File too large. Max {MAX_FILE_SIZE_MB}MB. Consider uploading to YouTube and sharing the link instead.",
             )
 
         video_id = str(uuid.uuid4())[:12]
         public_url = attachment.url
 
         # Save metadata to Google Sheets
-        await asyncio.to_thread(sheets.save_video, {
-            "video_id": video_id,
-            "match_id": "",
-            "uploader_id": uploader_id,
-            "opponent_id": opponent_id,
-            "storage_url": public_url,
-            "thumbnail_url": "",
-            "notes": notes,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        await asyncio.to_thread(
+            sheets.save_video,
+            {
+                "video_id": video_id,
+                "match_id": "",
+                "uploader_id": uploader_id,
+                "opponent_id": opponent_id,
+                "storage_url": public_url,
+                "thumbnail_url": "",
+                "notes": notes,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
-        log.info(f"Video {video_id} recorded by {uploader_id} in guild {guild_id} (Discord CDN)")
+        log.info(
+            f"Video {video_id} recorded by {uploader_id} in guild {guild_id} (Discord CDN)"
+        )
         return VideoUploadResult(
             success=True,
             video_id=video_id,

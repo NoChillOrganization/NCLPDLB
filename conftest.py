@@ -5,6 +5,7 @@ pytest loads this file first (before tests/conftest.py and before test collectio
 so Settings() sees these values instead of failing with ValidationError.
 Real credentials are never needed in the test suite.
 """
+
 import os
 
 os.environ.setdefault("DISCORD_TOKEN", "test_token_placeholder")

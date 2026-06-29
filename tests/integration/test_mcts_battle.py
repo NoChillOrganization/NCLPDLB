@@ -11,6 +11,7 @@ To run locally:
     #    node F:\\NCLPDLB\\pokemon-showdown\\pokemon-showdown start --no-security
     # 2. pytest tests/integration/test_mcts_battle.py -v
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -27,7 +28,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.ml.battle_env import POKE_ENV_AVAILABLE  # noqa: E402
 
 
-def _server_reachable(host: str = "127.0.0.1", port: int = 8000, timeout: float = 1.0) -> bool:
+def _server_reachable(
+    host: str = "127.0.0.1", port: int = 8000, timeout: float = 1.0
+) -> bool:
     """Return True if a TCP connection to host:port succeeds within timeout seconds."""
     try:
         with socket.create_connection((host, port), timeout=timeout):
@@ -54,6 +57,7 @@ pytestmark = [
 @pytest.fixture
 def replay_buffer():
     from src.ml.trainer import ReplayBuffer
+
     return ReplayBuffer()
 
 
@@ -90,7 +94,9 @@ def random_opponent():
 
 
 class TestMCTSBattleIntegration:
-    async def test_mcts_completes_full_battle_vs_random(self, mcts_player, random_opponent):
+    async def test_mcts_completes_full_battle_vs_random(
+        self, mcts_player, random_opponent
+    ):
         """MCTSPlayer finishes one battle vs RandomPlayer without error.
 
         Verifies:

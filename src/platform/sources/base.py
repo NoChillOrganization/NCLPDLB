@@ -1,4 +1,5 @@
 """Adapter contract. Adapters only emit RawRecord and land it — never touch canonical tables."""
+
 from dataclasses import dataclass
 from typing import Iterable, Protocol
 

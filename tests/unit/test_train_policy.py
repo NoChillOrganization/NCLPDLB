@@ -7,6 +7,7 @@ Covers pure-logic functions only:
   - SelfPlayCallback.__init__, _on_step, _save_and_swap
   - Constants: DOUBLES_FORMATS, PPO_HYPERPARAMS
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -27,6 +28,7 @@ from src.ml.train_policy import (
 
 # ── _check_showdown_server ────────────────────────────────────────────────────
 
+
 class TestCheckShowdownServer:
     def test_reachable_does_not_raise(self):
         with patch("socket.create_connection"):
@@ -34,7 +36,9 @@ class TestCheckShowdownServer:
 
     def test_unreachable_raises_runtime_error(self):
         with patch("socket.create_connection", side_effect=OSError("refused")):
-            with pytest.raises(RuntimeError, match="Cannot reach local Showdown server"):
+            with pytest.raises(
+                RuntimeError, match="Cannot reach local Showdown server"
+            ):
                 _check_showdown_server()
 
     def test_error_message_contains_port(self):
@@ -44,6 +48,7 @@ class TestCheckShowdownServer:
 
 
 # ── _check_showdown_server_if_local ──────────────────────────────────────────
+
 
 class TestCheckShowdownServerIfLocal:
     def test_localhost_mode_calls_check(self):
@@ -64,6 +69,7 @@ class TestCheckShowdownServerIfLocal:
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
+
 class TestConstants:
     def test_doubles_formats_is_set(self):
         assert isinstance(DOUBLES_FORMATS, set)
@@ -78,9 +84,17 @@ class TestConstants:
 
     def test_ppo_hyperparams_has_required_keys(self):
         required = {
-            "learning_rate", "n_steps", "batch_size", "n_epochs",
-            "gamma", "gae_lambda", "clip_range", "ent_coef",
-            "vf_coef", "max_grad_norm", "policy_kwargs",
+            "learning_rate",
+            "n_steps",
+            "batch_size",
+            "n_epochs",
+            "gamma",
+            "gae_lambda",
+            "clip_range",
+            "ent_coef",
+            "vf_coef",
+            "max_grad_norm",
+            "policy_kwargs",
         }
         assert required.issubset(PPO_HYPERPARAMS.keys())
 
@@ -97,6 +111,7 @@ class TestConstants:
 
 
 # ── CurriculumCallback ────────────────────────────────────────────────────────
+
 
 class TestCurriculumCallback:
     """Tests for CurriculumCallback (pure logic, no poke-env or live server)."""
@@ -210,7 +225,7 @@ class TestCurriculumCallback:
         """Once in selfplay phase, further episodes don't retrigger graduation."""
         cb, opponent = self._make_cb(tmp_path, min_episodes=5, win_threshold=0.60)
         with patch("shutil.copy"):
-            self._push_episodes(cb, wins=5, total=5)   # graduate
+            self._push_episodes(cb, wins=5, total=5)  # graduate
             # Now push more wins — should not call save again from _graduate
             _ = cb.model.save.call_count
             self._push_episodes(cb, wins=5, total=5)
@@ -221,11 +236,13 @@ class TestCurriculumCallback:
     # ── selfplay phase: checkpoint swaps ─────────────────────────
 
     def test_selfplay_swap_triggers_when_interval_reached(self, tmp_path):
-        cb, opponent = self._make_cb(tmp_path, swap_every=100, min_episodes=5, win_threshold=0.60)
+        cb, opponent = self._make_cb(
+            tmp_path, swap_every=100, min_episodes=5, win_threshold=0.60
+        )
         cb.verbose = 1
         with patch("shutil.copy"):
             self._push_episodes(cb, wins=5, total=5)  # graduate at ts=0
-            cb.num_timesteps = 100                    # advance past swap_every
+            cb.num_timesteps = 100  # advance past swap_every
             cb.locals = {"infos": []}
             cb._on_step()
 
@@ -233,10 +250,12 @@ class TestCurriculumCallback:
         assert opponent.load_policy.call_count == 2
 
     def test_selfplay_no_swap_below_interval(self, tmp_path):
-        cb, opponent = self._make_cb(tmp_path, swap_every=1000, min_episodes=5, win_threshold=0.60)
+        cb, opponent = self._make_cb(
+            tmp_path, swap_every=1000, min_episodes=5, win_threshold=0.60
+        )
         with patch("shutil.copy"):
             self._push_episodes(cb, wins=5, total=5)  # graduate
-            cb.num_timesteps = 50   # well below swap_every
+            cb.num_timesteps = 50  # well below swap_every
             cb.locals = {"infos": []}
             cb._on_step()
 
@@ -315,6 +334,7 @@ class TestCurriculumCallback:
     def test_force_graduation_emits_warning(self, tmp_path, caplog):
         """WARNING message contains step count and win rate."""
         import logging
+
         opponent = MagicMock()
         cb = CurriculumCallback(
             opponent_player=opponent,
@@ -347,6 +367,7 @@ class TestCurriculumCallback:
 
 # ── CurriculumOpponent ────────────────────────────────────────────────────────
 
+
 class TestCurriculumOpponent:
     """
     Mock-based tests — never instantiate the real CurriculumOpponent because
@@ -365,16 +386,21 @@ class TestCurriculumOpponent:
         fake_zip = tmp_path / "latest.zip"
         fake_zip.write_bytes(b"fake")
 
-        with patch("src.ml.train_policy.PPO") as mock_ppo_cls, \
-             patch("src.ml.train_policy.SB3_OK", True):
+        with (
+            patch("src.ml.train_policy.PPO") as mock_ppo_cls,
+            patch("src.ml.train_policy.SB3_OK", True),
+        ):
             mock_model = MagicMock()
             mock_ppo_cls.load.return_value = mock_model
 
             # Build a real-ish object by importing the class then calling load_policy
             # via the method itself on a MagicMock that has the real method bound.
             import src.ml.train_policy as tp
+
             if not hasattr(tp.CurriculumOpponent, "load_policy"):
-                pytest.skip("CurriculumOpponent.load_policy not available (POKE_ENV_OK=False)")
+                pytest.skip(
+                    "CurriculumOpponent.load_policy not available (POKE_ENV_OK=False)"
+                )
 
             # Simulate load_policy by calling it on a fresh mock instance
             instance = MagicMock()
@@ -392,8 +418,11 @@ class TestCurriculumOpponent:
             mock_ppo_cls.load.side_effect = FileNotFoundError("no file")
 
             import src.ml.train_policy as tp
+
             if not hasattr(tp.CurriculumOpponent, "load_policy"):
-                pytest.skip("CurriculumOpponent.load_policy not available (POKE_ENV_OK=False)")
+                pytest.skip(
+                    "CurriculumOpponent.load_policy not available (POKE_ENV_OK=False)"
+                )
 
             instance = MagicMock()
             instance._policy = None
@@ -403,14 +432,21 @@ class TestCurriculumOpponent:
     def test_choose_move_delegates_to_max_base_power_when_no_policy(self):
         """With _policy=None, choose_move should delegate to MaxBasePowerPlayer."""
         import src.ml.train_policy as tp
-        if not hasattr(tp.CurriculumOpponent, "choose_move") or not hasattr(tp, "MaxBasePowerPlayer"):
-            pytest.skip("CurriculumOpponent.choose_move not available (POKE_ENV_OK=False)")
+
+        if not hasattr(tp.CurriculumOpponent, "choose_move") or not hasattr(
+            tp, "MaxBasePowerPlayer"
+        ):
+            pytest.skip(
+                "CurriculumOpponent.choose_move not available (POKE_ENV_OK=False)"
+            )
 
         battle = MagicMock()
 
         # Patch MaxBasePowerPlayer.choose_move at the class level so that Python's
         # super() mechanics can find it via normal MRO (avoids unbound-call TypeError).
-        with patch.object(tp.MaxBasePowerPlayer, "choose_move", return_value="max_power_order"):
+        with patch.object(
+            tp.MaxBasePowerPlayer, "choose_move", return_value="max_power_order"
+        ):
             # Create a minimal real subclass instance so super() works properly.
             class _TestableCurriculumOpponent(tp.CurriculumOpponent):
                 def __init__(self):  # skip poke-env account/server setup
@@ -426,10 +462,14 @@ class TestCurriculumOpponent:
         """With _policy set, choose_move should call policy.predict."""
         pytest.importorskip("poke_env")
         import src.ml.train_policy as tp
+
         if not hasattr(tp.CurriculumOpponent, "choose_move"):
-            pytest.skip("CurriculumOpponent.choose_move not available (POKE_ENV_OK=False)")
+            pytest.skip(
+                "CurriculumOpponent.choose_move not available (POKE_ENV_OK=False)"
+            )
 
         import numpy as np
+
         mock_policy = MagicMock()
         mock_policy.predict.return_value = (np.array([3]), None)
 
@@ -438,10 +478,16 @@ class TestCurriculumOpponent:
         instance._is_doubles = False
         battle = MagicMock()
 
-        with patch("src.ml.train_policy.build_observation") as mock_obs, \
-             patch("poke_env.environment.singles_env.SinglesEnv.action_to_order",
-                   return_value="ppo_order"):
-            mock_obs.return_value = MagicMock(reshape=MagicMock(return_value=MagicMock()))
+        with (
+            patch("src.ml.train_policy.build_observation") as mock_obs,
+            patch(
+                "poke_env.environment.singles_env.SinglesEnv.action_to_order",
+                return_value="ppo_order",
+            ),
+        ):
+            mock_obs.return_value = MagicMock(
+                reshape=MagicMock(return_value=MagicMock())
+            )
             _ = tp.CurriculumOpponent.choose_move(instance, battle)
 
         mock_policy.predict.assert_called_once()
@@ -449,13 +495,20 @@ class TestCurriculumOpponent:
 
 # ── CurriculumCallback — secondary metrics ────────────────────────────────────
 
+
 class TestCurriculumCallbackTypeEff:
     """Tests for mean_type_eff graduation metric and policy collapse check."""
 
     import numpy as _np
 
-    def _make_cb(self, tmp_path, min_episodes=10, win_threshold=0.70,
-                 mean_type_eff_threshold=1.2, min_type_eff_samples=5):
+    def _make_cb(
+        self,
+        tmp_path,
+        min_episodes=10,
+        win_threshold=0.70,
+        mean_type_eff_threshold=1.2,
+        min_type_eff_samples=5,
+    ):
         opponent = MagicMock()
         cb = CurriculumCallback(
             opponent_player=opponent,
@@ -480,14 +533,15 @@ class TestCurriculumCallbackTypeEff:
     def _push_type_eff_obs(self, cb, n, eff_obs_val):
         """Push N steps with a move action (action=6, move slot 0) and given type_eff obs."""
         import numpy as np
+
         # Build obs with the eff value at MOVE_TYPE_EFF_OBS_IDXS[0] = index 6
         obs = np.zeros((1, 48), dtype=np.float32)
-        obs[0, 6] = eff_obs_val   # slot 0 type_eff
+        obs[0, 6] = eff_obs_val  # slot 0 type_eff
         for _ in range(n):
             cb.locals = {
                 "infos": [],
                 "obs_tensor": obs,
-                "actions": np.array([6]),   # move slot 0, no gimmick
+                "actions": np.array([6]),  # move slot 0, no gimmick
             }
             cb._on_step()
 
@@ -497,14 +551,17 @@ class TestCurriculumCallbackTypeEff:
         """When type_eff window has fewer than min_type_eff_samples, only win_rate is checked."""
         cb, _ = self._make_cb(tmp_path, min_episodes=5, min_type_eff_samples=100)
         with patch("shutil.copy"):
-            self._push_wins(cb, wins=5, total=5)   # 100 % wins, no obs injected
+            self._push_wins(cb, wins=5, total=5)  # 100 % wins, no obs injected
         assert cb._phase == "selfplay"
 
     def test_should_not_graduate_when_eff_below_threshold(self, tmp_path):
         """70 % wins but mean_type_eff below 1.2 → stays in warmup."""
         cb, _ = self._make_cb(
-            tmp_path, min_episodes=10, win_threshold=0.70,
-            mean_type_eff_threshold=1.2, min_type_eff_samples=5,
+            tmp_path,
+            min_episodes=10,
+            win_threshold=0.70,
+            mean_type_eff_threshold=1.2,
+            min_type_eff_samples=5,
         )
         # neutral obs_val → raw_mult = 2^(0.0 * 2) = 1.0 < 1.2
         with patch("shutil.copy"):
@@ -515,8 +572,11 @@ class TestCurriculumCallbackTypeEff:
     def test_should_graduate_when_both_metrics_met(self, tmp_path):
         """70 % wins AND mean_type_eff >= 1.2 → graduates."""
         cb, _ = self._make_cb(
-            tmp_path, min_episodes=10, win_threshold=0.70,
-            mean_type_eff_threshold=1.2, min_type_eff_samples=5,
+            tmp_path,
+            min_episodes=10,
+            win_threshold=0.70,
+            mean_type_eff_threshold=1.2,
+            min_type_eff_samples=5,
         )
         # obs_val=0.5 → raw_mult = 2^(0.5*2) = 2.0 ≥ 1.2
         with patch("shutil.copy"):
@@ -529,6 +589,7 @@ class TestCurriculumCallbackTypeEff:
     def test_switch_action_not_tracked(self, tmp_path):
         """Switch actions (0-5) should not append to type_eff window."""
         import numpy as np
+
         cb, _ = self._make_cb(tmp_path)
         obs = np.zeros((1, 48), dtype=np.float32)
         obs[0, 6] = 0.9
@@ -539,9 +600,10 @@ class TestCurriculumCallbackTypeEff:
     def test_move_action_appends_raw_mult(self, tmp_path):
         """Move action 6 (slot 0) with eff_obs=0.5 → raw_mult=2.0 appended."""
         import numpy as np
+
         cb, _ = self._make_cb(tmp_path)
         obs = np.zeros((1, 48), dtype=np.float32)
-        obs[0, 6] = 0.5   # slot 0 type_eff obs value
+        obs[0, 6] = 0.5  # slot 0 type_eff obs value
         cb.locals = {"infos": [], "obs_tensor": obs, "actions": np.array([6])}
         cb._on_step()
         assert len(cb._type_eff_window) == 1
@@ -550,9 +612,10 @@ class TestCurriculumCallbackTypeEff:
     def test_tera_action_uses_correct_slot(self, tmp_path):
         """Action 22 → tera slot 0 → move_slot = (22-6) % 4 = 0."""
         import numpy as np
+
         cb, _ = self._make_cb(tmp_path)
         obs = np.zeros((1, 48), dtype=np.float32)
-        obs[0, 6] = 1.0   # slot 0 → 4x effective → raw_mult=4.0
+        obs[0, 6] = 1.0  # slot 0 → 4x effective → raw_mult=4.0
         cb.locals = {"infos": [], "obs_tensor": obs, "actions": np.array([22])}
         cb._on_step()
         assert cb._type_eff_window[0] == pytest.approx(4.0)
@@ -560,6 +623,7 @@ class TestCurriculumCallbackTypeEff:
     def test_missing_obs_tensor_silently_skipped(self, tmp_path):
         """No obs_tensor in locals → no crash, no data added."""
         import numpy as np
+
         cb, _ = self._make_cb(tmp_path)
         cb.locals = {"infos": [], "actions": np.array([6])}
         cb._on_step()
@@ -571,6 +635,7 @@ class TestCurriculumCallbackTypeEff:
         """Warning is emitted when one action exceeds 80 % over 1000 steps."""
         import numpy as np
         import logging
+
         cb, _ = self._make_cb(tmp_path)
         obs = np.zeros((1, 48), dtype=np.float32)
         with caplog.at_level(logging.WARNING, logger="src.ml.train_policy"):
@@ -578,7 +643,7 @@ class TestCurriculumCallbackTypeEff:
                 cb.locals = {
                     "infos": [],
                     "obs_tensor": obs,
-                    "actions": np.array([6]),   # always same action
+                    "actions": np.array([6]),  # always same action
                 }
                 cb._on_step()
         assert any("PolicyCollapse" in r.message for r in caplog.records)
@@ -587,11 +652,12 @@ class TestCurriculumCallbackTypeEff:
         """No warning when actions are spread across multiple indices."""
         import numpy as np
         import logging
+
         cb, _ = self._make_cb(tmp_path)
         obs = np.zeros((1, 48), dtype=np.float32)
         with caplog.at_level(logging.WARNING, logger="src.ml.train_policy"):
             for i in range(1000):
-                action = i % 26   # uniform distribution across all actions
+                action = i % 26  # uniform distribution across all actions
                 cb.locals = {
                     "infos": [],
                     "obs_tensor": obs,
@@ -603,6 +669,7 @@ class TestCurriculumCallbackTypeEff:
     def test_collapse_counters_reset_after_check(self, tmp_path):
         """Action counts and total reset to 0 after each 1000-step check window."""
         import numpy as np
+
         cb, _ = self._make_cb(tmp_path)
         obs = np.zeros((1, 48), dtype=np.float32)
         for _ in range(1000):
@@ -614,6 +681,7 @@ class TestCurriculumCallbackTypeEff:
     def test_track_step_type_eff_exception_silently_ignored(self, tmp_path):
         """Exception during obs_tensor processing → except: pass branch (lines 302-303)."""
         import numpy as np
+
         cb, _ = self._make_cb(tmp_path)
         bad_obs = MagicMock()
         bad_obs.detach.side_effect = RuntimeError("bad tensor")
@@ -632,6 +700,7 @@ class TestCurriculumCallbackTypeEff:
 
 # ── Phase 03: BC pretrain integration ────────────────────────────────────────
 
+
 class TestPretrainResumeMutex:
     """--pretrain and --resume are mutually exclusive."""
 
@@ -640,11 +709,15 @@ class TestPretrainResumeMutex:
         import src.ml.train_policy as tp
 
         # Patch away all the heavy dependencies so we get to the mutex check fast
-        with patch("src.ml.train_policy.POKE_ENV_AVAILABLE", False), \
-             patch("src.ml.train_policy.SB3_OK", False), \
-             patch("src.ml.train_policy._check_showdown_server_if_local"), \
-             patch("src.ml.train_policy._log_meta_context"):
-            with pytest.raises(ValueError, match="--pretrain and --resume are mutually exclusive"):
+        with (
+            patch("src.ml.train_policy.POKE_ENV_AVAILABLE", False),
+            patch("src.ml.train_policy.SB3_OK", False),
+            patch("src.ml.train_policy._check_showdown_server_if_local"),
+            patch("src.ml.train_policy._log_meta_context"),
+        ):
+            with pytest.raises(
+                ValueError, match="--pretrain and --resume are mutually exclusive"
+            ):
                 tp.train(
                     fmt="gen9ou",
                     total_timesteps=1000,
@@ -658,10 +731,12 @@ class TestPretrainResumeMutex:
         """Passing only --resume does not trigger the mutex guard."""
         import src.ml.train_policy as tp
 
-        with patch("src.ml.train_policy.POKE_ENV_AVAILABLE", False), \
-             patch("src.ml.train_policy.SB3_OK", False), \
-             patch("src.ml.train_policy._check_showdown_server_if_local"), \
-             patch("src.ml.train_policy._log_meta_context"):
+        with (
+            patch("src.ml.train_policy.POKE_ENV_AVAILABLE", False),
+            patch("src.ml.train_policy.SB3_OK", False),
+            patch("src.ml.train_policy._check_showdown_server_if_local"),
+            patch("src.ml.train_policy._log_meta_context"),
+        ):
             # Will raise RuntimeError about missing deps, NOT ValueError about mutex
             with pytest.raises(RuntimeError):
                 tp.train(
@@ -677,10 +752,12 @@ class TestPretrainResumeMutex:
         """Passing only --pretrain does not trigger the mutex guard."""
         import src.ml.train_policy as tp
 
-        with patch("src.ml.train_policy.POKE_ENV_AVAILABLE", False), \
-             patch("src.ml.train_policy.SB3_OK", False), \
-             patch("src.ml.train_policy._check_showdown_server_if_local"), \
-             patch("src.ml.train_policy._log_meta_context"):
+        with (
+            patch("src.ml.train_policy.POKE_ENV_AVAILABLE", False),
+            patch("src.ml.train_policy.SB3_OK", False),
+            patch("src.ml.train_policy._check_showdown_server_if_local"),
+            patch("src.ml.train_policy._log_meta_context"),
+        ):
             with pytest.raises(RuntimeError):
                 tp.train(
                     fmt="gen9ou",
@@ -706,17 +783,27 @@ class TestPretrainWeightLoading:
         OBS_DIM = 48
 
         class _DummyEnv(_GymEnv):
-            observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            observation_space = Box(
+                low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32
+            )
             action_space = Discrete(26)
-            def reset(self, **_kw): return np.zeros(OBS_DIM, dtype=np.float32), {}
-            def step(self, _a): return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
+
+            def reset(self, **_kw):
+                return np.zeros(OBS_DIM, dtype=np.float32), {}
+
+            def step(self, _a):
+                return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
 
         model = PPO("MlpPolicy", _DummyEnv())
 
         # Build a fake checkpoint with only actor keys
         policy_sd = model.policy.state_dict()
-        actor_keys = [k for k in policy_sd if not k.startswith("value_net")
-                      and not k.startswith("mlp_extractor.value_net")]
+        actor_keys = [
+            k
+            for k in policy_sd
+            if not k.startswith("value_net")
+            and not k.startswith("mlp_extractor.value_net")
+        ]
         assert actor_keys, "No actor keys found — test setup error"
 
         # Fill every actor tensor with a known constant (99.0) so we can detect the load
@@ -744,10 +831,16 @@ class TestPretrainWeightLoading:
         OBS_DIM = 48
 
         class _DummyEnv(_GymEnv):
-            observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            observation_space = Box(
+                low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32
+            )
             action_space = Discrete(26)
-            def reset(self, **_kw): return np.zeros(OBS_DIM, dtype=np.float32), {}
-            def step(self, _a): return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
+
+            def reset(self, **_kw):
+                return np.zeros(OBS_DIM, dtype=np.float32), {}
+
+            def step(self, _a):
+                return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
 
         model = PPO("MlpPolicy", _DummyEnv())
 
@@ -769,17 +862,24 @@ class TestPretrainWeightLoading:
         OBS_DIM = 48
 
         class _DummyEnv(_GymEnv):
-            observation_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+            observation_space = Box(
+                low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32
+            )
             action_space = Discrete(26)
-            def reset(self, **_kw): return np.zeros(OBS_DIM, dtype=np.float32), {}
-            def step(self, _a): return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
+
+            def reset(self, **_kw):
+                return np.zeros(OBS_DIM, dtype=np.float32), {}
+
+            def step(self, _a):
+                return np.zeros(OBS_DIM, dtype=np.float32), 0.0, True, False, {}
 
         model = PPO("MlpPolicy", _DummyEnv())
         policy_sd = model.policy.state_dict()
 
         # Pick the first actor weight tensor with >1 element (to avoid trivial bias=0 cases)
         actor_key = next(
-            k for k in policy_sd
+            k
+            for k in policy_sd
             if not k.startswith("value_net")
             and not k.startswith("mlp_extractor.value_net")
             and policy_sd[k].numel() > 1
