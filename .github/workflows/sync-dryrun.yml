@@ -10,6 +10,9 @@ on:
       - 'requirements.txt'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   dryrun:
     name: Real sync against ephemeral Postgres
