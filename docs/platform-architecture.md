@@ -115,7 +115,7 @@ raw_name, normalized_key)` in `repositories.py:27` looks up `species_alias` by
 source-NULL global alias (`ORDER BY sa.source_id NULLS LAST`). Returns `None` on
 miss — caller leaves `canonical_species_id` NULL rather than crashing.
 
-Seeded once via `python -m src.platform.sync seed` (`seed.py`): full dex from
+Seeded once via `python -m src.platform.seed` (`seed.py`): full dex from
 `data/pokemon.json` → `canonical_species` + self-alias per species, then Showdown's
 `pokemon-showdown/data/aliases.ts` parsed for additional aliases.
 
