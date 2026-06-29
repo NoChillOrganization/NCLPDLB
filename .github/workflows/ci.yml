@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install ruff
+        run: pip install "ruff==0.15.18"  # pinned to match ruff.toml era
+      - name: Check formatting
+        run: ruff format --check .
+      - name: Check linting
+        run: ruff check .
+
+  typecheck:
+    name: Type check (pyright, advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true  # advisory: untyped codebase; tighten once green
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run pyright
+        run: npx --yes pyright@latest --pythonversion 3.13
+
+  dry-run-pr:
+    name: Dry-run sync (no DB)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install dependencies
+        # Install without heavy ML deps — platform sync only needs aiohttp/asyncpg/pydantic.
+        # ponytail: full requirements.txt used so we test the real import environment.
+        run: pip install -r requirements.txt
+      - name: Dry-run Smogon sync
+        # Makes real HTTP call; validates fetch→RawRecord path without DB writes.
+        run: >
+          python -m src.platform.sync_smogon
+          --period 2026-05
+          --formats gen9vgc2025regi
+          --cutoff 1500
+          --dry-run
+      - name: Dry-run Pikalytics sync
+        run: >
+          python -m src.platform.sync_pikalytics
+          --formats gen9vgc2025regi
+          --max-pages 1
+          --dry-run
+      - name: Dry-run Limitless sync
+        run: >
+          python -m src.platform.sync_limitless_vgc
+          --game VGC
+          --limit 5
+          --dry-run

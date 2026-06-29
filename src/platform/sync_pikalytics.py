@@ -17,16 +17,22 @@ import argparse
 import asyncio
 
 from src.platform.normalize.usage import normalize_usage_row
-from src.platform.orchestrate import land_and_normalize, with_ingest_run
+from src.platform.orchestrate import dry_run_normalize, land_and_normalize, with_ingest_run
 from src.platform.sources.pikalytics import PikalyticsAdapter
 from src.platform.store.db import get_pool, migrate
 
 
-async def _run(*, formats: list[str], max_pages: int) -> None:
-    await migrate()
-    pool = await get_pool()
+async def _run(*, formats: list[str], max_pages: int, dry_run: bool = False) -> None:
     adapter = PikalyticsAdapter()
     records = await adapter.fetch(formats=formats, max_pages=max_pages)
+    if dry_run:
+        stats = await dry_run_normalize(records)
+        print("DRY RUN:", stats)
+        if stats["errored"]:
+            raise SystemExit(1)
+        return
+    await migrate()
+    pool = await get_pool()
     async with pool.acquire() as conn:
         stats = await with_ingest_run(
             conn,
@@ -50,8 +56,10 @@ def main() -> None:
                         help="Pikalytics format slugs to sync")
     parser.add_argument("--max-pages", type=int, default=10, dest="max_pages",
                         help="Max pages to fetch per format (default 10)")
+    parser.add_argument("--dry-run", action="store_true", dest="dry_run",
+                        help="Fetch and validate without writing to DB")
     args = parser.parse_args()
-    asyncio.run(_run(formats=args.formats, max_pages=args.max_pages))
+    asyncio.run(_run(formats=args.formats, max_pages=args.max_pages, dry_run=args.dry_run))
 
 
 if __name__ == "__main__":

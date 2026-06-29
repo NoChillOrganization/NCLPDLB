@@ -13,6 +13,7 @@ import aiohttp
 
 from src.platform.sources.base import RawRecord
 from src.platform.sources.http import get_json
+from src.platform.throttle import get_limiter
 
 LEADS_URL = "https://www.pikalytics.com/api/l/{format}/{page}"
 
@@ -22,12 +23,13 @@ class PikalyticsAdapter:
 
     async def fetch(self, *, formats: list[str], max_pages: int = 10, **kwargs) -> Iterable[RawRecord]:
         records = []
+        limiter = get_limiter(self.source)
         async with aiohttp.ClientSession() as session:
             for fmt in formats:
                 pages = []
                 for page in range(max_pages):
                     url = LEADS_URL.format(format=fmt, page=page)
-                    data = await get_json(session, url)
+                    data = await get_json(session, url, limiter=limiter)
                     if not data:  # None (clean miss / 404) or empty list → stop paginating
                         break
                     pages.extend(data)

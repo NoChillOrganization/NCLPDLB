@@ -1,0 +1,11 @@
+{
+    "id": "fixture-regional-2026",
+    "name": "Fixture Regional 2026",
+    "game": "VGC",
+    "format": "VGC 2025 Regulation I",
+    "date": "2026-03-15T00:00:00.000Z",
+    "players": 256,
+    "country": "US",
+    "isOnline": false,
+    "organizer": "Play! Pokemon"
+}

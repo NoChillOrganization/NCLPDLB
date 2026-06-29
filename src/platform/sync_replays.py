@@ -22,7 +22,7 @@ import asyncio
 import asyncpg
 
 from src.platform.normalize.replay import normalize_replay_row
-from src.platform.orchestrate import land_and_normalize, with_ingest_run
+from src.platform.orchestrate import dry_run_normalize, land_and_normalize, with_ingest_run
 from src.platform.sources.showdown import ShowdownAdapter
 from src.platform.store.db import get_pool, migrate
 
@@ -45,12 +45,19 @@ async def _run(
     format: str | None,
     pages: int,
     min_rating: int,
+    dry_run: bool = False,
 ) -> None:
     mode = "replay_targeted" if ids else "periodic"
-    await migrate()
-    pool = await get_pool()
     adapter = ShowdownAdapter()
     records = await adapter.fetch(ids=ids, format=format, pages=pages, min_rating=min_rating)
+    if dry_run:
+        stats = await dry_run_normalize(records)
+        print("DRY RUN:", stats)
+        if stats["errored"]:
+            raise SystemExit(1)
+        return
+    await migrate()
+    pool = await get_pool()
     async with pool.acquire() as conn:
         stats = await with_ingest_run(
             conn,
@@ -79,12 +86,15 @@ def main() -> None:
                         help="Max search pages for ladder sweep (default 10)")
     parser.add_argument("--min-rating", type=int, default=0, dest="min_rating",
                         help="Skip ladder replays below this rating (default 0)")
+    parser.add_argument("--dry-run", action="store_true", dest="dry_run",
+                        help="Fetch and validate without writing to DB")
     args = parser.parse_args()
     asyncio.run(_run(
         ids=args.ids,
         format=getattr(args, "format", None),
         pages=args.pages,
         min_rating=args.min_rating,
+        dry_run=args.dry_run,
     ))
 
 
