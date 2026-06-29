@@ -18,16 +18,22 @@ import argparse
 import asyncio
 
 from src.platform.normalize.usage import normalize_usage_row
-from src.platform.orchestrate import land_and_normalize, with_ingest_run
+from src.platform.orchestrate import dry_run_normalize, land_and_normalize, with_ingest_run
 from src.platform.sources.smogon import SmogonAdapter
 from src.platform.store.db import get_pool, migrate
 
 
-async def _run(*, period: str, formats: list[str], cutoff: int) -> None:
-    await migrate()
-    pool = await get_pool()
+async def _run(*, period: str, formats: list[str], cutoff: int, dry_run: bool = False) -> None:
     adapter = SmogonAdapter()
     records = await adapter.fetch(period=period, formats=formats, cutoff=cutoff)
+    if dry_run:
+        stats = await dry_run_normalize(records)
+        print("DRY RUN:", stats)
+        if stats["errored"]:
+            raise SystemExit(1)
+        return
+    await migrate()
+    pool = await get_pool()
     async with pool.acquire() as conn:
         stats = await with_ingest_run(
             conn,
@@ -53,8 +59,10 @@ def main() -> None:
                         help="Showdown format slugs to sync")
     parser.add_argument("--cutoff", type=int, default=1500,
                         help="Elo cutoff tier (default 1500)")
+    parser.add_argument("--dry-run", action="store_true", dest="dry_run",
+                        help="Fetch and validate without writing to DB")
     args = parser.parse_args()
-    asyncio.run(_run(period=args.period, formats=args.formats, cutoff=args.cutoff))
+    asyncio.run(_run(period=args.period, formats=args.formats, cutoff=args.cutoff, dry_run=args.dry_run))
 
 
 if __name__ == "__main__":

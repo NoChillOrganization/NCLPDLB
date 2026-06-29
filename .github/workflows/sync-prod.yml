@@ -1,0 +1,110 @@
+name: Production Sync
+
+# Scheduled production data sync — runs on the self-hosted runner where
+# prod Postgres is reachable at localhost:5432.
+#
+# Schedules:
+#   Monthly (1st at 09:00 UTC): Smogon usage stats (new month's data is posted ~1st)
+#   Daily   (06:00 UTC):        Limitless VGC tournaments + Showdown replays
+#
+# All syncs are idempotent: reruns / over-fires are safe (ON CONFLICT DO NOTHING).
+# Failures write to dead_letter table and trigger the notification step.
+on:
+  schedule:
+    - cron: '0 9 1 * *'   # monthly: Smogon usage stats
+    - cron: '0 6 * * *'   # daily: tournaments + replays
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Which sync to run: smogon | pikalytics | limitless | replays | all'
+        default: 'all'
+        required: false
+
+jobs:
+  sync:
+    name: Run production sync
+    runs-on: [self-hosted]  # existing actions-runner; prod Postgres at localhost
+
+    env:
+      PLATFORM_DATABASE_URL: ${{ secrets.PLATFORM_DATABASE_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          # No pip cache on self-hosted — cache dir permissions vary per runner config.
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # --- Daily syncs (run every day) ---
+
+      - name: Sync Limitless VGC tournaments (daily)
+        if: >-
+          github.event.schedule == '0 6 * * *' ||
+          github.event_name == 'workflow_dispatch' && (inputs.source == 'limitless' || inputs.source == 'all')
+        run: >
+          python -m src.platform.sync_limitless_vgc
+          --game VGC
+          --limit 50
+
+      - name: Sync Showdown replays (daily)
+        if: >-
+          github.event.schedule == '0 6 * * *' ||
+          github.event_name == 'workflow_dispatch' && (inputs.source == 'replays' || inputs.source == 'all')
+        run: >
+          python -m src.platform.sync_replays
+          --format gen9vgc2025regi
+          --pages 5
+          --min-rating 1500
+
+      # --- Monthly syncs (1st of each month) ---
+
+      - name: Sync Smogon usage stats (monthly)
+        if: >-
+          github.event.schedule == '0 9 1 * *' ||
+          github.event_name == 'workflow_dispatch' && (inputs.source == 'smogon' || inputs.source == 'all')
+        run: |
+          # Derive last completed month (sync runs on the 1st, so previous month's data is ready).
+          PERIOD=$(python -c "
+          from datetime import date, timedelta
+          d = date.today().replace(day=1) - timedelta(days=1)
+          print(d.strftime('%Y-%m'))
+          ")
+          echo "Syncing Smogon stats for period: $PERIOD"
+          python -m src.platform.sync_smogon \
+            --period "$PERIOD" \
+            --formats gen9vgc2025regi gen9ou gen9vgc2025regf \
+            --cutoff 1500
+
+      - name: Sync Pikalytics usage stats (monthly)
+        if: >-
+          github.event.schedule == '0 9 1 * *' ||
+          github.event_name == 'workflow_dispatch' && (inputs.source == 'pikalytics' || inputs.source == 'all')
+        run: >
+          python -m src.platform.sync_pikalytics
+          --formats gen9vgc2025regi gen9ou
+          --max-pages 10
+
+      # --- Failure notification ---
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Production sync failed: ${context.workflow} (${new Date().toISOString().slice(0,10)})`,
+              body: [
+                `**Workflow:** ${context.workflow}`,
+                `**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                `**Trigger:** ${context.eventName}`,
+                '',
+                'Check the `dead_letter` table for per-record failures.',
+              ].join('\n'),
+              labels: ['sync-failure'],
+            });
