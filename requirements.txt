@@ -55,7 +55,7 @@ pandas>=3.0.3
 # Local install: pip install torch  (or see https://pytorch.org/get-started/locally/ for CUDA)
 torch>=2.10.0
 stable-baselines3>=2.8.0   # PPO/DQN for battle policy RL
-playwright>=1.60.0          # Headless browser automation; run `playwright install chromium` after pip install
+playwright>=1.61.0          # Headless browser automation; run `playwright install chromium` after pip install
 tensorboard>=2.20.0         # training metrics visualisation
 # imitation is NOT listed here: poke-env==0.12.1 requires gymnasium>=1.0.0 while
 # imitation>=1.0.0 requires gymnasium~=0.29 — they cannot coexist in one environment.
