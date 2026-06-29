@@ -8,6 +8,7 @@ Covers:
   - MCTSPlayer.load_policy() is a harmless no-op
   - train() raises ValueError for doubles + --opponent mcts
 """
+
 from __future__ import annotations
 
 import argparse
@@ -20,10 +21,12 @@ from src.ml.self_play import POKE_ENV_OK, POKE_ENV_AVAILABLE
 
 # ── argparse contract ─────────────────────────────────────────────────────────
 
+
 class TestOpponentArgparse:
     def _parse(self, argv: list[str]) -> argparse.Namespace:
         """Run _parse_args() with a patched sys.argv."""
         from src.ml.train_policy import _parse_args
+
         with patch("sys.argv", ["train_policy"] + argv):
             return _parse_args()
 
@@ -40,11 +43,16 @@ class TestOpponentArgparse:
         assert args.opponent_checkpoint is None
 
     def test_opponent_checkpoint_accepted(self):
-        args = self._parse([
-            "--format", "gen9randombattle",
-            "--opponent", "mcts",
-            "--opponent-checkpoint", "model.pt",
-        ])
+        args = self._parse(
+            [
+                "--format",
+                "gen9randombattle",
+                "--opponent",
+                "mcts",
+                "--opponent-checkpoint",
+                "model.pt",
+            ]
+        )
         assert args.opponent_checkpoint == "model.pt"
 
     def test_invalid_opponent_raises_system_exit(self):
@@ -53,6 +61,7 @@ class TestOpponentArgparse:
 
 
 # ── MCTSPlayer in opponent mode ───────────────────────────────────────────────
+
 
 @pytest.mark.skipif(
     not (POKE_ENV_OK and POKE_ENV_AVAILABLE),
@@ -108,7 +117,7 @@ class TestMCTSPlayerOpponentMode:
         battle_mock.battle_tag = "tag-opponent"
         battle_mock.won = True
         battle_mock.lost = False
-        player._turn_obs  = {"tag-opponent": [np.zeros(48, dtype="float32")]}
+        player._turn_obs = {"tag-opponent": [np.zeros(48, dtype="float32")]}
         player._turn_acts = {"tag-opponent": [0]}
         player._turn_probs = {"tag-opponent": [np.ones(26, dtype="float32") / 26]}
 
@@ -125,6 +134,7 @@ class TestMCTSPlayerOpponentMode:
 
 
 # ── Doubles guard ─────────────────────────────────────────────────────────────
+
 
 class TestDoublesGuard:
     def test_train_mcts_doubles_raises_value_error(self):

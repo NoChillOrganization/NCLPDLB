@@ -43,6 +43,7 @@ Usage:
 Standalone (seeds buffer and prints stats):
     python data/ingestion.py --formats gen9ou --max-battles 500
 """
+
 from __future__ import annotations
 
 import argparse
@@ -61,8 +62,8 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _PROJECT_ROOT = Path(__file__).parent.parent
-_REPLAYS_DIR  = _PROJECT_ROOT / "data" / "replays"
-_VOCAB_DIR    = _PROJECT_ROOT / "data" / "ml" / "vocab"
+_REPLAYS_DIR = _PROJECT_ROOT / "data" / "replays"
+_VOCAB_DIR = _PROJECT_ROOT / "data" / "ml" / "vocab"
 
 # ---------------------------------------------------------------------------
 # Observation constants (must stay in sync with battle_env.OBS_DIM = 48)
@@ -71,52 +72,61 @@ _VOCAB_DIR    = _PROJECT_ROOT / "data" / "ml" / "vocab"
 OBS_DIM = 48
 
 _I_ACT_SPECIES = 0
-_I_ACT_HP      = 1
-_I_MOVES       = slice(2, 22)    # 4 moves × 5 feats — zero-padded from replays
-_I_STATUS      = 22
-_I_BOOSTS      = slice(23, 29)   # 6 boosts — zero-padded from replays
+_I_ACT_HP = 1
+_I_MOVES = slice(2, 22)  # 4 moves × 5 feats — zero-padded from replays
+_I_STATUS = 22
+_I_BOOSTS = slice(23, 29)  # 6 boosts — zero-padded from replays
 _I_OPP_SPECIES = 29
-_I_OPP_HP      = 30
-_I_OPP_STATUS  = 31
-_I_MY_TEAM_HP  = slice(32, 38)
+_I_OPP_HP = 30
+_I_OPP_STATUS = 31
+_I_MY_TEAM_HP = slice(32, 38)
 _I_OPP_TEAM_HP = slice(38, 44)
-_I_WEATHER     = 44
-_I_TERRAIN     = 45
-_I_TRICK_ROOM  = 46
-_I_TURN_NORM   = 47
+_I_WEATHER = 44
+_I_TERRAIN = 45
+_I_TRICK_ROOM = 46
+_I_TURN_NORM = 47
 
 # Action space indices (matches battle_env.py)
-_ACTION_SWITCH_BASE = 0     # +slot_index → 0-5
-_ACTION_MOVE_BASE   = 6     # +move_slot  → 6-9
-_ACTION_TERA_BASE   = 22    # +move_slot  → 22-25
+_ACTION_SWITCH_BASE = 0  # +slot_index → 0-5
+_ACTION_MOVE_BASE = 6  # +move_slot  → 6-9
+_ACTION_TERA_BASE = 22  # +move_slot  → 22-25
 
 # Normalisation denominators
-_MAX_STATUS_ID  = 6.0
+_MAX_STATUS_ID = 6.0
 _MAX_WEATHER_ID = 10.0
 _MAX_TERRAIN_ID = 4.0
 
 _STATUS_IDS: dict[str, float] = {
-    "brn": 1 / _MAX_STATUS_ID, "par": 2 / _MAX_STATUS_ID,
-    "slp": 3 / _MAX_STATUS_ID, "frz": 4 / _MAX_STATUS_ID,
-    "psn": 5 / _MAX_STATUS_ID, "tox": 6 / _MAX_STATUS_ID,
+    "brn": 1 / _MAX_STATUS_ID,
+    "par": 2 / _MAX_STATUS_ID,
+    "slp": 3 / _MAX_STATUS_ID,
+    "frz": 4 / _MAX_STATUS_ID,
+    "psn": 5 / _MAX_STATUS_ID,
+    "tox": 6 / _MAX_STATUS_ID,
 }
 
 _WEATHER_IDS: dict[str, float] = {
-    "sunnyday": 1 / _MAX_WEATHER_ID, "desolateland": 1 / _MAX_WEATHER_ID,
-    "raindance": 2 / _MAX_WEATHER_ID, "primordialsea": 2 / _MAX_WEATHER_ID,
+    "sunnyday": 1 / _MAX_WEATHER_ID,
+    "desolateland": 1 / _MAX_WEATHER_ID,
+    "raindance": 2 / _MAX_WEATHER_ID,
+    "primordialsea": 2 / _MAX_WEATHER_ID,
     "sandstorm": 3 / _MAX_WEATHER_ID,
-    "hail": 4 / _MAX_WEATHER_ID, "snow": 4 / _MAX_WEATHER_ID,
+    "hail": 4 / _MAX_WEATHER_ID,
+    "snow": 4 / _MAX_WEATHER_ID,
 }
 
 _TERRAIN_IDS: dict[str, float] = {
-    "electricterrain": 1 / _MAX_TERRAIN_ID, "grassyterrain": 2 / _MAX_TERRAIN_ID,
-    "mistyterrain": 3 / _MAX_TERRAIN_ID, "psychicterrain": 4 / _MAX_TERRAIN_ID,
+    "electricterrain": 1 / _MAX_TERRAIN_ID,
+    "grassyterrain": 2 / _MAX_TERRAIN_ID,
+    "mistyterrain": 3 / _MAX_TERRAIN_ID,
+    "psychicterrain": 4 / _MAX_TERRAIN_ID,
 }
 
 
 # ---------------------------------------------------------------------------
 # Vocabulary loading
 # ---------------------------------------------------------------------------
+
 
 def _load_species_vocab(vocab_dir: Path) -> dict[str, float]:
     """
@@ -145,6 +155,7 @@ def _load_species_vocab(vocab_dir: Path) -> dict[str, float]:
 # Per-battle state tracker
 # ---------------------------------------------------------------------------
 
+
 class _BattleState:
     """
     Tracks mutable state (HP, status, field) across turns for one BattleRecord.
@@ -170,8 +181,8 @@ class _BattleState:
         self._slot_status: dict[str, str] = {}
 
         # Field
-        self.weather    = 0.0
-        self.terrain    = 0.0
+        self.weather = 0.0
+        self.terrain = 0.0
         self.trick_room = 0.0
 
     # ── Public accessors ──────────────────────────────────────────────
@@ -217,7 +228,7 @@ class _BattleState:
                 # Carry over previous HP if available; new active species
                 # gets its own entry on first damage event
                 species = evt.detail
-                active[evt.slot] = species   # update the shared active map
+                active[evt.slot] = species  # update the shared active map
                 # If we've never seen this Pokemon, it enters at full HP
                 if species not in self._species_hp:
                     self._species_hp[species] = 1.0
@@ -251,25 +262,25 @@ class _BattleState:
 
         # ── Own active Pokemon ──────────────────────────────────────────
         obs[_I_ACT_SPECIES] = species_vocab.get(p1_active, 0.0)
-        obs[_I_ACT_HP]      = self.hp(p1_active)
+        obs[_I_ACT_HP] = self.hp(p1_active)
         # obs[2:22] — move features — stay zero
-        obs[_I_STATUS]      = self.status("p1a")
+        obs[_I_STATUS] = self.status("p1a")
         # obs[23:29] — boosts — stay zero
 
         # ── Opponent active Pokemon ──────────────────────────────────────
         obs[_I_OPP_SPECIES] = species_vocab.get(p2_active, 0.0)
-        obs[_I_OPP_HP]      = self.hp(p2_active)
-        obs[_I_OPP_STATUS]  = self.status("p2a")
+        obs[_I_OPP_HP] = self.hp(p2_active)
+        obs[_I_OPP_STATUS] = self.status("p2a")
 
         # ── Team HP arrays ───────────────────────────────────────────────
-        obs[_I_MY_TEAM_HP]  = self.team_hps(self.p1_team)
+        obs[_I_MY_TEAM_HP] = self.team_hps(self.p1_team)
         obs[_I_OPP_TEAM_HP] = self.team_hps(self.p2_team)
 
         # ── Field ────────────────────────────────────────────────────────
-        obs[_I_WEATHER]    = self.weather
-        obs[_I_TERRAIN]    = self.terrain
+        obs[_I_WEATHER] = self.weather
+        obs[_I_TERRAIN] = self.terrain
         obs[_I_TRICK_ROOM] = self.trick_room
-        obs[_I_TURN_NORM]  = min(turn_number / 50.0, 1.0)
+        obs[_I_TURN_NORM] = min(turn_number / 50.0, 1.0)
 
         return obs
 
@@ -277,6 +288,7 @@ class _BattleState:
 # ---------------------------------------------------------------------------
 # Action inference
 # ---------------------------------------------------------------------------
+
 
 def _infer_action(events: list[Any], perspective: str, team: list[str]) -> int:
     """
@@ -290,7 +302,7 @@ def _infer_action(events: list[Any], perspective: str, team: list[str]) -> int:
     Defaults to action 6 (first move, no gimmick) when nothing more specific
     can be determined.
     """
-    has_tera    = False
+    has_tera = False
 
     for evt in events:
         # Detect terastallise flag on this turn for perspective player
@@ -328,6 +340,7 @@ def _one_hot_action(action: int, n_actions: int = 26) -> np.ndarray:
 # Replay-to-transitions converter
 # ---------------------------------------------------------------------------
 
+
 def record_to_transitions(
     record: Any,
     species_vocab: dict[str, float],
@@ -353,7 +366,7 @@ def record_to_transitions(
     (observations, actions, action_probs_list, reward)
     Empty lists with reward=0.0 for battles that should be skipped.
     """
-    winner = record.winner   # "p1" | "p2" | "tie" | "unknown"
+    winner = record.winner  # "p1" | "p2" | "tie" | "unknown"
 
     if perspective == "winner":
         if winner not in ("p1", "p2"):
@@ -362,7 +375,9 @@ def record_to_transitions(
     elif perspective in ("p1", "p2"):
         player = perspective
     else:
-        raise ValueError(f"perspective must be 'p1', 'p2', or 'winner'; got {perspective!r}")
+        raise ValueError(
+            f"perspective must be 'p1', 'p2', or 'winner'; got {perspective!r}"
+        )
 
     # Terminal reward: +1 if this player won, -1 if lost, 0 if tie
     if winner == player:
@@ -374,12 +389,12 @@ def record_to_transitions(
 
     p1_team = list(record.p1_team)
     p2_team = list(record.p2_team)
-    team    = p1_team if player == "p1" else p2_team
+    team = p1_team if player == "p1" else p2_team
 
     state = _BattleState(p1_team, p2_team)
 
-    observations:      list[np.ndarray] = []
-    actions:           list[int]        = []
+    observations: list[np.ndarray] = []
+    actions: list[int] = []
     action_probs_list: list[np.ndarray] = []
 
     # Active species tracker shared with _BattleState.apply_events()
@@ -399,9 +414,9 @@ def record_to_transitions(
             # Flip perspective: my active is p2_active, opponent is p1_active
             obs = state.build_obs(p2_active, p1_active, turn.turn_number, species_vocab)
             # Swap team HP halves in the observation
-            my_hp  = obs[_I_MY_TEAM_HP].copy()
+            my_hp = obs[_I_MY_TEAM_HP].copy()
             opp_hp = obs[_I_OPP_TEAM_HP].copy()
-            obs[_I_MY_TEAM_HP]  = opp_hp
+            obs[_I_MY_TEAM_HP] = opp_hp
             obs[_I_OPP_TEAM_HP] = my_hp
 
         # Infer the action this player took in this turn
@@ -421,6 +436,7 @@ def record_to_transitions(
 # Main ingester class
 # ---------------------------------------------------------------------------
 
+
 class ReplayIngester:
     """
     Loads scraped replay JSON files and converts them into ReplayBuffer
@@ -439,10 +455,10 @@ class ReplayIngester:
     def __init__(
         self,
         replays_dir: Path | str | None = None,
-        vocab_dir: Path | str | None   = None,
+        vocab_dir: Path | str | None = None,
     ) -> None:
-        self._replays_dir    = Path(replays_dir) if replays_dir else _REPLAYS_DIR
-        self._vocab_dir      = Path(vocab_dir)   if vocab_dir   else _VOCAB_DIR
+        self._replays_dir = Path(replays_dir) if replays_dir else _REPLAYS_DIR
+        self._vocab_dir = Path(vocab_dir) if vocab_dir else _VOCAB_DIR
         self._species_vocab: dict[str, float] | None = None
 
     # ── Lazy vocab loading ────────────────────────────────────────────
@@ -480,10 +496,10 @@ class ReplayIngester:
         self,
         buffer: Any,
         formats: list[str] | None = None,
-        max_battles: int          = 1000,
-        min_rating: int           = 0,
-        perspective: str          = "winner",
-        shuffle: bool             = True,
+        max_battles: int = 1000,
+        min_rating: int = 0,
+        perspective: str = "winner",
+        shuffle: bool = True,
     ) -> int:
         """
         Load replay files, convert to transitions, and push into ``buffer``.
@@ -536,15 +552,17 @@ class ReplayIngester:
         replay_paths = replay_paths[:max_battles]
         log.info(
             "Ingesting up to %d replays from %d format(s) (perspective=%s)",
-            len(replay_paths), len(formats), perspective,
+            len(replay_paths),
+            len(formats),
+            perspective,
         )
 
         total_transitions = 0
-        skipped           = 0
+        skipped = 0
 
         for path in replay_paths:
             try:
-                raw    = json.loads(path.read_text(encoding="utf-8"))
+                raw = json.loads(path.read_text(encoding="utf-8"))
                 record = parse_replay_json(raw)
             except Exception as exc:
                 log.debug("Failed to parse %s: %s", path.name, exc)
@@ -568,17 +586,19 @@ class ReplayIngester:
 
         log.info(
             "Ingestion complete: %d transitions from %d battles (%d skipped)",
-            total_transitions, len(replay_paths) - skipped, skipped,
+            total_transitions,
+            len(replay_paths) - skipped,
+            skipped,
         )
         return total_transitions
 
     def ingest_to_arrays(
         self,
         formats: list[str] | None = None,
-        max_battles: int           = 1000,
-        min_rating: int            = 0,
-        perspective: str           = "winner",
-        shuffle: bool              = True,
+        max_battles: int = 1000,
+        min_rating: int = 0,
+        perspective: str = "winner",
+        shuffle: bool = True,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Load replays and return raw numpy arrays (obs, actions) without
@@ -597,7 +617,7 @@ class ReplayIngester:
         vocab = self._get_vocab()
 
         replay_paths: list[Path] = []
-        for fmt in (formats or []):
+        for fmt in formats or []:
             fmt_dir = self._replays_dir / fmt
             if fmt_dir.exists():
                 replay_paths.extend(fmt_dir.glob("*.json"))
@@ -606,12 +626,12 @@ class ReplayIngester:
             random.shuffle(replay_paths)
         replay_paths = replay_paths[:max_battles]
 
-        all_obs:  list[np.ndarray] = []
-        all_acts: list[int]        = []
+        all_obs: list[np.ndarray] = []
+        all_acts: list[int] = []
 
         for path in replay_paths:
             try:
-                raw    = json.loads(path.read_text(encoding="utf-8"))
+                raw = json.loads(path.read_text(encoding="utf-8"))
                 record = parse_replay_json(raw)
             except Exception:
                 continue
@@ -629,7 +649,7 @@ class ReplayIngester:
             return np.empty((0, OBS_DIM), dtype=np.float32), np.empty(0, dtype=np.int64)
 
         return (
-            np.stack(all_obs,  axis=0).astype(np.float32),
+            np.stack(all_obs, axis=0).astype(np.float32),
             np.array(all_acts, dtype=np.int64),
         )
 
@@ -637,6 +657,7 @@ class ReplayIngester:
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
+
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -647,24 +668,37 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--formats", nargs="+", default=None, metavar="FORMAT",
+        "--formats",
+        nargs="+",
+        default=None,
+        metavar="FORMAT",
         help="Format IDs to load (default: all available).",
     )
     parser.add_argument(
-        "--max-battles", type=int, default=500, dest="max_battles",
+        "--max-battles",
+        type=int,
+        default=500,
+        dest="max_battles",
         help="Maximum replays to ingest (default: 500).",
     )
     parser.add_argument(
-        "--min-rating", type=int, default=0, dest="min_rating",
+        "--min-rating",
+        type=int,
+        default=0,
+        dest="min_rating",
         help="Skip replays below this rating (default: 0).",
     )
     parser.add_argument(
-        "--perspective", default="winner",
+        "--perspective",
+        default="winner",
         choices=["winner", "p1", "p2"],
         help="Whose moves to learn from (default: winner).",
     )
     parser.add_argument(
-        "--buffer-size", type=int, default=50_000, dest="buffer_size",
+        "--buffer-size",
+        type=int,
+        default=50_000,
+        dest="buffer_size",
         help="ReplayBuffer capacity (default: 50000).",
     )
     return parser
@@ -681,6 +715,7 @@ if __name__ == "__main__":
 
     try:
         from src.ml.trainer import ReplayBuffer
+
         buffer = ReplayBuffer(capacity=args.buffer_size)
     except ImportError:
         log.warning(
@@ -705,7 +740,9 @@ if __name__ == "__main__":
             min_rating=args.min_rating,
             perspective=args.perspective,
         )
-        print(f"\nSeeded ReplayBuffer with {n} transitions (buffer size: {len(buffer)})")
+        print(
+            f"\nSeeded ReplayBuffer with {n} transitions (buffer size: {len(buffer)})"
+        )
     else:
         obs, acts = ingester.ingest_to_arrays(
             formats=args.formats,

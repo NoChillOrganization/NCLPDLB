@@ -7,6 +7,7 @@ Covers pure helper functions:
   - BotChallenger._format_result()
   - Import sanity for browser_trainer.py
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -24,6 +25,7 @@ from src.ml.showdown_player import (
 
 # ── _get_opponent_name ────────────────────────────────────────────────────────
 
+
 class TestGetOpponentName:
     def test_returns_opponent_username(self):
         battle = MagicMock()
@@ -40,11 +42,13 @@ class TestGetOpponentName:
             @property
             def opponent_username(self):
                 raise AttributeError("no attribute")
+
         result = _get_opponent_name(BadBattle())
         assert result == "Unknown"
 
 
 # ── best_model_for_format ─────────────────────────────────────────────────────
+
 
 class TestBestModelForFormat:
     def test_returns_none_when_nothing_exists(self, tmp_path):
@@ -200,6 +204,7 @@ class TestBestModelForFormat:
 
 # ── BotChallenger._format_result ─────────────────────────────────────────────
 
+
 class TestBotChallengerFormatResult:
     """Test the _format_result method without initializing BotChallenger fully."""
 
@@ -269,7 +274,9 @@ class TestBotChallengerFormatResult:
         battle.lost = False
         battle.turn = 5
 
-        result = challenger._format_result(battle, replay_url="https://example.com/replay")
+        result = challenger._format_result(
+            battle, replay_url="https://example.com/replay"
+        )
         assert result["replay_url"] == "https://example.com/replay"
 
     def test_replay_url_none_by_default(self):
@@ -284,6 +291,7 @@ class TestBotChallengerFormatResult:
 
 
 # ── resolve_transformer_checkpoint ───────────────────────────────────────────
+
 
 class TestResolveTransformerCheckpoint:
     """
@@ -315,6 +323,7 @@ class TestResolveTransformerCheckpoint:
     def test_default_checkpoint_constant_matches_train_transformer(self):
         """DEFAULT_TRANSFORMER_CHECKPOINT path matches the value in train_transformer.py."""
         from src.ml.train_transformer import DEFAULT_CHECKPOINT_OUT
+
         # Compare as Path objects so Windows vs POSIX separator differences don't matter
         assert DEFAULT_TRANSFORMER_CHECKPOINT == Path(DEFAULT_CHECKPOINT_OUT)
 
@@ -341,14 +350,21 @@ class TestResolveTransformerCheckpoint:
 
 # ── browser_trainer import sanity ─────────────────────────────────────────────
 
+
 class TestBrowserTrainerImport:
     def test_module_importable(self):
         """browser_trainer.py should import without errors (no Playwright needed)."""
         import src.ml.browser_trainer  # noqa: F401
+
         assert True
 
     def test_constants_defined(self):
-        from src.ml.browser_trainer import SHOWDOWN_URL, DEFAULT_SAVE_DIR, DEFAULT_RESULTS_DIR
+        from src.ml.browser_trainer import (
+            SHOWDOWN_URL,
+            DEFAULT_SAVE_DIR,
+            DEFAULT_RESULTS_DIR,
+        )
+
         assert SHOWDOWN_URL == "https://play.pokemonshowdown.com"
         assert "data/ml/policy" in DEFAULT_SAVE_DIR
         assert "results" in DEFAULT_RESULTS_DIR

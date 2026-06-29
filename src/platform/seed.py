@@ -1,4 +1,5 @@
 """Seed canonical_species + species_alias. Run once (or after data/pokemon.json updates)."""
+
 from __future__ import annotations
 
 import json
@@ -41,25 +42,36 @@ async def seed_species(conn: asyncpg.Connection) -> dict:
     for mon in species_list:
         slug = _normalized_key(mon["name"])
         species_id = await upsert_canonical_species(
-            conn, slug=slug, national_dex=mon["national_dex"], display_name=mon["name"],
+            conn,
+            slug=slug,
+            national_dex=mon["national_dex"],
+            display_name=mon["name"],
         )
         slug_to_id[slug] = species_id
         await add_species_alias(
-            conn, canonical_species_id=species_id, source=None,
-            raw_name=mon["name"], normalized_key=slug,
+            conn,
+            canonical_species_id=species_id,
+            source=None,
+            raw_name=mon["name"],
+            normalized_key=slug,
         )
 
     ts_added = ts_skipped = 0
     if ALIASES_TS.exists():
-        for alias_key, canonical_name in parse_species_aliases(ALIASES_TS.read_text(encoding="utf-8")):
+        for alias_key, canonical_name in parse_species_aliases(
+            ALIASES_TS.read_text(encoding="utf-8")
+        ):
             target_slug = _normalized_key(canonical_name)
             species_id = slug_to_id.get(target_slug)
             if species_id is None:
                 ts_skipped += 1
                 continue
             await add_species_alias(
-                conn, canonical_species_id=species_id, source=None,
-                raw_name=alias_key, normalized_key=_normalized_key(alias_key),
+                conn,
+                canonical_species_id=species_id,
+                source=None,
+                raw_name=alias_key,
+                normalized_key=_normalized_key(alias_key),
             )
             ts_added += 1
 

@@ -1,6 +1,7 @@
 """
 Team View — Discord embed showing a player's full drafted roster with analytics.
 """
+
 from __future__ import annotations
 
 import discord
@@ -34,26 +35,43 @@ class TeamEmbedView(discord.ui.View):
             value=", ".join(t.title() for t in self.roster.type_coverage) or "None",
             inline=False,
         )
-        embed.set_footer(text=f"{len(self.roster.pokemon)} Pokemon | Use /analysis for full breakdown")
+        embed.set_footer(
+            text=f"{len(self.roster.pokemon)} Pokemon | Use /analysis for full breakdown"
+        )
         return embed
 
-    @discord.ui.button(label="Full Analysis", style=discord.ButtonStyle.primary, emoji="📊")
-    async def analysis(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    @discord.ui.button(
+        label="Full Analysis", style=discord.ButtonStyle.primary, emoji="📊"
+    )
+    async def analysis(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         import asyncio
         from src.services.analytics_service import AnalyticsService
+
         svc = AnalyticsService()
         report = await asyncio.to_thread(svc.analyze_pokemon_list, self.roster.pokemon)
-        embed = discord.Embed(title=f"Team Analysis — {self.owner.display_name}", color=discord.Color.blurple())
+        embed = discord.Embed(
+            title=f"Team Analysis — {self.owner.display_name}",
+            color=discord.Color.blurple(),
+        )
         embed.add_field(name="Coverage", value=report.coverage_summary, inline=False)
         embed.add_field(name="Weaknesses", value=report.weakness_summary, inline=False)
         embed.add_field(name="Speed Tiers", value=report.speed_summary, inline=False)
         embed.add_field(name="Archetype", value=report.archetype, inline=True)
-        embed.add_field(name="Threat Score", value=str(report.threat_score), inline=True)
+        embed.add_field(
+            name="Threat Score", value=str(report.threat_score), inline=True
+        )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.ui.button(label="Showdown Export", style=discord.ButtonStyle.secondary, emoji="📋")
-    async def export(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    @discord.ui.button(
+        label="Showdown Export", style=discord.ButtonStyle.secondary, emoji="📋"
+    )
+    async def export(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         from src.services.team_service import TeamService
+
         svc = TeamService()
         text = await svc.export_showdown(
             guild_id=str(interaction.guild_id),
@@ -63,6 +81,7 @@ class TeamEmbedView(discord.ui.View):
         # Discord hard-caps messages at 2000 chars; send as file attachment if too long
         if len(payload) > 1990:
             import io
+
             await interaction.response.send_message(
                 "Team export (too long for inline display):",
                 file=discord.File(io.BytesIO(text.encode()), filename="team.txt"),

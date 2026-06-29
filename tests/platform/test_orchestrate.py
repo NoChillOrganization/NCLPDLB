@@ -1,4 +1,5 @@
 """Tests for dry_run_normalize in orchestrate.py."""
+
 import pytest
 
 from src.platform.orchestrate import dry_run_normalize
@@ -6,7 +7,9 @@ from src.platform.sources.base import RawRecord
 
 
 def _rec(natural_key="k1", payload=None):
-    return RawRecord(route="usage", natural_key=natural_key, payload=payload or {"x": 1})
+    return RawRecord(
+        route="usage", natural_key=natural_key, payload=payload or {"x": 1}
+    )
 
 
 @pytest.mark.asyncio
@@ -42,8 +45,11 @@ async def test_dry_run_normalize_empty_list():
 async def test_dry_run_normalize_writes_nothing(monkeypatch):
     """Confirm no DB functions are called during dry_run_normalize."""
     import src.platform.store.repositories as repos
+
     called = []
     monkeypatch.setattr(repos, "land_raw", lambda *a, **kw: called.append("land_raw"))
-    monkeypatch.setattr(repos, "to_dead_letter", lambda *a, **kw: called.append("dead_letter"))
+    monkeypatch.setattr(
+        repos, "to_dead_letter", lambda *a, **kw: called.append("dead_letter")
+    )
     await dry_run_normalize([_rec()])
     assert called == [], "dry_run_normalize must not touch DB"

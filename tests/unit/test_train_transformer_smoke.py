@@ -10,6 +10,7 @@ Covers:
       - val_losses list has >= 2 entries (non-increasing trend is logged, not asserted)
   - _parse_args: all required flags present with correct defaults
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,6 +26,7 @@ from src.ml.train_transformer import _GameCapture, _split_and_fill_buffers, trai
 
 
 # ── _GameCapture ──────────────────────────────────────────────────────────────
+
 
 class TestGameCapture:
     def _make_game(self, n_turns: int = 5) -> tuple:
@@ -68,6 +70,7 @@ class TestGameCapture:
 
 # ── _split_and_fill_buffers ───────────────────────────────────────────────────
 
+
 class TestSplitAndFillBuffers:
     def _synthetic_games(self, n: int, turns_each: int = 4) -> list:
         rng = np.random.default_rng(99)
@@ -88,23 +91,30 @@ class TestSplitAndFillBuffers:
 
     def test_train_and_val_together_cover_all_games(self):
         games = self._synthetic_games(10, turns_each=4)
-        train_buf, val_buf = _split_and_fill_buffers(games, val_frac=0.2, buffer_capacity=1_000)
+        train_buf, val_buf = _split_and_fill_buffers(
+            games, val_frac=0.2, buffer_capacity=1_000
+        )
         # 10 games × 4 turns = 40 transitions total; 8 train + 2 val
         assert len(train_buf) + len(val_buf) == 40
 
     def test_train_buf_larger_than_val_buf(self):
         games = self._synthetic_games(10, turns_each=4)
-        train_buf, val_buf = _split_and_fill_buffers(games, val_frac=0.2, buffer_capacity=1_000)
+        train_buf, val_buf = _split_and_fill_buffers(
+            games, val_frac=0.2, buffer_capacity=1_000
+        )
         assert len(train_buf) > len(val_buf)
 
     def test_single_game_handled_without_crash(self):
         games = self._synthetic_games(1, turns_each=3)
         # With 1 game and val_frac=0.2, edge case: 0 val games
-        train_buf, val_buf = _split_and_fill_buffers(games, val_frac=0.2, buffer_capacity=500)
+        train_buf, val_buf = _split_and_fill_buffers(
+            games, val_frac=0.2, buffer_capacity=500
+        )
         assert len(train_buf) >= 3
 
 
 # ── train() smoke (monkeypatched game generation) ────────────────────────────
+
 
 class TestTrainSmoke:
     """
@@ -162,7 +172,8 @@ class TestTrainSmoke:
         assert log_file.exists(), "Log file must be created"
 
         log_lines = [
-            ln for ln in log_file.read_text(encoding="utf-8").splitlines()
+            ln
+            for ln in log_file.read_text(encoding="utf-8").splitlines()
             if "epoch=" in ln
         ]
         assert len(log_lines) >= 2, (
@@ -178,6 +189,7 @@ class TestTrainSmoke:
         with patch("src.ml.train_transformer.asyncio") as mock_asyncio:
             mock_asyncio.run.return_value = synthetic
             import asyncio
+
             mock_asyncio.wait_for = asyncio.wait_for
 
             results = train(
@@ -200,9 +212,11 @@ class TestTrainSmoke:
 
 # ── _parse_args defaults ──────────────────────────────────────────────────────
 
+
 class TestParseArgs:
     def _parse(self, argv: list[str]):
         from src.ml.train_transformer import _parse_args
+
         with patch("sys.argv", ["train_transformer"] + argv):
             return _parse_args()
 

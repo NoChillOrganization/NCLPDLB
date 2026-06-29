@@ -18,6 +18,7 @@ Thresholds are conservative — tuned to fire on genuine outages, not noise.
 Monthly sources (smogon/pikalytics) have a 35-day window so a skipped month
 does not trigger until the *second* miss.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -30,14 +31,14 @@ from src.platform.store.db import get_pool
 
 # Days since last successful run before STALE_SYNC fires.
 _STALE_DAYS: dict[str, int] = {
-    "smogon": 35,       # monthly cadence; fire after second missed month
+    "smogon": 35,  # monthly cadence; fire after second missed month
     "pikalytics": 35,
-    "limitless": 2,     # daily cadence
+    "limitless": 2,  # daily cadence
     "showdown": 2,
 }
 _DEFAULT_STALE_DAYS = 7
-_VOLUME_DROP_RATIO = 0.5    # alert when last run < 50% of rolling avg
-_VOLUME_MIN_BASELINE = 10   # don't alert on sources that normally land < 10 records
+_VOLUME_DROP_RATIO = 0.5  # alert when last run < 50% of rolling avg
+_VOLUME_MIN_BASELINE = 10  # don't alert on sources that normally land < 10 records
 _PARSE_ERROR_THRESHOLD = 5  # dead-letter records (with natural_key) in last 24 h
 
 
@@ -53,29 +54,34 @@ async def check_alerts(conn) -> list[dict]:
         GROUP BY s.name
     """)
     from datetime import datetime as _dt
+
     now = _dt.now(timezone.utc)
     for row in rows:
         threshold = _STALE_DAYS.get(row["name"], _DEFAULT_STALE_DAYS)
         if row["last_ok"] is None:
-            alerts.append({
-                "type": "STALE_SYNC",
-                "source": row["name"],
-                "last_ok": None,
-                "age_days": None,
-                "threshold_days": threshold,
-                "action": f"No successful run ever recorded for '{row['name']}'. Check runner config.",
-            })
+            alerts.append(
+                {
+                    "type": "STALE_SYNC",
+                    "source": row["name"],
+                    "last_ok": None,
+                    "age_days": None,
+                    "threshold_days": threshold,
+                    "action": f"No successful run ever recorded for '{row['name']}'. Check runner config.",
+                }
+            )
         else:
             age_days = round((now - row["last_ok"]).total_seconds() / 86400, 1)
             if age_days > threshold:
-                alerts.append({
-                    "type": "STALE_SYNC",
-                    "source": row["name"],
-                    "last_ok": row["last_ok"].isoformat(),
-                    "age_days": age_days,
-                    "threshold_days": threshold,
-                    "action": f"Sync '{row['name']}' overdue by {age_days - threshold:.1f}d. Check sync-prod.yml run history.",
-                })
+                alerts.append(
+                    {
+                        "type": "STALE_SYNC",
+                        "source": row["name"],
+                        "last_ok": row["last_ok"].isoformat(),
+                        "age_days": age_days,
+                        "threshold_days": threshold,
+                        "action": f"Sync '{row['name']}' overdue by {age_days - threshold:.1f}d. Check sync-prod.yml run history.",
+                    }
+                )
 
     # 2. REPEATED_FAILURE — last 3 runs all errored (consecutive failures, not 3-of-any)
     rows = await conn.fetch("""
@@ -92,15 +98,18 @@ async def check_alerts(conn) -> list[dict]:
         HAVING COUNT(*) >= 3
     """)
     for row in rows:
-        alerts.append({
-            "type": "REPEATED_FAILURE",
-            "source": row["name"],
-            "consecutive_errors": int(row["error_count"]),
-            "action": f"'{row['name']}' failed 3 consecutive runs. Check dead_letter and runner logs.",
-        })
+        alerts.append(
+            {
+                "type": "REPEATED_FAILURE",
+                "source": row["name"],
+                "consecutive_errors": int(row["error_count"]),
+                "action": f"'{row['name']}' failed 3 consecutive runs. Check dead_letter and runner logs.",
+            }
+        )
 
     # 3. VOLUME_DROP — last ok run landed < 50% of 30d rolling avg
-    rows = await conn.fetch("""
+    rows = await conn.fetch(
+        """
         WITH ok_runs AS (
             SELECT source_id,
                    (stats->>'landed')::int AS landed,
@@ -122,21 +131,27 @@ async def check_alerts(conn) -> list[dict]:
         JOIN baseline b USING (source_id)
         JOIN source s ON s.id = l.source_id
         WHERE l.landed < b.avg_landed * $2
-    """, _VOLUME_MIN_BASELINE, _VOLUME_DROP_RATIO)
+    """,
+        _VOLUME_MIN_BASELINE,
+        _VOLUME_DROP_RATIO,
+    )
     for row in rows:
-        alerts.append({
-            "type": "VOLUME_DROP",
-            "source": row["name"],
-            "last_landed": row["last_landed"],
-            "avg_30d": int(row["avg_30d"]),
-            "action": (
-                f"'{row['name']}' landed {row['last_landed']} records vs 30d avg {int(row['avg_30d'])}. "
-                "Possible upstream data gap or schema change."
-            ),
-        })
+        alerts.append(
+            {
+                "type": "VOLUME_DROP",
+                "source": row["name"],
+                "last_landed": row["last_landed"],
+                "avg_30d": int(row["avg_30d"]),
+                "action": (
+                    f"'{row['name']}' landed {row['last_landed']} records vs 30d avg {int(row['avg_30d'])}. "
+                    "Possible upstream data gap or schema change."
+                ),
+            }
+        )
 
     # 4. PARSE_ERRORS — dead_letter rows with a natural_key (record-level failures) in last 24h
-    rows = await conn.fetch("""
+    rows = await conn.fetch(
+        """
         SELECT s.name, COUNT(*) AS dl_count
         FROM dead_letter dl
         JOIN source s ON s.id = dl.source_id
@@ -144,17 +159,21 @@ async def check_alerts(conn) -> list[dict]:
           AND dl.natural_key IS NOT NULL
         GROUP BY s.name
         HAVING COUNT(*) > $1
-    """, _PARSE_ERROR_THRESHOLD)
+    """,
+        _PARSE_ERROR_THRESHOLD,
+    )
     for row in rows:
-        alerts.append({
-            "type": "PARSE_ERRORS",
-            "source": row["name"],
-            "dead_letter_24h": int(row["dl_count"]),
-            "action": (
-                f"'{row['name']}' has {int(row['dl_count'])} parse failures in last 24h. "
-                "Check dead_letter table. Possible upstream schema drift."
-            ),
-        })
+        alerts.append(
+            {
+                "type": "PARSE_ERRORS",
+                "source": row["name"],
+                "dead_letter_24h": int(row["dl_count"]),
+                "action": (
+                    f"'{row['name']}' has {int(row['dl_count'])} parse failures in last 24h. "
+                    "Check dead_letter table. Possible upstream schema drift."
+                ),
+            }
+        )
 
     return alerts
 
@@ -173,6 +192,8 @@ async def _main(quiet: bool) -> int:
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Check ingest pipeline health")
-    p.add_argument("--quiet", action="store_true", help="Suppress JSON output; use exit code only")
+    p.add_argument(
+        "--quiet", action="store_true", help="Suppress JSON output; use exit code only"
+    )
     args = p.parse_args()
     sys.exit(asyncio.run(_main(args.quiet)))

@@ -2,6 +2,7 @@
 Pokemon Data Layer — Local JSON cache + PokéAPI + Showdown tiers.
 Cross-platform: uses pathlib for all file operations.
 """
+
 from __future__ import annotations
 
 import json
@@ -26,7 +27,9 @@ class PokemonDatabase:
         """Load all Pokemon from local JSON cache."""
         pokemon_file = DATA_DIR / "pokemon.json"
         if not pokemon_file.exists():
-            log.warning(f"Pokemon data file not found at {pokemon_file}. Run seed script first.")
+            log.warning(
+                f"Pokemon data file not found at {pokemon_file}. Run seed script first."
+            )
             return
         with pokemon_file.open(encoding="utf-8") as f:
             data = json.load(f)

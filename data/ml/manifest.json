@@ -1,0 +1,302 @@
+{
+  "gen9ou": {
+    "format": "gen9ou",
+    "replay_count": 1052,
+    "records_parsed": 627,
+    "x_team_shape": [
+      627,
+      12
+    ],
+    "x_state_shape": [
+      18155,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:47.442107+00:00"
+  },
+  "gen9vgc2023regulationa": {
+    "format": "gen9vgc2023regulationa",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:48.038638+00:00"
+  },
+  "gen9vgc2023regulationb": {
+    "format": "gen9vgc2023regulationb",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:48.625067+00:00"
+  },
+  "gen9vgc2023regulationc": {
+    "format": "gen9vgc2023regulationc",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:49.326695+00:00"
+  },
+  "gen9vgc2023regulationd": {
+    "format": "gen9vgc2023regulationd",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:49.938009+00:00"
+  },
+  "gen9vgc2024regg": {
+    "format": "gen9vgc2024regg",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:50.563355+00:00"
+  },
+  "gen9vgc2024regh": {
+    "format": "gen9vgc2024regh",
+    "replay_count": 17,
+    "records_parsed": 17,
+    "x_team_shape": [
+      17,
+      12
+    ],
+    "x_state_shape": [
+      104,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:54.063058+00:00"
+  },
+  "gen9vgc2024reggregf": {
+    "format": "gen9vgc2024reggregf",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:54.697097+00:00"
+  },
+  "gen9vgc2025regg": {
+    "format": "gen9vgc2025regg",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:55.351031+00:00"
+  },
+  "gen9ubers": {
+    "format": "gen9ubers",
+    "replay_count": 5,
+    "records_parsed": 5,
+    "x_team_shape": [
+      5,
+      12
+    ],
+    "x_state_shape": [
+      153,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:57:58.040696+00:00"
+  },
+  "gen9uu": {
+    "format": "gen9uu",
+    "replay_count": 2,
+    "records_parsed": 2,
+    "x_team_shape": [
+      2,
+      12
+    ],
+    "x_state_shape": [
+      186,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:00.946920+00:00"
+  },
+  "gen9ru": {
+    "format": "gen9ru",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:01.567183+00:00"
+  },
+  "gen9nu": {
+    "format": "gen9nu",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:02.168620+00:00"
+  },
+  "gen9pu": {
+    "format": "gen9pu",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:02.810452+00:00"
+  },
+  "gen9lc": {
+    "format": "gen9lc",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:03.425041+00:00"
+  },
+  "gen9monotype": {
+    "format": "gen9monotype",
+    "replay_count": 6,
+    "records_parsed": 6,
+    "x_team_shape": [
+      6,
+      12
+    ],
+    "x_state_shape": [
+      111,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:08.637032+00:00"
+  },
+  "gen9doublesou": {
+    "format": "gen9doublesou",
+    "replay_count": 377,
+    "records_parsed": 377,
+    "x_team_shape": [
+      376,
+      12
+    ],
+    "x_state_shape": [
+      3824,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:13.894230+00:00"
+  },
+  "gen9vgc2024rege": {
+    "format": "gen9vgc2024rege",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:14.512059+00:00"
+  },
+  "gen9vgc2024regf": {
+    "format": "gen9vgc2024regf",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:15.146439+00:00"
+  },
+  "draftleague": {
+    "format": "draftleague",
+    "replay_count": 0,
+    "records_parsed": 0,
+    "x_team_shape": [
+      0,
+      12
+    ],
+    "x_state_shape": [
+      0,
+      19
+    ],
+    "min_rating": 1500,
+    "timestamp": "2026-06-27T13:58:15.748764+00:00"
+  }
+}

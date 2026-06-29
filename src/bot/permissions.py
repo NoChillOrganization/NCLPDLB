@@ -7,16 +7,17 @@ Three named roles form a strict hierarchy (highest → lowest):
 Any role satisfies the check for all tiers below it.
 Manage Guild permission is always accepted as a safety net.
 """
+
 import discord
 from discord import app_commands
 
 ROLE_GUILDMASTER = "Guildmaster"
-ROLE_MOD         = "Moderators"
-ROLE_COACH       = "Draft League Coaches"
+ROLE_MOD = "Moderators"
+ROLE_COACH = "Draft League Coaches"
 
 _TIERS: dict[str, tuple[str, ...]] = {
-    ROLE_COACH:       (ROLE_COACH, ROLE_MOD, ROLE_GUILDMASTER),
-    ROLE_MOD:         (ROLE_MOD, ROLE_GUILDMASTER),
+    ROLE_COACH: (ROLE_COACH, ROLE_MOD, ROLE_GUILDMASTER),
+    ROLE_MOD: (ROLE_MOD, ROLE_GUILDMASTER),
     ROLE_GUILDMASTER: (ROLE_GUILDMASTER,),
 }
 
@@ -31,7 +32,9 @@ def require_role(min_role: str) -> app_commands.check:
 
     async def predicate(interaction: discord.Interaction) -> bool:
         if not interaction.guild or not isinstance(interaction.user, discord.Member):
-            raise app_commands.CheckFailure("This command can only be used in a server.")
+            raise app_commands.CheckFailure(
+                "This command can only be used in a server."
+            )
         if interaction.user.guild_permissions.manage_guild:
             return True
         if {r.name for r in interaction.user.roles} & accepted:

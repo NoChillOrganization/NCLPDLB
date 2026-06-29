@@ -40,12 +40,12 @@ Requirements
 ------------
   pip install fastapi uvicorn poke-env torch numpy websockets
 """
+
 from __future__ import annotations
 
 import argparse
 import asyncio
 import logging
-import sys
 import threading
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -58,15 +58,16 @@ log = logging.getLogger(__name__)
 
 # ── Dependency checks ─────────────────────────────────────────────────────────
 
+
 def _check_dependencies() -> list[str]:
     """Return list of missing critical packages."""
     missing = []
     for pkg, import_name in [
-        ("fastapi",   "fastapi"),
-        ("uvicorn",   "uvicorn"),
-        ("torch",     "torch"),
-        ("poke_env",  "poke_env"),
-        ("websockets","websockets"),
+        ("fastapi", "fastapi"),
+        ("uvicorn", "uvicorn"),
+        ("torch", "torch"),
+        ("poke_env", "poke_env"),
+        ("websockets", "websockets"),
     ]:
         try:
             __import__(import_name)
@@ -76,6 +77,7 @@ def _check_dependencies() -> list[str]:
 
 
 # ── Self-play thread ──────────────────────────────────────────────────────────
+
 
 def _run_self_play_in_thread(
     loop_obj: "SelfPlayLoop",
@@ -94,6 +96,7 @@ def _run_self_play_in_thread(
         log.error("[SelfPlayThread] Fatal error: %s", exc, exc_info=True)
         try:
             from src.ml.api import update_state
+
             update_state(status="error")
         except Exception:
             pass
@@ -102,6 +105,7 @@ def _run_self_play_in_thread(
 
 
 # ── Main entry point ──────────────────────────────────────────────────────────
+
 
 def main(
     port: int = 8080,
@@ -142,19 +146,20 @@ def main(
     # ── 3. Build replay buffer + trainer ────────────────────────────────
     from src.ml.trainer import ReplayBuffer, PolicyTrainer
 
-    buffer  = ReplayBuffer(capacity=buffer_capacity)
+    buffer = ReplayBuffer(capacity=buffer_capacity)
     trainer = PolicyTrainer(model=model, lr=lr)
 
     # ── 4. Build shared stats + self-play loop ───────────────────────────
     from src.ml.self_play import SharedStats, SelfPlayLoop
     from src.ml.mcts import MCTSConfig
 
-    stats       = SharedStats()
+    stats = SharedStats()
     mcts_config = MCTSConfig(n_simulations=mcts_sims)
 
     # Sync initial mcts_sims into the API state
     try:
         from src.ml.api import update_state
+
         update_state(mcts_sims=mcts_sims, status="stopped")
     except Exception:
         pass
@@ -162,6 +167,7 @@ def main(
     # ── Load Showdown credentials from config ────────────────────────────
     try:
         from src.config import settings
+
         username = settings.showdown_username
         password = settings.showdown_password.get_secret_value()
     except Exception as exc:
@@ -194,6 +200,7 @@ def main(
     async def _run_game_with_live_config() -> dict:
         try:
             from src.ml.api import get_state
+
             sims = get_state().get("mcts_sims", mcts_sims)
             loop_obj.mcts_config = MCTSConfig(n_simulations=sims)
         except Exception:
@@ -237,6 +244,7 @@ def main(
     finally:
         try:
             from src.ml.api import update_state
+
             update_state(status="stopped")
         except Exception:
             pass
@@ -244,19 +252,29 @@ def main(
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+
 def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Pokemon AI local training system — self-play + transformer + dashboard",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    ap.add_argument("--port",        type=int,   default=8080,               help="API/dashboard port")
-    ap.add_argument("--host",                    default="127.0.0.1",        help="API bind address (default loopback)")
-    ap.add_argument("--format",      default="gen9randombattle",             help="Showdown format")
-    ap.add_argument("--mcts-sims",   type=int,   default=0,                  help="MCTS simulations per move (0 = honest prior-shaping pass; >0 requires forward model)")
-    ap.add_argument("--buffer",      type=int,   default=50_000,             help="Replay buffer capacity")
-    ap.add_argument("--lr",          type=float, default=3e-4,               help="Transformer learning rate")
-    ap.add_argument("--train-every", type=int,   default=5,                  help="Train after N games (0=off)")
-    ap.add_argument("--model",       default=None,                           help="Path to a .pt model checkpoint")
+    ap.add_argument("--port", type=int, default=8080, help="API/dashboard port")
+    ap.add_argument(
+        "--host", default="127.0.0.1", help="API bind address (default loopback)"
+    )
+    ap.add_argument("--format", default="gen9randombattle", help="Showdown format")
+    ap.add_argument(
+        "--mcts-sims",
+        type=int,
+        default=0,
+        help="MCTS simulations per move (0 = honest prior-shaping pass; >0 requires forward model)",
+    )
+    ap.add_argument("--buffer", type=int, default=50_000, help="Replay buffer capacity")
+    ap.add_argument("--lr", type=float, default=3e-4, help="Transformer learning rate")
+    ap.add_argument(
+        "--train-every", type=int, default=5, help="Train after N games (0=off)"
+    )
+    ap.add_argument("--model", default=None, help="Path to a .pt model checkpoint")
     return ap.parse_args()
 
 

@@ -1,4 +1,5 @@
 """Unit tests for monitoring.check_alerts — uses a mock asyncpg connection."""
+
 from unittest.mock import AsyncMock, MagicMock
 from datetime import datetime, timezone, timedelta
 
@@ -25,14 +26,19 @@ async def test_no_alerts_all_healthy():
     now = datetime.now(timezone.utc)
     # source_health row: smogon succeeded 1 day ago (well within 35d threshold)
     smogon_row = {"name": "smogon", "last_ok": now - timedelta(days=1)}
-    conn = _conn([
-        [smogon_row],   # stale query
-        [],              # repeated failure query
-        [],              # volume drop query
-        [],              # parse errors query
-    ])
+    conn = _conn(
+        [
+            [smogon_row],  # stale query
+            [],  # repeated failure query
+            [],  # volume drop query
+            [],  # parse errors query
+        ]
+    )
     conn.fetch.side_effect = [
-        [smogon_row], [], [], [],
+        [smogon_row],
+        [],
+        [],
+        [],
     ]
     alerts = await check_alerts(conn)
     assert alerts == []
@@ -83,7 +89,9 @@ async def test_repeated_failure_alert():
 async def test_volume_drop_alert():
     row = MagicMock()
     row.__getitem__ = lambda self, k: {
-        "name": "pikalytics", "last_landed": 3, "avg_30d": 50,
+        "name": "pikalytics",
+        "last_landed": 3,
+        "avg_30d": 50,
     }[k]
     conn = AsyncMock()
     conn.fetch.side_effect = [[], [], [row], []]
@@ -110,7 +118,8 @@ async def test_multiple_alerts_accumulate():
     now = datetime.now(timezone.utc)
     stale_row = MagicMock()
     stale_row.__getitem__ = lambda self, k: {
-        "name": "showdown", "last_ok": now - timedelta(days=10),
+        "name": "showdown",
+        "last_ok": now - timedelta(days=10),
     }[k]
     fail_row = MagicMock()
     fail_row.__getitem__ = lambda self, k: {"name": "smogon", "error_count": 3}[k]

@@ -1,6 +1,7 @@
 """
 Unit tests for src/ml/mcts.py — MCTSConfig, MCTSNode, MCTS, run_mcts, _build_legal_mask.
 """
+
 import pytest
 import numpy as np
 
@@ -18,9 +19,11 @@ from src.ml.battle_env import N_ACTIONS_GEN9, OBS_DIM  # noqa: E402
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
+
 def make_mock_model(n_actions: int = N_ACTIONS_GEN9):
     """A minimal BattleTransformer stand-in for MCTS tests."""
     from unittest.mock import MagicMock
+
     model = MagicMock()
     model.policy_probs.return_value = torch.ones(n_actions) / n_actions
     model.forward.return_value = (
@@ -36,8 +39,8 @@ def make_obs(n: int = OBS_DIM) -> np.ndarray:
 
 # ── MCTSConfig ─────────────────────────────────────────────────────────────────
 
-class TestMCTSConfig:
 
+class TestMCTSConfig:
     def test_default_values(self):
         cfg = MCTSConfig()
         assert cfg.n_simulations == 0
@@ -55,8 +58,8 @@ class TestMCTSConfig:
 
 # ── MCTSNode ───────────────────────────────────────────────────────────────────
 
-class TestMCTSNode:
 
+class TestMCTSNode:
     def test_default_q_value_is_zero_when_unvisited(self):
         node = MCTSNode()
         assert node.q_value == 0.0
@@ -97,8 +100,8 @@ class TestMCTSNode:
 
 # ── MCTS ───────────────────────────────────────────────────────────────────────
 
-class TestMCTS:
 
+class TestMCTS:
     def test_search_returns_root_with_children(self):
         model = make_mock_model()
         obs = make_obs()
@@ -185,8 +188,8 @@ class TestMCTS:
 
 # ── run_mcts ───────────────────────────────────────────────────────────────────
 
-class TestRunMcts:
 
+class TestRunMcts:
     def test_returns_action_and_stats(self):
         model = make_mock_model()
         obs = make_obs()
@@ -222,8 +225,8 @@ class TestRunMcts:
 
 # ── _build_legal_mask ──────────────────────────────────────────────────────────
 
-class TestBuildLegalMask:
 
+class TestBuildLegalMask:
     def test_returns_tensor_with_correct_size(self):
         """When torch is available, returns a bool tensor of shape (n_actions,)."""
         mask = _build_legal_mask(battle=None, n_actions=10)
@@ -241,18 +244,19 @@ class TestBuildLegalMask:
         pytest.importorskip("poke_env")
         from unittest.mock import patch, MagicMock
         from poke_env.environment.singles_env import SinglesEnv
+
         battle = MagicMock()
 
         def _side_effect(act, b):
             if act == 0:
-                return "some_order"   # legal action → mask[0] = False
+                return "some_order"  # legal action → mask[0] = False
             raise Exception("illegal")  # illegal action → mask stays True
 
         with patch.object(SinglesEnv, "action_to_order", side_effect=_side_effect):
             mask = _build_legal_mask(battle=battle, n_actions=2)
 
-        assert mask[0].item() is False   # legal action — unmasked
-        assert mask[1].item() is True    # illegal action — stays masked
+        assert mask[0].item() is False  # legal action — unmasked
+        assert mask[1].item() is True  # illegal action — stays masked
 
     def test_unexpected_exception_is_logged_as_warning(self):
         """
@@ -283,12 +287,14 @@ class TestBuildLegalMask:
 
 # ── MCTS else-branch (already-visited leaf) ───────────────────────────────────
 
+
 class TestMCTSElseBranch:
     """Cover line 172: else: value = leaf.q_value or 0.0"""
 
     def test_non_leaf_selected_uses_q_value(self):
         """When _select returns a non-leaf node, else branch evaluates leaf.q_value."""
         from unittest.mock import patch
+
         model = make_mock_model()
         obs = make_obs()
         cfg = MCTSConfig(n_simulations=1, dirichlet_eps=0.0)
@@ -299,7 +305,7 @@ class TestMCTSElseBranch:
         # → False or False → False when is_expanded=True AND children non-empty
         non_leaf = MCTSNode()
         non_leaf.visit_count = 2
-        non_leaf.value_sum = 1.0   # q_value = 0.5
+        non_leaf.value_sum = 1.0  # q_value = 0.5
         non_leaf.prior = 1.0
         non_leaf.is_expanded = True
         non_leaf.children[0] = MCTSNode()
@@ -314,6 +320,7 @@ class TestMCTSElseBranch:
 
 
 # ── _add_dirichlet_noise early return ─────────────────────────────────────────
+
 
 class TestDirichletNoiseEmptyRoot:
     """Cover line 290: if not root.children: return"""

@@ -1,6 +1,7 @@
 """
 Unit tests for TeamService — roster management, trades, import/export, legality.
 """
+
 import json
 import pytest
 from unittest.mock import MagicMock, patch
@@ -12,16 +13,20 @@ from src.data.models import Pokemon, PokemonStats, TeamRoster
 
 # ── Helpers ───────────────────────────────────────────────────
 
-def make_pokemon(name: str, types=None, spe=80, tier="OU", vgc=True,
-                 console=None, showdown_tier="OU") -> Pokemon:
+
+def make_pokemon(
+    name: str, types=None, spe=80, tier="OU", vgc=True, console=None, showdown_tier="OU"
+) -> Pokemon:
     return Pokemon(
-        national_dex=1, name=name,
+        national_dex=1,
+        name=name,
         types=types or ["dragon", "ground"],
         base_stats=PokemonStats(hp=80, atk=100, def_=80, spa=80, spd=80, spe=spe),
         generation=4,
         showdown_tier=showdown_tier,
         vgc_legal=vgc,
-        console_legal=console or {"sv": True, "swsh": True, "bdsp": False, "legends": False},
+        console_legal=console
+        or {"sv": True, "swsh": True, "bdsp": False, "legends": False},
     )
 
 
@@ -33,6 +38,7 @@ def clear_roster_cache():
 
 
 # ── get_team ──────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_get_team_returns_none_when_not_found():
@@ -59,10 +65,14 @@ async def test_get_team_loads_from_sheets():
     svc = TeamService()
     garchomp = make_pokemon("Garchomp")
 
-    with patch("src.services.team_service.sheets") as mock_sheets, \
-         patch("src.services.team_service.pokemon_db") as mock_db:
+    with (
+        patch("src.services.team_service.sheets") as mock_sheets,
+        patch("src.services.team_service.pokemon_db") as mock_db,
+    ):
         mock_sheets.find_row.return_value = {
-            "team_id": "T1", "player_id": "p1", "guild_id": "g1",
+            "team_id": "T1",
+            "player_id": "p1",
+            "guild_id": "g1",
             "pokemon_list": json.dumps(["Garchomp"]),
         }
         mock_db.find.return_value = garchomp
@@ -78,7 +88,9 @@ async def test_get_team_wrong_guild():
     svc = TeamService()
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = {
-            "team_id": "T1", "player_id": "p1", "guild_id": "g2",
+            "team_id": "T1",
+            "player_id": "p1",
+            "guild_id": "g2",
         }
         result = await svc.get_team("g1", "p1")
     assert result is None
@@ -90,7 +102,9 @@ async def test_get_team_invalid_json_pokemon_list():
     svc = TeamService()
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = {
-            "team_id": "T1", "player_id": "p1", "guild_id": "g1",
+            "team_id": "T1",
+            "player_id": "p1",
+            "guild_id": "g1",
             "pokemon_list": "not valid json ][",
         }
         result = await svc.get_team("g1", "p1")
@@ -104,7 +118,9 @@ async def test_get_team_non_list_json_pokemon_list():
     svc = TeamService()
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = {
-            "team_id": "T1", "player_id": "p1", "guild_id": "g1",
+            "team_id": "T1",
+            "player_id": "p1",
+            "guild_id": "g1",
             "pokemon_list": '"a string value"',
         }
         result = await svc.get_team("g1", "p1")
@@ -113,6 +129,7 @@ async def test_get_team_non_list_json_pokemon_list():
 
 
 # ── register_team ─────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_register_team_creates_roster():
@@ -143,6 +160,7 @@ async def test_register_team_updates_existing_in_cache():
 
 # ── propose_trade ─────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_propose_trade_success():
     svc = TeamService()
@@ -168,7 +186,9 @@ async def test_propose_trade_no_from_team():
     svc = TeamService()
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = None
-        result = await svc.propose_trade("g1", "no_team", "p2", "Garchomp", "Corviknight")
+        result = await svc.propose_trade(
+            "g1", "no_team", "p2", "Garchomp", "Corviknight"
+        )
     assert not result.success
     assert "don't have a team" in result.error
 
@@ -176,12 +196,16 @@ async def test_propose_trade_no_from_team():
 @pytest.mark.asyncio
 async def test_propose_trade_no_to_team():
     svc = TeamService()
-    from_team = TeamRoster(player_id="p1", guild_id="g1", pokemon=[make_pokemon("Garchomp")])
+    from_team = TeamRoster(
+        player_id="p1", guild_id="g1", pokemon=[make_pokemon("Garchomp")]
+    )
     ts_mod._roster_cache["g1:p1"] = from_team
 
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = None
-        result = await svc.propose_trade("g1", "p1", "no_team", "Garchomp", "Corviknight")
+        result = await svc.propose_trade(
+            "g1", "p1", "no_team", "Garchomp", "Corviknight"
+        )
     assert not result.success
     assert "doesn't have a team" in result.error
 
@@ -189,8 +213,12 @@ async def test_propose_trade_no_to_team():
 @pytest.mark.asyncio
 async def test_propose_trade_dont_have_offering():
     svc = TeamService()
-    from_team = TeamRoster(player_id="p1", guild_id="g1", pokemon=[make_pokemon("Garchomp")])
-    to_team = TeamRoster(player_id="p2", guild_id="g1", pokemon=[make_pokemon("Corviknight")])
+    from_team = TeamRoster(
+        player_id="p1", guild_id="g1", pokemon=[make_pokemon("Garchomp")]
+    )
+    to_team = TeamRoster(
+        player_id="p2", guild_id="g1", pokemon=[make_pokemon("Corviknight")]
+    )
     ts_mod._roster_cache["g1:p1"] = from_team
     ts_mod._roster_cache["g1:p2"] = to_team
 
@@ -202,8 +230,12 @@ async def test_propose_trade_dont_have_offering():
 @pytest.mark.asyncio
 async def test_propose_trade_opponent_doesnt_have():
     svc = TeamService()
-    from_team = TeamRoster(player_id="p1", guild_id="g1", pokemon=[make_pokemon("Garchomp")])
-    to_team = TeamRoster(player_id="p2", guild_id="g1", pokemon=[make_pokemon("Corviknight")])
+    from_team = TeamRoster(
+        player_id="p1", guild_id="g1", pokemon=[make_pokemon("Garchomp")]
+    )
+    to_team = TeamRoster(
+        player_id="p2", guild_id="g1", pokemon=[make_pokemon("Corviknight")]
+    )
     ts_mod._roster_cache["g1:p1"] = from_team
     ts_mod._roster_cache["g1:p2"] = to_team
 
@@ -213,6 +245,7 @@ async def test_propose_trade_opponent_doesnt_have():
 
 
 # ── accept_trade ──────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_accept_trade_success():
@@ -224,8 +257,10 @@ async def test_accept_trade_success():
     ts_mod._roster_cache["g1:p1"] = from_team
     ts_mod._roster_cache["g1:p2"] = to_team
 
-    with patch("src.services.team_service.sheets") as mock_sheets, \
-         patch("src.services.team_service.pokemon_db") as mock_db:
+    with (
+        patch("src.services.team_service.sheets") as mock_sheets,
+        patch("src.services.team_service.pokemon_db") as mock_db,
+    ):
         mock_sheets.find_row.return_value = {
             "transaction_id": "T1",
             "to_player_id": "p2",
@@ -259,7 +294,9 @@ async def test_accept_trade_wrong_player():
     svc = TeamService()
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = {
-            "transaction_id": "T1", "to_player_id": "p2", "status": "pending",
+            "transaction_id": "T1",
+            "to_player_id": "p2",
+            "status": "pending",
         }
         result = await svc.accept_trade("wrong_player", "T1")
     assert not result.success
@@ -271,7 +308,9 @@ async def test_accept_trade_not_pending():
     svc = TeamService()
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = {
-            "transaction_id": "T1", "to_player_id": "p2", "status": "accepted",
+            "transaction_id": "T1",
+            "to_player_id": "p2",
+            "status": "accepted",
         }
         result = await svc.accept_trade("p2", "T1")
     assert not result.success
@@ -280,12 +319,15 @@ async def test_accept_trade_not_pending():
 
 # ── decline_trade ─────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_decline_trade_success():
     svc = TeamService()
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = {
-            "transaction_id": "T1", "to_player_id": "p2", "status": "pending",
+            "transaction_id": "T1",
+            "to_player_id": "p2",
+            "status": "pending",
         }
         mock_sheets.save_transaction = MagicMock()
         result = await svc.decline_trade("p2", "T1")
@@ -307,7 +349,9 @@ async def test_decline_trade_wrong_player():
     svc = TeamService()
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = {
-            "transaction_id": "T1", "to_player_id": "p2", "status": "pending",
+            "transaction_id": "T1",
+            "to_player_id": "p2",
+            "status": "pending",
         }
         result = await svc.decline_trade("wrong", "T1")
     assert not result.success
@@ -319,7 +363,9 @@ async def test_decline_trade_not_pending():
     svc = TeamService()
     with patch("src.services.team_service.sheets") as mock_sheets:
         mock_sheets.find_row.return_value = {
-            "transaction_id": "T1", "to_player_id": "p2", "status": "declined",
+            "transaction_id": "T1",
+            "to_player_id": "p2",
+            "status": "declined",
         }
         result = await svc.decline_trade("p2", "T1")
     assert not result.success
@@ -356,7 +402,9 @@ async def test_import_showdown_pokemon_not_in_db(capsys):
     svc = TeamService()
     text = "FakeMon123 @ Choice Scarf\nAbility: Test\n\nGarchomp @ Scarf\nAbility: Rough Skin"
     with patch("src.services.team_service.pokemon_db") as mock_db:
-        mock_db.find.side_effect = lambda name: None if "FakeMon" in name else make_pokemon(name)
+        mock_db.find.side_effect = lambda name: (
+            None if "FakeMon" in name else make_pokemon(name)
+        )
         result = await svc.import_showdown("g1", "p1", text)
     # Only Garchomp was found
     assert result.success
@@ -374,6 +422,7 @@ async def test_import_showdown_no_valid_pokemon():
 
 
 # ── export_showdown ───────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_export_showdown_no_team():
@@ -398,6 +447,7 @@ async def test_export_showdown_with_team():
 
 
 # ── check_legality ────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_check_legality_pokemon_not_found():

@@ -1,6 +1,7 @@
 """
 ELO Rating Service — Standard ELO with K=32, per-league ratings.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -19,6 +20,7 @@ def _safe_int(val: object, default: int) -> int:
         return int(str(val).strip().split()[0]) if str(val).strip() else default
     except (ValueError, IndexError):
         return default
+
 
 log = logging.getLogger(__name__)
 
@@ -53,42 +55,47 @@ class EloService:
         """Load all ELO rows from SQLite into the in-memory cache on startup."""
         rows = await load_all_elo()
         for row in rows:
-            guild_id  = row["guild_id"]
+            guild_id = row["guild_id"]
             player_id = row["player_id"]
             _elo_cache.setdefault(guild_id, {})[player_id] = PlayerElo(
-                player_id    = player_id,
-                guild_id     = guild_id,
-                display_name = row.get("display_name", ""),
-                elo          = int(row["elo"]),
-                wins         = int(row["wins"]),
-                losses       = int(row["losses"]),
-                streak       = int(row.get("streak", 0)),
+                player_id=player_id,
+                guild_id=guild_id,
+                display_name=row.get("display_name", ""),
+                elo=int(row["elo"]),
+                wins=int(row["wins"]),
+                losses=int(row["losses"]),
+                streak=int(row.get("streak", 0)),
             )
         if rows:
             log.info("Restored %d ELO record(s) from SQLite", len(rows))
 
     async def _save_player_to_db(self, player: PlayerElo) -> None:
         await _db_save_elo(
-            guild_id     = player.guild_id,
-            player_id    = player.player_id,
-            elo          = player.elo,
-            wins         = player.wins,
-            losses       = player.losses,
-            streak       = player.streak,
-            display_name = player.display_name,
+            guild_id=player.guild_id,
+            player_id=player.player_id,
+            elo=player.elo,
+            wins=player.wins,
+            losses=player.losses,
+            streak=player.streak,
+            display_name=player.display_name,
         )
 
     async def _get_player(self, guild_id: str, player_id: str) -> PlayerElo:
         guild_elo = _elo_cache.setdefault(guild_id, {})
         if player_id not in guild_elo:
             # Try loading from flat ELO Data tab
-            record = await asyncio.to_thread(sheets.find_row, Tab.ELO_DATA, "player_id", player_id)
+            record = await asyncio.to_thread(
+                sheets.find_row, Tab.ELO_DATA, "player_id", player_id
+            )
             if record:
                 guild_elo[player_id] = PlayerElo(
                     player_id=player_id,
                     guild_id=guild_id,
                     display_name=str(record.get("player_name", "")),
-                    elo=_safe_int(record.get("elo", settings.elo_default_rating), settings.elo_default_rating),
+                    elo=_safe_int(
+                        record.get("elo", settings.elo_default_rating),
+                        settings.elo_default_rating,
+                    ),
                     wins=_safe_int(record.get("wins", 0), 0),
                     losses=_safe_int(record.get("losses", 0), 0),
                     streak=_safe_int(record.get("streak", 0), 0),
@@ -179,12 +186,15 @@ class EloService:
         return sorted(guild_elo.values(), key=lambda p: p.elo, reverse=True)
 
     async def _save_player(self, player: PlayerElo) -> None:
-        await asyncio.to_thread(sheets.upsert_standing, {
-            "player_id": player.player_id,
-            "player_name": player.display_name,
-            "elo": player.elo,
-            "wins": player.wins,
-            "losses": player.losses,
-            "streak": player.streak,
-            "win_pct": round(player.win_rate, 2),
-        })
+        await asyncio.to_thread(
+            sheets.upsert_standing,
+            {
+                "player_id": player.player_id,
+                "player_name": player.display_name,
+                "elo": player.elo,
+                "wins": player.wins,
+                "losses": player.losses,
+                "streak": player.streak,
+                "win_pct": round(player.win_rate, 2),
+            },
+        )

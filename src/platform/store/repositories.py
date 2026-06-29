@@ -1,4 +1,5 @@
 """Upsert helpers. One job each: write raw, resolve species, upsert canonical rows."""
+
 import json
 
 import asyncpg
@@ -7,8 +8,13 @@ from src.platform.store.db import payload_hash
 
 
 async def land_raw(
-    conn: asyncpg.Connection, *, source: str, route: str, natural_key: str,
-    payload: dict, url: str | None = None,
+    conn: asyncpg.Connection,
+    *,
+    source: str,
+    route: str,
+    natural_key: str,
+    payload: dict,
+    url: str | None = None,
 ) -> int | None:
     """Insert into raw_ingest. Returns new row id, or None if identical payload already landed."""
     raw_bytes = json.dumps(payload, sort_keys=True).encode()
@@ -19,13 +25,22 @@ async def land_raw(
         ON CONFLICT (source_id, natural_key, payload_hash) DO NOTHING
         RETURNING id
         """,
-        source, route, natural_key, url, json.dumps(payload), payload_hash(raw_bytes),
+        source,
+        route,
+        natural_key,
+        url,
+        json.dumps(payload),
+        payload_hash(raw_bytes),
     )
     return row["id"] if row else None
 
 
 async def resolve_species(
-    conn: asyncpg.Connection, *, source: str | None, raw_name: str, normalized_key: str,
+    conn: asyncpg.Connection,
+    *,
+    source: str | None,
+    raw_name: str,
+    normalized_key: str,
 ) -> int | None:
     """raw_name -> canonical_species_id via species_alias. None if unresolved (caller should log)."""
     row = await conn.fetchrow(
@@ -35,14 +50,20 @@ async def resolve_species(
         WHERE sa.normalized_key = $1 AND (s.name = $2 OR sa.source_id IS NULL)
         ORDER BY sa.source_id NULLS LAST LIMIT 1
         """,
-        normalized_key, source,
+        normalized_key,
+        source,
     )
     return row["canonical_species_id"] if row else None
 
 
 async def upsert_canonical_species(
-    conn: asyncpg.Connection, *, slug: str, national_dex: int | None, display_name: str,
-    base_forme_slug: str | None = None, is_forme: bool = False,
+    conn: asyncpg.Connection,
+    *,
+    slug: str,
+    national_dex: int | None,
+    display_name: str,
+    base_forme_slug: str | None = None,
+    is_forme: bool = False,
 ) -> int:
     row = await conn.fetchrow(
         """
@@ -52,14 +73,22 @@ async def upsert_canonical_species(
             display_name = EXCLUDED.display_name
         RETURNING id
         """,
-        slug, national_dex, display_name, base_forme_slug, is_forme,
+        slug,
+        national_dex,
+        display_name,
+        base_forme_slug,
+        is_forme,
     )
     return row["id"]
 
 
 async def add_species_alias(
-    conn: asyncpg.Connection, *, canonical_species_id: int, source: str | None,
-    raw_name: str, normalized_key: str,
+    conn: asyncpg.Connection,
+    *,
+    canonical_species_id: int,
+    source: str | None,
+    raw_name: str,
+    normalized_key: str,
 ) -> None:
     await conn.execute(
         """
@@ -68,13 +97,23 @@ async def add_species_alias(
         UNION ALL SELECT $1::integer, NULL::integer, $3::text, $4::text WHERE $2 IS NULL
         ON CONFLICT (source_id, normalized_key) DO NOTHING
         """,
-        canonical_species_id, source, raw_name, normalized_key,
+        canonical_species_id,
+        source,
+        raw_name,
+        normalized_key,
     )
 
 
 async def upsert_replay(
-    conn: asyncpg.Connection, *, source: str, replay_id: str, format_id: int | None,
-    players: dict, rating: int | None, log_hash: str, raw_ingest_id: int | None,
+    conn: asyncpg.Connection,
+    *,
+    source: str,
+    replay_id: str,
+    format_id: int | None,
+    players: dict,
+    rating: int | None,
+    log_hash: str,
+    raw_ingest_id: int | None,
 ) -> int:
     row = await conn.fetchrow(
         """
@@ -84,14 +123,25 @@ async def upsert_replay(
             raw_ingest_id = EXCLUDED.raw_ingest_id
         RETURNING id
         """,
-        source, replay_id, format_id, json.dumps(players), rating, log_hash, raw_ingest_id,
+        source,
+        replay_id,
+        format_id,
+        json.dumps(players),
+        rating,
+        log_hash,
+        raw_ingest_id,
     )
     return row["id"]
 
 
 async def upsert_replay_battle(
-    conn: asyncpg.Connection, *, replay_db_id: int, winner: str, turn_count: int,
-    turns: list, parser_version: int,
+    conn: asyncpg.Connection,
+    *,
+    replay_db_id: int,
+    winner: str,
+    turn_count: int,
+    turns: list,
+    parser_version: int,
 ) -> int:
     """UNIQUE(replay_id, parser_version) — re-parse with bumped parser_version is idempotent reprocess."""
     row = await conn.fetchrow(
@@ -102,27 +152,45 @@ async def upsert_replay_battle(
             turn_count = EXCLUDED.turn_count, turns = EXCLUDED.turns, normalized_at = now()
         RETURNING id
         """,
-        replay_db_id, winner, turn_count, json.dumps(turns), parser_version,
+        replay_db_id,
+        winner,
+        turn_count,
+        json.dumps(turns),
+        parser_version,
     )
     return row["id"]
 
 
 async def add_replay_team_member(
-    conn: asyncpg.Connection, *, replay_battle_id: int, player_slot: int,
-    canonical_species_id: int | None, brought: bool, lead: bool,
+    conn: asyncpg.Connection,
+    *,
+    replay_battle_id: int,
+    player_slot: int,
+    canonical_species_id: int | None,
+    brought: bool,
+    lead: bool,
 ) -> None:
     await conn.execute(
         """
         INSERT INTO replay_team (replay_battle_id, player_slot, canonical_species_id, brought, lead)
         VALUES ($1, $2, $3, $4, $5)
         """,
-        replay_battle_id, player_slot, canonical_species_id, brought, lead,
+        replay_battle_id,
+        player_slot,
+        canonical_species_id,
+        brought,
+        lead,
     )
 
 
 async def upsert_canonical_format(
-    conn: asyncpg.Connection, *, slug: str, label: str, generation: int,
-    game_type: str, regulation: str | None = None,
+    conn: asyncpg.Connection,
+    *,
+    slug: str,
+    label: str,
+    generation: int,
+    game_type: str,
+    regulation: str | None = None,
 ) -> int:
     row = await conn.fetchrow(
         """
@@ -131,14 +199,24 @@ async def upsert_canonical_format(
         ON CONFLICT (slug) DO UPDATE SET label = EXCLUDED.label, regulation = EXCLUDED.regulation
         RETURNING id
         """,
-        slug, label, generation, game_type, regulation,
+        slug,
+        label,
+        generation,
+        game_type,
+        regulation,
     )
     return row["id"]
 
 
 async def upsert_usage_snapshot(
-    conn: asyncpg.Connection, *, source: str, format_id: int, period, elo_cutoff: int | None,
-    sample_size: int | None, raw_ingest_id: int | None,
+    conn: asyncpg.Connection,
+    *,
+    source: str,
+    format_id: int,
+    period,
+    elo_cutoff: int | None,
+    sample_size: int | None,
+    raw_ingest_id: int | None,
 ) -> int:
     row = await conn.fetchrow(
         """
@@ -148,14 +226,24 @@ async def upsert_usage_snapshot(
             DO UPDATE SET sample_size = EXCLUDED.sample_size, raw_ingest_id = EXCLUDED.raw_ingest_id
         RETURNING id
         """,
-        source, format_id, period, elo_cutoff, sample_size, raw_ingest_id,
+        source,
+        format_id,
+        period,
+        elo_cutoff,
+        sample_size,
+        raw_ingest_id,
     )
     return row["id"]
 
 
 async def upsert_usage_entry(
-    conn: asyncpg.Connection, *, snapshot_id: int, canonical_species_id: int | None,
-    rank: int | None, usage_pct: float | None, raw_count: int | None,
+    conn: asyncpg.Connection,
+    *,
+    snapshot_id: int,
+    canonical_species_id: int | None,
+    rank: int | None,
+    usage_pct: float | None,
+    raw_count: int | None,
 ) -> int:
     row = await conn.fetchrow(
         """
@@ -165,32 +253,58 @@ async def upsert_usage_entry(
             rank = EXCLUDED.rank, usage_pct = EXCLUDED.usage_pct, raw_count = EXCLUDED.raw_count
         RETURNING id
         """,
-        snapshot_id, canonical_species_id, rank, usage_pct, raw_count,
+        snapshot_id,
+        canonical_species_id,
+        rank,
+        usage_pct,
+        raw_count,
     )
     return row["id"]
 
 
 async def upsert_usage_moveset(
-    conn: asyncpg.Connection, *, usage_entry_id: int, moves: dict, items: dict,
-    spreads: dict, abilities: dict, teammates: dict, checks: dict,
+    conn: asyncpg.Connection,
+    *,
+    usage_entry_id: int,
+    moves: dict,
+    items: dict,
+    spreads: dict,
+    abilities: dict,
+    teammates: dict,
+    checks: dict,
 ) -> None:
     """No unique constraint on usage_entry_id — caller (normalizer) must delete-before-insert
     on reprocess. Re-running normalize_usage_row on the same raw_id would otherwise duplicate.
     """
-    await conn.execute("DELETE FROM usage_moveset WHERE usage_entry_id = $1", usage_entry_id)
+    await conn.execute(
+        "DELETE FROM usage_moveset WHERE usage_entry_id = $1", usage_entry_id
+    )
     await conn.execute(
         """
         INSERT INTO usage_moveset (usage_entry_id, moves, items, spreads, abilities, teammates, checks)
         VALUES ($1, $2::jsonb, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb)
         """,
-        usage_entry_id, json.dumps(moves), json.dumps(items), json.dumps(spreads),
-        json.dumps(abilities), json.dumps(teammates), json.dumps(checks),
+        usage_entry_id,
+        json.dumps(moves),
+        json.dumps(items),
+        json.dumps(spreads),
+        json.dumps(abilities),
+        json.dumps(teammates),
+        json.dumps(checks),
     )
 
 
 async def upsert_tournament_event(
-    conn: asyncpg.Connection, *, source: str, external_id: str, name: str, format_id: int | None,
-    event_date, level: str | None, url: str | None, raw_ingest_id: int | None,
+    conn: asyncpg.Connection,
+    *,
+    source: str,
+    external_id: str,
+    name: str,
+    format_id: int | None,
+    event_date,
+    level: str | None,
+    url: str | None,
+    raw_ingest_id: int | None,
 ) -> int:
     row = await conn.fetchrow(
         """
@@ -201,14 +315,28 @@ async def upsert_tournament_event(
             level = EXCLUDED.level, url = EXCLUDED.url, raw_ingest_id = EXCLUDED.raw_ingest_id
         RETURNING id
         """,
-        source, external_id, name, format_id, event_date, level, url, raw_ingest_id,
+        source,
+        external_id,
+        name,
+        format_id,
+        event_date,
+        level,
+        url,
+        raw_ingest_id,
     )
     return row["id"]
 
 
 async def upsert_tournament_team(
-    conn: asyncpg.Connection, *, event_id: int, placement: int | None, player_name: str | None,
-    player_external_id: str | None, wins: int | None, losses: int | None, raw_ingest_id: int | None,
+    conn: asyncpg.Connection,
+    *,
+    event_id: int,
+    placement: int | None,
+    player_name: str | None,
+    player_external_id: str | None,
+    wins: int | None,
+    losses: int | None,
+    raw_ingest_id: int | None,
 ) -> int:
     row = await conn.fetchrow(
         """
@@ -219,33 +347,57 @@ async def upsert_tournament_team(
             raw_ingest_id = EXCLUDED.raw_ingest_id
         RETURNING id
         """,
-        event_id, placement, player_name, player_external_id, wins, losses, raw_ingest_id,
+        event_id,
+        placement,
+        player_name,
+        player_external_id,
+        wins,
+        losses,
+        raw_ingest_id,
     )
     return row["id"]
 
 
 async def add_tournament_team_member(
-    conn: asyncpg.Connection, *, team_id: int, canonical_species_id: int | None, slot: int,
-    item: str | None, ability: str | None, tera_type: str | None, moves: list,
+    conn: asyncpg.Connection,
+    *,
+    team_id: int,
+    canonical_species_id: int | None,
+    slot: int,
+    item: str | None,
+    ability: str | None,
+    tera_type: str | None,
+    moves: list,
 ) -> None:
     """No unique constraint on tournament_team_member — delete-before-insert per team_id
     on reprocess, same precedent as upsert_usage_moveset.
     """
     if slot == 1:
-        await conn.execute("DELETE FROM tournament_team_member WHERE team_id = $1", team_id)
+        await conn.execute(
+            "DELETE FROM tournament_team_member WHERE team_id = $1", team_id
+        )
     await conn.execute(
         """
         INSERT INTO tournament_team_member (team_id, canonical_species_id, slot, item, ability, tera_type, moves)
         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
         """,
-        team_id, canonical_species_id, slot, item, ability, tera_type, json.dumps(moves),
+        team_id,
+        canonical_species_id,
+        slot,
+        item,
+        ability,
+        tera_type,
+        json.dumps(moves),
     )
 
 
-async def mark_raw_processed(conn: asyncpg.Connection, *, raw_id: int, normalizer_version: int) -> None:
+async def mark_raw_processed(
+    conn: asyncpg.Connection, *, raw_id: int, normalizer_version: int
+) -> None:
     await conn.execute(
         "UPDATE raw_ingest SET status = 'normalized', processed_at = now(), normalizer_version = $2 WHERE id = $1",
-        raw_id, normalizer_version,
+        raw_id,
+        normalizer_version,
     )
 
 

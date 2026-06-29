@@ -1,6 +1,7 @@
 """
 Battle Simulation Service — Damage calc, team comparison, Showdown replay parsing.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -65,8 +66,11 @@ class BattleSimService:
         if not r1 or not r2:
             return TeamCompareResult(
                 advantage_summary="Could not load one or both teams.",
-                p1_threats="N/A", p2_threats="N/A",
-                type_summary="N/A", p1_score=0, p2_score=0,
+                p1_threats="N/A",
+                p2_threats="N/A",
+                type_summary="N/A",
+                p1_score=0,
+                p2_score=0,
             )
 
         # Find which of p1's pokemon threaten p2's team
@@ -94,7 +98,9 @@ class BattleSimService:
             p2_score=p2_score,
         )
 
-    def _find_threats(self, attackers: list[Pokemon], defenders: list[Pokemon]) -> list[str]:
+    def _find_threats(
+        self, attackers: list[Pokemon], defenders: list[Pokemon]
+    ) -> list[str]:
         """Find attackers that have a type advantage over 2+ defenders."""
         threats = []
         for atk in attackers:
@@ -108,7 +114,9 @@ class BattleSimService:
                 threats.append(f"{atk.name} ({atk.type_string})")
         return threats
 
-    def _team_matchup_score(self, team_a: list[Pokemon], team_b: list[Pokemon]) -> float:
+    def _team_matchup_score(
+        self, team_a: list[Pokemon], team_b: list[Pokemon]
+    ) -> float:
         """Heuristic score for team_a vs team_b (higher = better for team_a)."""
         score = 0.0
         for a in team_a:
@@ -144,11 +152,13 @@ class BattleSimService:
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(json_url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                async with session.get(
+                    json_url, timeout=aiohttp.ClientTimeout(total=10)
+                ) as resp:
                     if resp.status != 200:
                         return ReplayParseResult(
                             success=False,
-                            error=f"Could not fetch replay (HTTP {resp.status}). Check the URL."
+                            error=f"Could not fetch replay (HTTP {resp.status}). Check the URL.",
                         )
                     data = await resp.json(content_type=None)
         except (aiohttp.ClientError, ValueError) as e:
@@ -161,16 +171,19 @@ class BattleSimService:
             return ReplayParseResult(success=False, error=f"Parse error: {e}")
 
         # Save to Google Sheets
-        await asyncio.to_thread(sheets.save_replay, {
-            "replay_id": str(uuid.uuid4())[:8],
-            "match_id": "",  # Will be linked if match exists
-            "url": replay_url,
-            "winner": result.winner_name,
-            "p1_team": result.p1_team,
-            "p2_team": result.p2_team,
-            "turns": result.turns,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        await asyncio.to_thread(
+            sheets.save_replay,
+            {
+                "replay_id": str(uuid.uuid4())[:8],
+                "match_id": "",  # Will be linked if match exists
+                "url": replay_url,
+                "winner": result.winner_name,
+                "p1_team": result.p1_team,
+                "p2_team": result.p2_team,
+                "turns": result.turns,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
         return result
 
     def _parse_replay_data(self, data: dict) -> ReplayParseResult:

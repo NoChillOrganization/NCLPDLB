@@ -29,6 +29,7 @@ Usage
   # In ShowdownBotPlayer:
   #   action_id = run_mcts(obs, model, n_legal_actions, config)[0]
 """
+
 from __future__ import annotations
 
 import logging
@@ -44,12 +45,14 @@ log = logging.getLogger(__name__)
 
 try:
     import torch
+
     TORCH_OK = True
 except ImportError:  # pragma: no cover
     TORCH_OK = False
     torch = None  # type: ignore
 
 # ── Config ────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class MCTSConfig:
@@ -62,15 +65,19 @@ class MCTSConfig:
     exploration, and action_probs() returns the network prior distribution
     directly.  Set n_simulations>0 only once a forward model is available.
     """
-    n_simulations: int   = 0        # 0 = prior-shaping pass (see NOTE); >0 = full MCTS
-    c_puct:        float = 1.5      # exploration constant (UCB coefficient)
-    dirichlet_eps: float = 0.25     # fraction of Dirichlet noise added at root
-    dirichlet_alpha: float = 0.3    # Dirichlet concentration (0.3 = reasonable for ~26 actions)
-    temperature:   float = 1.0      # action selection temperature (1.0 = proportional)
-    value_scale:   float = 1.0      # scale applied to model value estimates
+
+    n_simulations: int = 0  # 0 = prior-shaping pass (see NOTE); >0 = full MCTS
+    c_puct: float = 1.5  # exploration constant (UCB coefficient)
+    dirichlet_eps: float = 0.25  # fraction of Dirichlet noise added at root
+    dirichlet_alpha: float = (
+        0.3  # Dirichlet concentration (0.3 = reasonable for ~26 actions)
+    )
+    temperature: float = 1.0  # action selection temperature (1.0 = proportional)
+    value_scale: float = 1.0  # scale applied to model value estimates
 
 
 # ── Node ──────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class MCTSNode:
@@ -85,11 +92,12 @@ class MCTSNode:
     children   : child nodes indexed by action id
     is_expanded: whether expand() has been called
     """
-    prior:       float = 0.0
-    visit_count: int   = 0
-    value_sum:   float = 0.0
-    children:    dict[int, "MCTSNode"] = field(default_factory=dict)
-    is_expanded: bool  = False
+
+    prior: float = 0.0
+    visit_count: int = 0
+    value_sum: float = 0.0
+    children: dict[int, "MCTSNode"] = field(default_factory=dict)
+    is_expanded: bool = False
 
     @property
     def q_value(self) -> float:
@@ -105,10 +113,7 @@ class MCTSNode:
         score = Q(s,a) + C * P(s,a) * sqrt(N(s)) / (1 + N(s,a))
         """
         exploration = (
-            c_puct
-            * self.prior
-            * math.sqrt(parent_visit_count)
-            / (1 + self.visit_count)
+            c_puct * self.prior * math.sqrt(parent_visit_count) / (1 + self.visit_count)
         )
         return self.q_value + exploration
 
@@ -117,6 +122,7 @@ class MCTSNode:
 
 
 # ── Core search ───────────────────────────────────────────────────────────────
+
 
 class MCTS:
     """
@@ -128,7 +134,7 @@ class MCTS:
 
     def __init__(self, config: MCTSConfig | None = None) -> None:
         self.config = config or MCTSConfig()
-        self.root   = MCTSNode(prior=1.0)
+        self.root = MCTSNode(prior=1.0)
 
     # ── Public API ──────────────────────────────────────────────────────
 
@@ -218,7 +224,11 @@ class MCTS:
             if deterministic:
                 return actions[int(np.argmax(priors))]
             total = priors.sum()
-            probs = priors / total if total > 0 else np.ones(len(actions), dtype=np.float32) / len(actions)
+            probs = (
+                priors / total
+                if total > 0
+                else np.ones(len(actions), dtype=np.float32) / len(actions)
+            )
             return int(np.random.choice(actions, p=probs))
 
         if deterministic:
@@ -279,7 +289,7 @@ class MCTS:
         """Create child nodes for all legal actions."""
         for action_id in range(n_actions):
             if legal_mask is not None and legal_mask[action_id].item():
-                continue   # skip illegal actions
+                continue  # skip illegal actions
             node.children[action_id] = MCTSNode(prior=float(priors[action_id]))
         node.is_expanded = True
 
@@ -293,9 +303,9 @@ class MCTS:
         path = [root]
         node = root
         while node.is_expanded and node.children:
-            best_score  = float("-inf")
-            best_child  = None
-            parent_n    = node.visit_count
+            best_score = float("-inf")
+            best_child = None
+            parent_n = node.visit_count
 
             for child in node.children.values():
                 score = child.ucb_score(parent_n, self.config.c_puct)
@@ -313,7 +323,7 @@ class MCTS:
         """Propagate value backup from leaf to root."""
         for node in reversed(path):
             node.visit_count += 1
-            node.value_sum   += value
+            node.value_sum += value
             # Flip value perspective at each level (if desired)
             # For cooperative self-play we keep the same sign
             # value = -value   # uncomment for zero-sum alternating perspective
@@ -330,6 +340,7 @@ class MCTS:
 
 
 # ── Functional interface ──────────────────────────────────────────────────────
+
 
 def run_mcts(
     obs: Any,
@@ -362,15 +373,9 @@ def run_mcts(
 
     # Build stats for logging / replay buffer
     stats = {
-        "visit_counts": {
-            a: n.visit_count for a, n in tree.root.children.items()
-        },
-        "q_values": {
-            a: n.q_value for a, n in tree.root.children.items()
-        },
-        "priors": {
-            a: n.prior for a, n in tree.root.children.items()
-        },
+        "visit_counts": {a: n.visit_count for a, n in tree.root.children.items()},
+        "q_values": {a: n.q_value for a, n in tree.root.children.items()},
+        "priors": {a: n.prior for a, n in tree.root.children.items()},
         "action_probs": tree.action_probs(),
         "n_simulations": cfg.n_simulations,
         "chosen_action": action,
@@ -379,6 +384,7 @@ def run_mcts(
 
 
 # ── MCTSPlayer mixin ──────────────────────────────────────────────────────────
+
 
 class MCTSPlayerMixin:
     """
@@ -393,9 +399,14 @@ class MCTSPlayerMixin:
 
     _mcts_config: MCTSConfig = MCTSConfig()
 
-    def choose_move(self, battle: Any) -> Any:   # pragma: no cover
+    def choose_move(self, battle: Any) -> Any:  # pragma: no cover
         """Use MCTS + transformer model to select the best action."""
-        from src.ml.battle_env import build_observation, N_ACTIONS_GEN9, POKE_ENV_AVAILABLE
+        from src.ml.battle_env import (
+            build_observation,
+            N_ACTIONS_GEN9,
+            POKE_ENV_AVAILABLE,
+        )
+
         if not POKE_ENV_AVAILABLE:
             return self.choose_random_move(battle)  # type: ignore[attr-defined]
 
@@ -409,7 +420,9 @@ class MCTSPlayerMixin:
             # Build legal action mask
             legal = _build_legal_mask(battle, N_ACTIONS_GEN9)
             action, stats = run_mcts(
-                obs, policy, N_ACTIONS_GEN9,
+                obs,
+                policy,
+                N_ACTIONS_GEN9,
                 config=self._mcts_config,
                 legal_mask=legal,
                 deterministic=True,
@@ -440,6 +453,7 @@ def _build_legal_mask(battle: Any, n_actions: int) -> "torch.Tensor | None":
     try:
         # Mark legal moves as False (= not masked out)
         from poke_env.environment.singles_env import SinglesEnv
+
         for act in range(n_actions):
             try:
                 order = SinglesEnv.action_to_order(act, battle)
@@ -448,7 +462,9 @@ def _build_legal_mask(battle: Any, n_actions: int) -> "torch.Tensor | None":
             except ValueError:
                 pass  # action is illegal — leave as True (expected poke-env signal)
             except Exception as _exc:
-                log.warning("Unexpected error checking action %d legality: %s", act, _exc)
+                log.warning(
+                    "Unexpected error checking action %d legality: %s", act, _exc
+                )
     except Exception:  # pragma: no cover
         # If poke-env not available, allow all actions
         mask.fill_(False)

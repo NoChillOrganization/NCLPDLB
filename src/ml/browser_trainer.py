@@ -15,6 +15,7 @@ ponytail: the PPO/Playwright self-play loop, _ReplayEnv, and the DOM action
 helpers were removed (they only fed the no-op learner). git history has them
 when BC work starts. Track: TODO(H16).
 """
+
 from __future__ import annotations
 
 import logging
@@ -25,8 +26,8 @@ import numpy as np
 
 log = logging.getLogger(__name__)
 
-SHOWDOWN_URL        = "https://play.pokemonshowdown.com"
-DEFAULT_SAVE_DIR    = "data/ml/policy"
+SHOWDOWN_URL = "https://play.pokemonshowdown.com"
+DEFAULT_SAVE_DIR = "data/ml/policy"
 DEFAULT_RESULTS_DIR = "data/ml/results"
 
 

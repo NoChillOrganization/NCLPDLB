@@ -30,6 +30,7 @@ Usage
   if len(buffer) >= 256:
       metrics = trainer.train_step(buffer, batch_size=64)
 """
+
 from __future__ import annotations
 
 import logging
@@ -46,16 +47,18 @@ log = logging.getLogger(__name__)
 try:
     import torch
     import torch.nn as nn
+
     TORCH_OK = True
 except ImportError:  # pragma: no cover
     TORCH_OK = False
-    torch = None   # type: ignore
-    nn    = None   # type: ignore
+    torch = None  # type: ignore
+    nn = None  # type: ignore
 
 from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9  # noqa: E402
 
 
 # ── Replay Buffer ─────────────────────────────────────────────────────────────
+
 
 class ReplayBuffer:
     """
@@ -80,18 +83,18 @@ class ReplayBuffer:
         obs_dim: int = OBS_DIM,
         n_actions: int = N_ACTIONS_GEN9,
     ) -> None:
-        self._capacity  = capacity
-        self._obs_dim   = obs_dim
+        self._capacity = capacity
+        self._obs_dim = obs_dim
         self._n_actions = n_actions
-        self._lock      = threading.Lock()
+        self._lock = threading.Lock()
 
-        self._obs   = np.zeros((capacity, obs_dim),   dtype=np.float32)
-        self._acts  = np.zeros(capacity,               dtype=np.int64)
-        self._rews  = np.zeros(capacity,               dtype=np.float32)
-        self._done  = np.zeros(capacity,               dtype=bool)
-        self._probs = np.zeros((capacity, n_actions),  dtype=np.float32)
+        self._obs = np.zeros((capacity, obs_dim), dtype=np.float32)
+        self._acts = np.zeros(capacity, dtype=np.int64)
+        self._rews = np.zeros(capacity, dtype=np.float32)
+        self._done = np.zeros(capacity, dtype=bool)
+        self._probs = np.zeros((capacity, n_actions), dtype=np.float32)
 
-        self._ptr  = 0
+        self._ptr = 0
         self._size = 0
 
     # ── Write ────────────────────────────────────────────────────────────
@@ -106,7 +109,7 @@ class ReplayBuffer:
     ) -> None:
         """Push one transition into the buffer (overwrites oldest if full)."""
         with self._lock:
-            self._obs[self._ptr]  = obs
+            self._obs[self._ptr] = obs
             self._acts[self._ptr] = action
             self._rews[self._ptr] = reward
             self._done[self._ptr] = done
@@ -117,7 +120,7 @@ class ReplayBuffer:
                 # Uniform fallback if no MCTS probs are provided
                 self._probs[self._ptr] = 1.0 / self._n_actions
 
-            self._ptr  = (self._ptr + 1) % self._capacity
+            self._ptr = (self._ptr + 1) % self._capacity
             self._size = min(self._size + 1, self._capacity)
 
     def add_game(
@@ -163,17 +166,17 @@ class ReplayBuffer:
                 )
             indices = np.random.randint(0, size, size=batch_size)
             # Copy under lock to avoid torn reads from concurrent add() calls
-            obs   = self._obs[indices].copy()
-            acts  = self._acts[indices].copy()
-            rews  = self._rews[indices].copy()
-            done  = self._done[indices].copy()
+            obs = self._obs[indices].copy()
+            acts = self._acts[indices].copy()
+            rews = self._rews[indices].copy()
+            done = self._done[indices].copy()
             probs = self._probs[indices].copy()
 
         return {
-            "obs":          torch.as_tensor(obs,   dtype=torch.float32),
-            "actions":      torch.as_tensor(acts,  dtype=torch.long),
-            "rewards":      torch.as_tensor(rews,  dtype=torch.float32),
-            "done":         torch.as_tensor(done,  dtype=torch.bool),
+            "obs": torch.as_tensor(obs, dtype=torch.float32),
+            "actions": torch.as_tensor(acts, dtype=torch.long),
+            "rewards": torch.as_tensor(rews, dtype=torch.float32),
+            "done": torch.as_tensor(done, dtype=torch.bool),
             "action_probs": torch.as_tensor(probs, dtype=torch.float32),
         }
 
@@ -193,6 +196,7 @@ class ReplayBuffer:
 
 
 # ── Policy Trainer ────────────────────────────────────────────────────────────
+
 
 class PolicyTrainer:
     """
@@ -223,10 +227,10 @@ class PolicyTrainer:
         if not TORCH_OK:  # pragma: no cover
             raise ImportError("PyTorch is required for PolicyTrainer.")
 
-        self.model       = model
-        self.value_coef  = value_coef
-        self.save_path   = Path(save_path) if save_path else self.DEFAULT_SAVE_PATH
-        self.optimizer   = torch.optim.Adam(model.parameters(), lr=lr)
+        self.model = model
+        self.value_coef = value_coef
+        self.save_path = Path(save_path) if save_path else self.DEFAULT_SAVE_PATH
+        self.optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         self._step_count = 0
 
     # ── Single gradient step ─────────────────────────────────────────────
@@ -277,9 +281,9 @@ class PolicyTrainer:
 
         return {
             "policy_loss": float(policy_loss.item()),
-            "value_loss":  float(value_loss.item()),
-            "total_loss":  float(total_loss.item()),
-            "step":        self._step_count,
+            "value_loss": float(value_loss.item()),
+            "total_loss": float(total_loss.item()),
+            "step": self._step_count,
         }
 
     # ── Multi-epoch training ─────────────────────────────────────────────
@@ -296,8 +300,8 @@ class PolicyTrainer:
         Skips silently if the buffer is not ready.
         """
         all_policy = []
-        all_value  = []
-        all_total  = []
+        all_value = []
+        all_total = []
 
         for _ in range(n_epochs):
             m = self.train_step(buffer, batch_size)
@@ -311,10 +315,10 @@ class PolicyTrainer:
 
         return {
             "policy_loss": float(np.mean(all_policy)),
-            "value_loss":  float(np.mean(all_value)),
-            "total_loss":  float(np.mean(all_total)),
-            "n_epochs":    n_epochs,
-            "step":        self._step_count,
+            "value_loss": float(np.mean(all_value)),
+            "total_loss": float(np.mean(all_total)),
+            "n_epochs": n_epochs,
+            "step": self._step_count,
         }
 
     # ── Validation ──────────────────────────────────────────────────────
@@ -349,9 +353,9 @@ class PolicyTrainer:
                 policy_logits, value_pred = self.model(obs)
 
                 # Same loss math as train_step — keep in sync if that changes
-                log_probs   = torch.log_softmax(policy_logits, dim=-1)
+                log_probs = torch.log_softmax(policy_logits, dim=-1)
                 policy_loss = -(batch["action_probs"] * log_probs).sum(dim=-1).mean()
-                value_loss  = nn.functional.mse_loss(
+                value_loss = nn.functional.mse_loss(
                     value_pred.squeeze(-1),
                     batch["rewards"],
                 )
@@ -359,8 +363,8 @@ class PolicyTrainer:
 
             return {
                 "val_policy_loss": float(policy_loss.item()),
-                "val_value_loss":  float(value_loss.item()),
-                "val_total_loss":  float(total_loss.item()),
+                "val_value_loss": float(value_loss.item()),
+                "val_total_loss": float(total_loss.item()),
             }
         finally:
             self.model.train(True)  # always restore training mode
@@ -370,6 +374,7 @@ class PolicyTrainer:
     def save(self, path: str | Path | None = None) -> Path:
         """Save model weights to disk. Returns the path written."""
         from src.ml.transformer_model import save_model
+
         target = Path(path) if path else self.save_path
         save_model(self.model, target)
         log.info("Trainer saved model to %s (step %d)", target, self._step_count)
@@ -378,6 +383,7 @@ class PolicyTrainer:
     def load(self, path: str | Path | None = None) -> None:
         """Load model weights from disk (in-place, keeps optimizer state)."""
         from src.ml.transformer_model import load_model
+
         source = Path(path) if path else self.save_path
         loaded = load_model(source)
         self.model.load_state_dict(loaded.state_dict())

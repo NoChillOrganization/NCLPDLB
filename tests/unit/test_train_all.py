@@ -6,6 +6,7 @@ Covers pure helper functions:
   - _resume_checkpoint()
   - TRAINING_MAP structure
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -19,6 +20,7 @@ from src.ml.train_all import (
 
 
 # ── _model_done ───────────────────────────────────────────────────────────────
+
 
 class TestModelDone:
     def test_returns_false_when_no_files(self, tmp_path):
@@ -55,6 +57,7 @@ class TestModelDone:
 
 
 # ── _resume_checkpoint ────────────────────────────────────────────────────────
+
 
 class TestResumeCheckpoint:
     def test_returns_none_when_no_latest(self, tmp_path):
@@ -101,6 +104,7 @@ class TestResumeCheckpoint:
 
 
 # ── TRAINING_MAP ──────────────────────────────────────────────────────────────
+
 
 class TestTrainingMap:
     def test_is_dict(self):
