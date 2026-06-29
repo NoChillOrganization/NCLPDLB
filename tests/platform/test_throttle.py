@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.platform.throttle import RateLimiter, get_limiter, _registry
+from src.platform.throttle import RateLimiter, get_limiter
 from src.platform.retry import RateLimited, retry_async
 
 
