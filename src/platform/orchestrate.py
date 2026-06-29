@@ -15,6 +15,8 @@ as callables so this module stays import-free of individual normalizers.
 from __future__ import annotations
 
 import json
+import sys
+import time
 from collections.abc import Iterable
 from typing import Any, Awaitable, Callable
 
@@ -143,18 +145,25 @@ async def with_ingest_run(
         """,
         source, route, mode,
     )
+    t0 = time.monotonic()
     try:
         stats = await fn()
+        duration = round(time.monotonic() - t0, 2)
         await conn.execute(
             """
             UPDATE ingest_run
                SET status = 'ok', finished_at = now(), stats = $2::jsonb
              WHERE id = $1
             """,
-            run_id, json.dumps(stats),
+            run_id, json.dumps({**stats, "sync_duration_seconds": duration}),
         )
-        return stats
+        print(json.dumps({
+            "event": "ingest_run_ok", "source": source, "route": route, "mode": mode,
+            "run_id": run_id, "duration_secs": duration, **stats,
+        }), file=sys.stderr)
+        return {**stats, "sync_duration_seconds": duration}
     except Exception as exc:
+        duration = round(time.monotonic() - t0, 2)
         error_msg = f"{type(exc).__name__}: {exc}"
         await conn.execute(
             """
@@ -162,8 +171,12 @@ async def with_ingest_run(
                SET status = 'error', finished_at = now(), stats = $2::jsonb
              WHERE id = $1
             """,
-            run_id, json.dumps({"error": error_msg}),
+            run_id, json.dumps({"error": error_msg, "sync_duration_seconds": duration}),
         )
+        print(json.dumps({
+            "event": "ingest_run_error", "source": source, "route": route, "mode": mode,
+            "run_id": run_id, "duration_secs": duration, "error": error_msg,
+        }), file=sys.stderr)
         # Route exhausted/unrecoverable failures to dead_letter for operator review.
         # payload=None at run level — we don't have a single record to blame here.
         await to_dead_letter(
