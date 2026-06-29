@@ -1,7 +1,6 @@
 """Tests for src.platform.throttle and Retry-After integration in retry_async."""
 from __future__ import annotations
 
-import asyncio
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
