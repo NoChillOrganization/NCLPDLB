@@ -27,7 +27,7 @@ lxml>=6.1.1
 
 # Database
 aiosqlite>=0.22.1
-asyncpg>=0.30.0  # platform Postgres pool (src/platform/store/db.py)
+asyncpg>=0.31.0  # platform Postgres pool (src/platform/store/db.py)
 
 # Path Handling (cross-platform, stdlib)
 # pathlib is built-in to Python 3.4+
