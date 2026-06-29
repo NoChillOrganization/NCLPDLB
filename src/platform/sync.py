@@ -6,10 +6,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import time
 
 from src.platform.normalize.replay import normalize_replay_row
 from src.platform.normalize.tournament import normalize_tournament_row
 from src.platform.normalize.usage import normalize_usage_row
+from src.platform.retry import retry_async
 from src.platform.seed import seed_species
 from src.platform.sources.limitless import LimitlessAdapter
 from src.platform.sources.pikalytics import PikalyticsAdapter
@@ -27,10 +29,13 @@ async def run_seed() -> None:
     print(counts)
 
 
-async def run_replays(ids: list[str]) -> None:
+async def run_replays(ids: list[str], *, deadline: float | None = None) -> None:
     await migrate()
     pool = await get_pool()
-    records = await ShowdownAdapter().fetch(ids=ids)
+    records = await retry_async(
+        lambda: ShowdownAdapter().fetch(ids=ids),
+        deadline=deadline,
+    )
     async with pool.acquire() as conn:
         for record in records:
             raw_id = await land_raw(
@@ -43,7 +48,7 @@ async def run_replays(ids: list[str]) -> None:
     print(f"fetched={len(list(ids))} landed_and_normalized={len(records)}")
 
 
-async def run_usage(*, period: str, formats: list[str], cutoff: int) -> None:
+async def run_usage(*, period: str, formats: list[str], cutoff: int, deadline: float | None = None) -> None:
     """Periodic mode: pull current usage snapshots from Smogon + Pikalytics."""
     await migrate()
     pool = await get_pool()
@@ -52,7 +57,10 @@ async def run_usage(*, period: str, formats: list[str], cutoff: int) -> None:
         for adapter in (SmogonAdapter(), PikalyticsAdapter()):
             kwargs = {"period": period, "formats": formats, "cutoff": cutoff} \
                 if adapter.source == "smogon" else {"formats": formats}
-            records = await adapter.fetch(**kwargs)
+            records = await retry_async(
+                lambda: adapter.fetch(**kwargs),
+                deadline=deadline,
+            )
             for record in records:
                 raw_id = await land_raw(
                     conn, source=adapter.source, route=record.route,
@@ -69,13 +77,18 @@ async def run_usage(*, period: str, formats: list[str], cutoff: int) -> None:
     print(f"landed={landed} normalized={normalized}")
 
 
-async def run_event(*, ids: list[str] | None, game: str, limit: int, page: int) -> None:
+async def run_event(
+    *, ids: list[str] | None, game: str, limit: int, page: int, deadline: float | None = None
+) -> None:
     """Periodic/manual mode: pull tournament standings+decklists from Limitless."""
     await migrate()
     pool = await get_pool()
     landed = normalized = 0
     async with pool.acquire() as conn:
-        records = await LimitlessAdapter().fetch(ids=ids, game=game, limit=limit, page=page)
+        records = await retry_async(
+            lambda: LimitlessAdapter().fetch(ids=ids, game=game, limit=limit, page=page),
+            deadline=deadline,
+        )
         for record in records:
             raw_id = await land_raw(
                 conn, source="limitless", route=record.route,
@@ -94,6 +107,11 @@ async def run_event(*, ids: list[str] | None, game: str, limit: int, page: int) 
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="sync")
+    parser.add_argument(
+        "--deadline-seconds", type=float, default=300.0,
+        help="Wall-clock budget for the whole job in seconds (default: 300). "
+             "0 = no deadline.",
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("seed")
     replays_parser = sub.add_parser("replays")
@@ -111,14 +129,17 @@ def main() -> None:
     event_parser.add_argument("--page", type=int, default=1)
 
     args = parser.parse_args()
+    # deadline=None means no cap; 0 from CLI also maps to None (disabled).
+    deadline = (time.monotonic() + args.deadline_seconds) if args.deadline_seconds > 0 else None
+
     if args.cmd == "seed":
         asyncio.run(run_seed())
     elif args.cmd == "replays":
-        asyncio.run(run_replays(args.ids))
+        asyncio.run(run_replays(args.ids, deadline=deadline))
     elif args.cmd == "usage":
-        asyncio.run(run_usage(period=args.period, formats=args.formats, cutoff=args.cutoff))
+        asyncio.run(run_usage(period=args.period, formats=args.formats, cutoff=args.cutoff, deadline=deadline))
     elif args.cmd == "event":
-        asyncio.run(run_event(ids=args.ids, game=args.game, limit=args.limit, page=args.page))
+        asyncio.run(run_event(ids=args.ids, game=args.game, limit=args.limit, page=args.page, deadline=deadline))
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ from typing import Any, Awaitable, Callable
 import asyncpg
 
 from src.platform.sources.base import RawRecord
-from src.platform.store.repositories import land_raw
+from src.platform.store.repositories import land_raw, mark_raw_error, to_dead_letter
 
 
 async def land_and_normalize(
@@ -31,24 +31,27 @@ async def land_and_normalize(
     route: str,
     records: Iterable[RawRecord],
     normalize: Callable[..., Awaitable[Any]],
+    ingest_run_id: int | None = None,
 ) -> dict[str, int]:
     """Land each RawRecord into raw_ingest and call *normalize* for new payloads.
 
     Args:
-        conn:      asyncpg connection (already acquired from the pool).
-        source:    Source name matching a ``source.name`` row ('smogon', …).
-        route:     Ingest route ('usage' | 'tournament' | 'replay').
-        records:   Iterable of RawRecord emitted by a SourceAdapter.
-        normalize: Async callable with signature
-                   ``(conn, *, raw_id, source, natural_key, payload) -> Any``.
-                   Called only for newly-landed records (land_raw returned an id).
+        conn:          asyncpg connection (already acquired from the pool).
+        source:        Source name matching a ``source.name`` row ('smogon', …).
+        route:         Ingest route ('usage' | 'tournament' | 'replay').
+        records:       Iterable of RawRecord emitted by a SourceAdapter.
+        normalize:     Async callable with signature
+                       ``(conn, *, raw_id, source, natural_key, payload) -> Any``.
+                       Called only for newly-landed records (land_raw returned an id).
+        ingest_run_id: Optional run id for dead-letter traceability.
 
     Returns:
-        {'landed': int, 'normalized': int}
+        {'landed': int, 'normalized': int, 'errored': int}
         ``landed`` counts every record processed (including dups);
-        ``normalized`` counts records where the normalizer actually ran.
+        ``normalized`` counts records where the normalizer actually ran;
+        ``errored`` counts records that failed normalization (dead-lettered).
     """
-    landed = normalized = 0
+    landed = normalized = errored = 0
     for record in records:
         raw_id = await land_raw(
             conn,
@@ -61,15 +64,28 @@ async def land_and_normalize(
         landed += 1
         if raw_id is None:
             continue  # identical payload already in raw_ingest — idempotent skip
-        await normalize(
-            conn,
-            raw_id=raw_id,
-            source=source,
-            natural_key=record.natural_key,
-            payload=record.payload,
-        )
-        normalized += 1
-    return {"landed": landed, "normalized": normalized}
+        try:
+            await normalize(
+                conn,
+                raw_id=raw_id,
+                source=source,
+                natural_key=record.natural_key,
+                payload=record.payload,
+            )
+            normalized += 1
+        except Exception as exc:  # parse / permanent failure — keep processing rest
+            errored += 1
+            await mark_raw_error(conn, raw_id=raw_id)
+            await to_dead_letter(
+                conn,
+                source=source,
+                route=route,
+                natural_key=record.natural_key,
+                payload=record.payload,
+                error=f"{type(exc).__name__}: {exc}",
+                ingest_run_id=ingest_run_id,
+            )
+    return {"landed": landed, "normalized": normalized, "errored": errored}
 
 
 async def with_ingest_run(
@@ -118,12 +134,24 @@ async def with_ingest_run(
         )
         return stats
     except Exception as exc:
+        error_msg = f"{type(exc).__name__}: {exc}"
         await conn.execute(
             """
             UPDATE ingest_run
                SET status = 'error', finished_at = now(), stats = $2::jsonb
              WHERE id = $1
             """,
-            run_id, json.dumps({"error": str(exc)}),
+            run_id, json.dumps({"error": error_msg}),
+        )
+        # Route exhausted/unrecoverable failures to dead_letter for operator review.
+        # payload=None at run level — we don't have a single record to blame here.
+        await to_dead_letter(
+            conn,
+            source=source,
+            route=route,
+            natural_key=None,
+            payload=None,
+            error=error_msg,
+            ingest_run_id=run_id,
         )
         raise
