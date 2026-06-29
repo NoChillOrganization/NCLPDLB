@@ -6,6 +6,7 @@ Collects credentials, writes .env, and optionally runs setup scripts.
 Usage:
     python scripts/setup_wizard.py
 """
+
 import shutil
 import subprocess
 import sys
@@ -20,6 +21,7 @@ DATA_FILE = ROOT / "data" / "pokemon.json"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def _print_header(text: str) -> None:
     width = 60
     print("\n" + "=" * width)
@@ -31,6 +33,7 @@ def _ask(prompt: str, default: str = "", secret: bool = False) -> str:
     display = f"{prompt}" + (f" [{default}]" if default else "") + ": "
     if secret:
         import getpass
+
         val = getpass.getpass(display)
     else:
         val = input(display)
@@ -66,7 +69,9 @@ def _write_env(values: dict[str, str]) -> None:
                 lines.append(f"{k}={v}")
     else:
         # Start from .env.example if available
-        template = ENV_EXAMPLE.read_text(encoding="utf-8") if ENV_EXAMPLE.exists() else ""
+        template = (
+            ENV_EXAMPLE.read_text(encoding="utf-8") if ENV_EXAMPLE.exists() else ""
+        )
         lines = template.splitlines()
         seen = set()
         for i, line in enumerate(lines):
@@ -98,6 +103,7 @@ def _run(cmd: list[str], desc: str) -> bool:
 
 # ── Steps ────────────────────────────────────────────────────────────────────
 
+
 def step_discord() -> dict[str, str]:
     _print_header("Step 1 — Discord Bot Credentials")
     print("""
@@ -109,7 +115,9 @@ def step_discord() -> dict[str, str]:
     """)
     token = _ask("Discord Bot Token", secret=True)
     client_id = _ask("Discord Application/Client ID")
-    guild_id = _ask("Test Server Guild ID (right-click server → Copy ID, optional)", default="")
+    guild_id = _ask(
+        "Test Server Guild ID (right-click server → Copy ID, optional)", default=""
+    )
     bot_name = _ask("Bot display name", default="DraftBot")
     return {
         "DISCORD_TOKEN": token,
@@ -136,7 +144,9 @@ def step_google_sheets() -> dict[str, str]:
         shutil.copy2(src, CREDS_DEST)
         print(f"  ✅ Copied credentials to {CREDS_DEST}")
     elif not src.exists():
-        print(f"  ⚠️  File not found: {src} — you'll need to place credentials.json manually.")
+        print(
+            f"  ⚠️  File not found: {src} — you'll need to place credentials.json manually."
+        )
 
     spreadsheet_id = _ask("Google Sheets Spreadsheet ID")
     return {
@@ -153,11 +163,17 @@ def step_optional() -> dict[str, str]:
         values["R2_ACCOUNT_ID"] = _ask("R2 Account ID")
         values["R2_ACCESS_KEY_ID"] = _ask("R2 Access Key ID")
         values["R2_SECRET_ACCESS_KEY"] = _ask("R2 Secret Access Key", secret=True)
-        values["R2_BUCKET_NAME"] = _ask("R2 Bucket Name", default="pokemon-draft-videos")
+        values["R2_BUCKET_NAME"] = _ask(
+            "R2 Bucket Name", default="pokemon-draft-videos"
+        )
         values["R2_PUBLIC_URL"] = _ask("R2 Public URL (e.g. https://pub-xxxx.r2.dev)")
 
     import secrets as _secrets
-    api_secret = _ask("API Secret Key (random string for web dashboard)", default=_secrets.token_hex(32))
+
+    api_secret = _ask(
+        "API Secret Key (random string for web dashboard)",
+        default=_secrets.token_hex(32),
+    )
     values["API_SECRET_KEY"] = api_secret
     values["LOG_LEVEL"] = _ask("Log level", default="INFO")
     return values
@@ -165,22 +181,32 @@ def step_optional() -> dict[str, str]:
 
 def step_run_scripts() -> None:
     _print_header("Step 4 — Setup Google Sheet Tabs")
-    if not _ask_yes_no("Run setup_google_sheet.py to create all 17 tabs?", default=True):
+    if not _ask_yes_no(
+        "Run setup_google_sheet.py to create all 17 tabs?", default=True
+    ):
         print("  Skipped. Run manually: python scripts/setup_google_sheet.py")
         return
-    _run([sys.executable, str(ROOT / "scripts" / "setup_google_sheet.py")], "Google Sheet setup")
+    _run(
+        [sys.executable, str(ROOT / "scripts" / "setup_google_sheet.py")],
+        "Google Sheet setup",
+    )
 
 
 def step_seed_pokemon() -> None:
     _print_header("Step 5 — Seed Pokemon Database")
     if DATA_FILE.exists():
-        print(f"  ✅ {DATA_FILE} already exists ({DATA_FILE.stat().st_size // 1024} KB). Skipping.")
+        print(
+            f"  ✅ {DATA_FILE} already exists ({DATA_FILE.stat().st_size // 1024} KB). Skipping."
+        )
         return
     print("  This will fetch all 1025 Pokemon from PokéAPI (~5 minutes).")
     if not _ask_yes_no("Fetch Pokemon data now?", default=True):
         print("  Skipped. Run manually: python scripts/seed_pokemon_data.py")
         return
-    _run([sys.executable, str(ROOT / "scripts" / "seed_pokemon_data.py")], "Pokemon data seeding")
+    _run(
+        [sys.executable, str(ROOT / "scripts" / "seed_pokemon_data.py")],
+        "Pokemon data seeding",
+    )
 
 
 def step_verify() -> None:
@@ -219,6 +245,7 @@ def step_verify() -> None:
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     _print_header("Pokemon Draft League Bot — Setup Wizard")

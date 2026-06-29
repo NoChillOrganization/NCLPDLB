@@ -12,6 +12,7 @@ The scraper:
   4. Saves to data/replays/<format>/<id>.json
   5. Tracks already-downloaded IDs to avoid duplicates across runs
 """
+
 from __future__ import annotations
 
 import argparse
@@ -29,26 +30,28 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 log = logging.getLogger(__name__)
 
 REPLAYS_DIR = PROJECT_ROOT / "data" / "replays"
-SEARCH_URL  = "https://replay.pokemonshowdown.com/search.json"
-REPLAY_URL  = "https://replay.pokemonshowdown.com/{id}.json"
+SEARCH_URL = "https://replay.pokemonshowdown.com/search.json"
+REPLAY_URL = "https://replay.pokemonshowdown.com/{id}.json"
 
 # Be respectful — Showdown is a free service
-REQUEST_DELAY   = 0.3   # seconds between requests
-MAX_CONCURRENCY = 5     # parallel downloads
+REQUEST_DELAY = 0.3  # seconds between requests
+MAX_CONCURRENCY = 5  # parallel downloads
 
 
 # ── Data classes ──────────────────────────────────────────────────────────────
 
+
 class ReplayMeta:
     """Lightweight metadata returned by the search API."""
+
     __slots__ = ("id", "format", "p1", "p2", "rating", "uploadtime")
 
     def __init__(self, data: dict[str, Any]) -> None:
-        self.id         = data["id"]
-        self.format     = data.get("format", "unknown")
-        self.p1         = data.get("p1", "")
-        self.p2         = data.get("p2", "")
-        self.rating     = data.get("rating", 0) or 0
+        self.id = data["id"]
+        self.format = data.get("format", "unknown")
+        self.p1 = data.get("p1", "")
+        self.p2 = data.get("p2", "")
+        self.rating = data.get("rating", 0) or 0
         self.uploadtime = data.get("uploadtime", 0)
 
     def __repr__(self) -> str:
@@ -56,6 +59,7 @@ class ReplayMeta:
 
 
 # ── Scraper ───────────────────────────────────────────────────────────────────
+
 
 class ReplayScraper:
     """Async scraper that downloads Showdown replays and saves them to disk."""
@@ -66,9 +70,9 @@ class ReplayScraper:
         min_rating: int = 0,
         output_dir: Path | None = None,
     ) -> None:
-        self.format     = format
+        self.format = format
         self.min_rating = min_rating
-        self.out_dir    = (output_dir or REPLAYS_DIR) / format
+        self.out_dir = (output_dir or REPLAYS_DIR) / format
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self._seen: set[str] = self._load_seen()
 
@@ -89,7 +93,9 @@ class ReplayScraper:
         """Fetch one page of replay metadata from the search API."""
         params = {"format": self.format, "page": page}
         try:
-            async with session.get(SEARCH_URL, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+            async with session.get(
+                SEARCH_URL, params=params, timeout=aiohttp.ClientTimeout(total=15)
+            ) as resp:
                 if resp.status != 200:
                     log.warning(f"Search page {page} returned HTTP {resp.status}")
                     return []
@@ -121,7 +127,9 @@ class ReplayScraper:
         async with semaphore:
             url = REPLAY_URL.format(id=meta.id)
             try:
-                async with session.get(url, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                async with session.get(
+                    url, timeout=aiohttp.ClientTimeout(total=20)
+                ) as resp:
                     if resp.status != 200:
                         log.debug(f"Replay {meta.id} returned HTTP {resp.status}")
                         return False
@@ -131,7 +139,9 @@ class ReplayScraper:
                 return False
 
             if not isinstance(data, dict):
-                log.debug(f"Replay {meta.id} returned non-dict JSON: {type(data).__name__}")
+                log.debug(
+                    f"Replay {meta.id} returned non-dict JSON: {type(data).__name__}"
+                )
                 return False
 
             # Attach metadata we already know
@@ -172,13 +182,14 @@ class ReplayScraper:
                     continue
 
                 tasks = [
-                    self._fetch_replay(session, meta, semaphore)
-                    for meta in new_metas
+                    self._fetch_replay(session, meta, semaphore) for meta in new_metas
                 ]
                 results = await asyncio.gather(*tasks)
                 batch = sum(results)
                 downloaded += batch
-                log.info(f"  Downloaded {batch}/{len(new_metas)} in batch (total: {downloaded})")
+                log.info(
+                    f"  Downloaded {batch}/{len(new_metas)} in batch (total: {downloaded})"
+                )
                 await asyncio.sleep(REQUEST_DELAY)
 
         log.info(f"Scrape complete. {downloaded} new replays saved to {self.out_dir}")
@@ -186,6 +197,7 @@ class ReplayScraper:
 
 
 # ── Stats helper ──────────────────────────────────────────────────────────────
+
 
 def replay_stats(format: str | None = None) -> dict[str, int]:
     """Return count of downloaded replays per format."""
@@ -201,11 +213,14 @@ def replay_stats(format: str | None = None) -> dict[str, int]:
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+
 async def _main() -> None:  # pragma: no cover
     parser = argparse.ArgumentParser(description="Scrape Pokemon Showdown replays")
-    parser.add_argument("--format",     default="gen9ou",  help="Showdown format ID")
-    parser.add_argument("--pages",      type=int, default=10, help="Search pages to scrape")
-    parser.add_argument("--min-rating", type=int, default=0,  help="Minimum player rating filter")
+    parser.add_argument("--format", default="gen9ou", help="Showdown format ID")
+    parser.add_argument("--pages", type=int, default=10, help="Search pages to scrape")
+    parser.add_argument(
+        "--min-rating", type=int, default=0, help="Minimum player rating filter"
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")

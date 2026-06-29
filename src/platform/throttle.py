@@ -12,6 +12,7 @@ or lower _LIMITS[source] once empirical data is available.
 #           asyncio.Semaphore only when an adapter actually goes concurrent
 #           (today all source loops are sequential).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -23,10 +24,10 @@ import time
 # limitless:  public REST, up to ~100 req/run — 0.75s.
 # showdown:   community-run, hundreds of replay GETs — 0.5s stays polite.
 _LIMITS: dict[str, float] = {
-    "smogon":     0.5,
+    "smogon": 0.5,
     "pikalytics": 1.0,
-    "limitless":  0.75,
-    "showdown":   0.5,
+    "limitless": 0.75,
+    "showdown": 0.5,
 }
 _DEFAULT_INTERVAL = 1.0
 
@@ -38,17 +39,19 @@ class RateLimiter:
 
     def __init__(self, min_interval: float) -> None:
         self._min_interval = min_interval
-        self._next_allowed: float = 0.0   # monotonic timestamp
+        self._next_allowed: float = 0.0  # monotonic timestamp
         self._lock = asyncio.Lock()
 
     async def acquire(self) -> None:
         """Wait until the next request slot is available, then claim it."""
-        async with self._lock:            # serialize concurrent callers
+        async with self._lock:  # serialize concurrent callers
             now = time.monotonic()
             wait = self._next_allowed - now
             if wait > 0:
                 await asyncio.sleep(wait)
-            self._next_allowed = max(time.monotonic(), self._next_allowed) + self._min_interval
+            self._next_allowed = (
+                max(time.monotonic(), self._next_allowed) + self._min_interval
+            )
 
 
 def get_limiter(source: str) -> RateLimiter:
@@ -59,6 +62,7 @@ def get_limiter(source: str) -> RateLimiter:
 
 
 # ─── Self-check ──────────────────────────────────────────────────────────────
+
 
 async def _demo() -> None:
     import time as _t

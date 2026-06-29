@@ -3,6 +3,7 @@
 Usage:
     TRAIN_TEAM_FORMAT=gen9zu python scripts/validate_teams.py
 """
+
 import ast
 import os
 import re
@@ -19,7 +20,9 @@ def main() -> None:
 
     src = open("src/ml/teams.py", encoding="utf-8").read()
 
-    map_match = re.search(r"FORMAT_TEAMS\b\s*(?::[^=\n]+)?=\s*\{(.*?)\}", src, re.DOTALL)
+    map_match = re.search(
+        r"FORMAT_TEAMS\b\s*(?::[^=\n]+)?=\s*\{(.*?)\}", src, re.DOTALL
+    )
     if not map_match:
         print("ERROR: FORMAT_TEAMS not found in teams.py", file=sys.stderr)
         sys.exit(1)

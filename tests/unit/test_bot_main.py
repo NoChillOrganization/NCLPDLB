@@ -1,13 +1,20 @@
 """Tests for src/bot/main.py — pure helper functions and bot lifecycle."""
+
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 
-from src.bot.main import _command_fingerprint, drift_check_commands, DraftLeagueBot, COGS
+from src.bot.main import (
+    _command_fingerprint,
+    drift_check_commands,
+    DraftLeagueBot,
+    COGS,
+)
 
 
 # ── _command_fingerprint ──────────────────────────────────────────────────────
+
 
 def test_command_fingerprint_stable_order_independent():
     """Same commands in different order produce the same hash."""
@@ -76,6 +83,7 @@ def test_command_fingerprint_empty_list():
 
 # ── drift_check_commands ──────────────────────────────────────────────────────
 
+
 def test_drift_check_no_drift():
     assert drift_check_commands({"draft", "team"}, {"draft", "team"}) == set()
 
@@ -102,6 +110,7 @@ def test_drift_check_all_drift():
 
 # ── DraftLeagueBot.setup_hook ──────────────────────────────────────────────────
 
+
 def _make_bot_with_mocked_internals():
     """Create a DraftLeagueBot with tree/load_extension mocked out.
 
@@ -127,8 +136,10 @@ async def test_setup_hook_loads_all_cogs(tmp_path):
     """All COGS are attempted via load_extension during setup_hook."""
     bot = _make_bot_with_mocked_internals()
 
-    with patch("src.bot.main.settings") as mock_settings, \
-         patch("src.bot.main._SYNC_HASH_FILE", tmp_path / ".hash"):
+    with (
+        patch("src.bot.main.settings") as mock_settings,
+        patch("src.bot.main._SYNC_HASH_FILE", tmp_path / ".hash"),
+    ):
         mock_settings.discord_guild_id = None
         mock_settings.sync_commands_on_startup = False
         # CSV does not exist — skip drift check
@@ -146,10 +157,14 @@ async def test_setup_hook_continues_on_cog_load_failure(tmp_path):
     bot = _make_bot_with_mocked_internals()
 
     # First cog raises, others succeed
-    bot.load_extension = AsyncMock(side_effect=[Exception("fail")] + [None] * (len(COGS) - 1))
+    bot.load_extension = AsyncMock(
+        side_effect=[Exception("fail")] + [None] * (len(COGS) - 1)
+    )
 
-    with patch("src.bot.main.settings") as mock_settings, \
-         patch("src.bot.main._SYNC_HASH_FILE", tmp_path / ".hash"):
+    with (
+        patch("src.bot.main.settings") as mock_settings,
+        patch("src.bot.main._SYNC_HASH_FILE", tmp_path / ".hash"),
+    ):
         mock_settings.discord_guild_id = None
         mock_settings.sync_commands_on_startup = False
         with patch.object(Path, "exists", return_value=False):
@@ -166,20 +181,27 @@ async def test_setup_hook_csv_exists_runs_drift_check(tmp_path):
     csv_file = tmp_path / "discord_commands.csv"
     csv_file.write_text("Command\n/draft\n/team\n", encoding="utf-8")
 
-    with patch("src.bot.main.settings") as mock_settings, \
-         patch("src.bot.main._SYNC_HASH_FILE", tmp_path / ".hash"), \
-         patch("src.bot.main.drift_check_commands", return_value=set()), \
-         patch("src.bot.main.Path"):
+    with (
+        patch("src.bot.main.settings") as mock_settings,
+        patch("src.bot.main._SYNC_HASH_FILE", tmp_path / ".hash"),
+        patch("src.bot.main.drift_check_commands", return_value=set()),
+        patch("src.bot.main.Path"),
+    ):
         # Make the CSV path resolve to our tmp file
         mock_settings.discord_guild_id = None
         mock_settings.sync_commands_on_startup = False
 
         # Patch _command_fingerprint so hash always changes → triggers sync
-        with patch("src.bot.main._command_fingerprint", return_value="newhash"), \
-             patch.object(Path, "exists", side_effect=lambda: True), \
-             patch("builtins.open", create=True) as mock_open:
+        with (
+            patch("src.bot.main._command_fingerprint", return_value="newhash"),
+            patch.object(Path, "exists", side_effect=lambda: True),
+            patch("builtins.open", create=True) as mock_open,
+        ):
             import io
-            mock_open.return_value.__enter__ = lambda s: io.StringIO("Command\n/draft\n")
+
+            mock_open.return_value.__enter__ = lambda s: io.StringIO(
+                "Command\n/draft\n"
+            )
             mock_open.return_value.__exit__ = MagicMock(return_value=False)
             # Just verify no exception raised when CSV handling path is reached
             # (integration tested via full path; here we just confirm no crash)
@@ -192,10 +214,12 @@ async def test_setup_hook_syncs_to_guild_when_guild_id_set(tmp_path):
 
     hash_file = tmp_path / ".hash"
 
-    with patch("src.bot.main.settings") as mock_settings, \
-         patch("src.bot.main._SYNC_HASH_FILE", hash_file), \
-         patch("src.bot.main._command_fingerprint", return_value="abc123"), \
-         patch.object(Path, "exists", return_value=False):
+    with (
+        patch("src.bot.main.settings") as mock_settings,
+        patch("src.bot.main._SYNC_HASH_FILE", hash_file),
+        patch("src.bot.main._command_fingerprint", return_value="abc123"),
+        patch.object(Path, "exists", return_value=False),
+    ):
         mock_settings.discord_guild_id = "9999"
         mock_settings.sync_commands_on_startup = False
 
@@ -221,10 +245,12 @@ async def test_setup_hook_skips_sync_when_hash_unchanged(tmp_path):
         # Any path constructed with csv filename returns our mock
         return csv_path_mock
 
-    with patch("src.bot.main.settings") as mock_settings, \
-         patch("src.bot.main._SYNC_HASH_FILE", hash_file), \
-         patch("src.bot.main._command_fingerprint", return_value="same_hash"), \
-         patch("src.bot.main.Path") as mock_path_cls:
+    with (
+        patch("src.bot.main.settings") as mock_settings,
+        patch("src.bot.main._SYNC_HASH_FILE", hash_file),
+        patch("src.bot.main._command_fingerprint", return_value="same_hash"),
+        patch("src.bot.main.Path") as mock_path_cls,
+    ):
         mock_settings.discord_guild_id = "9999"
         mock_settings.sync_commands_on_startup = False
         # Make Path(...) return a mock that says csv doesn't exist
@@ -249,10 +275,12 @@ async def test_setup_hook_logs_drift_warning(tmp_path):
 
     hash_file = tmp_path / ".hash"
 
-    with patch("src.bot.main.settings") as mock_settings, \
-         patch("src.bot.main._SYNC_HASH_FILE", hash_file), \
-         patch("src.bot.main._command_fingerprint", return_value="newhash"), \
-         patch("src.bot.main.Path") as mock_path_cls:
+    with (
+        patch("src.bot.main.settings") as mock_settings,
+        patch("src.bot.main._SYNC_HASH_FILE", hash_file),
+        patch("src.bot.main._command_fingerprint", return_value="newhash"),
+        patch("src.bot.main.Path") as mock_path_cls,
+    ):
         mock_settings.discord_guild_id = None
         mock_settings.sync_commands_on_startup = False
 
@@ -269,10 +297,13 @@ async def test_setup_hook_logs_drift_warning(tmp_path):
 
         # Patch open so the CSV read returns our file content
         import io
+
         csv_content = "Command\n/draft\n"
         with patch("builtins.open", return_value=io.StringIO(csv_content)):
             # drift_check_commands({'draft'}, {'secret-cmd'}) → {'secret-cmd'}
-            with patch("src.bot.main.drift_check_commands", return_value={"secret-cmd"}) as mock_drift:
+            with patch(
+                "src.bot.main.drift_check_commands", return_value={"secret-cmd"}
+            ) as mock_drift:
                 await bot.setup_hook()
 
         mock_drift.assert_called_once()
@@ -284,10 +315,12 @@ async def test_setup_hook_global_sync_when_no_guild_id(tmp_path):
 
     hash_file = tmp_path / ".hash"
 
-    with patch("src.bot.main.settings") as mock_settings, \
-         patch("src.bot.main._SYNC_HASH_FILE", hash_file), \
-         patch("src.bot.main._command_fingerprint", return_value="newhash"), \
-         patch.object(Path, "exists", return_value=False):
+    with (
+        patch("src.bot.main.settings") as mock_settings,
+        patch("src.bot.main._SYNC_HASH_FILE", hash_file),
+        patch("src.bot.main._command_fingerprint", return_value="newhash"),
+        patch.object(Path, "exists", return_value=False),
+    ):
         mock_settings.discord_guild_id = None
         mock_settings.sync_commands_on_startup = True
 
@@ -307,10 +340,12 @@ async def test_setup_hook_global_sync_unchanged_skipped(tmp_path):
     csv_path_mock = MagicMock()
     csv_path_mock.exists.return_value = False
 
-    with patch("src.bot.main.settings") as mock_settings, \
-         patch("src.bot.main._SYNC_HASH_FILE", hash_file), \
-         patch("src.bot.main._command_fingerprint", return_value="same_hash"), \
-         patch("src.bot.main.Path") as mock_path_cls:
+    with (
+        patch("src.bot.main.settings") as mock_settings,
+        patch("src.bot.main._SYNC_HASH_FILE", hash_file),
+        patch("src.bot.main._command_fingerprint", return_value="same_hash"),
+        patch("src.bot.main.Path") as mock_path_cls,
+    ):
         mock_settings.discord_guild_id = None
         mock_settings.sync_commands_on_startup = True
         mock_path_cls.return_value = csv_path_mock
@@ -327,10 +362,12 @@ async def test_setup_hook_no_sync_when_both_flags_off(tmp_path):
 
     hash_file = tmp_path / ".hash"
 
-    with patch("src.bot.main.settings") as mock_settings, \
-         patch("src.bot.main._SYNC_HASH_FILE", hash_file), \
-         patch("src.bot.main._command_fingerprint", return_value="anyhash"), \
-         patch.object(Path, "exists", return_value=False):
+    with (
+        patch("src.bot.main.settings") as mock_settings,
+        patch("src.bot.main._SYNC_HASH_FILE", hash_file),
+        patch("src.bot.main._command_fingerprint", return_value="anyhash"),
+        patch.object(Path, "exists", return_value=False),
+    ):
         mock_settings.discord_guild_id = None
         mock_settings.sync_commands_on_startup = False
 
@@ -340,6 +377,7 @@ async def test_setup_hook_no_sync_when_both_flags_off(tmp_path):
 
 
 # ── DraftLeagueBot.on_ready ────────────────────────────────────────────────────
+
 
 async def test_on_ready_changes_presence():
     """on_ready calls change_presence with a Watching activity."""
@@ -368,6 +406,7 @@ async def test_on_ready_changes_presence():
 
 # ── DraftLeagueBot.on_command_error ───────────────────────────────────────────
 
+
 async def test_on_command_error_does_not_raise():
     """on_command_error logs the error without re-raising."""
     bot = _make_bot_with_mocked_internals()
@@ -380,12 +419,16 @@ async def test_on_command_error_does_not_raise():
 
 # ── main() ────────────────────────────────────────────────────────────────────
 
+
 async def test_main_starts_bot_with_token():
     """main() creates a DraftLeagueBot and calls bot.start() with the discord token."""
-    with patch("src.bot.main.DraftLeagueBot") as MockBot, \
-         patch("src.bot.main._setup_logging"), \
-         patch("src.bot.main.settings") as mock_settings:
+    with (
+        patch("src.bot.main.DraftLeagueBot") as MockBot,
+        patch("src.bot.main._setup_logging"),
+        patch("src.bot.main.settings") as mock_settings,
+    ):
         from pydantic import SecretStr
+
         mock_settings.discord_token = SecretStr("fake-token")
         mock_settings.google_sheets_credentials_file.exists.return_value = True
 
@@ -397,6 +440,7 @@ async def test_main_starts_bot_with_token():
         MockBot.return_value = mock_bot_instance
 
         from src.bot.main import main
+
         await main()
 
     mock_bot_instance.start.assert_awaited_once_with("fake-token")

@@ -7,6 +7,7 @@ Simulates realistic usage patterns:
 - Check standings / team analysis (medium read)
 - Submit draft picks (light write)
 """
+
 from __future__ import annotations
 
 import random
@@ -15,16 +16,33 @@ from locust import HttpUser, task, between, events
 SAMPLE_GUILD = "123456789"
 SAMPLE_PLAYERS = [f"player_{i:04d}" for i in range(16)]
 SAMPLE_POKEMON = [
-    "pikachu", "charizard", "blastoise", "venusaur", "mewtwo", "lucario",
-    "garchomp", "gengar", "tyranitar", "dragonite", "salamence", "metagross",
-    "heatran", "rotom-wash", "landorus-therian", "tornadus-therian",
-    "tapu-koko", "tapu-fini", "urshifu-rapid-strike", "rillaboom",
+    "pikachu",
+    "charizard",
+    "blastoise",
+    "venusaur",
+    "mewtwo",
+    "lucario",
+    "garchomp",
+    "gengar",
+    "tyranitar",
+    "dragonite",
+    "salamence",
+    "metagross",
+    "heatran",
+    "rotom-wash",
+    "landorus-therian",
+    "tornadus-therian",
+    "tapu-koko",
+    "tapu-fini",
+    "urshifu-rapid-strike",
+    "rillaboom",
 ]
 TIERS = ["OU", "UU", "RU", "NU", "Uber", ""]
 
 
 class PokemonBrowserUser(HttpUser):
     """Simulates a user browsing the Pokemon database (read-heavy)."""
+
     wait_time = between(0.5, 2.0)
     weight = 5
 
@@ -42,7 +60,9 @@ class PokemonBrowserUser(HttpUser):
     @task(5)
     def search_pokemon(self):
         query = random.choice(["char", "pika", "gen", "sala", "ttar", "man"])
-        self.client.get("/api/pokemon", params={"search": query}, name="/api/pokemon[search]")
+        self.client.get(
+            "/api/pokemon", params={"search": query}, name="/api/pokemon[search]"
+        )
 
     @task(3)
     def get_single_pokemon(self):
@@ -56,6 +76,7 @@ class PokemonBrowserUser(HttpUser):
 
 class StandingsUser(HttpUser):
     """Simulates users checking standings, teams, and schedules."""
+
     wait_time = between(1.0, 3.0)
     weight = 3
 
@@ -71,7 +92,9 @@ class StandingsUser(HttpUser):
     @task(2)
     def view_team_analysis(self):
         player = random.choice(SAMPLE_PLAYERS)
-        self.client.get(f"/api/teams/{SAMPLE_GUILD}/{player}/analysis", name="/api/teams[analysis]")
+        self.client.get(
+            f"/api/teams/{SAMPLE_GUILD}/{player}/analysis", name="/api/teams[analysis]"
+        )
 
     @task(1)
     def view_matchup(self):
@@ -81,6 +104,7 @@ class StandingsUser(HttpUser):
 
 class ActiveDraftUser(HttpUser):
     """Simulates players actively picking during a draft."""
+
     wait_time = between(5.0, 30.0)
     weight = 1
 
@@ -117,5 +141,7 @@ def on_test_stop(environment, **kwargs):
         t = environment.runner.stats.total
         print("\n=== Results ===")
         print(f"Requests: {t.num_requests} | Failures: {t.num_failures}")
-        print(f"Avg: {t.avg_response_time:.1f}ms | p95: {t.get_response_time_percentile(0.95):.1f}ms")
+        print(
+            f"Avg: {t.avg_response_time:.1f}ms | p95: {t.get_response_time_percentile(0.95):.1f}ms"
+        )
         print(f"RPS: {t.current_rps:.1f}")

@@ -21,6 +21,7 @@ Usage
   python scripts/sync_closed_issues.py --check    # CI / hook dry-run
   python scripts/sync_closed_issues.py --verbose  # extra detail
 """
+
 from __future__ import annotations
 
 import argparse
@@ -31,14 +32,15 @@ from pathlib import Path
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-REPO_ROOT    = Path(__file__).parent.parent
-ISSUES_MD    = REPO_ROOT / "issues.md"
-ISSUES_DIR   = REPO_ROOT / "issues"
+REPO_ROOT = Path(__file__).parent.parent
+ISSUES_MD = REPO_ROOT / "issues.md"
+ISSUES_DIR = REPO_ROOT / "issues"
 SOLUTION_DIR = REPO_ROOT  # ISS-NNN-SOLUTION.md lives at repo root (matches ISS-002/003)
 
 TODAY = date.today().isoformat()
 
 # ── Frontmatter helpers ───────────────────────────────────────────────────────
+
 
 def _parse_frontmatter(text: str) -> dict[str, str]:
     """Return key→value dict from YAML frontmatter (--- block), stdlib only."""
@@ -60,7 +62,7 @@ def _update_frontmatter(path: Path, updates: dict[str, str]) -> bool:
     Write ``updates`` into the frontmatter of ``path``.
     Returns True if the file was changed, False if already correct.
     """
-    text  = path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")
     lines = text.splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
         return False  # no frontmatter — skip
@@ -102,12 +104,11 @@ def _update_frontmatter(path: Path, updates: dict[str, str]) -> bool:
     path.write_text(new_text, encoding="utf-8")
     return True
 
+
 # ── issues.md parser ──────────────────────────────────────────────────────────
 
 # Matches: | [[ISS-006-ml-training-environment|ISS-006]] | ...
-_CLOSED_ROW_RE = re.compile(
-    r"\[\[(?P<slug>ISS-\d{3}-[^\]|]+)\|(?P<id>ISS-\d{3})\]\]"
-)
+_CLOSED_ROW_RE = re.compile(r"\[\[(?P<slug>ISS-\d{3}-[^\]|]+)\|(?P<id>ISS-\d{3})\]\]")
 _OPEN_ROW_RE = re.compile(
     r"\[\[(?P<slug>ISS-\d{3}-[^\]|]+)\|(?P<id>ISS-\d{3})\]\].*?(?:in-progress|open)",
     re.IGNORECASE,
@@ -198,8 +199,8 @@ def _scaffold_solution(
     fm: dict[str, str],
     solution_path: Path,
 ) -> None:
-    title  = fm.get("title", issue_id)
-    phase  = fm.get("phase", "backlog")
+    title = fm.get("title", issue_id)
+    phase = fm.get("phase", "backlog")
     closed = fm.get("closed", TODAY)
     content = _SOLUTION_SKELETON.format(
         issue_id=issue_id,
@@ -213,6 +214,7 @@ def _scaffold_solution(
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+
 def run(check: bool = False, verbose: bool = False) -> int:
     """
     Execute the sync.  Returns exit code (0 = clean, 1 = issues found in --check).
@@ -224,9 +226,9 @@ def run(check: bool = False, verbose: bool = False) -> int:
     closed = _parse_closed_issues(ISSUES_MD)
     open_ids = _parse_open_issues(ISSUES_MD)
 
-    synced    = 0
+    synced = 0
     scaffolded = 0
-    warnings  = 0
+    warnings = 0
     check_failures = 0
 
     for issue_id, slug in closed:
@@ -255,7 +257,9 @@ def run(check: bool = False, verbose: bool = False) -> int:
             else:
                 did_change = _update_frontmatter(note_path, needed)
                 if did_change:
-                    print(f"  SYNC  {issue_id}: updated frontmatter {list(needed.keys())}")
+                    print(
+                        f"  SYNC  {issue_id}: updated frontmatter {list(needed.keys())}"
+                    )
                     synced += 1
                 elif verbose:
                     print(f"  OK    {issue_id}: frontmatter already correct")
@@ -325,7 +329,8 @@ def main() -> None:
         help="Read-only mode: exit 1 if any closed issue is missing a solution or has stale frontmatter",
     )
     ap.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Print a line for every issue, not just changes and warnings",
     )

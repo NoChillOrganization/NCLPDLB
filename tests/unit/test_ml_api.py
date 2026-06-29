@@ -5,6 +5,7 @@ Covers:
   - get_state() / update_state() thread-safe helpers
   - GET /stats, GET /, POST /start, POST /stop, POST /config routes
 """
+
 from __future__ import annotations
 
 import sys
@@ -26,6 +27,7 @@ from src.ml.api import get_state, update_state, app  # noqa: E402
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _reset_state() -> None:
     """Bring _STATE back to clean defaults between tests."""
@@ -54,6 +56,7 @@ def reset_api_state():
 
 
 # ── get_state / update_state ──────────────────────────────────────────────────
+
 
 class TestGetState:
     def test_returns_snapshot_dict(self):
@@ -95,6 +98,7 @@ class TestUpdateState:
 
 # ── FastAPI routes ────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def client():
     return TestClient(app)
@@ -107,7 +111,15 @@ class TestStatsRoute:
 
     def test_body_contains_expected_keys(self, client):
         body = client.get("/stats").json()
-        for key in ("games", "wins", "losses", "ties", "winrate", "status", "mcts_sims"):
+        for key in (
+            "games",
+            "wins",
+            "losses",
+            "ties",
+            "winrate",
+            "status",
+            "mcts_sims",
+        ):
             assert key in body
 
     def test_reflects_current_state(self, client):
@@ -121,6 +133,7 @@ class TestStatsRoute:
 class TestDashboardRoute:
     def test_returns_200_when_html_file_exists(self, client):
         from pathlib import Path
+
         html = Path(__file__).parent.parent.parent / "src" / "ml" / "dashboard.html"
         if html.exists():
             r = client.get("/")

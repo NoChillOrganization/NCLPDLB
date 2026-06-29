@@ -1,4 +1,5 @@
 """Tests for src.ml.type_chart — get_type_effectiveness_float()."""
+
 from unittest.mock import MagicMock
 
 import pytest

@@ -2,6 +2,7 @@
 Unit tests for src/ml/transformer_model.py — BattleTransformer, save/load helpers.
 Covers the branches not hit by other test files.
 """
+
 import pytest
 
 torch = pytest.importorskip("torch")
@@ -17,12 +18,17 @@ from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9  # noqa: E402
 
 @pytest.fixture
 def model():
-    return BattleTransformer(obs_dim=OBS_DIM, n_actions=N_ACTIONS_GEN9,
-                             d_model=32, n_heads=4, n_layers=1, ffn_dim=64)
+    return BattleTransformer(
+        obs_dim=OBS_DIM,
+        n_actions=N_ACTIONS_GEN9,
+        d_model=32,
+        n_heads=4,
+        n_layers=1,
+        ffn_dim=64,
+    )
 
 
 class TestForwardWithMask:
-
     def test_forward_with_padding_mask(self, model):
         """Line 196 — forward() branch when mask is not None."""
         batch, seq = 2, 4
@@ -37,7 +43,6 @@ class TestForwardWithMask:
 
 
 class TestPredict:
-
     def test_predict_with_1d_input(self, model):
         obs = torch.zeros(OBS_DIM)
         action, value = model.predict(obs)
@@ -76,7 +81,6 @@ class TestPredict:
 
 
 class TestPolicyProbs:
-
     def test_policy_probs_with_1d_input(self, model):
         obs = torch.zeros(OBS_DIM)
         probs = model.policy_probs(obs)
@@ -102,7 +106,6 @@ class TestPolicyProbs:
 
 
 class TestNumParameters:
-
     def test_num_parameters_positive(self, model):
         """Line 277 — num_parameters()."""
         n = model.num_parameters()
@@ -116,7 +119,6 @@ class TestNumParameters:
 
 
 class TestSaveLoad:
-
     def test_save_and_load_roundtrip(self, tmp_path):
         """Lines 297-308 save_model, lines 322-333 load_model.
         Uses default architecture — save_model only persists obs_dim/n_actions/d_model.
@@ -145,7 +147,6 @@ class TestSaveLoad:
 
 
 class TestBuildDefaultModel:
-
     def test_build_default_model_returns_battle_transformer(self):
         """Line 338 — build_default_model()."""
         m = build_default_model()

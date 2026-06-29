@@ -26,6 +26,7 @@ Requirements
     (node pokemon-showdown/pokemon-showdown start --no-security)
   • pip install poke-env>=0.8.1 torch numpy
 """
+
 from __future__ import annotations
 
 import argparse
@@ -44,6 +45,7 @@ DEFAULT_FORMAT = "gen9randombattle"
 
 
 # ── Game capture collector ────────────────────────────────────────────────────
+
 
 class _GameCapture:
     """
@@ -69,12 +71,14 @@ class _GameCapture:
         reward: float,
     ) -> None:
         """Append one completed game's data."""
-        self._games.append((
-            [o.copy() for o in observations],
-            list(actions),
-            [p.copy() if p is not None else None for p in action_probs_list],
-            float(reward),
-        ))
+        self._games.append(
+            (
+                [o.copy() for o in observations],
+                list(actions),
+                [p.copy() if p is not None else None for p in action_probs_list],
+                float(reward),
+            )
+        )
 
     def __len__(self) -> int:
         """Total transitions collected (across all games)."""
@@ -86,6 +90,7 @@ class _GameCapture:
 
 
 # ── Generate games via local self-play ───────────────────────────────────────
+
 
 async def _generate_games(
     model: Any,
@@ -134,12 +139,14 @@ async def _generate_games(
     )
     log.info(
         "[generate] Done. %d games → %d transitions",
-        len(capture.games), len(capture),
+        len(capture.games),
+        len(capture),
     )
     return capture.games
 
 
 # ── Train/val split ───────────────────────────────────────────────────────────
+
 
 def _split_and_fill_buffers(
     all_games: list,
@@ -183,13 +190,16 @@ def _split_and_fill_buffers(
 
     log.info(
         "[split] train=%d games (%d transitions) | val=%d games (%d transitions)",
-        len(train_games), len(train_buf),
-        len(val_games), len(val_buf),
+        len(train_games),
+        len(train_buf),
+        len(val_games),
+        len(val_buf),
     )
     return train_buf, val_buf
 
 
 # ── Main training function ────────────────────────────────────────────────────
+
 
 def train(
     fmt: str = DEFAULT_FORMAT,
@@ -249,9 +259,7 @@ def train(
     trainer = PolicyTrainer(model, lr=lr, save_path=checkpoint_out)
 
     # ── Generate games ───────────────────────────────────────────────
-    all_games = asyncio.run(
-        _generate_games(model, mcts_config, n_games, fmt, server)
-    )
+    all_games = asyncio.run(_generate_games(model, mcts_config, n_games, fmt, server))
 
     # ── Split buffers ────────────────────────────────────────────────
     train_buf, val_buf = _split_and_fill_buffers(all_games, val_frac, buffer_capacity)
@@ -277,7 +285,11 @@ def train(
             train_metrics = trainer.train_epochs(train_buf, n_epochs=steps_per_epoch)
             # Clamp val batch to available data so small training runs still validate.
             val_bs = max(1, min(256, len(val_buf)))
-            val_metrics = trainer.validation_loss(val_buf, batch_size=val_bs) if val_bs > 0 else {}
+            val_metrics = (
+                trainer.validation_loss(val_buf, batch_size=val_bs)
+                if val_bs > 0
+                else {}
+            )
 
             if not train_metrics or not val_metrics:
                 log.warning(
@@ -318,7 +330,8 @@ def train(
         else:
             log.info(
                 "[train_transformer] Val loss decreased by %.4f over %d epochs",
-                val_delta, len(val_losses),
+                val_delta,
+                len(val_losses),
             )
 
     return {
@@ -332,12 +345,14 @@ def train(
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+
 def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Train BattleTransformer via offline MCTS self-play"
     )
     ap.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         default=DEFAULT_FORMAT,
         help=f"Showdown battle format (default: {DEFAULT_FORMAT})",
     )
@@ -410,6 +425,7 @@ def _parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     import logging as _logging
+
     _logging.basicConfig(
         level=_logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s — %(message)s",

@@ -6,6 +6,7 @@ Covers:
                   uniform fallback when action_probs=None, thread-safety
   PolicyTrainer — train_step, train_epochs, save, load, step_count property
 """
+
 from __future__ import annotations
 
 import threading
@@ -17,6 +18,7 @@ import pytest
 
 try:
     import torch
+
     TORCH_OK = True
 except ImportError:
     TORCH_OK = False
@@ -29,6 +31,7 @@ from src.ml.trainer import ReplayBuffer, PolicyTrainer  # noqa: E402
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _obs(obs_dim: int = OBS_DIM) -> np.ndarray:
     return np.random.rand(obs_dim).astype(np.float32)
 
@@ -40,13 +43,18 @@ def _probs(n_actions: int = N_ACTIONS_GEN9) -> np.ndarray:
 
 def _tiny_model():
     from src.ml.transformer_model import BattleTransformer
+
     return BattleTransformer(
-        obs_dim=OBS_DIM, n_actions=N_ACTIONS_GEN9,
-        d_model=16, n_heads=2, n_layers=1,
+        obs_dim=OBS_DIM,
+        n_actions=N_ACTIONS_GEN9,
+        d_model=16,
+        n_heads=2,
+        n_layers=1,
     )
 
 
 # ── ReplayBuffer ──────────────────────────────────────────────────────────────
+
 
 class TestReplayBufferInit:
     def test_empty_on_creation(self):
@@ -91,9 +99,7 @@ class TestReplayBufferAdd:
         probs = _probs()
         buf.add(_obs(), 3, 1.0, True, action_probs=probs)
         batch = buf.sample(1)
-        np.testing.assert_allclose(
-            batch["action_probs"].numpy()[0], probs, atol=1e-5
-        )
+        np.testing.assert_allclose(batch["action_probs"].numpy()[0], probs, atol=1e-5)
 
     def test_add_without_action_probs_uses_uniform_fallback(self):
         buf = ReplayBuffer(capacity=10, obs_dim=OBS_DIM, n_actions=N_ACTIONS_GEN9)
@@ -182,7 +188,13 @@ class TestReplayBufferSample:
         for _ in range(10):
             buf.add(_obs(), 0, 0.0, False)
         batch = buf.sample(5)
-        assert set(batch.keys()) == {"obs", "actions", "rewards", "done", "action_probs"}
+        assert set(batch.keys()) == {
+            "obs",
+            "actions",
+            "rewards",
+            "done",
+            "action_probs",
+        }
 
     def test_sample_batch_size_matches(self):
         buf = ReplayBuffer(capacity=100)
@@ -264,6 +276,7 @@ class TestReplayBufferThreadSafety:
 
 # ── PolicyTrainer ─────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def tiny_model():
     return _tiny_model()
@@ -274,7 +287,12 @@ def full_buffer():
     """A buffer with 128 transitions ready for sampling."""
     buf = ReplayBuffer(capacity=256)
     for _ in range(128):
-        buf.add(_obs(), np.random.randint(N_ACTIONS_GEN9), float(np.random.choice([-1, 1])), False)
+        buf.add(
+            _obs(),
+            np.random.randint(N_ACTIONS_GEN9),
+            float(np.random.choice([-1, 1])),
+            False,
+        )
     return buf
 
 
@@ -350,7 +368,11 @@ class TestPolicyTrainerTrainEpochs:
     def test_returns_metrics_with_n_epochs(self, trainer, full_buffer):
         result = trainer.train_epochs(full_buffer, n_epochs=3, batch_size=32)
         assert set(result.keys()) == {
-            "policy_loss", "value_loss", "total_loss", "n_epochs", "step"
+            "policy_loss",
+            "value_loss",
+            "total_loss",
+            "n_epochs",
+            "step",
         }
         assert result["n_epochs"] == 3
 
@@ -405,6 +427,7 @@ class TestPolicyTrainerLoad:
         n_heads use their defaults).
         """
         from src.ml.transformer_model import build_default_model, save_model, load_model
+
         model = build_default_model()
         t = PolicyTrainer(model)
         dest = tmp_path / "snap.pt"
@@ -423,13 +446,16 @@ class TestPolicyTrainerLoad:
 
     def test_load_uses_default_path_when_none(self, trainer):
         fake_model = _tiny_model()
-        with patch("src.ml.transformer_model.load_model", return_value=fake_model) as mock_load:
+        with patch(
+            "src.ml.transformer_model.load_model", return_value=fake_model
+        ) as mock_load:
             trainer.load()
         mock_load.assert_called_once_with(trainer.save_path)
 
     def test_load_accepts_string_path(self, tmp_path):
         """Passing a str path (not Path) should not raise."""
         from src.ml.transformer_model import build_default_model, save_model
+
         model = build_default_model()
         t = PolicyTrainer(model)
         dest = tmp_path / "w.pt"

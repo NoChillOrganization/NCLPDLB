@@ -2,6 +2,7 @@
 Unit tests for VideoService — Discord CDN URL recording.
 sheets is mocked; no external storage required.
 """
+
 from unittest.mock import MagicMock, patch
 
 from src.services.video_service import VideoService, VideoUploadResult, MAX_FILE_SIZE_MB
@@ -22,6 +23,7 @@ def make_attachment(
 
 
 # ── Size validation ───────────────────────────────────────────
+
 
 async def test_upload_rejects_oversized_file():
     svc = VideoService()
@@ -44,6 +46,7 @@ async def test_upload_accepts_max_size_file():
 
 
 # ── Discord CDN recording ─────────────────────────────────────
+
 
 async def test_upload_records_discord_cdn_url():
     svc = VideoService()

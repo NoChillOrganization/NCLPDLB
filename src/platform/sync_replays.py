@@ -14,6 +14,7 @@ Mode is 'replay_targeted' when --ids is supplied, 'periodic' for ladder discover
 # ponytail: shared loop + ingest_run wiring now live in orchestrate.py.
 #           normalize_replay_row doesn't take natural_key — wrapped below.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -22,7 +23,11 @@ import asyncio
 import asyncpg
 
 from src.platform.normalize.replay import normalize_replay_row
-from src.platform.orchestrate import dry_run_normalize, land_and_normalize, with_ingest_run
+from src.platform.orchestrate import (
+    dry_run_normalize,
+    land_and_normalize,
+    with_ingest_run,
+)
 from src.platform.sources.showdown import ShowdownAdapter
 from src.platform.store.db import get_pool, migrate
 
@@ -36,7 +41,9 @@ async def _replay_normalize(
     payload: dict,
 ) -> int:
     """Adapter: land_and_normalize passes natural_key; normalize_replay_row doesn't need it."""
-    return await normalize_replay_row(conn, raw_id=raw_id, source=source, payload=payload)
+    return await normalize_replay_row(
+        conn, raw_id=raw_id, source=source, payload=payload
+    )
 
 
 async def _run(
@@ -49,7 +56,9 @@ async def _run(
 ) -> None:
     mode = "replay_targeted" if ids else "periodic"
     adapter = ShowdownAdapter()
-    records = await adapter.fetch(ids=ids, format=format, pages=pages, min_rating=min_rating)
+    records = await adapter.fetch(
+        ids=ids, format=format, pages=pages, min_rating=min_rating
+    )
     if dry_run:
         stats = await dry_run_normalize(records)
         print("DRY RUN:", stats)
@@ -78,24 +87,46 @@ async def _run(
 def main() -> None:
     parser = argparse.ArgumentParser(prog="sync_replays", description=__doc__)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--ids", nargs="+", metavar="ID",
-                       help="Specific replay IDs (replay_targeted mode)")
-    group.add_argument("--format", metavar="FORMAT",
-                       help="Showdown format slug for ladder sweep (periodic mode)")
-    parser.add_argument("--pages", type=int, default=10,
-                        help="Max search pages for ladder sweep (default 10)")
-    parser.add_argument("--min-rating", type=int, default=0, dest="min_rating",
-                        help="Skip ladder replays below this rating (default 0)")
-    parser.add_argument("--dry-run", action="store_true", dest="dry_run",
-                        help="Fetch and validate without writing to DB")
+    group.add_argument(
+        "--ids",
+        nargs="+",
+        metavar="ID",
+        help="Specific replay IDs (replay_targeted mode)",
+    )
+    group.add_argument(
+        "--format",
+        metavar="FORMAT",
+        help="Showdown format slug for ladder sweep (periodic mode)",
+    )
+    parser.add_argument(
+        "--pages",
+        type=int,
+        default=10,
+        help="Max search pages for ladder sweep (default 10)",
+    )
+    parser.add_argument(
+        "--min-rating",
+        type=int,
+        default=0,
+        dest="min_rating",
+        help="Skip ladder replays below this rating (default 0)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="Fetch and validate without writing to DB",
+    )
     args = parser.parse_args()
-    asyncio.run(_run(
-        ids=args.ids,
-        format=getattr(args, "format", None),
-        pages=args.pages,
-        min_rating=args.min_rating,
-        dry_run=args.dry_run,
-    ))
+    asyncio.run(
+        _run(
+            ids=args.ids,
+            format=getattr(args, "format", None),
+            pages=args.pages,
+            min_rating=args.min_rating,
+            dry_run=args.dry_run,
+        )
+    )
 
 
 if __name__ == "__main__":

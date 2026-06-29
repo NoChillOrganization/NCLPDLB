@@ -9,9 +9,9 @@ Retry budget: 4 attempts total (3 retries), ceiling ~8s at default base_delay=0.
 # ponytail: tune max_tries / base_delay per call-site for rate-limited endpoints
 #           (e.g. Pikalytics may need higher base_delay if bursts trigger 429s).
 """
+
 from __future__ import annotations
 
-import asyncio
 
 import aiohttp
 
@@ -72,6 +72,7 @@ async def get_json(
     Only transient conditions (RETRY_STATUS + transport errors) are retried;
     all other non-200 responses return None immediately.
     """
+
     async def _attempt() -> dict | list | None:
         if limiter is not None:
             await limiter.acquire()

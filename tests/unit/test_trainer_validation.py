@@ -8,6 +8,7 @@ Covers:
   - Returns empty dict when buffer is too small (not ready)
   - Model is restored to training mode after the call
 """
+
 from __future__ import annotations
 
 import pytest
@@ -67,8 +68,7 @@ class TestValidationLoss:
         Any change would mean autograd ran an optimiser step — that's a bug.
         """
         before = {
-            name: param.data.clone()
-            for name, param in self.model.named_parameters()
+            name: param.data.clone() for name, param in self.model.named_parameters()
         }
         self.trainer.validation_loss(self.buf)
         for name, param in self.model.named_parameters():
@@ -82,7 +82,9 @@ class TestValidationLoss:
     def test_model_is_in_training_mode_after_call(self):
         """validation_loss must restore model.training=True in its finally block."""
         self.trainer.validation_loss(self.buf)
-        assert self.model.training, "model.training should be True after validation_loss"
+        assert self.model.training, (
+            "model.training should be True after validation_loss"
+        )
 
     def test_model_was_not_in_training_mode_before_but_restored_after(self):
         """Even if model was manually set to eval mode before, we restore it."""

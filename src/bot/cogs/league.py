@@ -1,6 +1,7 @@
 """
 League Cog — League management, schedules, multi-server support.
 """
+
 import asyncio
 import logging
 import uuid
@@ -23,9 +24,13 @@ class LeagueCog(commands.Cog, name="League"):
         self.elo = EloService()
         self.notifications = NotificationService(bot)
 
-    @app_commands.command(name="league-create", description="Create a new draft league for this server")
+    @app_commands.command(
+        name="league-create", description="Create a new draft league for this server"
+    )
     @require_role(ROLE_GUILDMASTER)
-    @app_commands.describe(name="League name", format="Draft format", season="Season number")
+    @app_commands.describe(
+        name="League name", format="Draft format", season="Season number"
+    )
     async def league_create(
         self,
         interaction: discord.Interaction,
@@ -59,7 +64,10 @@ class LeagueCog(commands.Cog, name="League"):
 
     @app_commands.command(name="schedule", description="View the match schedule")
     @require_role(ROLE_COACH)
-    @app_commands.describe(week="Filter to a specific week (leave blank for all)", pool="Filter by pool (A or B)")
+    @app_commands.describe(
+        week="Filter to a specific week (leave blank for all)",
+        pool="Filter by pool (A or B)",
+    )
     async def schedule(
         self,
         interaction: discord.Interaction,
@@ -115,14 +123,17 @@ class LeagueCog(commands.Cog, name="League"):
         # Persist match to Sheets — best-effort: a write failure must not suppress
         # the embed or leave ELO mutated with no user feedback.
         try:
-            await asyncio.to_thread(sheets.save_match_stats, {
-                "match_id": str(uuid.uuid4())[:8],
-                "league_id": str(interaction.guild_id),
-                "winner_id": str(winner.id),
-                "loser_id": str(loser.id),
-                "p1_team": [],
-                "p2_team": [],
-            })
+            await asyncio.to_thread(
+                sheets.save_match_stats,
+                {
+                    "match_id": str(uuid.uuid4())[:8],
+                    "league_id": str(interaction.guild_id),
+                    "winner_id": str(winner.id),
+                    "loser_id": str(loser.id),
+                    "p1_team": [],
+                    "p2_team": [],
+                },
+            )
         except Exception:
             log.exception("[result] Non-fatal: failed to persist match stats to Sheets")
 
@@ -143,13 +154,17 @@ class LeagueCog(commands.Cog, name="League"):
 
         # DM both players about ELO change
         await self.notifications.notify_elo_update(
-            str(winner.id), won=True,
-            old_elo=match_result.winner_old_elo, new_elo=match_result.winner_new_elo,
+            str(winner.id),
+            won=True,
+            old_elo=match_result.winner_old_elo,
+            new_elo=match_result.winner_new_elo,
             opponent_name=loser.display_name,
         )
         await self.notifications.notify_elo_update(
-            str(loser.id), won=False,
-            old_elo=match_result.loser_old_elo, new_elo=match_result.loser_new_elo,
+            str(loser.id),
+            won=False,
+            old_elo=match_result.loser_old_elo,
+            new_elo=match_result.loser_new_elo,
             opponent_name=winner.display_name,
         )
 

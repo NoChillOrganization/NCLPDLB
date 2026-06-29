@@ -33,9 +33,9 @@ jobs:
       PLATFORM_DATABASE_URL: ${{ secrets.PLATFORM_DATABASE_URL }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           # No pip cache on self-hosted — cache dir permissions vary per runner config.

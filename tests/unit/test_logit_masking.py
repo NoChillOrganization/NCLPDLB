@@ -13,12 +13,14 @@ These tests verify:
   4. Legal actions are unaffected by the mask.
   5. The softmax distribution over legal actions is valid (sums to ~1).
 """
+
 from __future__ import annotations
 
 import pytest
 
 try:
     import torch
+
     TORCH_OK = True
 except ImportError:
     TORCH_OK = False
@@ -30,7 +32,10 @@ pytestmark = pytest.mark.skipif(not TORCH_OK, reason="PyTorch not installed")
 def tiny_model():
     """Return a minimal BattleTransformer (obs_dim=48, n_actions=26)."""
     from src.ml.transformer_model import BattleTransformer
-    return BattleTransformer(obs_dim=48, n_actions=26, d_model=16, n_heads=2, n_layers=1)
+
+    return BattleTransformer(
+        obs_dim=48, n_actions=26, d_model=16, n_heads=2, n_layers=1
+    )
 
 
 @pytest.fixture
@@ -50,7 +55,7 @@ def _illegal_mask(illegal_actions: list[int], n_actions: int = 26) -> "torch.Ten
 class TestLogitMaskingPredict:
     def test_illegal_actions_have_zero_probability(self, tiny_model, dummy_obs):
         """predict() with a mask must assign 0.0 probability to masked actions."""
-        illegal = [0, 1, 2, 3, 4, 5]   # all switches illegal
+        illegal = [0, 1, 2, 3, 4, 5]  # all switches illegal
         mask = _illegal_mask(illegal)
         action, _ = tiny_model.predict(dummy_obs, legal_mask=mask)
         # The chosen action must not be illegal
@@ -100,6 +105,7 @@ class TestLogitMaskingPolicyProbs:
     def test_masked_fill_uses_neg_inf(self, tiny_model, dummy_obs):
         """Verify that masking applies float('-inf') — not just a large negative number."""
         import torch
+
         # Intercept the forward pass to inspect pre-softmax logits.
         illegal = [10, 11]
         mask = _illegal_mask(illegal)
@@ -125,14 +131,15 @@ class TestLogitMaskingPolicyProbs:
     def test_legal_actions_not_affected_by_mask(self, tiny_model, dummy_obs):
         """Logits of legal actions must be identical with and without masking."""
         import torch
+
         illegal = [0]
         mask = _illegal_mask(illegal)
 
-        probs_masked   = tiny_model.policy_probs(dummy_obs, legal_mask=mask)
+        probs_masked = tiny_model.policy_probs(dummy_obs, legal_mask=mask)
         probs_unmasked = tiny_model.policy_probs(dummy_obs, legal_mask=None)
 
         # After renormalisation the ratios between legal actions should be preserved.
         legal = [i for i in range(26) if i not in illegal]
-        ratio_masked   = probs_masked[legal] / probs_masked[legal].sum()
+        ratio_masked = probs_masked[legal] / probs_masked[legal].sum()
         ratio_unmasked = probs_unmasked[legal] / probs_unmasked[legal].sum()
         assert torch.allclose(ratio_masked, ratio_unmasked, atol=1e-5)

@@ -5,6 +5,7 @@ once a real payload is seen. Land raw is safe regardless — only normalize/usag
 field names to be exact.
 # ponytail: paginates until an empty page; confirm `format` slugs against pikalytics.com URLs.
 """
+
 from __future__ import annotations
 
 from typing import Iterable
@@ -21,7 +22,9 @@ LEADS_URL = "https://www.pikalytics.com/api/l/{format}/{page}"
 class PikalyticsAdapter:
     source = "pikalytics"
 
-    async def fetch(self, *, formats: list[str], max_pages: int = 10, **kwargs) -> Iterable[RawRecord]:
+    async def fetch(
+        self, *, formats: list[str], max_pages: int = 10, **kwargs
+    ) -> Iterable[RawRecord]:
         records = []
         limiter = get_limiter(self.source)
         async with aiohttp.ClientSession() as session:
@@ -30,12 +33,18 @@ class PikalyticsAdapter:
                 for page in range(max_pages):
                     url = LEADS_URL.format(format=fmt, page=page)
                     data = await get_json(session, url, limiter=limiter)
-                    if not data:  # None (clean miss / 404) or empty list → stop paginating
+                    if (
+                        not data
+                    ):  # None (clean miss / 404) or empty list → stop paginating
                         break
                     pages.extend(data)
                 if pages:
-                    records.append(RawRecord(
-                        route="usage", natural_key=f"pikalytics-{fmt}",
-                        payload={"format": fmt, "entries": pages}, url=LEADS_URL.format(format=fmt, page=0),
-                    ))
+                    records.append(
+                        RawRecord(
+                            route="usage",
+                            natural_key=f"pikalytics-{fmt}",
+                            payload={"format": fmt, "entries": pages},
+                            url=LEADS_URL.format(format=fmt, page=0),
+                        )
+                    )
         return records

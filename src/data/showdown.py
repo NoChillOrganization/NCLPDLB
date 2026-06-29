@@ -2,6 +2,7 @@
 Showdown Integration — Fetches and parses Showdown tier data from the smogon/pokemon-showdown repo.
 Updates the local pokemon.json with current tier assignments.
 """
+
 from __future__ import annotations
 
 import json
@@ -18,10 +19,20 @@ DATA_FILE = Path(__file__).parent.parent.parent / "data" / "tiers.json"
 
 # Showdown tier names mapped to canonical short names
 TIER_MAP = {
-    "AG": "AG", "Uber": "Uber", "OU": "OU", "UUBL": "UUBL",
-    "UU": "UU", "RUBL": "RUBL", "RU": "RU", "NUBL": "NUBL",
-    "NU": "NU", "PUBL": "PUBL", "PU": "PU", "NFE": "NFE",
-    "LC": "LC", "Untiered": "Untiered",
+    "AG": "AG",
+    "Uber": "Uber",
+    "OU": "OU",
+    "UUBL": "UUBL",
+    "UU": "UU",
+    "RUBL": "RUBL",
+    "RU": "RU",
+    "NUBL": "NUBL",
+    "NU": "NU",
+    "PUBL": "PUBL",
+    "PU": "PU",
+    "NFE": "NFE",
+    "LC": "LC",
+    "Untiered": "Untiered",
 }
 
 
@@ -32,7 +43,9 @@ async def fetch_showdown_tiers() -> dict[str, str]:
     """
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(TIERS_URL, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+            async with session.get(
+                TIERS_URL, timeout=aiohttp.ClientTimeout(total=15)
+            ) as resp:
                 if resp.status != 200:
                     log.warning(f"Failed to fetch Showdown tiers (HTTP {resp.status})")
                     return {}

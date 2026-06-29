@@ -2,6 +2,7 @@
 Tests for src/ml/pretrain.py — check_mapping_gap, build_obs_from_snapshot,
 ActionResolver, and pretrain().
 """
+
 from __future__ import annotations
 
 import logging
@@ -22,6 +23,7 @@ from src.ml.replay_parser import BattleEvent, BattleRecord, TurnSnapshot
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _snap(
     turn: int = 1,
@@ -57,6 +59,7 @@ def _record(
 
 # ── check_mapping_gap ─────────────────────────────────────────────────────────
 
+
 class TestCheckMappingGap:
     def test_zero_total_returns_zero(self):
         gap = check_mapping_gap(unmappable=0, total=0)
@@ -82,7 +85,8 @@ class TestCheckMappingGap:
         """Exactly at warn threshold is NOT > threshold — no warning."""
         with caplog.at_level(logging.WARNING, logger="src.ml.pretrain"):
             gap = check_mapping_gap(
-                unmappable=int(WARN_THRESHOLD * 100), total=100,
+                unmappable=int(WARN_THRESHOLD * 100),
+                total=100,
             )
         assert gap == pytest.approx(WARN_THRESHOLD)
         assert not caplog.records
@@ -100,7 +104,8 @@ class TestCheckMappingGap:
     def test_gap_exactly_at_abort_threshold_does_not_raise(self):
         """Exactly at abort threshold is NOT > threshold — no raise."""
         gap = check_mapping_gap(
-            unmappable=int(ABORT_THRESHOLD * 100), total=100,
+            unmappable=int(ABORT_THRESHOLD * 100),
+            total=100,
         )
         assert gap == pytest.approx(ABORT_THRESHOLD)
 
@@ -116,11 +121,13 @@ class TestCheckMappingGap:
 
 # ── build_obs_from_snapshot ───────────────────────────────────────────────────
 
+
 class TestBuildObsFromSnapshot:
     """build_obs_from_snapshot produces a correctly shaped, bounded obs vector."""
 
     def test_output_shape(self):
         from src.ml.battle_env import OBS_DIM
+
         snap = _snap()
         obs = build_obs_from_snapshot(snap)
         assert obs.shape == (OBS_DIM,)
@@ -236,8 +243,8 @@ class TestBuildObsFromSnapshot:
 
 # ── ActionResolver ────────────────────────────────────────────────────────────
 
-class TestActionResolver:
 
+class TestActionResolver:
     def test_empty_record_returns_empty(self):
         resolver = ActionResolver()
         record = _record(turns=[])
@@ -281,7 +288,9 @@ class TestActionResolver:
 
     def test_switch_maps_to_sorted_team_index(self):
         """Switch slot uses alphabetical team order: Corviknight < Garchomp → slot 0."""
-        events = [BattleEvent(kind="switch", slot="p1a", detail="Corviknight", hp_after=1.0)]
+        events = [
+            BattleEvent(kind="switch", slot="p1a", detail="Corviknight", hp_after=1.0)
+        ]
         snap = _snap(events=events)
         # sorted(["Garchomp", "Corviknight"]) = ["Corviknight", "Garchomp"]
         record = _record([snap], p1_team=["Garchomp", "Corviknight"])
@@ -291,7 +300,9 @@ class TestActionResolver:
 
     def test_switch_slot_stable_regardless_of_input_order(self):
         """Slot index is independent of how p1_team was passed — always sorted."""
-        events = [BattleEvent(kind="switch", slot="p1a", detail="Garchomp", hp_after=1.0)]
+        events = [
+            BattleEvent(kind="switch", slot="p1a", detail="Garchomp", hp_after=1.0)
+        ]
         snap = _snap(events=events)
         record_a = _record([snap], p1_team=["Garchomp", "Corviknight"])
         record_b = _record([snap], p1_team=["Corviknight", "Garchomp"])
@@ -299,7 +310,7 @@ class TestActionResolver:
         idx_a = r.resolve(record_a)[0][1]
         idx_b = r.resolve(record_b)[0][1]
         assert idx_a == idx_b  # same slot regardless of input order
-        assert idx_a == 1      # sorted: ["Corviknight", "Garchomp"] → Garchomp = slot 1
+        assert idx_a == 1  # sorted: ["Corviknight", "Garchomp"] → Garchomp = slot 1
 
     def test_tera_move_maps_to_22_plus_slot(self):
         """Tera event before move → action 22 + move_slot."""
@@ -315,7 +326,13 @@ class TestActionResolver:
 
     def test_fifth_move_is_unmappable(self):
         """A 5th distinct move for a species increments unmappable."""
-        moves = ["Earthquake", "Dragon Claw", "Swords Dance", "Stealth Rock", "Fire Fang"]
+        moves = [
+            "Earthquake",
+            "Dragon Claw",
+            "Swords Dance",
+            "Stealth Rock",
+            "Fire Fang",
+        ]
         snaps = [
             _snap(turn=i + 1, events=[BattleEvent(kind="move", slot="p1a", detail=m)])
             for i, m in enumerate(moves)
@@ -360,6 +377,7 @@ class TestActionResolver:
     def test_obs_shape_in_pairs(self):
         """Each pair's obs has shape (OBS_DIM,)."""
         from src.ml.battle_env import OBS_DIM
+
         events = [BattleEvent(kind="move", slot="p1a", detail="Earthquake")]
         snap = _snap(events=events)
         record = _record([snap])
@@ -382,7 +400,7 @@ class TestActionResolver:
     def test_total_and_unmappable_accumulate_across_records(self):
         """resolve() called twice accumulates totals."""
         good_events = [BattleEvent(kind="move", slot="p1a", detail="Earthquake")]
-        bad_events  = []  # no action → unmappable
+        bad_events = []  # no action → unmappable
         record1 = _record([_snap(events=good_events)])
         record2 = _record([_snap(events=bad_events)])
         resolver = ActionResolver(player="p1")
@@ -400,12 +418,14 @@ class TestActionResolver:
         assert len(pairs) == 1
         obs, label = pairs[0]
         assert label.shape == (26,)
-        assert label[6] == pytest.approx(1.0)   # first move → action 6
+        assert label[6] == pytest.approx(1.0)  # first move → action 6
         assert label[:6].sum() == pytest.approx(0.0)
 
     def test_resolve_soft_switch_is_uniform(self):
         """resolve_soft(): switch actions get uniform 1/6 over slots 0-5."""
-        events = [BattleEvent(kind="switch", slot="p1a", detail="Corviknight", hp_after=1.0)]
+        events = [
+            BattleEvent(kind="switch", slot="p1a", detail="Corviknight", hp_after=1.0)
+        ]
         snap = _snap(events=events)
         record = _record([snap], p1_team=["Garchomp", "Corviknight"])
         pairs = ActionResolver(player="p1").resolve_soft(record, n_actions=26)
@@ -418,6 +438,7 @@ class TestActionResolver:
 
 
 # ── pretrain() ────────────────────────────────────────────────────────────────
+
 
 def _make_fake_record() -> BattleRecord:
     """One-turn replay record with a single move action for p1."""
@@ -449,7 +470,7 @@ def _mock_deps():
     mock_ppo_instance = MagicMock()
     mock_ppo_instance.policy.state_dict.return_value = {
         "actor.weight": MagicMock(),
-        "value_net.weight": MagicMock(),   # filtered out by name prefix
+        "value_net.weight": MagicMock(),  # filtered out by name prefix
     }
     mock_ppo_class = MagicMock(return_value=mock_ppo_instance)
 
@@ -464,15 +485,18 @@ def _mock_deps():
     fake_sb3_mod.PPO = mock_ppo_class
     fake_torch_mod = MagicMock()
 
-    return patch.dict(sys.modules, {
-        "imitation": MagicMock(),
-        "imitation.algorithms": MagicMock(),
-        "imitation.algorithms.bc": fake_bc_mod,
-        "imitation.data": MagicMock(),
-        "imitation.data.types": fake_types_mod,
-        "stable_baselines3": fake_sb3_mod,
-        "torch": fake_torch_mod,
-    })
+    return patch.dict(
+        sys.modules,
+        {
+            "imitation": MagicMock(),
+            "imitation.algorithms": MagicMock(),
+            "imitation.algorithms.bc": fake_bc_mod,
+            "imitation.data": MagicMock(),
+            "imitation.data.types": fake_types_mod,
+            "stable_baselines3": fake_sb3_mod,
+            "torch": fake_torch_mod,
+        },
+    )
 
 
 class TestPretrain:
@@ -481,8 +505,13 @@ class TestPretrain:
     def test_import_error_when_imitation_missing(self, tmp_path):
         """pretrain() raises ImportError when imitation is not installed."""
         from src.ml.pretrain import pretrain
+
         # Force imitation's import to fail regardless of whether it's installed.
-        real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__import__
+        real_import = (
+            __builtins__["__import__"]
+            if isinstance(__builtins__, dict)
+            else __builtins__.__import__
+        )
 
         def _no_imitation(name, *args, **kwargs):
             if name == "imitation" or name.startswith("imitation."):
@@ -496,34 +525,50 @@ class TestPretrain:
     def test_raises_value_error_when_no_records(self, tmp_path):
         """pretrain() raises ValueError when replay_dir contains no JSON files."""
         from src.ml.pretrain import pretrain
-        with _mock_deps(), \
-             patch("src.ml.replay_parser.parse_replay_dir", return_value=[]):
+
+        with (
+            _mock_deps(),
+            patch("src.ml.replay_parser.parse_replay_dir", return_value=[]),
+        ):
             with pytest.raises(ValueError, match="No replay"):
                 pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt")
 
     def test_raises_value_error_when_no_pairs(self, tmp_path):
         """pretrain() raises ValueError when all turns are unmappable."""
         from src.ml.pretrain import pretrain
+
         empty_snap = TurnSnapshot(turn_number=1)
         empty_snap.events = []
         record = BattleRecord(
-            replay_id="x", format="gen9ou", rating=1500,
-            p1_name="A", p2_name="B", winner="p1", winner_name="A",
-            p1_team=["Garchomp"], p2_team=["Pikachu"],
-            turns=[empty_snap], total_turns=1,
+            replay_id="x",
+            format="gen9ou",
+            rating=1500,
+            p1_name="A",
+            p2_name="B",
+            winner="p1",
+            winner_name="A",
+            p1_team=["Garchomp"],
+            p2_team=["Pikachu"],
+            turns=[empty_snap],
+            total_turns=1,
         )
-        with _mock_deps(), \
-             patch("src.ml.replay_parser.parse_replay_dir", return_value=[record]):
+        with (
+            _mock_deps(),
+            patch("src.ml.replay_parser.parse_replay_dir", return_value=[record]),
+        ):
             with pytest.raises(ValueError, match="No mappable"):
                 pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt", force=True)
 
     def test_happy_path_saves_weights(self, tmp_path):
         """pretrain() processes pairs, trains BC, and saves actor weights."""
         from src.ml.pretrain import pretrain
+
         record = _make_fake_record()
-        with _mock_deps(), \
-             patch("src.ml.replay_parser.parse_replay_dir", return_value=[record]), \
-             patch("torch.save") as mock_save:
+        with (
+            _mock_deps(),
+            patch("src.ml.replay_parser.parse_replay_dir", return_value=[record]),
+            patch("torch.save") as mock_save,
+        ):
             pretrain(tmp_path, "gen9ou", tmp_path / "bc.pt", n_epochs=1)
         mock_save.assert_called_once()
         saved_path = mock_save.call_args[0][1]

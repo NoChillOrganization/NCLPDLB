@@ -1,6 +1,7 @@
 """
 Miscellaneous commands cog — /help, /help-roles, /models-status.
 """
+
 import csv
 import logging
 from pathlib import Path
@@ -53,7 +54,9 @@ class MiscCog(commands.Cog, name="Misc"):
         embed = build_help_embed()
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="help-roles", description="Show which roles can use which commands")
+    @app_commands.command(
+        name="help-roles", description="Show which roles can use which commands"
+    )
     @require_role(ROLE_COACH)
     async def help_roles(self, interaction: discord.Interaction) -> None:
         """Static embed mapping the 3 server roles to their command groups."""
@@ -98,7 +101,10 @@ class MiscCog(commands.Cog, name="Misc"):
         embed.set_footer(text="Server admins (Manage Server) bypass all role checks.")
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="models-status", description="Show which trained AI models are installed locally")
+    @app_commands.command(
+        name="models-status",
+        description="Show which trained AI models are installed locally",
+    )
     @require_role(ROLE_COACH)
     async def models_status(self, interaction: discord.Interaction) -> None:
         """Scan data/ml/policy/ and report present/missing models per format."""
@@ -119,9 +125,13 @@ class MiscCog(commands.Cog, name="Misc"):
         embed = discord.Embed(
             title="Local Model Status",
             description="\n".join(lines) or "No formats in TRAINING_MAP.",
-            color=discord.Color.green() if installed == len(lines) else discord.Color.orange(),
+            color=discord.Color.green()
+            if installed == len(lines)
+            else discord.Color.orange(),
         )
-        embed.set_footer(text=f"{installed}/{len(lines)} models installed · Use /admin-pull-models to download")
+        embed.set_footer(
+            text=f"{installed}/{len(lines)} models installed · Use /admin-pull-models to download"
+        )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
 
