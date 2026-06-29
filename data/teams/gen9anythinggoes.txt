@@ -1,0 +1,303 @@
+Zacian-Crowned @ Rusted Sword
+Ability: Intrepid Sword
+Tera Type: Fairy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Behemoth Blade
+- Play Rough
+- Wild Charge
+- Close Combat
+
+Kyogre @ Choice Specs
+Ability: Drizzle
+Tera Type: Water
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Water Spout
+- Origin Pulse
+- Ice Beam
+- Thunder
+
+Landorus-Therian @ Rocky Helmet
+Ability: Intimidate
+Tera Type: Ground
+EVs: 252 HP / 240 Def / 16 Spe
+Impish Nature
+- Earthquake
+- U-turn
+- Stealth Rock
+- Rock Slide
+
+Gholdengo @ Choice Specs
+Ability: Good as Gold
+Tera Type: Ghost
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Focus Blast
+- Trick
+
+Corviknight @ Leftovers
+Ability: Pressure
+Tera Type: Steel
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Body Press
+- Roost
+- Defog
+- U-turn
+
+Kingambit @ Black Glasses
+Ability: Supreme Overlord
+Tera Type: Flying
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Swords Dance
+---
+Groudon @ Earth Plate
+Ability: Drought
+Tera Type: Ground
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Precipice Blades
+- Fire Punch
+- Stealth Rock
+- Rock Slide
+
+Rayquaza @ Life Orb
+Ability: Air Lock
+Tera Type: Dragon
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Dragon Ascent
+- Extreme Speed
+- Earthquake
+- Dragon Dance
+
+Ho-Oh @ Life Orb
+Ability: Regenerator
+Tera Type: Fire
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Sacred Fire
+- Brave Bird
+- Earthquake
+- Recover
+
+Flutter Mane @ Choice Specs
+Ability: Protosynthesis
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Moonblast
+- Shadow Ball
+- Mystical Fire
+- Dazzling Gleam
+
+Necrozma-Dusk-Mane @ Life Orb
+Ability: Prism Armor
+Tera Type: Steel
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Sunsteel Strike
+- Earthquake
+- Dragon Dance
+- Knock Off
+
+Great Tusk @ Heavy-Duty Boots
+Ability: Protosynthesis
+Tera Type: Ground
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Earthquake
+- Ice Spinner
+- Rapid Spin
+- Stealth Rock
+---
+Kyogre @ Choice Specs
+Ability: Drizzle
+Tera Type: Water
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Water Spout
+- Origin Pulse
+- Ice Beam
+- Thunder
+
+Palkia @ Choice Specs
+Ability: Pressure
+Tera Type: Water
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Spacial Rend
+- Hydro Pump
+- Fire Blast
+- Thunder
+
+Zamazenta-Crowned @ Rusted Shield
+Ability: Dauntless Shield
+Tera Type: Steel
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+- Body Press
+- Iron Defense
+- Crunch
+- Protect
+
+Eternatus @ Leftovers
+Ability: Pressure
+Tera Type: Poison
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Flamethrower
+- Sludge Bomb
+- Recover
+- Dragon Pulse
+
+Corviknight @ Leftovers
+Ability: Pressure
+Tera Type: Steel
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Body Press
+- Roost
+- Defog
+- U-turn
+
+Gholdengo @ Choice Specs
+Ability: Good as Gold
+Tera Type: Ghost
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Focus Blast
+- Trick
+---
+Calyrex-Ice @ Weakness Policy
+Ability: As One (Glastrier)
+Tera Type: Ice
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+IVs: 0 Spe
+- Glacial Lance
+- High Horsepower
+- Protect
+- Trick Room
+
+Hatterene @ Misty Seed
+Ability: Magic Bounce
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Mystical Fire
+- Trick Room
+- Healing Wish
+
+Ursaluna @ Flame Orb
+Ability: Guts
+Tera Type: Normal
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+IVs: 0 Spe
+- Facade
+- Headlong Rush
+- Crunch
+- Swords Dance
+
+Necrozma @ Power Herb
+Ability: Prism Armor
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Photon Geyser
+- Flash Cannon
+- Power Gem
+- Trick Room
+
+Zacian-Crowned @ Rusted Sword
+Ability: Intrepid Sword
+Tera Type: Fairy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Behemoth Blade
+- Play Rough
+- Wild Charge
+- Close Combat
+
+Clefable @ Leftovers
+Ability: Magic Guard
+Tera Type: Fairy
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Moonblast
+- Calm Mind
+- Moonlight
+- Flamethrower
+---
+Lugia @ Leftovers
+Ability: Multiscale
+Tera Type: Psychic
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Aeroblast
+- Whirlwind
+- Recover
+- Ice Beam
+
+Zekrom @ Choice Band
+Ability: Teravolt
+Tera Type: Dragon
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Bolt Strike
+- Dragon Claw
+- Outrage
+- Zen Headbutt
+
+Miraidon @ Choice Specs
+Ability: Hadron Engine
+Tera Type: Electric
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Electro Drift
+- Draco Meteor
+- Dazzling Gleam
+- Volt Switch
+
+Landorus-Therian @ Rocky Helmet
+Ability: Intimidate
+Tera Type: Ground
+EVs: 252 HP / 240 Def / 16 Spe
+Impish Nature
+- Earthquake
+- U-turn
+- Stealth Rock
+- Rock Slide
+
+Corviknight @ Leftovers
+Ability: Pressure
+Tera Type: Steel
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Body Press
+- Roost
+- Defog
+- U-turn
+
+Gholdengo @ Choice Specs
+Ability: Good as Gold
+Tera Type: Ghost
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Focus Blast
+- Trick

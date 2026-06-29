@@ -1,0 +1,299 @@
+Landorus-Therian @ Rocky Helmet
+Ability: Intimidate
+Tera Type: Ground
+EVs: 252 HP / 240 Def / 16 Spe
+Impish Nature
+- Earthquake
+- U-turn
+- Stealth Rock
+- Rock Slide
+
+Rotom-Wash @ Leftovers
+Ability: Levitate
+Tera Type: Water
+EVs: 248 HP / 252 SpA / 8 Spe
+Modest Nature
+- Volt Switch
+- Hydro Pump
+- Will-O-Wisp
+- Pain Split
+
+Clefable @ Leftovers
+Ability: Magic Guard
+Tera Type: Fairy
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Moonblast
+- Calm Mind
+- Moonlight
+- Flamethrower
+
+Scizor @ Choice Band
+Ability: Technician
+Tera Type: Steel
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+- U-turn
+- Bullet Punch
+- Superpower
+- Knock Off
+
+Heatran @ Leftovers
+Ability: Flash Fire
+Tera Type: Steel
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Magma Storm
+- Earth Power
+- Stealth Rock
+- Taunt
+
+Latios @ Choice Specs
+Ability: Levitate
+Tera Type: Dragon
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Draco Meteor
+- Psyshock
+- Thunderbolt
+- Trick
+---
+Iron Valiant @ Choice Scarf
+Ability: Quark Drive
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Moonblast
+- Dazzling Gleam
+- Shadow Ball
+- Trick
+
+Gardevoir @ Choice Specs
+Ability: Trace
+Tera Type: Fairy
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Moonblast
+- Psyshock
+- Focus Blast
+- Trick
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+Tera Type: Rock
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Stone Edge
+- Crunch
+- Ice Punch
+- Earthquake
+
+Iron Treads @ Heavy-Duty Boots
+Ability: Quark Drive
+Tera Type: Ground
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Earthquake
+- Iron Head
+- Rapid Spin
+- Stealth Rock
+
+Garchomp @ Rocky Helmet
+Ability: Rough Skin
+Tera Type: Ground
+EVs: 252 HP / 164 Def / 92 Spe
+Impish Nature
+- Earthquake
+- Stealth Rock
+- Dragon Tail
+- Fire Fang
+
+Great Tusk @ Heavy-Duty Boots
+Ability: Protosynthesis
+Tera Type: Ground
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Earthquake
+- Ice Spinner
+- Rapid Spin
+- Stealth Rock
+---
+Garchomp @ Rocky Helmet
+Ability: Rough Skin
+Tera Type: Ground
+EVs: 252 HP / 164 Def / 92 Spe
+Impish Nature
+- Earthquake
+- Stealth Rock
+- Dragon Tail
+- Fire Fang
+
+Iron Treads @ Heavy-Duty Boots
+Ability: Quark Drive
+Tera Type: Ground
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Earthquake
+- Iron Head
+- Rapid Spin
+- Stealth Rock
+
+Toxapex @ Black Sludge
+Ability: Regenerator
+Tera Type: Poison
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Surf
+- Recover
+- Toxic Spikes
+- Haze
+
+Zapdos @ Heavy-Duty Boots
+Ability: Static
+Tera Type: Flying
+EVs: 248 HP / 8 SpA / 252 Def
+Bold Nature
+- Thunderbolt
+- Hurricane
+- Roost
+- Volt Switch
+
+Blissey @ Leftovers
+Ability: Natural Cure
+Tera Type: Normal
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Soft-Boiled
+- Wish
+- Protect
+- Toxic
+
+Gholdengo @ Choice Specs
+Ability: Good as Gold
+Tera Type: Ghost
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Focus Blast
+- Trick
+---
+Ninetales @ Heat Rock
+Ability: Drought
+Tera Type: Fire
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Fire Blast
+- Solar Beam
+- Hypnosis
+- Nasty Plot
+
+Venusaur @ Focus Sash
+Ability: Chlorophyll
+Tera Type: Grass
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Solar Beam
+- Sludge Bomb
+- Sleep Powder
+- Earth Power
+
+Heatran @ Choice Scarf
+Ability: Flash Fire
+Tera Type: Fire
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Magma Storm
+- Earth Power
+- Flash Cannon
+- Ancient Power
+
+Kingambit @ Black Glasses
+Ability: Supreme Overlord
+Tera Type: Flying
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Swords Dance
+
+Corviknight @ Leftovers
+Ability: Pressure
+Tera Type: Steel
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Body Press
+- Roost
+- Defog
+- U-turn
+
+Great Tusk @ Heavy-Duty Boots
+Ability: Protosynthesis
+Tera Type: Ground
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Earthquake
+- Ice Spinner
+- Rapid Spin
+- Stealth Rock
+---
+Landorus-Therian @ Choice Scarf
+Ability: Intimidate
+Tera Type: Ground
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Earthquake
+- U-turn
+- Stone Edge
+- Rock Slide
+
+Rotom-Wash @ Leftovers
+Ability: Levitate
+Tera Type: Water
+EVs: 248 HP / 252 SpA / 8 Spe
+Modest Nature
+- Volt Switch
+- Hydro Pump
+- Will-O-Wisp
+- Pain Split
+
+Scizor @ Choice Band
+Ability: Technician
+Tera Type: Steel
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+- U-turn
+- Bullet Punch
+- Superpower
+- Knock Off
+
+Zapdos @ Heavy-Duty Boots
+Ability: Static
+Tera Type: Flying
+EVs: 248 HP / 8 SpA / 252 Def
+Bold Nature
+- Thunderbolt
+- Hurricane
+- Roost
+- Volt Switch
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+Tera Type: Rock
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Stone Edge
+- Crunch
+- Earthquake
+- Ice Punch
+
+Clefable @ Leftovers
+Ability: Magic Guard
+Tera Type: Fairy
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Moonblast
+- Calm Mind
+- Moonlight
+- Flamethrower

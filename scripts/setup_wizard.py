@@ -4,14 +4,14 @@ Pokemon Draft League Bot — Interactive Setup Script
 Collects credentials, writes .env, and optionally runs setup scripts.
 
 Usage:
-    python setup.py
+    python scripts/setup_wizard.py
 """
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).parent.parent
 ENV_FILE = ROOT / ".env"
 ENV_EXAMPLE = ROOT / ".env.example"
 CREDS_DEST = ROOT / "credentials.json"

@@ -136,57 +136,12 @@ class TestBuildObservationFromDom:
         assert obs.dtype == np.float32
 
 
-# ── TestReplayEnv ─────────────────────────────────────────────────────────────
+# ── TestTrainBrowserDisabled ──────────────────────────────────────────────────
 
-class TestReplayEnv:
-    """_ReplayEnv step/reset contract (no SB3 gym.Env dependency needed)."""
+class TestTrainBrowserDisabled:
+    """train_browser fails fast until behaviour cloning is implemented (TODO(H16))."""
 
-    def _make_obs(self):
-        return np.ones(OBS_DIM, dtype=np.float32) * 0.5
-
-    def test_step_returns_stored_transition(self):
-        from src.ml.browser_trainer import _ReplayEnv
-        obs_arr = self._make_obs()
-        env = _ReplayEnv([(obs_arr, 1.0, True)])
-        env.reset()
-        obs, reward, terminated, truncated, info = env.step(0)
-        np.testing.assert_array_equal(obs, obs_arr)
-        assert reward == 1.0
-        assert terminated is True
-        assert truncated is False
-
-    def test_step_returns_zeros_when_exhausted(self):
-        from src.ml.browser_trainer import _ReplayEnv
-        env = _ReplayEnv([])
-        env.reset()
-        obs, reward, terminated, truncated, info = env.step(0)
-        assert terminated is True
-        assert reward == 0.0
-        assert obs.shape == (OBS_DIM,)
-
-    def test_reset_replays_from_start(self):
-        from src.ml.browser_trainer import _ReplayEnv
-        obs1 = np.ones(OBS_DIM, dtype=np.float32) * 0.1
-        obs2 = np.ones(OBS_DIM, dtype=np.float32) * 0.9
-        env = _ReplayEnv([(obs1, 0.5, False), (obs2, 1.0, True)])
-        env.reset()
-        env.step(0)
-        env.step(0)
-        env.reset()
-        obs, reward, _, _, _ = env.step(0)
-        np.testing.assert_array_equal(obs, obs1)
-        assert reward == 0.5
-
-    def test_reset_returns_zero_obs(self):
-        from src.ml.browser_trainer import _ReplayEnv
-        env = _ReplayEnv([(self._make_obs(), 1.0, True)])
-        result = env.reset()
-        obs, info = result
-        assert obs.shape == (OBS_DIM,)
-        assert isinstance(info, dict)
-
-    def test_has_observation_and_action_space(self):
-        from src.ml.browser_trainer import _ReplayEnv
-        env = _ReplayEnv([])
-        assert hasattr(env, "observation_space")
-        assert hasattr(env, "action_space")
+    def test_raises_not_implemented(self):
+        from src.ml.browser_trainer import train_browser
+        with pytest.raises(NotImplementedError, match="behaviour cloning"):
+            train_browser("gen9ou", 1000)

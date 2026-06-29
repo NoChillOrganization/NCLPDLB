@@ -1,0 +1,273 @@
+Farigiraf @ Sitrus Berry
+Ability: Armor Tail
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Trick Room
+- Psychic
+- Hyper Voice
+- Protect
+
+Polteageist @ Life Orb
+Ability: Weak Armor
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shell Smash
+- Shadow Ball
+- Mystical Fire
+- Protect
+
+Mabosstiff @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Crunch
+- Play Rough
+- Sucker Punch
+- Facade
+
+Klawf @ Assault Vest
+Ability: Anger Shell
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Rock Slide
+- X-Scissor
+- Facade
+- Protect
+
+Brambleghast @ Choice Scarf
+Ability: Wind Rider
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shadow Ball
+- Energy Ball
+- Leaf Blade
+- Will-O-Wisp
+
+Greedent @ Sitrus Berry
+Ability: Gluttony
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Body Slam
+- Bullet Seed
+- Crunch
+- Protect
+
+---
+Flamigo @ Choice Band
+Ability: Scrappy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Close Combat
+- Brave Bird
+- Acrobatics
+- U-turn
+
+Cyclizar @ Choice Scarf
+Ability: Regenerator
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Dragon Claw
+- High Horsepower
+- Knock Off
+- Rapid Spin
+
+Grafaiai @ Focus Sash
+Ability: Poison Touch
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Sucker Punch
+- Gunk Shot
+- Knock Off
+- Parting Shot
+
+Lokix @ Life Orb
+Ability: Tinted Lens
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- First Impression
+- Leech Life
+- Night Slash
+- Knock Off
+
+Maushold @ Sitrus Berry
+Ability: Friend Guard
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Population Bomb
+- Follow Me
+- Helping Hand
+- Protect
+
+Dachsbun @ Sitrus Berry
+Ability: Well-Baked Body
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Play Rough
+- Crunch
+- Helping Hand
+- Protect
+
+---
+Mabosstiff @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Crunch
+- Play Rough
+- Sucker Punch
+- Facade
+
+Farigiraf @ Assault Vest
+Ability: Cud Chew
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Hyper Voice
+- Psychic
+- Shadow Ball
+- Body Slam
+
+Lokix @ Choice Scarf
+Ability: Tinted Lens
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- First Impression
+- Leech Life
+- Night Slash
+- Sucker Punch
+
+Klawf @ Assault Vest
+Ability: Shell Armor
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Rock Slide
+- X-Scissor
+- Facade
+- Protect
+
+Flamigo @ Life Orb
+Ability: Scrappy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Close Combat
+- Brave Bird
+- Acrobatics
+- U-turn
+
+Polteageist @ Focus Sash
+Ability: Cursed Body
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shadow Ball
+- Mystical Fire
+- Energy Ball
+- Will-O-Wisp
+
+---
+Arboliva @ Leftovers
+Ability: Seed Sower
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Petal Blizzard
+- Earth Power
+- Energy Ball
+- Protect
+
+Brambleghast @ Life Orb
+Ability: Wind Rider
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shadow Ball
+- Energy Ball
+- Leaf Blade
+- Protect
+
+Grafaiai @ Black Sludge
+Ability: Poison Touch
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Sucker Punch
+- Gunk Shot
+- Knock Off
+- Parting Shot
+
+Dachsbun @ Sitrus Berry
+Ability: Well-Baked Body
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Play Rough
+- Crunch
+- Helping Hand
+- Protect
+
+Cyclizar @ Choice Scarf
+Ability: Regenerator
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Dragon Claw
+- High Horsepower
+- Knock Off
+- Rapid Spin
+
+Maushold @ Sitrus Berry
+Ability: Friend Guard
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Population Bomb
+- Follow Me
+- Helping Hand
+- Protect
+
+---
+Wigglytuff @ Sitrus Berry
+Ability: Competitive
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Dazzling Gleam
+- Hyper Voice
+- Helping Hand
+- Protect
+
+Mabosstiff @ Sitrus Berry
+Ability: Intimidate
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Crunch
+- Sucker Punch
+- Parting Shot
+- Protect
+
+Klawf @ Choice Band
+Ability: Anger Shell
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Rock Slide
+- X-Scissor
+- Facade
+- Stomping Tantrum
+
+Flamigo @ Choice Scarf
+Ability: Scrappy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Close Combat
+- Brave Bird
+- Acrobatics
+- U-turn
+
+Polteageist @ Life Orb
+Ability: Weak Armor
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Shell Smash
+- Shadow Ball
+- Mystical Fire
+- Protect
+
+Farigiraf @ Assault Vest
+Ability: Armor Tail
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Hyper Voice
+- Psychic
+- Shadow Ball
+- Body Slam

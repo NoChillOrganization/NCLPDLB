@@ -1,0 +1,187 @@
+Kyogre @ Choice Scarf
+Ability: Drizzle
+Tera Type: Water
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Water Spout
+- Origin Pulse
+- Ice Beam
+- Thunder
+
+Koraidon @ Choice Band
+Ability: Orichalcum Pulse
+Tera Type: Fire
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Collision Course
+- Flare Blitz
+- Drain Punch
+- U-turn
+
+Mewtwo @ Focus Sash
+Ability: Pressure
+Tera Type: Psychic
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Psystrike
+- Aura Sphere
+- Ice Beam
+- Calm Mind
+
+Gholdengo @ Choice Scarf
+Ability: Good as Gold
+Tera Type: Steel
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Trick
+- Nasty Plot
+
+Ting-Lu @ Leftovers
+Ability: Vessel of Ruin
+Tera Type: Ground
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Earthquake
+- Whirlwind
+- Stealth Rock
+- Ruination
+
+Eternatus @ Choice Specs
+Ability: Pressure
+Tera Type: Poison
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Dynamax Cannon
+- Shadow Ball
+- Flamethrower
+- Sludge Wave
+
+---
+Lunala @ Choice Scarf
+Ability: Shadow Shield
+Tera Type: Ghost
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Moongeist Beam
+- Psyshock
+- Shadow Ball
+- Trick
+
+Eternatus @ Choice Specs
+Ability: Pressure
+Tera Type: Poison
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Dragon Pulse
+- Sludge Bomb
+- Flamethrower
+- Shadow Ball
+
+Necrozma-Dusk-Mane @ Leftovers
+Ability: Prism Armor
+Tera Type: Steel
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Sunsteel Strike
+- Morning Sun
+- Swords Dance
+- Stealth Rock
+
+Zacian-Crowned @ Rusted Sword
+Ability: Intrepid Sword
+Tera Type: Fairy
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Behemoth Blade
+- Close Combat
+- Wild Charge
+- Sacred Sword
+
+Ho-Oh @ Heavy-Duty Boots
+Ability: Regenerator
+Tera Type: Fire
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Sacred Fire
+- Brave Bird
+- Earthquake
+- Recover
+
+Landorus-Therian @ Rocky Helmet
+Ability: Intimidate
+Tera Type: Ground
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Earthquake
+- U-turn
+- Rock Slide
+- Stealth Rock
+
+---
+Calyrex-Ice @ Weakness Policy
+Ability: As One (Glastrier)
+Tera Type: Ice
+EVs: 252 HP / 252 Atk / 4 Def
+Brave Nature
+IVs: 0 Spe
+- Glacial Lance
+- High Horsepower
+- Close Combat
+- Swords Dance
+
+Hatterene @ Misty Seed
+Ability: Magic Bounce
+Tera Type: Psychic
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Psychic
+- Mystical Fire
+- Trick Room
+- Healing Wish
+
+Groudon @ Leftovers
+Ability: Drought
+Tera Type: Ground
+EVs: 252 Atk / 4 Def / 252 HP
+Brave Nature
+IVs: 0 Spe
+- Precipice Blades
+- Fire Punch
+- Stone Edge
+- Swords Dance
+
+Zamazenta-Crowned @ Rusted Shield
+Ability: Dauntless Shield
+Tera Type: Steel
+EVs: 252 HP / 252 Def / 4 SpD
+Relaxed Nature
+IVs: 0 Spe
+- Behemoth Bash
+- Body Press
+- Wide Guard
+- Protect
+
+Kyogre @ Choice Specs
+Ability: Drizzle
+Tera Type: Water
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 0 Spe
+- Water Spout
+- Origin Pulse
+- Ice Beam
+- Thunder
+
+Necrozma-Dawn-Wings @ Leftovers
+Ability: Prism Armor
+Tera Type: Psychic
+EVs: 252 HP / 4 Def / 252 SpA
+Quiet Nature
+IVs: 0 Spe
+- Moongeist Beam
+- Prismatic Laser
+- Trick Room
+- Stealth Rock

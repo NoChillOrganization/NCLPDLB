@@ -20,8 +20,7 @@ Default server
 Windows notes
 -------------
   Python 3.8+ uses ProactorEventLoop by default on Windows which supports
-  asyncio sub-processes and WebSockets.  Call windows_event_loop_fix() at
-  program startup if you hit "Event loop closed" errors.
+  asyncio sub-processes and WebSockets.  No event-loop workaround needed.
 """
 from __future__ import annotations
 
@@ -41,20 +40,6 @@ try:
 except ImportError:  # pragma: no cover
     WS_OK = False
     websockets = None  # type: ignore
-
-
-# ── Windows compatibility helper ──────────────────────────────────────────────
-
-def windows_event_loop_fix() -> None:
-    """No-op on all supported Pythons.
-
-    ProactorEventLoop has been the Windows default since Python 3.8, so this
-    used to just re-apply the default via the (now-deprecated, removed in
-    3.16) event-loop-policy API. Kept as a no-op function — rather than
-    deleting it outright — so callers and tests don't need to change if a
-    real loop-construction workaround is ever needed again.
-    """
-    return
 
 
 # ── Layer 1: Connection ───────────────────────────────────────────────────────
