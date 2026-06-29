@@ -7,6 +7,7 @@ import aiohttp
 
 from src.platform.sources.base import RawRecord
 from src.platform.sources.http import get_json
+from src.platform.throttle import RateLimiter, get_limiter
 
 REPLAY_URL = "https://replay.pokemonshowdown.com/{id}.json"
 SEARCH_URL = "https://replay.pokemonshowdown.com/search.json"
@@ -38,24 +39,29 @@ class ShowdownAdapter:
 
         # ponytail: rating filter is client-side (search API has no rating param),
         #           matching replay_scraper.py behaviour.
+        # ponytail: future migration — replace search.json polling with battle-end
+        #           events from the Showdown websocket (src.ml.replay_scraper already
+        #           connects to it), eliminating periodic scraping entirely.
         """
         records: list[RawRecord] = []
+        limiter = get_limiter(self.source)
         async with aiohttp.ClientSession() as session:
             if ids is not None:
-                await self._fetch_by_ids(session, ids, records)
+                await self._fetch_by_ids(session, limiter, ids, records)
             elif format is not None:
-                await self._fetch_ladder(session, format, pages, min_rating, records)
+                await self._fetch_ladder(session, limiter, format, pages, min_rating, records)
         return records
 
     async def _fetch_by_ids(
         self,
         session: aiohttp.ClientSession,
+        limiter: RateLimiter,
         ids: list[str],
         records: list[RawRecord],
     ) -> None:
         for replay_id in ids:
             url = REPLAY_URL.format(id=replay_id)
-            data = await get_json(session, url)
+            data = await get_json(session, url, limiter=limiter)
             if isinstance(data, dict):
                 records.append(RawRecord(
                     route="replay", natural_key=replay_id, payload=data, url=url,
@@ -64,6 +70,7 @@ class ShowdownAdapter:
     async def _fetch_ladder(
         self,
         session: aiohttp.ClientSession,
+        limiter: RateLimiter,
         format: str,
         pages: int,
         min_rating: int,
@@ -71,7 +78,9 @@ class ShowdownAdapter:
     ) -> None:
         collected_ids: list[str] = []
         for page in range(1, pages + 1):
-            results = await get_json(session, SEARCH_URL, params={"format": format, "page": page})
+            results = await get_json(
+                session, SEARCH_URL, params={"format": format, "page": page}, limiter=limiter,
+            )
             if not results:
                 break
             for entry in results:
@@ -81,4 +90,4 @@ class ShowdownAdapter:
                     continue
                 if "id" in entry:
                     collected_ids.append(entry["id"])
-        await self._fetch_by_ids(session, collected_ids, records)
+        await self._fetch_by_ids(session, limiter, collected_ids, records)
