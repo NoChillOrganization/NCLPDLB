@@ -40,6 +40,7 @@ Usage
   )
   asyncio.run(loop.run_forever())
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -56,14 +57,16 @@ log = logging.getLogger(__name__)
 try:
     from poke_env.player import Player, RandomPlayer
     from poke_env.ps_client.server_configuration import ShowdownServerConfiguration
+
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
-    Player = object       # type: ignore
-    RandomPlayer = object # type: ignore
+    Player = object  # type: ignore
+    RandomPlayer = object  # type: ignore
 
 try:
     import torch
+
     TORCH_OK = True
 except ImportError:  # pragma: no cover
     TORCH_OK = False
@@ -75,6 +78,7 @@ from src.ml.mcts import MCTSConfig, run_mcts, _build_legal_mask  # noqa: E402
 
 # ── Shared stats ──────────────────────────────────────────────────────────────
 
+
 class SharedStats:
     """
     Thread-safe counter bag shared between self-play and API state.
@@ -83,22 +87,22 @@ class SharedStats:
     """
 
     def __init__(self) -> None:
-        self._lock   = threading.Lock()
-        self.games   = 0
-        self.wins    = 0   # AccountA wins
-        self.losses  = 0   # AccountB wins
-        self.ties    = 0
+        self._lock = threading.Lock()
+        self.games = 0
+        self.wins = 0  # AccountA wins
+        self.losses = 0  # AccountB wins
+        self.ties = 0
 
     def record(self, outcome: str) -> None:
         """Record one game result. outcome: 'win' | 'loss' | 'tie'."""
         with self._lock:
             self.games += 1
             if outcome == "win":
-                self.wins   += 1
+                self.wins += 1
             elif outcome == "loss":
                 self.losses += 1
             else:
-                self.ties   += 1
+                self.ties += 1
 
     @property
     def winrate(self) -> float:
@@ -109,10 +113,10 @@ class SharedStats:
         with self._lock:
             winrate = self.wins / self.games if self.games else 0.0
             return {
-                "games":   self.games,
-                "wins":    self.wins,
-                "losses":  self.losses,
-                "ties":    self.ties,
+                "games": self.games,
+                "wins": self.wins,
+                "losses": self.losses,
+                "ties": self.ties,
                 "winrate": winrate,
             }
 
@@ -141,32 +145,37 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             self,
             model: Any,
             mcts_config: MCTSConfig,
-            replay_buffer: Any = None,   # ReplayBuffer — optional (None when used as opponent)
+            replay_buffer: Any = None,  # ReplayBuffer — optional (None when used as opponent)
             stats: "SharedStats | None" = None,
             name: str = "AccountA",
             **kwargs: Any,
         ) -> None:
             super().__init__(**kwargs)
-            self._model        = model
-            self._mcts_config  = mcts_config
+            self._model = model
+            self._mcts_config = mcts_config
             self._replay_buffer = replay_buffer
-            self._stats         = stats
-            self._name          = name
+            self._stats = stats
+            self._name = name
 
             # Per-battle turn buffers keyed by battle_tag (safe for concurrent battles)
-            self._turn_obs:    dict[str, list[np.ndarray]]        = {}
-            self._turn_acts:   dict[str, list[int]]                = {}
-            self._turn_probs:  dict[str, list[np.ndarray | None]]  = {}
-            self._last_outcome: str = "tie"  # set by callback; read by LadderLoop.run_game
+            self._turn_obs: dict[str, list[np.ndarray]] = {}
+            self._turn_acts: dict[str, list[int]] = {}
+            self._turn_probs: dict[str, list[np.ndarray | None]] = {}
+            self._last_outcome: str = (
+                "tie"  # set by callback; read by LadderLoop.run_game
+            )
 
         def load_policy(self, path: Any) -> None:
             """No-op: MCTS opponent uses a fixed transformer; ignore PPO checkpoint swaps."""
-            log.debug("[MCTSPlayer] load_policy(%s) ignored — fixed MCTS opponent", path)
+            log.debug(
+                "[MCTSPlayer] load_policy(%s) ignored — fixed MCTS opponent", path
+            )
 
         def choose_move(self, battle: Any) -> Any:
             """Run MCTS and return the chosen order. Record experience."""
             try:
                 from src.ml.battle_env import build_observation
+
                 obs = build_observation(battle)
 
                 # Build legal action mask (True = illegal)
@@ -194,7 +203,11 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
                 return self._action_to_move(action, battle)
 
             except Exception as exc:
-                log.warning("[MCTSPlayer:%s] choose_move error: %s — random fallback", self._name, exc)
+                log.warning(
+                    "[MCTSPlayer:%s] choose_move error: %s — random fallback",
+                    self._name,
+                    exc,
+                )
                 return self.choose_random_move(battle)
 
         def _battle_finished_callback(self, battle: Any) -> None:
@@ -202,8 +215,8 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             super()._battle_finished_callback(battle)
 
             tag = battle.battle_tag
-            turn_obs   = self._turn_obs.pop(tag, [])
-            turn_acts  = self._turn_acts.pop(tag, [])
+            turn_obs = self._turn_obs.pop(tag, [])
+            turn_acts = self._turn_acts.pop(tag, [])
             turn_probs = self._turn_probs.pop(tag, [])
 
             if not turn_obs:
@@ -221,23 +234,33 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
 
             if self._replay_buffer is not None:
                 try:
-                    self._replay_buffer.add_game(turn_obs, turn_acts, turn_probs, reward)
+                    self._replay_buffer.add_game(
+                        turn_obs, turn_acts, turn_probs, reward
+                    )
                 except Exception as exc:
-                    log.warning("[MCTSPlayer:%s] replay buffer push error: %s", self._name, exc)
+                    log.warning(
+                        "[MCTSPlayer:%s] replay buffer push error: %s", self._name, exc
+                    )
                 log.debug(
                     "[MCTSPlayer:%s] game done — reward=%.1f turns=%d buffer=%d",
-                    self._name, reward, len(turn_obs), len(self._replay_buffer),
+                    self._name,
+                    reward,
+                    len(turn_obs),
+                    len(self._replay_buffer),
                 )
             else:
                 log.debug(
                     "[MCTSPlayer:%s] game done (no buffer) — reward=%.1f turns=%d",
-                    self._name, reward, len(turn_obs),
+                    self._name,
+                    reward,
+                    len(turn_obs),
                 )
 
         def _action_to_move(self, action_id: int, battle: Any) -> Any:
             """Convert action index to a poke-env BattleOrder."""
             try:
                 from poke_env.environment.singles_env import SinglesEnv
+
                 order = SinglesEnv.action_to_order(action_id, battle)
                 if order is not None:
                     return order
@@ -255,6 +278,7 @@ else:  # pragma: no cover
 
 
 # ── Self-play loop ────────────────────────────────────────────────────────────
+
 
 class LadderLoop:
     """
@@ -298,15 +322,15 @@ class LadderLoop:
         username: str = "",
         password: str = "",
     ) -> None:
-        self.model       = model
-        self.buffer      = buffer
-        self.stats       = stats
+        self.model = model
+        self.buffer = buffer
+        self.stats = stats
         self.mcts_config = mcts_config or MCTSConfig()
-        self.fmt         = fmt
+        self.fmt = fmt
         self.train_every = train_every
-        self.trainer     = trainer
-        self.username    = username
-        self.password    = password
+        self.trainer = trainer
+        self.username = username
+        self.password = password
         self._player: Any = None
         self._games_since_train = 0
 
@@ -362,6 +386,7 @@ class LadderLoop:
             # Check API stop signal
             try:
                 from src.ml.api import get_state
+
                 if get_state()["status"] == "stopped":
                     log.info("[Ladder] Status=stopped — waiting...")
                     await asyncio.sleep(2.0)
@@ -386,6 +411,7 @@ class LadderLoop:
                 # Sync stats back to API state
                 try:
                     from src.ml.api import update_state
+
                     update_state(
                         games=snapshot["games"],
                         wins=snapshot["wins"],
@@ -414,6 +440,7 @@ class LadderLoop:
                         )
                         try:
                             from src.ml.api import update_state
+
                             update_state(
                                 train_steps=metrics.get("step", 0),
                                 last_loss=round(metrics.get("total_loss", 0), 4),
@@ -436,5 +463,3 @@ class LadderLoop:
 
 # Alias so existing imports don't break
 SelfPlayLoop = LadderLoop
-
-

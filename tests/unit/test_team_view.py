@@ -1,4 +1,5 @@
 """Tests for TeamEmbedView — build_embed() and button handlers."""
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.bot.views.team_view import TeamEmbedView
@@ -17,6 +18,7 @@ def _make_pokemon(name: str, types: list, tier: str = "OU") -> Pokemon:
 
 
 # ── build_embed() ─────────────────────────────────────────────────────────────
+
 
 async def test_build_embed_empty_team():
     """Empty roster shows 'No Pokemon drafted yet.' description."""
@@ -99,7 +101,9 @@ async def test_build_embed_type_coverage_field():
     embed = view.build_embed()
     coverage_fields = [f for f in embed.fields if f.name == "Type Coverage"]
     assert len(coverage_fields) == 1
-    assert "fire" in coverage_fields[0].value.lower() or "Fire" in coverage_fields[0].value
+    assert (
+        "fire" in coverage_fields[0].value.lower() or "Fire" in coverage_fields[0].value
+    )
 
 
 async def test_build_embed_shows_tier_badge():
@@ -125,6 +129,7 @@ async def test_build_embed_title_has_owner_name():
 
 
 # ── TeamEmbedView button handlers ──────────────────────────────────────────────
+
 
 def _make_interaction(guild_id="1234", user_id="5678"):
     """Build a minimal mock discord.Interaction for button handler tests."""
@@ -161,7 +166,9 @@ async def test_analysis_button_sends_analysis_embed():
 
     # AnalyticsService is imported lazily inside the method body using 'from ... import'.
     # Patch the class at its defining module so the local import picks up the mock.
-    with patch("src.services.analytics_service.AnalyticsService", return_value=mock_svc):
+    with patch(
+        "src.services.analytics_service.AnalyticsService", return_value=mock_svc
+    ):
         # @discord.ui.button creates a descriptor; call via class to get the raw function
         await TeamEmbedView.analysis(view, interaction, button)
 
@@ -196,12 +203,20 @@ async def test_analysis_button_embed_has_required_fields():
     mock_svc = MagicMock()
     mock_svc.analyze_pokemon_list = MagicMock(return_value=mock_report)
 
-    with patch("src.services.analytics_service.AnalyticsService", return_value=mock_svc):
+    with patch(
+        "src.services.analytics_service.AnalyticsService", return_value=mock_svc
+    ):
         await TeamEmbedView.analysis(view, interaction, button)
 
     embed = interaction.response.send_message.call_args[1]["embed"]
     field_names = [f.name for f in embed.fields]
-    for expected_field in ("Coverage", "Weaknesses", "Speed Tiers", "Archetype", "Threat Score"):
+    for expected_field in (
+        "Coverage",
+        "Weaknesses",
+        "Speed Tiers",
+        "Archetype",
+        "Threat Score",
+    ):
         assert expected_field in field_names, f"Missing field: {expected_field}"
 
 
@@ -223,9 +238,7 @@ async def test_export_button_sends_showdown_text():
     with patch("src.services.team_service.TeamService", return_value=mock_svc):
         await TeamEmbedView.export(view, interaction, button)
 
-    mock_svc.export_showdown.assert_awaited_once_with(
-        guild_id="9999", player_id="333"
-    )
+    mock_svc.export_showdown.assert_awaited_once_with(guild_id="9999", player_id="333")
     interaction.response.send_message.assert_awaited_once()
     sent_text = interaction.response.send_message.call_args[0][0]
     assert "Garchomp" in sent_text

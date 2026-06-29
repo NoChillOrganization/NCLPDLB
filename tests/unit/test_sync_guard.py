@@ -10,6 +10,7 @@ Covers:
   SYNC-06: admin_sync calls copy_global_to before guild sync
   SYNC-07: admin_sync surfaces HTTPException with retry_after to user
 """
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -19,6 +20,7 @@ from src.bot.main import _command_fingerprint, drift_check_commands
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_cmd(name: str, description: str = "desc", params: list[str] | None = None):
     """Build a minimal fake app_commands.Command-like object."""
@@ -31,6 +33,7 @@ def _make_cmd(name: str, description: str = "desc", params: list[str] | None = N
 
 # ── SYNC-01: Fingerprint stability ────────────────────────────────────────────
 
+
 def test_fingerprint_stable():
     """SYNC-01: Same command list produces identical hash on repeated calls."""
     cmds = [_make_cmd("pick", params=["pokemon"]), _make_cmd("draft-start")]
@@ -42,17 +45,18 @@ def test_fingerprint_stable():
 
 # ── SYNC-02: Fingerprint detects changes ──────────────────────────────────────
 
+
 def test_fingerprint_detects_new_command():
     """SYNC-02a: Adding a command changes the fingerprint."""
     cmds_before = [_make_cmd("pick")]
-    cmds_after  = [_make_cmd("pick"), _make_cmd("ban")]
+    cmds_after = [_make_cmd("pick"), _make_cmd("ban")]
     assert _command_fingerprint(cmds_before) != _command_fingerprint(cmds_after)
 
 
 def test_fingerprint_detects_param_change():
     """SYNC-02b: Adding a parameter changes the fingerprint."""
     cmds_before = [_make_cmd("spar", params=["format"])]
-    cmds_after  = [_make_cmd("spar", params=["format", "showdown_name"])]
+    cmds_after = [_make_cmd("spar", params=["format", "showdown_name"])]
     assert _command_fingerprint(cmds_before) != _command_fingerprint(cmds_after)
 
 
@@ -64,6 +68,7 @@ def test_fingerprint_order_independent():
 
 
 # ── SYNC-03: Skip sync when unchanged ─────────────────────────────────────────
+
 
 def test_setup_hook_skips_sync_when_hash_matches(tmp_path):
     """SYNC-03: commands_changed=False when stored hash equals current hash → no sync."""
@@ -84,6 +89,7 @@ def test_setup_hook_skips_sync_when_hash_matches(tmp_path):
 
 
 # ── SYNC-04 / SYNC-05: Sync when changed or missing ──────────────────────────
+
 
 def test_commands_changed_when_hash_differs(tmp_path):
     """SYNC-04: commands_changed=True when stored hash differs from current."""
@@ -109,6 +115,7 @@ def test_commands_changed_when_hash_file_missing(tmp_path):
 
 # ── SYNC-06: admin_sync calls copy_global_to ──────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_admin_sync_calls_copy_global_to():
     """SYNC-06: /admin-sync guild scope calls copy_global_to before tree.sync()."""
@@ -132,6 +139,7 @@ async def test_admin_sync_calls_copy_global_to():
     mock_interaction.followup = AsyncMock()
 
     from src.bot.cogs.admin import AdminCog
+
     cog = AdminCog.__new__(AdminCog)
 
     # Simulate guild-scope call (scope=None → defaults to guild)
@@ -144,6 +152,7 @@ async def test_admin_sync_calls_copy_global_to():
 
 # ── SYNC-07: admin_sync surfaces rate limit error ─────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_admin_sync_shows_rate_limit_error():
     """SYNC-07: If tree.sync() raises discord.HTTPException 429, user sees retry_after."""
@@ -153,7 +162,9 @@ async def test_admin_sync_shows_rate_limit_error():
     mock_response.status = 429
     mock_response.headers = {"Content-Type": "application/json"}
 
-    exc = discord.HTTPException(mock_response, {"message": "rate limited", "retry_after": 355.0})
+    exc = discord.HTTPException(
+        mock_response, {"message": "rate limited", "retry_after": 355.0}
+    )
     exc.retry_after = 355.0  # type: ignore[attr-defined]
 
     mock_tree = MagicMock()
@@ -171,6 +182,7 @@ async def test_admin_sync_shows_rate_limit_error():
     mock_interaction.followup = AsyncMock()
 
     from src.bot.cogs.admin import AdminCog
+
     cog = AdminCog.__new__(AdminCog)
 
     await cog.admin_sync.callback(cog, mock_interaction, scope=None)
@@ -184,6 +196,7 @@ async def test_admin_sync_shows_rate_limit_error():
 
 
 # ── Existing drift check (regression) ────────────────────────────────────────
+
 
 def test_drift_check_no_regression():
     """Regression: drift_check_commands still works correctly."""

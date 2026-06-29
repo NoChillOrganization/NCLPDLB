@@ -21,6 +21,7 @@ Usage:
     # Combined model across all formats
     python -m src.ml.train_matchup --all --combined
 """
+
 from __future__ import annotations
 
 import argparse
@@ -36,11 +37,12 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 log = logging.getLogger(__name__)
 
-ML_DIR   = Path("data/ml")
+ML_DIR = Path("data/ml")
 TEAM_SIZE = 6
 
 
 # ── Embedding layer ───────────────────────────────────────────────────────────
+
 
 def _embed_team_matrix(X: np.ndarray, vocab_size: int) -> np.ndarray:
     """
@@ -55,8 +57,8 @@ def _embed_team_matrix(X: np.ndarray, vocab_size: int) -> np.ndarray:
     This lets the model learn per-species win rates without needing embeddings.
     """
     n = X.shape[0]
-    p1_cols = X[:, :TEAM_SIZE]    # (n, 6)
-    p2_cols = X[:, TEAM_SIZE:]    # (n, 6)
+    p1_cols = X[:, :TEAM_SIZE]  # (n, 6)
+    p2_cols = X[:, TEAM_SIZE:]  # (n, 6)
 
     # Binary presence bags
     p1_bag = np.zeros((n, vocab_size), dtype=np.float32)
@@ -77,7 +79,8 @@ def _embed_team_matrix(X: np.ndarray, vocab_size: int) -> np.ndarray:
         log.warning(
             "Dropped %d species id(s) >= vocab_size=%d — treated as UNK. "
             "Re-run feature extraction to rebuild the vocabulary.",
-            dropped, vocab_size,
+            dropped,
+            vocab_size,
         )
 
     # Symmetric difference — what's unique to each team
@@ -92,6 +95,7 @@ def _embed_team_matrix(X: np.ndarray, vocab_size: int) -> np.ndarray:
 
 # ── Training ──────────────────────────────────────────────────────────────────
 
+
 def train_format(
     fmt: str,
     ml_dir: Path = ML_DIR,
@@ -103,8 +107,8 @@ def train_format(
     Returns a results dict with accuracy, roc_auc, log_loss and the model.
     """
     fmt_dir = ml_dir / fmt
-    X_path  = fmt_dir / "X_team.npy"
-    y_path  = fmt_dir / "y_team.npy"
+    X_path = fmt_dir / "X_team.npy"
+    y_path = fmt_dir / "y_team.npy"
     vocab_path = fmt_dir / "species_vocab.json"
 
     if not X_path.exists():
@@ -112,14 +116,14 @@ def train_format(
         return {}
 
     X_raw = np.load(X_path)
-    y     = np.load(y_path)
+    y = np.load(y_path)
 
     if len(X_raw) < 50:
         log.warning(f"{fmt}: only {len(X_raw)} samples — skipping (need ≥50)")
         return {}
 
     # Load vocabulary size
-    vocab_size = 512   # default
+    vocab_size = 512  # default
     if vocab_path.exists():
         vocab_data = json.loads(vocab_path.read_text(encoding="utf-8"))
         vocab_size = len(vocab_data.get("token2id", {}))
@@ -141,20 +145,24 @@ def train_format(
     )
 
     # Cross-validated evaluation
-    cv = StratifiedKFold(n_splits=min(n_folds, len(y) // 10), shuffle=True, random_state=42)
+    cv = StratifiedKFold(
+        n_splits=min(n_folds, len(y) // 10), shuffle=True, random_state=42
+    )
 
-    acc_scores  = cross_val_score(model, X, y, cv=cv, scoring="accuracy",  n_jobs=-1)
-    auc_scores  = cross_val_score(model, X, y, cv=cv, scoring="roc_auc",   n_jobs=-1)
-    loss_scores = -cross_val_score(model, X, y, cv=cv, scoring="neg_log_loss", n_jobs=-1)
+    acc_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy", n_jobs=-1)
+    auc_scores = cross_val_score(model, X, y, cv=cv, scoring="roc_auc", n_jobs=-1)
+    loss_scores = -cross_val_score(
+        model, X, y, cv=cv, scoring="neg_log_loss", n_jobs=-1
+    )
 
     results = {
-        "format":    fmt,
+        "format": fmt,
         "n_samples": len(X_raw),
-        "accuracy":  float(acc_scores.mean()),
+        "accuracy": float(acc_scores.mean()),
         "accuracy_std": float(acc_scores.std()),
-        "roc_auc":   float(auc_scores.mean()),
+        "roc_auc": float(auc_scores.mean()),
         "roc_auc_std": float(auc_scores.std()),
-        "log_loss":  float(loss_scores.mean()),
+        "log_loss": float(loss_scores.mean()),
     }
 
     log.info(
@@ -196,9 +204,9 @@ def train_combined(
     global_vocab: dict[str, int] = {"<UNK>": 0}
 
     for fmt in formats:
-        fmt_dir    = ml_dir / fmt
-        X_path     = fmt_dir / "X_team.npy"
-        y_path     = fmt_dir / "y_team.npy"
+        fmt_dir = ml_dir / fmt
+        X_path = fmt_dir / "X_team.npy"
+        y_path = fmt_dir / "y_team.npy"
         vocab_path = fmt_dir / "species_vocab.json"
 
         if not X_path.exists():
@@ -232,7 +240,7 @@ def train_combined(
 
     X_combined = np.vstack(all_X)
     y_combined = np.concatenate(all_y)
-    vocab_size  = len(global_vocab)
+    vocab_size = len(global_vocab)
     log.info(f"Combined: {len(X_combined)} games, {vocab_size} species in vocab")
 
     X = _embed_team_matrix(X_combined.astype(np.int32), vocab_size)
@@ -246,16 +254,22 @@ def train_combined(
         random_state=42,
     )
 
-    cv = StratifiedKFold(n_splits=min(n_folds, len(y_combined) // 50), shuffle=True, random_state=42)
-    acc_scores = cross_val_score(model, X, y_combined, cv=cv, scoring="accuracy", n_jobs=-1)
-    auc_scores = cross_val_score(model, X, y_combined, cv=cv, scoring="roc_auc",  n_jobs=-1)
+    cv = StratifiedKFold(
+        n_splits=min(n_folds, len(y_combined) // 50), shuffle=True, random_state=42
+    )
+    acc_scores = cross_val_score(
+        model, X, y_combined, cv=cv, scoring="accuracy", n_jobs=-1
+    )
+    auc_scores = cross_val_score(
+        model, X, y_combined, cv=cv, scoring="roc_auc", n_jobs=-1
+    )
 
     results = {
-        "format":    "combined",
+        "format": "combined",
         "n_samples": len(X_combined),
-        "accuracy":  float(acc_scores.mean()),
+        "accuracy": float(acc_scores.mean()),
         "accuracy_std": float(acc_scores.std()),
-        "roc_auc":   float(auc_scores.mean()),
+        "roc_auc": float(auc_scores.mean()),
         "roc_auc_std": float(auc_scores.std()),
         "vocab_size": vocab_size,
     }
@@ -271,7 +285,9 @@ def train_combined(
     combined_dir.mkdir(exist_ok=True)
 
     with open(combined_dir / "matchup_model.pkl", "wb") as f:
-        pickle.dump({"model": model, "vocab_size": vocab_size, "global_vocab": global_vocab}, f)
+        pickle.dump(
+            {"model": model, "vocab_size": vocab_size, "global_vocab": global_vocab}, f
+        )
     (combined_dir / "global_vocab.json").write_text(
         json.dumps({"token2id": global_vocab}, indent=2), encoding="utf-8"
     )
@@ -284,6 +300,7 @@ def train_combined(
 
 
 # ── Inference helper ──────────────────────────────────────────────────────────
+
 
 def predict_matchup(
     p1_team: list[str],
@@ -302,16 +319,18 @@ def predict_matchup(
     Returns:
         {"p1_win_prob": 0.62, "p2_win_prob": 0.38}
     """
-    fmt_dir    = ml_dir / fmt
+    fmt_dir = ml_dir / fmt
     model_path = fmt_dir / "matchup_model.pkl"
     vocab_path = fmt_dir / "species_vocab.json"
 
     if not model_path.exists():
-        raise FileNotFoundError(f"No trained model for format '{fmt}'. Run train_matchup first.")
+        raise FileNotFoundError(
+            f"No trained model for format '{fmt}'. Run train_matchup first."
+        )
 
     with open(model_path, "rb") as f:
         bundle = pickle.load(f)
-    model      = bundle["model"]
+    model = bundle["model"]
     vocab_size = bundle["vocab_size"]
 
     vocab: dict[str, int] = {}
@@ -325,7 +344,7 @@ def predict_matchup(
         return ids
 
     X_raw = np.array([to_ids(p1_team) + to_ids(p2_team)], dtype=np.int32)
-    X     = _embed_team_matrix(X_raw, vocab_size)
+    X = _embed_team_matrix(X_raw, vocab_size)
     proba = model.predict_proba(X)[0]
 
     return {"p1_win_prob": float(proba[1]), "p2_win_prob": float(proba[0])}
@@ -337,17 +356,24 @@ if __name__ == "__main__":  # pragma: no cover
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
     ap = argparse.ArgumentParser(description="Train matchup prediction models")
-    ap.add_argument("--format",   default="gen9ou", help="Single format to train")
-    ap.add_argument("--all",      action="store_true", help="Train all formats with data")
-    ap.add_argument("--combined", action="store_true", help="Also train a combined cross-format model")
-    ap.add_argument("--ml-dir",   default="data/ml", help="ML data directory")
+    ap.add_argument("--format", default="gen9ou", help="Single format to train")
+    ap.add_argument("--all", action="store_true", help="Train all formats with data")
+    ap.add_argument(
+        "--combined",
+        action="store_true",
+        help="Also train a combined cross-format model",
+    )
+    ap.add_argument("--ml-dir", default="data/ml", help="ML data directory")
     args = ap.parse_args()
 
     ml_dir = Path(args.ml_dir)
 
     if args.all or args.combined:
-        formats = [d.name for d in ml_dir.iterdir()
-                   if d.is_dir() and (d / "X_team.npy").exists() and d.name != "combined"]
+        formats = [
+            d.name
+            for d in ml_dir.iterdir()
+            if d.is_dir() and (d / "X_team.npy").exists() and d.name != "combined"
+        ]
         formats.sort()
         log.info(f"Formats with data: {formats}")
     else:

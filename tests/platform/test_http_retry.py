@@ -1,4 +1,5 @@
 """Unit tests for src.platform.sources.http.get_json — no DB, no real network."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
@@ -36,6 +37,7 @@ def _make_session(*cms):
 # Retry: 503 then 200
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_retries_on_transient_503_then_succeeds():
     """503 on first attempt, 200 on second → returns JSON body."""
@@ -51,6 +53,7 @@ async def test_retries_on_transient_503_then_succeeds():
 # ---------------------------------------------------------------------------
 # Exhaustion: always 503 → raises
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_raises_after_max_tries_on_persistent_503():
@@ -68,6 +71,7 @@ async def test_raises_after_max_tries_on_persistent_503():
 # Clean miss: 404 → None, no retry
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_returns_none_on_404_without_retry():
     """404 is a clean miss (unknown format slug) — returns None immediately."""
@@ -81,11 +85,14 @@ async def test_returns_none_on_404_without_retry():
 # Transport error retry
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_retries_on_transport_error():
     """aiohttp.ClientConnectionError on first attempt, 200 on second → returns JSON."""
     failing_cm = MagicMock()
-    failing_cm.__aenter__ = AsyncMock(side_effect=aiohttp.ClientConnectionError("timeout"))
+    failing_cm.__aenter__ = AsyncMock(
+        side_effect=aiohttp.ClientConnectionError("timeout")
+    )
     failing_cm.__aexit__ = AsyncMock(return_value=False)
 
     session = _make_session(
@@ -99,6 +106,7 @@ async def test_retries_on_transport_error():
 # ---------------------------------------------------------------------------
 # 200 returns body on first try
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_returns_json_on_200():

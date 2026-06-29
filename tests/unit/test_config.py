@@ -1,4 +1,5 @@
 """Tests for src/config.py — Settings validation."""
+
 import pytest
 from src.config import Settings
 

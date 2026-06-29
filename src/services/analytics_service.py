@@ -2,6 +2,7 @@
 Analytics Service — Team coverage, weaknesses, speed tiers, archetypes.
 Based on Smogon OU + VGC competitive data.
 """
+
 from __future__ import annotations
 
 import logging
@@ -15,24 +16,135 @@ log = logging.getLogger(__name__)
 # Gen 1-9 type effectiveness chart
 # effectiveness[attacking_type][defending_type] -> multiplier
 TYPE_CHART: dict[str, dict[str, float]] = {
-    "normal":   {"rock": 0.5, "ghost": 0, "steel": 0.5},
-    "fire":     {"fire": 0.5, "water": 0.5, "grass": 2, "ice": 2, "bug": 2, "rock": 0.5, "dragon": 0.5, "steel": 2},
-    "water":    {"fire": 2, "water": 0.5, "grass": 0.5, "ground": 2, "rock": 2, "dragon": 0.5},
-    "electric": {"water": 2, "electric": 0.5, "grass": 0.5, "ground": 0, "flying": 2, "dragon": 0.5},
-    "grass":    {"fire": 0.5, "water": 2, "grass": 0.5, "poison": 0.5, "ground": 2, "flying": 0.5, "bug": 0.5, "rock": 2, "dragon": 0.5, "steel": 0.5},
-    "ice":      {"water": 0.5, "grass": 2, "ice": 0.5, "ground": 2, "flying": 2, "dragon": 2, "steel": 0.5},
-    "fighting": {"normal": 2, "ice": 2, "poison": 0.5, "flying": 0.5, "psychic": 0.5, "bug": 0.5, "rock": 2, "ghost": 0, "dark": 2, "steel": 2, "fairy": 0.5},
-    "poison":   {"grass": 2, "poison": 0.5, "ground": 0.5, "rock": 0.5, "ghost": 0.5, "steel": 0, "fairy": 2},
-    "ground":   {"fire": 2, "electric": 2, "grass": 0.5, "poison": 2, "flying": 0, "bug": 0.5, "rock": 2, "steel": 2},
-    "flying":   {"electric": 0.5, "grass": 2, "fighting": 2, "bug": 2, "rock": 0.5, "steel": 0.5},
-    "psychic":  {"fighting": 2, "poison": 2, "psychic": 0.5, "dark": 0, "steel": 0.5},
-    "bug":      {"fire": 0.5, "grass": 2, "fighting": 0.5, "flying": 0.5, "psychic": 2, "ghost": 0.5, "dark": 2, "steel": 0.5, "fairy": 0.5},
-    "rock":     {"fire": 2, "ice": 2, "fighting": 0.5, "ground": 0.5, "flying": 2, "bug": 2, "steel": 0.5},
-    "ghost":    {"normal": 0, "psychic": 2, "ghost": 2, "dark": 0.5},
-    "dragon":   {"dragon": 2, "steel": 0.5, "fairy": 0},
-    "dark":     {"fighting": 0.5, "psychic": 2, "ghost": 2, "dark": 0.5, "fairy": 0.5},
-    "steel":    {"fire": 0.5, "water": 0.5, "electric": 0.5, "ice": 2, "rock": 2, "steel": 0.5, "fairy": 2},
-    "fairy":    {"fire": 0.5, "fighting": 2, "poison": 0.5, "dragon": 2, "dark": 2, "steel": 0.5},
+    "normal": {"rock": 0.5, "ghost": 0, "steel": 0.5},
+    "fire": {
+        "fire": 0.5,
+        "water": 0.5,
+        "grass": 2,
+        "ice": 2,
+        "bug": 2,
+        "rock": 0.5,
+        "dragon": 0.5,
+        "steel": 2,
+    },
+    "water": {
+        "fire": 2,
+        "water": 0.5,
+        "grass": 0.5,
+        "ground": 2,
+        "rock": 2,
+        "dragon": 0.5,
+    },
+    "electric": {
+        "water": 2,
+        "electric": 0.5,
+        "grass": 0.5,
+        "ground": 0,
+        "flying": 2,
+        "dragon": 0.5,
+    },
+    "grass": {
+        "fire": 0.5,
+        "water": 2,
+        "grass": 0.5,
+        "poison": 0.5,
+        "ground": 2,
+        "flying": 0.5,
+        "bug": 0.5,
+        "rock": 2,
+        "dragon": 0.5,
+        "steel": 0.5,
+    },
+    "ice": {
+        "water": 0.5,
+        "grass": 2,
+        "ice": 0.5,
+        "ground": 2,
+        "flying": 2,
+        "dragon": 2,
+        "steel": 0.5,
+    },
+    "fighting": {
+        "normal": 2,
+        "ice": 2,
+        "poison": 0.5,
+        "flying": 0.5,
+        "psychic": 0.5,
+        "bug": 0.5,
+        "rock": 2,
+        "ghost": 0,
+        "dark": 2,
+        "steel": 2,
+        "fairy": 0.5,
+    },
+    "poison": {
+        "grass": 2,
+        "poison": 0.5,
+        "ground": 0.5,
+        "rock": 0.5,
+        "ghost": 0.5,
+        "steel": 0,
+        "fairy": 2,
+    },
+    "ground": {
+        "fire": 2,
+        "electric": 2,
+        "grass": 0.5,
+        "poison": 2,
+        "flying": 0,
+        "bug": 0.5,
+        "rock": 2,
+        "steel": 2,
+    },
+    "flying": {
+        "electric": 0.5,
+        "grass": 2,
+        "fighting": 2,
+        "bug": 2,
+        "rock": 0.5,
+        "steel": 0.5,
+    },
+    "psychic": {"fighting": 2, "poison": 2, "psychic": 0.5, "dark": 0, "steel": 0.5},
+    "bug": {
+        "fire": 0.5,
+        "grass": 2,
+        "fighting": 0.5,
+        "flying": 0.5,
+        "psychic": 2,
+        "ghost": 0.5,
+        "dark": 2,
+        "steel": 0.5,
+        "fairy": 0.5,
+    },
+    "rock": {
+        "fire": 2,
+        "ice": 2,
+        "fighting": 0.5,
+        "ground": 0.5,
+        "flying": 2,
+        "bug": 2,
+        "steel": 0.5,
+    },
+    "ghost": {"normal": 0, "psychic": 2, "ghost": 2, "dark": 0.5},
+    "dragon": {"dragon": 2, "steel": 0.5, "fairy": 0},
+    "dark": {"fighting": 0.5, "psychic": 2, "ghost": 2, "dark": 0.5, "fairy": 0.5},
+    "steel": {
+        "fire": 0.5,
+        "water": 0.5,
+        "electric": 0.5,
+        "ice": 2,
+        "rock": 2,
+        "steel": 0.5,
+        "fairy": 2,
+    },
+    "fairy": {
+        "fire": 0.5,
+        "fighting": 2,
+        "poison": 0.5,
+        "dragon": 2,
+        "dark": 2,
+        "steel": 0.5,
+    },
 }
 
 ALL_TYPES = list(TYPE_CHART.keys())
@@ -40,13 +152,13 @@ ALL_TYPES = list(TYPE_CHART.keys())
 # Common team archetypes based on type/role composition
 ARCHETYPES = {
     "Hyper Offense": {"criteria": "3+ sweepers, avg_bst > 530, low bulk"},
-    "Stall":         {"criteria": "3+ walls, high bulk, recovery moves"},
-    "Balance":       {"criteria": "mixed offense/defense"},
-    "Rain":          {"criteria": "water type + swift swim or drizzle"},
-    "Sun":           {"criteria": "fire type + chlorophyll or drought"},
-    "Sand":          {"criteria": "rock/ground/steel + sand rush"},
-    "Trick Room":    {"criteria": "low speed + slow pokemon"},
-    "VGC Restricted":{"criteria": "legendary + restricted combo"},
+    "Stall": {"criteria": "3+ walls, high bulk, recovery moves"},
+    "Balance": {"criteria": "mixed offense/defense"},
+    "Rain": {"criteria": "water type + swift swim or drizzle"},
+    "Sun": {"criteria": "fire type + chlorophyll or drought"},
+    "Sand": {"criteria": "rock/ground/steel + sand rush"},
+    "Trick Room": {"criteria": "low speed + slow pokemon"},
+    "VGC Restricted": {"criteria": "legendary + restricted combo"},
 }
 
 
@@ -58,8 +170,8 @@ class TeamAnalysisReport:
     archetype: str
     threat_score: int
     covered_types: list[str]
-    weak_to: dict[str, int]   # type -> number of pokemon weak to it
-    resists: dict[str, int]   # type -> number of pokemon resisting it
+    weak_to: dict[str, int]  # type -> number of pokemon weak to it
+    resists: dict[str, int]  # type -> number of pokemon resisting it
     speed_tiers: list[str]
     role_distribution: dict[str, int]
 
@@ -125,12 +237,18 @@ class AnalyticsService:
         # Weakness summary (types where 2+ Pokemon are weak)
         serious_weaknesses = {t: n for t, n in weak_to.items() if n >= 2}
         weakness_txt = (
-            ", ".join(f"{t.title()} ×{n}" for t, n in sorted(serious_weaknesses.items(), key=lambda x: -x[1]))
+            ", ".join(
+                f"{t.title()} ×{n}"
+                for t, n in sorted(serious_weaknesses.items(), key=lambda x: -x[1])
+            )
             or "No major weaknesses!"
         )
 
         # Speed tiers
-        speed_lines = [f"{mon.name}: {mon.base_stats.spe} ({mon.speed_tier})" for mon in sorted(team, key=lambda m: -m.base_stats.spe)]
+        speed_lines = [
+            f"{mon.name}: {mon.base_stats.spe} ({mon.speed_tier})"
+            for mon in sorted(team, key=lambda m: -m.base_stats.spe)
+        ]
 
         # Archetype detection
         archetype = self._detect_archetype(team)

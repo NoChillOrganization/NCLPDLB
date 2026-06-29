@@ -3,6 +3,7 @@ End-to-End test — Full 4-player snake draft simulation.
 Tests the entire flow: create → join → start → pick all rounds → complete.
 Run: pytest tests/e2e/test_full_draft.py -v
 """
+
 import pytest
 from unittest.mock import MagicMock, patch
 
@@ -40,8 +41,10 @@ async def test_full_snake_draft():
     """
     svc = DraftService()
 
-    with patch("src.services.draft_service.sheets") as mock_sheets, \
-         patch("src.services.draft_service.pokemon_db") as mock_db:
+    with (
+        patch("src.services.draft_service.sheets") as mock_sheets,
+        patch("src.services.draft_service.pokemon_db") as mock_db,
+    ):
         mock_sheets.save_league_setup = MagicMock()
         mock_sheets.save_pick = MagicMock()
 
@@ -51,7 +54,9 @@ async def test_full_snake_draft():
         mock_db.find = fake_find
 
         # Step 1: Create draft
-        draft = await svc.create_draft(GUILD, PLAYERS[0], DraftFormat.SNAKE, rounds=ROUNDS)
+        draft = await svc.create_draft(
+            GUILD, PLAYERS[0], DraftFormat.SNAKE, rounds=ROUNDS
+        )
         assert draft.status == DraftStatus.SETUP
 
         # Step 2: All players join
@@ -73,11 +78,11 @@ async def test_full_snake_draft():
         for i, expected_player in enumerate(expected_full):
             current = draft.current_player_id
             assert current == expected_player, (
-                f"Pick {i+1}: expected {expected_player} but got {current}"
+                f"Pick {i + 1}: expected {expected_player} but got {current}"
             )
             pokemon_name = POKEMON_POOL[i]
             result = await svc.make_pick(GUILD, current, pokemon_name)
-            assert result.success, f"Pick {i+1} failed: {result.error}"
+            assert result.success, f"Pick {i + 1} failed: {result.error}"
             picks_made.append((current, pokemon_name))
 
         # Step 5: Draft complete
@@ -86,7 +91,9 @@ async def test_full_snake_draft():
 
         # Step 6: Each player has exactly ROUNDS pokemon
         for player in PLAYERS:
-            player_picks = [p.pokemon_name for p in draft.picks if p.player_id == player]
+            player_picks = [
+                p.pokemon_name for p in draft.picks if p.player_id == player
+            ]
             assert len(player_picks) == ROUNDS, f"{player} should have {ROUNDS} picks"
 
         # Step 7: No duplicates
@@ -97,11 +104,14 @@ async def test_full_snake_draft():
 @pytest.mark.asyncio
 async def test_ban_phase_blocks_picks():
     svc = DraftService()
-    with patch("src.services.draft_service.sheets"), \
-         patch("src.services.draft_service.pokemon_db") as mock_db:
+    with (
+        patch("src.services.draft_service.sheets"),
+        patch("src.services.draft_service.pokemon_db") as mock_db,
+    ):
         mock_db.find = lambda n: make_mock_pokemon(n)
 
         from src.data.models import DraftStatus
+
         draft = await svc.create_draft(GUILD + "_ban", "p1", DraftFormat.CUSTOM)
         await svc.add_player(GUILD + "_ban", "p1")
         await svc.add_player(GUILD + "_ban", "p2")
@@ -123,8 +133,10 @@ async def test_ban_phase_blocks_picks():
 @pytest.mark.asyncio
 async def test_draft_not_your_turn():
     svc = DraftService()
-    with patch("src.services.draft_service.sheets"), \
-         patch("src.services.draft_service.pokemon_db") as mock_db:
+    with (
+        patch("src.services.draft_service.sheets"),
+        patch("src.services.draft_service.pokemon_db") as mock_db,
+    ):
         mock_db.find = lambda n: make_mock_pokemon(n)
 
         draft = await svc.create_draft(GUILD + "_turn", "p1", DraftFormat.SNAKE)

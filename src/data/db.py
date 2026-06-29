@@ -16,6 +16,7 @@ Connection strategy (M19):
   WAL journal mode is applied once at init and persists at the DB-file
   level, allowing reads during writes.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -39,7 +40,7 @@ _DB_PATH: Path = Path(re.sub(r"^sqlite(?:\+\w+)?:///", "", _raw_url))
 # ── Shared connection state ───────────────────────────────────────────────────
 
 _conn: Optional[aiosqlite.Connection] = None
-_open_lock: asyncio.Lock = asyncio.Lock()   # serialise lazy-open races
+_open_lock: asyncio.Lock = asyncio.Lock()  # serialise lazy-open races
 _write_lock: asyncio.Lock = asyncio.Lock()  # serialise execute+commit pairs
 
 
@@ -64,6 +65,7 @@ async def _get_conn() -> aiosqlite.Connection:
 
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
+
 
 async def init_db() -> None:
     """Create tables if they don't exist. Safe to call on every startup."""
@@ -106,6 +108,7 @@ async def close_db() -> None:
 
 # ── Draft persistence ─────────────────────────────────────────────────────────
 
+
 async def save_draft(guild_id: str, draft_json: str) -> None:
     """Upsert a serialised Draft into active_drafts."""
     conn = await _get_conn()
@@ -127,24 +130,21 @@ async def delete_draft(guild_id: str) -> None:
     """Remove a completed/cancelled draft from active_drafts."""
     conn = await _get_conn()
     async with _write_lock:
-        await conn.execute(
-            "DELETE FROM active_drafts WHERE guild_id = ?", (guild_id,)
-        )
+        await conn.execute("DELETE FROM active_drafts WHERE guild_id = ?", (guild_id,))
         await conn.commit()
 
 
 async def load_all_drafts() -> list[tuple[str, str]]:
     """Return [(guild_id, draft_json), ...] for all rows in active_drafts."""
     conn = await _get_conn()
-    async with conn.execute(
-        "SELECT guild_id, draft_json FROM active_drafts"
-    ) as cursor:
+    async with conn.execute("SELECT guild_id, draft_json FROM active_drafts") as cursor:
         rows = await cursor.fetchall()
     # aiosqlite.Row supports index access, so callers receive compatible tuples
     return [(r[0], r[1]) for r in rows]
 
 
 # ── ELO persistence ───────────────────────────────────────────────────────────
+
 
 async def save_elo(
     guild_id: str,

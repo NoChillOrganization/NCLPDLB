@@ -6,6 +6,7 @@ preflight_check, _is_corrupt_zip, apply_fix, apply_all_fixes.
 
 Pragmas on _fix_install_dep and _fix_corrupt_checkpoints are in the source.
 """
+
 from __future__ import annotations
 
 import zipfile
@@ -28,6 +29,7 @@ from src.ml.training_doctor import (
 
 
 # ── diagnose_output ──────────────────────────────────────────────────────────
+
 
 class TestDiagnoseOutput:
     def test_showdown_offline_explicit(self):
@@ -90,7 +92,9 @@ class TestDiagnoseOutput:
         assert result[0]["fixable"] is False
 
     def test_shape_mismatch(self):
-        out = "RuntimeError: mat1 and mat2 shapes cannot be multiplied (64x128 and 64x64)"
+        out = (
+            "RuntimeError: mat1 and mat2 shapes cannot be multiplied (64x128 and 64x64)"
+        )
         result = diagnose_output(out)
         assert result[0]["type"] == "SHAPE_MISMATCH"
         assert result[0]["fixable"] is True
@@ -101,19 +105,13 @@ class TestDiagnoseOutput:
 
     def test_deduplicates_same_type(self):
         # Two SHOWDOWN_OFFLINE patterns in same output
-        out = (
-            "Cannot reach local Showdown server\n"
-            "Connection refused: 8000\n"
-        )
+        out = "Cannot reach local Showdown server\nConnection refused: 8000\n"
         result = diagnose_output(out)
         types = [r["type"] for r in result]
         assert types.count("SHOWDOWN_OFFLINE") == 1
 
     def test_multi_match_returns_multiple_types(self):
-        out = (
-            "No module named 'numpy'\n"
-            "No module named 'src'\n"
-        )
+        out = "No module named 'numpy'\nNo module named 'src'\n"
         result = diagnose_output(out)
         types = {r["type"] for r in result}
         assert "MISSING_DEP" in types
@@ -121,6 +119,7 @@ class TestDiagnoseOutput:
 
 
 # ── parse_timestep_progress ───────────────────────────────────────────────────
+
 
 class TestParseTimestepProgress:
     def test_extracts_timestep_from_sb3_log_line(self):
@@ -139,6 +138,7 @@ class TestParseTimestepProgress:
 
 
 # ── make_progress_bar ─────────────────────────────────────────────────────────
+
 
 class TestMakeProgressBar:
     def test_zero_percent(self):
@@ -168,6 +168,7 @@ class TestMakeProgressBar:
 
 # ── _is_corrupt_zip ───────────────────────────────────────────────────────────
 
+
 class TestIsCorruptZip:
     def test_valid_zip_returns_false(self, tmp_path):
         zp = tmp_path / "good.zip"
@@ -188,13 +189,18 @@ class TestIsCorruptZip:
 
 # ── preflight_check ───────────────────────────────────────────────────────────
 
+
 class TestPreflightCheck:
     def test_showdown_unreachable_adds_offline_issue(self, tmp_path):
         save_dir = tmp_path / "policy"
-        with patch("src.ml.training_doctor.socket.create_connection",
-                   side_effect=OSError("connection refused")):
+        with patch(
+            "src.ml.training_doctor.socket.create_connection",
+            side_effect=OSError("connection refused"),
+        ):
             with patch("src.ml.training_doctor._can_import", return_value=True):
-                issues = preflight_check("gen9ou", save_dir=save_dir, server_mode="localhost")
+                issues = preflight_check(
+                    "gen9ou", save_dir=save_dir, server_mode="localhost"
+                )
         types = [i["type"] for i in issues]
         assert "SHOWDOWN_OFFLINE" in types
 
@@ -203,10 +209,13 @@ class TestPreflightCheck:
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
         mock_conn.__exit__ = MagicMock(return_value=False)
-        with patch("src.ml.training_doctor.socket.create_connection",
-                   return_value=mock_conn):
+        with patch(
+            "src.ml.training_doctor.socket.create_connection", return_value=mock_conn
+        ):
             with patch("src.ml.training_doctor._can_import", return_value=True):
-                issues = preflight_check("gen9ou", save_dir=save_dir, server_mode="localhost")
+                issues = preflight_check(
+                    "gen9ou", save_dir=save_dir, server_mode="localhost"
+                )
         types = [i["type"] for i in issues]
         assert "SHOWDOWN_OFFLINE" not in types
 
@@ -226,8 +235,9 @@ class TestPreflightCheck:
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
         mock_conn.__exit__ = MagicMock(return_value=False)
-        with patch("src.ml.training_doctor.socket.create_connection",
-                   return_value=mock_conn):
+        with patch(
+            "src.ml.training_doctor.socket.create_connection", return_value=mock_conn
+        ):
             with patch("src.ml.training_doctor._can_import", return_value=True):
                 issues = preflight_check("gen9ou", save_dir=save_dir)
         types = [i["type"] for i in issues]
@@ -238,8 +248,9 @@ class TestPreflightCheck:
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
         mock_conn.__exit__ = MagicMock(return_value=False)
-        with patch("src.ml.training_doctor.socket.create_connection",
-                   return_value=mock_conn):
+        with patch(
+            "src.ml.training_doctor.socket.create_connection", return_value=mock_conn
+        ):
             with patch("src.ml.training_doctor._can_import", return_value=False):
                 issues = preflight_check("gen9ou", save_dir=save_dir)
         types = [i["type"] for i in issues]
@@ -250,14 +261,16 @@ class TestPreflightCheck:
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
         mock_conn.__exit__ = MagicMock(return_value=False)
-        with patch("src.ml.training_doctor.socket.create_connection",
-                   return_value=mock_conn):
+        with patch(
+            "src.ml.training_doctor.socket.create_connection", return_value=mock_conn
+        ):
             with patch("src.ml.training_doctor._can_import", return_value=True):
                 issues = preflight_check("gen9ou", save_dir=save_dir)
         assert issues == []
 
 
 # ── apply_fix ─────────────────────────────────────────────────────────────────
+
 
 class TestApplyFix:
     def test_corrupt_checkpoint_calls_fix(self, tmp_path):
@@ -278,9 +291,16 @@ class TestApplyFix:
 
     def test_missing_dep_calls_install(self, tmp_path):
         save_dir = tmp_path / "policy"
-        error = {"type": "MISSING_DEP", "fixable": True, "package": "numpy", "module": "numpy"}
-        with patch("src.ml.training_doctor._fix_install_dep",
-                   return_value=(True, "Installed `numpy` successfully")) as mock_fix:
+        error = {
+            "type": "MISSING_DEP",
+            "fixable": True,
+            "package": "numpy",
+            "module": "numpy",
+        }
+        with patch(
+            "src.ml.training_doctor._fix_install_dep",
+            return_value=(True, "Installed `numpy` successfully"),
+        ) as mock_fix:
             ok, msg = apply_fix(error, fmt="gen9ou", save_dir=save_dir)
         assert ok is True
         mock_fix.assert_called_once()
@@ -301,6 +321,7 @@ class TestApplyFix:
 
 
 # ── apply_all_fixes ───────────────────────────────────────────────────────────
+
 
 class TestApplyAllFixes:
     def test_skips_non_fixable(self, tmp_path):
@@ -334,6 +355,7 @@ class TestApplyAllFixes:
 
 # ── _can_import ───────────────────────────────────────────────────────────────
 
+
 class TestCanImport:
     def test_success_returns_true(self):
         mock_result = MagicMock()
@@ -348,12 +370,15 @@ class TestCanImport:
             assert _can_import("python", "missing_mod") is False
 
     def test_exception_returns_false(self):
-        with patch("src.ml.training_doctor.subprocess.run",
-                   side_effect=OSError("exe not found")):
+        with patch(
+            "src.ml.training_doctor.subprocess.run",
+            side_effect=OSError("exe not found"),
+        ):
             assert _can_import("/bad/python", "numpy") is False
 
 
 # ── _fix_corrupt_checkpoints ──────────────────────────────────────────────────
+
 
 class TestFixCorruptCheckpoints:
     def test_deletes_zips_and_reports(self, tmp_path):
@@ -383,6 +408,7 @@ class TestFixCorruptCheckpoints:
 
 # ── _fix_install_dep ──────────────────────────────────────────────────────────
 
+
 class TestFixInstallDep:
     def test_successful_install(self):
         mock_result = MagicMock()
@@ -402,15 +428,20 @@ class TestFixInstallDep:
 
     def test_timeout_returns_false(self):
         import subprocess
-        with patch("src.ml.training_doctor.subprocess.run",
-                   side_effect=subprocess.TimeoutExpired(cmd="pip", timeout=120)):
+
+        with patch(
+            "src.ml.training_doctor.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="pip", timeout=120),
+        ):
             ok, msg = _fix_install_dep("python", "numpy")
         assert ok is False
         assert "timed out" in msg
 
     def test_generic_exception_returns_false(self):
-        with patch("src.ml.training_doctor.subprocess.run",
-                   side_effect=RuntimeError("unexpected")):
+        with patch(
+            "src.ml.training_doctor.subprocess.run",
+            side_effect=RuntimeError("unexpected"),
+        ):
             ok, msg = _fix_install_dep("python", "numpy")
         assert ok is False
         assert "raised" in msg
@@ -418,17 +449,20 @@ class TestFixInstallDep:
 
 # ── preflight write-error branch ─────────────────────────────────────────────
 
+
 class TestPreflightWriteError:
     def test_write_error_adds_issue(self, tmp_path):
         save_dir = tmp_path / "policy"
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
         mock_conn.__exit__ = MagicMock(return_value=False)
-        with patch("src.ml.training_doctor.socket.create_connection",
-                   return_value=mock_conn):
+        with patch(
+            "src.ml.training_doctor.socket.create_connection", return_value=mock_conn
+        ):
             with patch("src.ml.training_doctor._can_import", return_value=True):
-                with patch.object(Path, "write_text",
-                                  side_effect=PermissionError("read-only")):
+                with patch.object(
+                    Path, "write_text", side_effect=PermissionError("read-only")
+                ):
                     issues = preflight_check("gen9ou", save_dir=save_dir)
         types = [i["type"] for i in issues]
         assert "WRITE_ERROR" in types

@@ -3,6 +3,7 @@ Seed Script — Fetches all Gen 1-9 Pokemon from PokéAPI and saves to data/poke
 Run once: python scripts/seed_pokemon_data.py
 Cross-platform (Windows/macOS/Linux) — uses pathlib and asyncio.
 """
+
 import asyncio
 import json
 import sys
@@ -38,20 +39,41 @@ async def fetch_pokemon(session: aiohttp.ClientSession, dex_id: int) -> dict | N
             "name": name,
             "types": types,
             "base_stats": {
-                "hp": raw.get("hp", 0), "atk": raw.get("attack", 0),
-                "def": raw.get("defense", 0), "spa": raw.get("special-attack", 0),
-                "spd": raw.get("special-defense", 0), "spe": raw.get("speed", 0),
+                "hp": raw.get("hp", 0),
+                "atk": raw.get("attack", 0),
+                "def": raw.get("defense", 0),
+                "spa": raw.get("special-attack", 0),
+                "spd": raw.get("special-defense", 0),
+                "spe": raw.get("speed", 0),
             },
-            "abilities": [a["ability"]["name"].title() for a in poke["abilities"] if not a["is_hidden"]],
-            "hidden_ability": next((a["ability"]["name"].title() for a in poke["abilities"] if a["is_hidden"]), None),
+            "abilities": [
+                a["ability"]["name"].title()
+                for a in poke["abilities"]
+                if not a["is_hidden"]
+            ],
+            "hidden_ability": next(
+                (
+                    a["ability"]["name"].title()
+                    for a in poke["abilities"]
+                    if a["is_hidden"]
+                ),
+                None,
+            ),
             "generation": gen,
             "is_legendary": species.get("is_legendary", False),
             "is_mythical": species.get("is_mythical", False),
             "showdown_tier": "Untiered",
             "vgc_legal": False,
             "vgc_season": "",
-            "console_legal": {"sv": True, "swsh": gen <= 8, "bdsp": gen <= 4, "legends": gen <= 4},
-            "tier_points": 5 if species.get("is_mythical") else (4 if species.get("is_legendary") else 1),
+            "console_legal": {
+                "sv": True,
+                "swsh": gen <= 8,
+                "bdsp": gen <= 4,
+                "legends": gen <= 4,
+            },
+            "tier_points": 5
+            if species.get("is_mythical")
+            else (4 if species.get("is_legendary") else 1),
             "smogon_strategy": "",
             # Animated GIFs from Showdown sprites CDN — covers all Gen 1-9
             "sprite_url": f"https://play.pokemonshowdown.com/sprites/ani/{poke['name']}.gif",
@@ -76,16 +98,23 @@ async def main() -> None:
     to_fetch = [i for i in range(1, TOTAL_POKEMON + 1) if i not in existing]
     print(f"Fetching {len(to_fetch)} Pokemon...")
 
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=BATCH_SIZE)) as session:
+    async with aiohttp.ClientSession(
+        connector=aiohttp.TCPConnector(limit=BATCH_SIZE)
+    ) as session:
         for i in range(0, len(to_fetch), BATCH_SIZE):
-            batch = to_fetch[i:i + BATCH_SIZE]
+            batch = to_fetch[i : i + BATCH_SIZE]
             for r in await asyncio.gather(*[fetch_pokemon(session, d) for d in batch]):
                 if r:
                     results.append(r)
             pct = (len(existing) + i + len(batch)) / TOTAL_POKEMON * 100
             print(f"  {pct:.1f}% — saving...")
             with OUTPUT_FILE.open("w", encoding="utf-8") as f:
-                json.dump(sorted(results, key=lambda x: x["national_dex"]), f, indent=2, ensure_ascii=False)
+                json.dump(
+                    sorted(results, key=lambda x: x["national_dex"]),
+                    f,
+                    indent=2,
+                    ensure_ascii=False,
+                )
             await asyncio.sleep(0.3)
 
     print(f"Done! {len(results)} Pokemon saved to {OUTPUT_FILE}")

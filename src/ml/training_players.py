@@ -10,20 +10,24 @@ time so that import-level checks (``hasattr``, ``isinstance``) still work,
 but any attempt to actually create a player fails loudly with a clear install
 instruction.
 """
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 
 import random
+
 try:
     from poke_env.player import Player
+
     _POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     _POKE_ENV_OK = False
 
     class Player:  # type: ignore
         """Stub — raises ImportError on instantiation if poke_env is missing."""
+
         def __init__(self, *args: object, **kwargs: object) -> None:
             raise ImportError(
                 "poke_env is not installed. Run: pip install poke-env>=0.8.1"
@@ -35,7 +39,9 @@ except ImportError:  # pragma: no cover
         def create_order(self, move: object) -> object:
             raise ImportError("poke_env is not installed")
 
+
 log = logging.getLogger(__name__)
+
 
 class MaxBasePowerPlayer(Player):
     """
@@ -51,8 +57,10 @@ class MaxBasePowerPlayer(Player):
             max_power = max((m.base_power or 0) for m in battle.available_moves)
 
             # Get all moves with that power (to break ties randomly)
-            best_moves = [m for m in battle.available_moves if (m.base_power or 0) == max_power]
-            
+            best_moves = [
+                m for m in battle.available_moves if (m.base_power or 0) == max_power
+            ]
+
             # Select one at random from the best
             chosen_move = random.choice(best_moves)
             return self.create_order(chosen_move)
@@ -60,10 +68,12 @@ class MaxBasePowerPlayer(Player):
         # 2. Fallback to random (switches, etc.)
         return self.choose_random_move(battle)
 
+
 class SimpleHeuristicPlayer(Player):
     """
     Intermediate curriculum opponent that uses type effectiveness and base power.
     """
+
     def choose_move(self, battle: Any) -> Any:
         opp = battle.opponent_active_pokemon
         if battle.available_moves and opp is not None:
@@ -73,9 +83,9 @@ class SimpleHeuristicPlayer(Player):
                 effectiveness = opp.damage_multiplier(move)
                 score = (move.base_power or 0) * effectiveness
                 scores.append((move, score))
-            
+
             # Pick move with highest score
             best_move = max(scores, key=lambda x: x[1])[0]
             return self.create_order(best_move)
-            
+
         return self.choose_random_move(battle)

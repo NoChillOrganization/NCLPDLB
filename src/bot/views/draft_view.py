@@ -2,6 +2,7 @@
 Draft View — Interactive Discord UI for picking Pokemon during a draft.
 Uses discord.py Views (buttons + selects) for a rich interactive experience.
 """
+
 from __future__ import annotations
 
 from typing import Awaitable, Callable
@@ -46,9 +47,9 @@ class PokemonSearchSelect(discord.ui.Select):
 
         # Build options from top available Pokemon
         available = [
-            p for p in pokemon_db.all()
-            if p.name.lower() not in picked_names
-            and p.name.lower() not in banned_names
+            p
+            for p in pokemon_db.all()
+            if p.name.lower() not in picked_names and p.name.lower() not in banned_names
         ][:25]
 
         options = [
@@ -73,14 +74,19 @@ class PokemonSearchSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction) -> None:
         if self.values[0] == "none":
-            await interaction.response.send_message("No Pokemon available.", ephemeral=True)
+            await interaction.response.send_message(
+                "No Pokemon available.", ephemeral=True
+            )
             return
 
         if str(interaction.user.id) != self.draft.current_player_id:
-            await interaction.response.send_message("It's not your turn!", ephemeral=True)
+            await interaction.response.send_message(
+                "It's not your turn!", ephemeral=True
+            )
             return
 
         from src.services.draft_service import DraftService
+
         svc = DraftService()
         result = await svc.make_pick(
             guild_id=self.draft.guild_id,
@@ -102,6 +108,7 @@ class PokemonSearchSelect(discord.ui.Select):
 
             # M4: post a fresh interactive view for the next player
             from src.services.draft_service import DraftStatus
+
             updated = svc.get_draft(self.draft.guild_id)
             if (
                 updated
@@ -121,13 +128,21 @@ class PokemonSearchSelect(discord.ui.Select):
                 )
                 await interaction.channel.send(embed=next_embed, view=next_view)
         else:
-            await interaction.response.send_message(f"Error: {result.error}", ephemeral=True)
+            await interaction.response.send_message(
+                f"Error: {result.error}", ephemeral=True
+            )
 
 
 class AuctionView(discord.ui.View):
     """Auction draft — bid buttons with budget display."""
 
-    def __init__(self, draft: Draft, nominated_pokemon: str, current_high: int, current_bidder: str) -> None:
+    def __init__(
+        self,
+        draft: Draft,
+        nominated_pokemon: str,
+        current_high: int,
+        current_bidder: str,
+    ) -> None:
         super().__init__(timeout=30)
         self.draft = draft
         self.nominated_pokemon = nominated_pokemon
@@ -135,23 +150,34 @@ class AuctionView(discord.ui.View):
         self.current_bidder = current_bidder
 
     @discord.ui.button(label="+10", style=discord.ButtonStyle.primary)
-    async def bid_10(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def bid_10(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await self._place_bid(interaction, self.current_high + 10)
 
     @discord.ui.button(label="+50", style=discord.ButtonStyle.primary)
-    async def bid_50(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def bid_50(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await self._place_bid(interaction, self.current_high + 50)
 
     @discord.ui.button(label="+100", style=discord.ButtonStyle.primary)
-    async def bid_100(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def bid_100(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await self._place_bid(interaction, self.current_high + 100)
 
     @discord.ui.button(label="Pass", style=discord.ButtonStyle.secondary)
-    async def pass_bid(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
-        await interaction.response.send_message("You passed on this Pokemon.", ephemeral=True)
+    async def pass_bid(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await interaction.response.send_message(
+            "You passed on this Pokemon.", ephemeral=True
+        )
 
     async def _place_bid(self, interaction: discord.Interaction, amount: int) -> None:
         from src.services.draft_service import DraftService
+
         svc = DraftService()
         result = await svc.place_bid(
             guild_id=self.draft.guild_id,
@@ -168,7 +194,9 @@ class AuctionView(discord.ui.View):
             )
             await interaction.response.edit_message(embed=embed, view=self)
         else:
-            await interaction.response.send_message(f"Bid failed: {result.error}", ephemeral=True)
+            await interaction.response.send_message(
+                f"Bid failed: {result.error}", ephemeral=True
+            )
 
 
 class BanPhaseView(discord.ui.View):
@@ -183,7 +211,9 @@ class BanPhaseView(discord.ui.View):
 class BanSelect(discord.ui.Select):
     def __init__(self, draft: Draft) -> None:
         self.draft = draft
-        top_pokemon = sorted(pokemon_db.all(), key=lambda p: p.base_stats.total, reverse=True)[:25]
+        top_pokemon = sorted(
+            pokemon_db.all(), key=lambda p: p.base_stats.total, reverse=True
+        )[:25]
         options = [
             discord.SelectOption(
                 label=p.name,
@@ -203,6 +233,7 @@ class BanSelect(discord.ui.Select):
             )
             return
         from src.services.draft_service import DraftService
+
         svc = DraftService()
         result = await svc.ban_pokemon(
             guild_id=self.draft.guild_id,
@@ -214,4 +245,6 @@ class BanSelect(discord.ui.Select):
                 f"**{self.values[0]}** has been banned!", ephemeral=False
             )
         else:
-            await interaction.response.send_message(f"Ban failed: {result.error}", ephemeral=True)
+            await interaction.response.send_message(
+                f"Ban failed: {result.error}", ephemeral=True
+            )

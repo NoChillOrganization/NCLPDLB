@@ -5,6 +5,7 @@ Fixtures here are available to all tests in tests/ without importing.
 The pytest.ini at project root sets asyncio_mode=auto, so async test
 functions and async fixtures work without @pytest.mark.asyncio.
 """
+
 import pytest
 import tracemalloc
 from unittest.mock import MagicMock, AsyncMock
@@ -12,22 +13,32 @@ from unittest.mock import MagicMock, AsyncMock
 tracemalloc.start()
 
 from src.data.models import (  # noqa: E402
-    Pokemon, PokemonStats,
-    Draft, DraftFormat, DraftStatus,
-    TeamRoster, PlayerElo,
+    Pokemon,
+    PokemonStats,
+    Draft,
+    DraftFormat,
+    DraftStatus,
+    TeamRoster,
+    PlayerElo,
 )
 
 
 # ── Pokemon helpers ───────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def make_pokemon():
     """Factory fixture: returns a callable to build Pokemon test objects."""
+
     def _make(
         name: str = "Garchomp",
         types: list[str] | None = None,
-        hp: int = 80, atk: int = 100, def_: int = 80,
-        spa: int = 80, spd: int = 80, spe: int = 100,
+        hp: int = 80,
+        atk: int = 100,
+        def_: int = 80,
+        spa: int = 80,
+        spd: int = 80,
+        spe: int = 100,
         generation: int = 4,
         national_dex: int = 445,
         is_legendary: bool = False,
@@ -44,6 +55,7 @@ def make_pokemon():
             is_legendary=is_legendary,
             is_mythical=is_mythical,
         )
+
     return _make
 
 
@@ -54,6 +66,7 @@ def mock_pokemon(make_pokemon) -> Pokemon:
 
 
 # ── Sheets mock ───────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def mock_sheets():
@@ -76,6 +89,7 @@ def mock_sheets():
 
 # ── Pokemon DB mock ───────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def mock_pokemon_db(mock_pokemon):
     """
@@ -91,6 +105,7 @@ def mock_pokemon_db(mock_pokemon):
 
 
 # ── Draft helpers ─────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def active_draft(make_pokemon) -> Draft:
@@ -111,9 +126,11 @@ def active_draft(make_pokemon) -> Draft:
 
 # ── ELO helpers ───────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def make_elo():
     """Factory fixture: returns a callable to build PlayerElo test objects."""
+
     def _make(
         player_id: str = "p1",
         guild_id: str = "guild1",
@@ -132,14 +149,17 @@ def make_elo():
             streak=streak,
             display_name=display_name or player_id,
         )
+
     return _make
 
 
 # ── TeamRoster helpers ────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def make_team(make_pokemon):
     """Factory fixture: returns a callable to build TeamRoster test objects."""
+
     def _make(
         player_id: str = "p1",
         guild_id: str = "guild1",
@@ -147,13 +167,17 @@ def make_team(make_pokemon):
     ) -> TeamRoster:
         if pokemon_names is None:
             pokemon_names = ["Garchomp", "Corviknight", "Toxapex"]
-        mons = [make_pokemon(name=n, types=["normal"], national_dex=i + 1)
-                for i, n in enumerate(pokemon_names)]
+        mons = [
+            make_pokemon(name=n, types=["normal"], national_dex=i + 1)
+            for i, n in enumerate(pokemon_names)
+        ]
         return TeamRoster(player_id=player_id, guild_id=guild_id, pokemon=mons)
+
     return _make
 
 
 # ── Async discord.Interaction mock ────────────────────────────────────────────
+
 
 @pytest.fixture
 def mock_interaction():

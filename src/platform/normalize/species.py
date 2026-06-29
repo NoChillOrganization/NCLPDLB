@@ -23,6 +23,7 @@ replay.py keeps its own definition; this module is the canonical home.
 
 See docs/platform-species-aliases.md for the alias-review workflow.
 """
+
 from __future__ import annotations
 
 import json
@@ -35,6 +36,7 @@ from typing import Iterable, Literal
 # ---------------------------------------------------------------------------
 # Slug normalization
 # ---------------------------------------------------------------------------
+
 
 def slugify(name: str) -> str:
     """
@@ -108,26 +110,26 @@ def _build_slug_set() -> frozenset[str]:
 # seed.py is the upgrade path for forms that warrant their own canonical_species row.
 FORM_OVERRIDES: dict[str, str] = {
     # ---- Short-form / default-form (bare name = the one form in pokemon.json) ----
-    "urshifu":         "urshifusinglestrike",   # Urshifu Single Strike
-    "mimikyu":         "mimikyudisguised",       # Mimikyu Disguised
-    "zygarde":         "zygarde50",              # Zygarde 50%
-    "indeedee":        "indeedeemale",           # Indeedee Male (Female not yet seeded)
-    "basculin":        "basculinredstriped",     # Basculin Red Striped
-    "aegislash":       "aegislashshield",        # Aegislash Shield
-    "wishiwashi":      "wishiwashisolo",         # Wishiwashi Solo
-    "minior":          "miniorredmeteor",        # Minior (form-colour is cosmetic)
-    "morpeko":         "morpekofullbelly",       # Morpeko Full Belly
-    "oricorio":        "oricoriobaile",          # Oricorio Baile (default)
-
+    "urshifu": "urshifusinglestrike",  # Urshifu Single Strike
+    "mimikyu": "mimikyudisguised",  # Mimikyu Disguised
+    "zygarde": "zygarde50",  # Zygarde 50%
+    "indeedee": "indeedeemale",  # Indeedee Male (Female not yet seeded)
+    "basculin": "basculinredstriped",  # Basculin Red Striped
+    "aegislash": "aegislashshield",  # Aegislash Shield
+    "wishiwashi": "wishiwashisolo",  # Wishiwashi Solo
+    "minior": "miniorredmeteor",  # Minior (form-colour is cosmetic)
+    "morpeko": "morpekofullbelly",  # Morpeko Full Belly
+    "oricorio": "oricoriobaile",  # Oricorio Baile (default)
     # ---- Battle-only forms (same team slot, form changes in-battle) ----
-    "mimikyubusted":   "mimikyudisguised",       # disguise breaks in battle
-    "zygardecomplete": "zygarde50",              # Power Construct: 100% only triggers in battle
-    "zygarde10":       "zygarde50",              # 10% forme (same mon, different speed tier)
-    "wishiwashischool":"wishiwashisolo",          # school form only active in battle
-    "aegislashblade":  "aegislashshield",        # blade stance in battle
-    "morpekohungry":   "morpekofullbelly",       # Hunger Switch triggers mid-turn
-    "morpekohangry":   "morpekofullbelly",       # alternate 'Hangry' spelling
+    "mimikyubusted": "mimikyudisguised",  # disguise breaks in battle
+    "zygardecomplete": "zygarde50",  # Power Construct: 100% only triggers in battle
+    "zygarde10": "zygarde50",  # 10% forme (same mon, different speed tier)
+    "wishiwashischool": "wishiwashisolo",  # school form only active in battle
+    "aegislashblade": "aegislashshield",  # blade stance in battle
+    "morpekohungry": "morpekofullbelly",  # Hunger Switch triggers mid-turn
+    "morpekohangry": "morpekofullbelly",  # alternate 'Hangry' spelling
 }
+
 
 # Validate at import: warn (don't raise) if a value slug is no longer in pokemon.json.
 # This fires on first import after a pokemon.json update removes or renames a species.
@@ -199,6 +201,7 @@ class SpeciesMatch:
         confidence:     1.0 for exact/form_override; 0.85–0.99 for fuzzy; 0.0 for unresolved.
         method:         Resolution path taken. Use for triage bucketing (see alias-review doc).
     """
+
     raw_name: str
     canonical_slug: str | None
     confidence: float
@@ -208,6 +211,7 @@ class SpeciesMatch:
 # ---------------------------------------------------------------------------
 # Core resolution
 # ---------------------------------------------------------------------------
+
 
 def canonicalize_species(
     raw: str,
@@ -235,7 +239,9 @@ def canonicalize_species(
         SpeciesMatch with raw_name always set to the original *raw* string.
     """
     slug_set = _build_slug_set()
-    overrides = FORM_OVERRIDES if not extra_overrides else {**FORM_OVERRIDES, **extra_overrides}
+    overrides = (
+        FORM_OVERRIDES if not extra_overrides else {**FORM_OVERRIDES, **extra_overrides}
+    )
     key = slugify(raw)
 
     # Step 1: exact slug
@@ -267,6 +273,7 @@ def canonicalize_species(
 # ---------------------------------------------------------------------------
 # Normalizer helpers (consumed by tournament.py / replay.py wiring, follow-up task)
 # ---------------------------------------------------------------------------
+
 
 def normalize_team_member(
     mon: dict,
@@ -348,23 +355,33 @@ _init()
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     cases = [
-        ("Urshifu",             "urshifusinglestrike", "form_override"),
-        ("Urshifu-Rapid-Strike", None,                 "unresolved"),  # RS not in pokemon.json — seed it
-        ("Mimikyu-Busted",      "mimikyudisguised",    "form_override"),
-        ("Zygarde-Complete",    "zygarde50",           "form_override"),
-        ("Indeedee",            "indeedeemale",        "form_override"),
-        ("Basculin",            "basculinredstriped",  "form_override"),
-        ("Iron Hands",          "ironhands",           "exact"),
-        ("Iron Hads",           "ironhands",           "fuzzy"),
-        ("Notamon",             None,                  "unresolved"),
+        ("Urshifu", "urshifusinglestrike", "form_override"),
+        (
+            "Urshifu-Rapid-Strike",
+            None,
+            "unresolved",
+        ),  # RS not in pokemon.json — seed it
+        ("Mimikyu-Busted", "mimikyudisguised", "form_override"),
+        ("Zygarde-Complete", "zygarde50", "form_override"),
+        ("Indeedee", "indeedeemale", "form_override"),
+        ("Basculin", "basculinredstriped", "form_override"),
+        ("Iron Hands", "ironhands", "exact"),
+        ("Iron Hads", "ironhands", "fuzzy"),
+        ("Notamon", None, "unresolved"),
     ]
     print(f"{'raw':<28} {'slug':<26} {'conf':>5}  {'method'}")
     print("-" * 75)
     ok = True
     for raw, expected_slug, expected_method in cases:
         m = canonicalize_species(raw)
-        status = "OK" if (m.canonical_slug == expected_slug and m.method == expected_method) else "FAIL"
+        status = (
+            "OK"
+            if (m.canonical_slug == expected_slug and m.method == expected_method)
+            else "FAIL"
+        )
         if status == "FAIL":
             ok = False
-        print(f"{status:<4} {raw:<26} {str(m.canonical_slug):<26} {m.confidence:>5.2f}  {m.method}")
+        print(
+            f"{status:<4} {raw:<26} {str(m.canonical_slug):<26} {m.confidence:>5.2f}  {m.method}"
+        )
     raise SystemExit(0 if ok else 1)

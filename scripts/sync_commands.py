@@ -5,6 +5,7 @@ Loads all cogs, syncs slash commands to the configured guild (or globally), then
 Usage:
     .venv/Scripts/python scripts/sync_commands.py
 """
+
 import asyncio
 import sys
 from pathlib import Path
@@ -44,10 +45,14 @@ async def main() -> None:
             bot.tree.clear_commands(guild=None)
             await bot.tree.sync()
             print("  Cleared global commands.")
-            print(f"\nOK Synced {len(synced)} command(s) to guild {settings.discord_guild_id}")
+            print(
+                f"\nOK Synced {len(synced)} command(s) to guild {settings.discord_guild_id}"
+            )
         else:
             synced = await bot.tree.sync()
-            print(f"\nOK Synced {len(synced)} command(s) globally (may take up to 1 hour)")
+            print(
+                f"\nOK Synced {len(synced)} command(s) globally (may take up to 1 hour)"
+            )
 
         print("Done.")
 

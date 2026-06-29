@@ -37,6 +37,7 @@ Usage
   python -m src.ml.train_all --timesteps 1000000 --swap-every 100000
   python -m src.ml.train_all --formats gen9randombattle gen9monotype
 """
+
 from __future__ import annotations
 
 import argparse
@@ -57,34 +58,34 @@ log = logging.getLogger(__name__)
 # None for train_fmt means SKIP entirely.
 TRAINING_MAP: dict[str, tuple[str | None, str | None]] = {
     # Random Battle (no teams needed)
-    "gen9randombattle"       : ("gen9randombattle",       None),
+    "gen9randombattle": ("gen9randombattle", None),
     "gen9randomdoublesbattle": ("gen9randomdoublesbattle", None),
     # Smogon Singles
-    "gen9ou"                 : ("gen9ou",                 "gen9ou"),
-    "gen9ubers"              : ("gen9ubers",              "gen9ubers"),
-    "gen9uu"                 : ("gen9uu",                 "gen9uu"),
-    "gen9ru"                 : ("gen9ru",                 "gen9ru"),
-    "gen9nu"                 : ("gen9nu",                 "gen9nu"),
-    "gen9pu"                 : ("gen9pu",                 "gen9pu"),
-    "gen9zu"                 : ("gen9zu",                 "gen9zu"),
-    "gen9lc"                 : ("gen9lc",                 "gen9lc"),
-    "gen9monotype"           : ("gen9monotype",           "gen9monotype"),
-    "gen9nationaldex"        : ("gen9nationaldex",        "gen9nationaldex"),
-    "gen9anythinggoes"       : ("gen9anythinggoes",       "gen9anythinggoes"),
+    "gen9ou": ("gen9ou", "gen9ou"),
+    "gen9ubers": ("gen9ubers", "gen9ubers"),
+    "gen9uu": ("gen9uu", "gen9uu"),
+    "gen9ru": ("gen9ru", "gen9ru"),
+    "gen9nu": ("gen9nu", "gen9nu"),
+    "gen9pu": ("gen9pu", "gen9pu"),
+    "gen9zu": ("gen9zu", "gen9zu"),
+    "gen9lc": ("gen9lc", "gen9lc"),
+    "gen9monotype": ("gen9monotype", "gen9monotype"),
+    "gen9nationaldex": ("gen9nationaldex", "gen9nationaldex"),
+    "gen9anythinggoes": ("gen9anythinggoes", "gen9anythinggoes"),
     # Smogon Doubles
-    "gen9doublesou"          : ("gen9doublesou",          "gen9doublesou"),
-    "gen9doublesubers"       : ("gen9doublesubers",       "gen9doublesubers"),
-    "gen9doublesuu"          : ("gen9doublesuu",          "gen9doublesuu"),
+    "gen9doublesou": ("gen9doublesou", "gen9doublesou"),
+    "gen9doublesubers": ("gen9doublesubers", "gen9doublesubers"),
+    "gen9doublesuu": ("gen9doublesuu", "gen9doublesuu"),
     # Champions
-    "gen9championsou"             : ("gen9championsou",             None),
-    "gen9championsbssregma"       : ("gen9championsbssregma",       None),
-    "gen9championsvgc2026regma"   : ("gen9championsvgc2026regma",   None),
+    "gen9championsou": ("gen9championsou", None),
+    "gen9championsbssregma": ("gen9championsbssregma", None),
+    "gen9championsvgc2026regma": ("gen9championsvgc2026regma", None),
     "gen9championsvgc2026regmabo3": ("gen9championsvgc2026regmabo3", None),
 }
 
-DEFAULT_TIMESTEPS   = 500_000
-DEFAULT_SWAP_EVERY  = 50_000
-DEFAULT_SAVE_DIR    = "data/ml/policy"
+DEFAULT_TIMESTEPS = 500_000
+DEFAULT_SWAP_EVERY = 50_000
+DEFAULT_SAVE_DIR = "data/ml/policy"
 DEFAULT_RESULTS_DIR = "data/ml/results"
 
 
@@ -129,20 +130,29 @@ def train_format(  # pragma: no cover
     import subprocess
 
     resume_path = _resume_checkpoint(spar_fmt, save_dir)
-    log.info(f"[train_all] {spar_fmt}: training directly on {train_fmt}"
-             + (f" with teams from {team_fmt}" if team_fmt else "")
-             + (f" [RESUMING from {resume_path.name}]" if resume_path else ""))
+    log.info(
+        f"[train_all] {spar_fmt}: training directly on {train_fmt}"
+        + (f" with teams from {team_fmt}" if team_fmt else "")
+        + (f" [RESUMING from {resume_path.name}]" if resume_path else "")
+    )
 
     # ── Spawn fresh subprocess for each training run ────────────────
     project_root = Path(__file__).parents[2]
     _results_dir = results_dir if results_dir is not None else Path(DEFAULT_RESULTS_DIR)
     cmd = [
-        sys.executable, "-m", "src.ml.train_policy",
-        "--format",      train_fmt,
-        "--timesteps",   str(total_timesteps),
-        "--swap-every",  str(swap_every),
-        "--save-dir",    str(save_dir),
-        "--results-dir", str(_results_dir),
+        sys.executable,
+        "-m",
+        "src.ml.train_policy",
+        "--format",
+        train_fmt,
+        "--timesteps",
+        str(total_timesteps),
+        "--swap-every",
+        str(swap_every),
+        "--save-dir",
+        str(save_dir),
+        "--results-dir",
+        str(_results_dir),
     ]
     if team_fmt:
         cmd += ["--team-format", team_fmt]
@@ -230,14 +240,21 @@ def run(  # pragma: no cover
         )
         elapsed = time.time() - t0
         results[spar_fmt] = "done" if ok else "failed"
-        log.info(f"\n[train_all] {spar_fmt}: {'OK' if ok else 'FAILED'} ({elapsed/60:.1f} min)")
+        log.info(
+            f"\n[train_all] {spar_fmt}: {'OK' if ok else 'FAILED'} ({elapsed / 60:.1f} min)"
+        )
 
     # ── Summary ────────────────────────────────────────────────────
     log.info("============================================================")
     log.info("  Training Summary")
     log.info("============================================================")
     for fmt, status in results.items():
-        icon = {"done": "OK", "already_done": "--", "skipped": "~~", "failed": "XX"}.get(status, "??")
+        icon = {
+            "done": "OK",
+            "already_done": "--",
+            "skipped": "~~",
+            "failed": "XX",
+        }.get(status, "??")
         log.info(f"  {icon}  {fmt:<25} {status}")
     log.info("")
 
@@ -247,13 +264,15 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
         description="Train PPO policies for all SPAR_FORMATS sequentially"
     )
     ap.add_argument(
-        "--formats", "-f",
+        "--formats",
+        "-f",
         nargs="+",
         default=[fmt for fmt, entry in TRAINING_MAP.items() if entry[0] is not None],
         help="Formats to train (default: all non-skipped)",
     )
     ap.add_argument(
-        "--timesteps", "-t",
+        "--timesteps",
+        "-t",
         type=int,
         default=DEFAULT_TIMESTEPS,
         help=f"Timesteps per format (default: {DEFAULT_TIMESTEPS:,})",

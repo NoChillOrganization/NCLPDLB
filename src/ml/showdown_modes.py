@@ -18,12 +18,13 @@ Usage
   acc1, acc2 = account_configs_for_mode("showdown") # → (AccountConfiguration, AccountConfiguration)
   pool = client_pool_for_mode("localhost")          # → ShowdownClientPool
 """
+
 from __future__ import annotations
 
 MODE_LOCALHOST = "localhost"
-MODE_SHOWDOWN  = "showdown"
-MODE_BROWSER   = "browser"
-VALID_MODES    = (MODE_LOCALHOST, MODE_SHOWDOWN, MODE_BROWSER)
+MODE_SHOWDOWN = "showdown"
+MODE_BROWSER = "browser"
+VALID_MODES = (MODE_LOCALHOST, MODE_SHOWDOWN, MODE_BROWSER)
 
 # Default guest account names for local self-play (no-security server)
 ACCOUNT_A = "AccountA"
@@ -34,11 +35,13 @@ LOCAL_WS_URL = "ws://localhost:8000/showdown/websocket"
 def server_config_for_mode(mode: str):
     """Return the poke-env ServerConfiguration for the given mode (localhost or showdown)."""
     from poke_env.ps_client.server_configuration import (
-        LocalhostServerConfiguration, ShowdownServerConfiguration,
+        LocalhostServerConfiguration,
+        ShowdownServerConfiguration,
     )
+
     if mode == MODE_SHOWDOWN:
         return ShowdownServerConfiguration
-    return LocalhostServerConfiguration   # localhost OR browser both use local initially
+    return LocalhostServerConfiguration  # localhost OR browser both use local initially
 
 
 def account_configs_for_mode(mode: str) -> tuple:
@@ -48,8 +51,10 @@ def account_configs_for_mode(mode: str) -> tuple:
     For showdown: reads SHOWDOWN_TRAIN_USER1/2 + SHOWDOWN_TRAIN_PASS1/2 from env.
     """
     import os
+
     if mode in (MODE_SHOWDOWN, MODE_BROWSER):
         from poke_env.ps_client.account_configuration import AccountConfiguration
+
         u1 = os.environ.get("SHOWDOWN_TRAIN_USER1", "")
         p1 = os.environ.get("SHOWDOWN_TRAIN_PASS1", "")
         u2 = os.environ.get("SHOWDOWN_TRAIN_USER2", "")
@@ -83,8 +88,10 @@ def client_pool_for_mode(mode: str):
         u2 = os.environ.get("SHOWDOWN_TRAIN_USER2", ACCOUNT_B)
         p2 = os.environ.get("SHOWDOWN_TRAIN_PASS2", "")
         return ShowdownClientPool(
-            username_a=u1, password_a=p1,
-            username_b=u2, password_b=p2,
+            username_a=u1,
+            password_a=p1,
+            username_b=u2,
+            password_b=p2,
             url="wss://sim3.psim.us/showdown/websocket",
         )
 

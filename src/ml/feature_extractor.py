@@ -23,6 +23,7 @@ Usage:
     # X shape: (n_battles, TEAM_FEATURE_DIM)
     # y shape: (n_battles,)  — 1 if p1 won, 0 if p2 won
 """
+
 from __future__ import annotations
 
 import json
@@ -40,15 +41,15 @@ log = logging.getLogger(__name__)
 
 # ── Vocabulary constants ──────────────────────────────────────────────────────
 
-UNKNOWN_ID  = 0     # reserved for species not seen in training
-TEAM_SIZE   = 6     # Pokemon per team in team preview
+UNKNOWN_ID = 0  # reserved for species not seen in training
+TEAM_SIZE = 6  # Pokemon per team in team preview
 
 # ── Feature dimensions ────────────────────────────────────────────────────────
 
 # Team feature vector layout:
 #   [p1_poke_0 ... p1_poke_5,  p2_poke_0 ... p2_poke_5]  — 12 species IDs
 #   + type coverage flags, BST bins, tier bins (added when Smogon data available)
-TEAM_FEATURE_DIM = TEAM_SIZE * 2   # minimum — extended below when data is available
+TEAM_FEATURE_DIM = TEAM_SIZE * 2  # minimum — extended below when data is available
 
 # State feature vector layout (per turn, offline replay pipeline):
 #   [p1_active_id, p2_active_id]           = 2   (species vocab IDs)
@@ -67,27 +68,49 @@ STATE_FEATURE_DIM = 19
 # ── Battle Observation Constants ──────────────────────────────────────────────
 
 TYPE_IDS = {
-    "normal": 1, "fire": 2, "water": 3, "electric": 4, "grass": 5, "ice": 6,
-    "fighting": 7, "poison": 8, "ground": 9, "flying": 10, "psychic": 11,
-    "bug": 12, "rock": 13, "ghost": 14, "dragon": 15, "dark": 16, "steel": 17, "fairy": 18,
+    "normal": 1,
+    "fire": 2,
+    "water": 3,
+    "electric": 4,
+    "grass": 5,
+    "ice": 6,
+    "fighting": 7,
+    "poison": 8,
+    "ground": 9,
+    "flying": 10,
+    "psychic": 11,
+    "bug": 12,
+    "rock": 13,
+    "ghost": 14,
+    "dragon": 15,
+    "dark": 16,
+    "steel": 17,
+    "fairy": 18,
     "stellar": 19,
 }
 
-STATUS_IDS = {
-    "brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6
-}
+STATUS_IDS = {"brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6}
 
 WEATHER_IDS = {
-    "sunnyday": 1, "desolateland": 1, "raindance": 2, "primordialsea": 2,
-    "sandstorm": 3, "hail": 4, "snow": 4
+    "sunnyday": 1,
+    "desolateland": 1,
+    "raindance": 2,
+    "primordialsea": 2,
+    "sandstorm": 3,
+    "hail": 4,
+    "snow": 4,
 }
 
 TERRAIN_IDS = {
-    "electricterrain": 1, "grassyterrain": 2, "mistyterrain": 3, "psychicterrain": 4
+    "electricterrain": 1,
+    "grassyterrain": 2,
+    "mistyterrain": 3,
+    "psychicterrain": 4,
 }
 
 
 # ── Vocabulary ────────────────────────────────────────────────────────────────
+
 
 class Vocabulary:
     """
@@ -97,7 +120,7 @@ class Vocabulary:
 
     def __init__(self) -> None:
         self._token2id: dict[str, int] = {"<UNK>": UNKNOWN_ID}
-        self._id2token: list[str]      = ["<UNK>"]
+        self._id2token: list[str] = ["<UNK>"]
 
     def __len__(self) -> int:
         return len(self._token2id)
@@ -142,6 +165,7 @@ def _normalize(name: str) -> str:
 
 # ── Feature Extractor ─────────────────────────────────────────────────────────
 
+
 class FeatureExtractor:
     """
     Converts BattleRecord objects into numpy feature arrays.
@@ -152,9 +176,9 @@ class FeatureExtractor:
 
     def __init__(self, vocab_path: Path | None = None) -> None:
         self.species_vocab = Vocabulary()
-        self.move_vocab    = Vocabulary()
-        self.vocab_path    = vocab_path
-        self._frozen       = False   # once frozen, add() becomes a no-op
+        self.move_vocab = Vocabulary()
+        self.vocab_path = vocab_path
+        self._frozen = False  # once frozen, add() becomes a no-op
 
     # ── Vocabulary management ──────────────────────────────────────
 
@@ -187,7 +211,9 @@ class FeatureExtractor:
         )
 
     def save(self, base_dir: Path | None = None) -> None:
-        base = base_dir or (self.vocab_path.parent if self.vocab_path else Path("data/ml"))
+        base = base_dir or (
+            self.vocab_path.parent if self.vocab_path else Path("data/ml")
+        )
         self.species_vocab.save(base / "species_vocab.json")
         self.move_vocab.save(base / "move_vocab.json")
         log.info(f"Vocabularies saved to {base}")
@@ -196,7 +222,7 @@ class FeatureExtractor:
     def load(cls, base_dir: Path) -> "FeatureExtractor":
         ext = cls()
         ext.species_vocab = Vocabulary.load(base_dir / "species_vocab.json")
-        ext.move_vocab    = Vocabulary.load(base_dir / "move_vocab.json")
+        ext.move_vocab = Vocabulary.load(base_dir / "move_vocab.json")
         ext._frozen = True
         log.info(
             f"Loaded vocabularies: {len(ext.species_vocab)} species, "
@@ -208,7 +234,7 @@ class FeatureExtractor:
     def load_or_create(cls, base_dir: Path) -> "FeatureExtractor":
         """Load existing vocabularies if present, else return a fresh extractor."""
         species_path = base_dir / "species_vocab.json"
-        move_path    = base_dir / "move_vocab.json"
+        move_path = base_dir / "move_vocab.json"
         if species_path.exists() and move_path.exists():
             return cls.load(base_dir)
         log.info("No existing vocabulary found — creating fresh extractor")
@@ -249,7 +275,9 @@ class FeatureExtractor:
             labels.append(1 if rec.winner == "p1" else 0)
 
         if not rows:
-            return np.empty((0, TEAM_SIZE * 2), dtype=np.int32), np.empty((0,), dtype=np.int8)
+            return np.empty((0, TEAM_SIZE * 2), dtype=np.int32), np.empty(
+                (0,), dtype=np.int8
+            )
 
         X = np.stack(rows).astype(np.int32)
         y = np.array(labels, dtype=np.int8)
@@ -257,13 +285,16 @@ class FeatureExtractor:
 
     # ── State feature extraction (Online/RL) ──────────────────────
 
-    def extract_features(self, battle: "AbstractBattle") -> np.ndarray:  # pragma: no cover
+    def extract_features(
+        self, battle: "AbstractBattle"
+    ) -> np.ndarray:  # pragma: no cover
         """
         Extracts the 78-dim live battle observation vector.
         Delegates to battle_env.build_observation() — the single source of truth —
         so this always exactly matches the RL training observation space (OBS_DIM=78).
         """
         from src.ml.battle_env import build_observation
+
         return build_observation(battle)
 
     def _species_to_id_normalized(self, species_name: Optional[str]) -> float:
@@ -276,6 +307,7 @@ class FeatureExtractor:
         if not species_name:
             return 0.0
         from src.ml.battle_env import _stable_species_id
+
         return _stable_species_id(species_name)
 
     # ── State feature extraction (Replays/Offline) ─────────────────
@@ -301,8 +333,8 @@ class FeatureExtractor:
                 continue
 
             # Track HP for each slot across turns
-            hp: dict[str, float] = {}           # slot → latest hp_pct
-            last_move: dict[str, int] = {}       # "p1"/"p2" → last move id
+            hp: dict[str, float] = {}  # slot → latest hp_pct
+            last_move: dict[str, int] = {}  # "p1"/"p2" → last move id
             fainted: dict[str, int] = {"p1": 0, "p2": 0}
 
             for turn in rec.turns:
@@ -323,17 +355,25 @@ class FeatureExtractor:
                 p2_active_id = self._add_species(turn.p2_active)
 
                 # HP for all 6 slots per player
-                p1_hps = [hp.get(f"p1{chr(ord('a')+i)}", 1.0) for i in range(TEAM_SIZE)]
-                p2_hps = [hp.get(f"p2{chr(ord('a')+i)}", 1.0) for i in range(TEAM_SIZE)]
+                p1_hps = [
+                    hp.get(f"p1{chr(ord('a') + i)}", 1.0) for i in range(TEAM_SIZE)
+                ]
+                p2_hps = [
+                    hp.get(f"p2{chr(ord('a') + i)}", 1.0) for i in range(TEAM_SIZE)
+                ]
 
                 turn_norm = min(turn.turn_number / 50.0, 1.0)
 
                 feature = np.array(
                     [p1_active_id, p2_active_id]
-                    + p1_hps + p2_hps
+                    + p1_hps
+                    + p2_hps
                     + [fainted["p1"], fainted["p2"]]
                     + [turn_norm]
-                    + [last_move.get("p1", UNKNOWN_ID), last_move.get("p2", UNKNOWN_ID)],
+                    + [
+                        last_move.get("p1", UNKNOWN_ID),
+                        last_move.get("p2", UNKNOWN_ID),
+                    ],
                     dtype=np.float32,
                 )
                 rows.append(feature)
@@ -352,6 +392,7 @@ class FeatureExtractor:
 
 
 # ── Dataset builder ───────────────────────────────────────────────────────────
+
 
 def build_dataset(
     replay_dir: Path,
@@ -395,8 +436,8 @@ def build_dataset(
     X_state, y_state = extractor.state_features(records)
     log.info(f"  State dataset: {X_state.shape}  labels: {y_state.shape}")
 
-    np.save(output_dir / "X_team.npy",  X_team)
-    np.save(output_dir / "y_team.npy",  y_team)
+    np.save(output_dir / "X_team.npy", X_team)
+    np.save(output_dir / "y_team.npy", y_team)
     np.save(output_dir / "X_state.npy", X_state)
     np.save(output_dir / "y_state.npy", y_state)
     log.info(f"Saved datasets to {output_dir}")
@@ -408,20 +449,23 @@ def build_dataset(
 
 if __name__ == "__main__":  # pragma: no cover
     import argparse
+
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
     ap = argparse.ArgumentParser(description="Build ML feature datasets from replays")
-    ap.add_argument("--replay-dir",  required=True, help="Directory of replay JSON files")
-    ap.add_argument("--output-dir",  default="data/ml", help="Where to save features")
+    ap.add_argument(
+        "--replay-dir", required=True, help="Directory of replay JSON files"
+    )
+    ap.add_argument("--output-dir", default="data/ml", help="Where to save features")
     ap.add_argument("--max-replays", type=int, default=0)
-    ap.add_argument("--min-rating",  type=int, default=0)
+    ap.add_argument("--min-rating", type=int, default=0)
     args = ap.parse_args()
 
     datasets = build_dataset(
-        replay_dir  = Path(args.replay_dir),
-        output_dir  = Path(args.output_dir),
-        max_replays = args.max_replays,
-        min_rating  = args.min_rating,
+        replay_dir=Path(args.replay_dir),
+        output_dir=Path(args.output_dir),
+        max_replays=args.max_replays,
+        min_rating=args.min_rating,
     )
     log.info("Dataset summary:")
     for key, arr in datasets.items():

@@ -4,6 +4,7 @@ Notification Service — DM players for draft turns, match reminders, trade offe
 All public methods return True on successful delivery and False on any failure
 (Forbidden, NotFound, or network error) so callers never need to catch exceptions.
 """
+
 from __future__ import annotations
 
 import logging
@@ -17,7 +18,9 @@ class NotificationService:
     def __init__(self, bot: discord.Client) -> None:
         self.bot = bot
 
-    async def notify_pick_turn(self, player_id: str, pokemon_hint: str = "", time_remaining: int = 60) -> bool:
+    async def notify_pick_turn(
+        self, player_id: str, pokemon_hint: str = "", time_remaining: int = 60
+    ) -> bool:
         """DM a player that it's their turn to pick."""
         return await self._dm(
             player_id,
@@ -49,7 +52,9 @@ class NotificationService:
             f"Use `/trade-accept {trade_id}` to accept or `/trade-decline {trade_id}` to decline.",
         )
 
-    async def notify_trade_accepted(self, player_id: str, given: str, received: str) -> bool:
+    async def notify_trade_accepted(
+        self, player_id: str, given: str, received: str
+    ) -> bool:
         return await self._dm(
             player_id,
             f"✅ **Trade accepted!**\nYou gave **{given}** and received **{received}**.",

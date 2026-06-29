@@ -7,6 +7,7 @@ the classify function seeing every exception type.
 Retry budget defaults: 4 attempts, ~8 s ceiling at base_delay=0.5.
 # ponytail: tune max_tries/base_delay at call-site for rate-limited sources.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -58,7 +59,9 @@ def is_transient(exc: BaseException) -> bool:
         return True
     if isinstance(exc, aiohttp.ClientResponseError):
         return exc.status in RETRY_STATUS
-    if isinstance(exc, (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError, OSError)):
+    if isinstance(
+        exc, (aiohttp.ClientError, asyncio.TimeoutError, ConnectionError, OSError)
+    ):
         return True
     return False
 
@@ -110,7 +113,7 @@ async def retry_async(
         # so we honour the server's own back-off window.
         # Note: `exc` is deleted by Python after the except block; use last_exc.
         hint = getattr(last_exc, "retry_after", None)
-        delay = max(random.uniform(0, base_delay * (2 ** attempt)), hint or 0.0)
+        delay = max(random.uniform(0, base_delay * (2**attempt)), hint or 0.0)
         await asyncio.sleep(delay)
 
     # Deadline exceeded mid-loop
@@ -120,6 +123,7 @@ async def retry_async(
 
 
 # ─── Self-check ──────────────────────────────────────────────────────────────
+
 
 async def _demo() -> None:
     import time as _time

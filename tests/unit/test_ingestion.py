@@ -1,6 +1,7 @@
 """
 Unit tests for data/ingestion.py — offline replay ingestion module.
 """
+
 from __future__ import annotations
 
 import json
@@ -25,6 +26,7 @@ from data.ingestion import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_event(kind: str, slot: str = "", detail: str = "", hp_after: float = -1.0):
     return SimpleNamespace(kind=kind, slot=slot, detail=detail, hp_after=hp_after)
 
@@ -38,9 +40,7 @@ def _make_turn(turn_number: int, p1_active: str, p2_active: str, events=None):
     )
 
 
-def _make_record(
-    p1_team=None, p2_team=None, winner="p1", turns=None, rating=1500
-):
+def _make_record(p1_team=None, p2_team=None, winner="p1", turns=None, rating=1500):
     return SimpleNamespace(
         replay_id="test-replay",
         format="gen9ou",
@@ -49,8 +49,17 @@ def _make_record(
         p2_name="Bob",
         winner=winner,
         winner_name="Alice" if winner == "p1" else "Bob",
-        p1_team=p1_team or ["Garchomp", "Miraidon", "Iron Hands", "Rillaboom", "Incineroar", "Torkoal"],
-        p2_team=p2_team or ["Flutter Mane", "Urshifu", "Pelipper", "Amoonguss", "Landorus", "Annihilape"],
+        p1_team=p1_team
+        or ["Garchomp", "Miraidon", "Iron Hands", "Rillaboom", "Incineroar", "Torkoal"],
+        p2_team=p2_team
+        or [
+            "Flutter Mane",
+            "Urshifu",
+            "Pelipper",
+            "Amoonguss",
+            "Landorus",
+            "Annihilape",
+        ],
         turns=turns or [],
         total_turns=len(turns or []),
         p1_fainted=0,
@@ -61,6 +70,7 @@ def _make_record(
 # ---------------------------------------------------------------------------
 # _load_species_vocab
 # ---------------------------------------------------------------------------
+
 
 class TestLoadSpeciesVocab:
     def test_missing_dir_returns_empty(self, tmp_path):
@@ -96,6 +106,7 @@ class TestLoadSpeciesVocab:
 # ---------------------------------------------------------------------------
 # _BattleState
 # ---------------------------------------------------------------------------
+
 
 class TestBattleState:
     def setup_method(self):
@@ -145,7 +156,7 @@ class TestBattleState:
     def test_build_obs_species_ids(self):
         vocab = {"Garchomp": 0.3, "Flutter Mane": 0.7}
         obs = self.state.build_obs("Garchomp", "Flutter Mane", 5, vocab)
-        assert obs[0] == pytest.approx(0.3)   # active species
+        assert obs[0] == pytest.approx(0.3)  # active species
         assert obs[29] == pytest.approx(0.7)  # opponent species
 
     def test_build_obs_turn_normalised(self):
@@ -157,9 +168,11 @@ class TestBattleState:
 
     def test_team_hps_in_obs(self):
         active = {"p1a": "Garchomp", "p2a": "Flutter Mane"}
-        self.state.apply_events([_make_event("damage", slot="p1a", hp_after=0.5)], active)
+        self.state.apply_events(
+            [_make_event("damage", slot="p1a", hp_after=0.5)], active
+        )
         obs = self.state.build_obs("Garchomp", "Flutter Mane", 1, {})
-        assert obs[1] == pytest.approx(0.5)   # active hp
+        assert obs[1] == pytest.approx(0.5)  # active hp
         assert obs[32] == pytest.approx(0.5)  # team slot 0 HP (same Pokemon)
 
 
@@ -167,9 +180,17 @@ class TestBattleState:
 # _infer_action
 # ---------------------------------------------------------------------------
 
+
 class TestInferAction:
     def test_switch_action(self):
-        team = ["Garchomp", "Miraidon", "Iron Hands", "Rillaboom", "Incineroar", "Torkoal"]
+        team = [
+            "Garchomp",
+            "Miraidon",
+            "Iron Hands",
+            "Rillaboom",
+            "Incineroar",
+            "Torkoal",
+        ]
         events = [_make_event("switch", slot="p1a", detail="Iron Hands")]
         action = _infer_action(events, "p1", team)
         assert action == 2  # slot 2 in team list
@@ -183,7 +204,7 @@ class TestInferAction:
     def test_move_action_default(self):
         events = [_make_event("move", slot="p1a", detail="Earthquake")]
         action = _infer_action(events, "p1", [])
-        assert action == 6   # _ACTION_MOVE_BASE
+        assert action == 6  # _ACTION_MOVE_BASE
 
     def test_tera_move_action(self):
         events = [
@@ -197,7 +218,7 @@ class TestInferAction:
         team = ["Garchomp", "Miraidon"]
         events = [_make_event("switch", slot="p2a", detail="Miraidon")]
         action = _infer_action(events, "p1", team)
-        assert action == 6   # falls back to move default
+        assert action == 6  # falls back to move default
 
     def test_no_events_returns_default(self):
         action = _infer_action([], "p1", [])
@@ -213,6 +234,7 @@ class TestInferAction:
 # ---------------------------------------------------------------------------
 # _one_hot_action
 # ---------------------------------------------------------------------------
+
 
 class TestOneHotAction:
     def test_shape(self):
@@ -231,15 +253,20 @@ class TestOneHotAction:
 # record_to_transitions
 # ---------------------------------------------------------------------------
 
+
 class TestRecordToTransitions:
     def test_winner_perspective_skip_tie(self):
         record = _make_record(winner="tie")
-        obs, acts, probs, reward = record_to_transitions(record, {}, perspective="winner")
+        obs, acts, probs, reward = record_to_transitions(
+            record, {}, perspective="winner"
+        )
         assert obs == []
 
     def test_winner_perspective_skip_unknown(self):
         record = _make_record(winner="unknown")
-        obs, acts, probs, reward = record_to_transitions(record, {}, perspective="winner")
+        obs, acts, probs, reward = record_to_transitions(
+            record, {}, perspective="winner"
+        )
         assert obs == []
 
     def test_winner_gets_positive_reward(self):
@@ -261,7 +288,9 @@ class TestRecordToTransitions:
             _make_turn(3, "Miraidon", "Urshifu"),
         ]
         record = _make_record(winner="p1", turns=turns)
-        obs, acts, probs, reward = record_to_transitions(record, {}, perspective="winner")
+        obs, acts, probs, reward = record_to_transitions(
+            record, {}, perspective="winner"
+        )
         assert len(obs) == 3
         assert len(acts) == 3
         assert len(probs) == 3
@@ -295,6 +324,7 @@ class TestRecordToTransitions:
 # ---------------------------------------------------------------------------
 # ReplayIngester
 # ---------------------------------------------------------------------------
+
 
 class TestReplayIngester:
     def test_list_formats_empty_dir(self, tmp_path):

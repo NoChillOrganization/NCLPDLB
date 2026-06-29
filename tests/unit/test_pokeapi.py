@@ -1,4 +1,5 @@
 """Tests for src/data/pokeapi.py — PokemonDatabase methods."""
+
 import json
 import pytest
 
@@ -10,7 +11,14 @@ SAMPLE_DATA = [
         "national_dex": 1,
         "name": "Bulbasaur",
         "types": ["grass", "poison"],
-        "base_stats": {"hp": 45, "atk": 49, "def_": 49, "spa": 65, "spd": 65, "spe": 45},
+        "base_stats": {
+            "hp": 45,
+            "atk": 49,
+            "def_": 49,
+            "spa": 65,
+            "spd": 65,
+            "spe": 45,
+        },
         "abilities": ["Overgrow"],
         "hidden_ability": "Chlorophyll",
         "generation": 1,
@@ -27,7 +35,14 @@ SAMPLE_DATA = [
         "national_dex": 6,
         "name": "Charizard",
         "types": ["fire", "flying"],
-        "base_stats": {"hp": 78, "atk": 84, "def_": 78, "spa": 109, "spd": 85, "spe": 100},
+        "base_stats": {
+            "hp": 78,
+            "atk": 84,
+            "def_": 78,
+            "spa": 109,
+            "spd": 85,
+            "spe": 100,
+        },
         "abilities": ["Blaze"],
         "hidden_ability": "Solar Power",
         "generation": 1,
@@ -44,7 +59,14 @@ SAMPLE_DATA = [
         "national_dex": 144,
         "name": "Articuno",
         "types": ["ice", "flying"],
-        "base_stats": {"hp": 90, "atk": 85, "def_": 100, "spa": 95, "spd": 125, "spe": 85},
+        "base_stats": {
+            "hp": 90,
+            "atk": 85,
+            "def_": 100,
+            "spa": 95,
+            "spd": 125,
+            "spe": 85,
+        },
         "abilities": ["Pressure"],
         "hidden_ability": "Snow Cloak",
         "generation": 1,

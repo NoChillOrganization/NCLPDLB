@@ -13,6 +13,7 @@ All tabs are safe to run again — existing tabs are skipped.
 
 Requires ML_LEARNING_SPREADSHEET_ID and GOOGLE_SHEETS_CREDENTIALS_FILE in .env
 """
+
 from __future__ import annotations
 
 import sys
@@ -24,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # ── Clock skew fix ────────────────────────────────────────────
 # Shared helper — see scripts/_clock_skew.py for details (M33)
 from _clock_skew import apply_google_clock_skew
+
 apply_google_clock_skew()
 
 from src.config import settings
@@ -40,20 +42,44 @@ SCOPES = [
 
 # All formats that may have per-format tabs (mirrors SPAR_FORMATS in stats.py)
 SPAR_FORMATS = [
-    "gen9randombattle", "gen9monorandom", "gen9randomdoublesbattle",
-    "gen7randombattle", "gen6randombattle",
-    "gen9ou", "gen9ubers", "gen9uu", "gen9ru", "gen9nu", "gen9pu", "gen9zu",
-    "gen9lc", "gen9monotype", "gen9nationaldex", "gen9anythinggoes",
-    "gen9doublesou", "gen9doublesubers", "gen9doublesuu", "gen9doublesnu",
-    "gen9vgc2025regg", "gen9vgc2025regh", "gen9vgc2025regi",
-    "gen9vgc2025reggbo3", "gen9vgc2025reghbo3", "gen9vgc2025regibo3",
-    "gen9vgc2026regi", "gen9vgc2026regibo3",
-    "gen9championsou", "gen9championsbssregma",
-    "gen9championsvgc2026regma", "gen9championsvgc2026regmabo3",
+    "gen9randombattle",
+    "gen9monorandom",
+    "gen9randomdoublesbattle",
+    "gen7randombattle",
+    "gen6randombattle",
+    "gen9ou",
+    "gen9ubers",
+    "gen9uu",
+    "gen9ru",
+    "gen9nu",
+    "gen9pu",
+    "gen9zu",
+    "gen9lc",
+    "gen9monotype",
+    "gen9nationaldex",
+    "gen9anythinggoes",
+    "gen9doublesou",
+    "gen9doublesubers",
+    "gen9doublesuu",
+    "gen9doublesnu",
+    "gen9vgc2025regg",
+    "gen9vgc2025regh",
+    "gen9vgc2025regi",
+    "gen9vgc2025reggbo3",
+    "gen9vgc2025reghbo3",
+    "gen9vgc2025regibo3",
+    "gen9vgc2026regi",
+    "gen9vgc2026regibo3",
+    "gen9championsou",
+    "gen9championsbssregma",
+    "gen9championsvgc2026regma",
+    "gen9championsvgc2026regmabo3",
 ]
 
 
-def _get_or_create(spreadsheet: gspread.Spreadsheet, title: str, headers: list[str]) -> str:
+def _get_or_create(
+    spreadsheet: gspread.Spreadsheet, title: str, headers: list[str]
+) -> str:
     """Return 'existing' or 'created' for a tab."""
     try:
         spreadsheet.worksheet(title)
@@ -82,7 +108,7 @@ def main() -> None:
 
     # Core tabs
     for title, headers in [
-        ("Replays",       REPLAY_HEADERS),
+        ("Replays", REPLAY_HEADERS),
         ("Training Runs", TRAINING_RUN_HEADERS),
     ]:
         status = _get_or_create(spreadsheet, title, headers)

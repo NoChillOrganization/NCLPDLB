@@ -44,6 +44,7 @@ AUDIT RESULTS (run 2026-03-17 with .venv/Scripts/pytest):
 #   - infra skip: 1 documentation test for Showdown server requirement
 #   - sklearn 1.8.0 installed during audit setup (was absent; now in .venv)
 """
+
 from __future__ import annotations
 
 import importlib
@@ -69,19 +70,26 @@ MINIMAL_LOG = (
 
 # ── Level 1: Import tests (all 11 modules) ────────────────────────────────────
 
-@pytest.mark.parametrize("module_path,requires", [
-    ("src.ml.replay_parser", []),
-    ("src.ml.teams", []),
-    ("src.ml.train_all", []),
-    ("src.ml.replay_scraper", ["aiohttp"]),
-    ("src.ml.feature_extractor", ["numpy"]),
-    ("src.ml.train_matchup", ["numpy", "sklearn"]),
-    ("src.ml.battle_env", ["numpy"]),
-    ("src.ml.train_policy", ["numpy"]),
-    ("src.ml.showdown_player", ["numpy", "gspread"]),  # top-level sheets import requires gspread
-    ("src.ml.teambuilder", ["poke_env"]),
-    ("src.ml.models", []),
-])
+
+@pytest.mark.parametrize(
+    "module_path,requires",
+    [
+        ("src.ml.replay_parser", []),
+        ("src.ml.teams", []),
+        ("src.ml.train_all", []),
+        ("src.ml.replay_scraper", ["aiohttp"]),
+        ("src.ml.feature_extractor", ["numpy"]),
+        ("src.ml.train_matchup", ["numpy", "sklearn"]),
+        ("src.ml.battle_env", ["numpy"]),
+        ("src.ml.train_policy", ["numpy"]),
+        (
+            "src.ml.showdown_player",
+            ["numpy", "gspread"],
+        ),  # top-level sheets import requires gspread
+        ("src.ml.teambuilder", ["poke_env"]),
+        ("src.ml.models", []),
+    ],
+)
 def test_module_imports(module_path, requires):
     """Level 1: every ml module must import without raising."""
     for dep in requires:
@@ -91,6 +99,7 @@ def test_module_imports(module_path, requires):
 
 
 # ── Level 2: Smoke tests ──────────────────────────────────────────────────────
+
 
 def test_replay_parser_smoke():
     """Level 2: parse_log() produces a correct BattleRecord from MINIMAL_LOG."""
@@ -199,6 +208,7 @@ def test_teams_showdown_format():
 
 # ── Level 3: Infra documentation ──────────────────────────────────────────────
 
+
 def test_infra_dependent_modules_require_showdown():
     """Level 3: Documents infra requirements — always skips (documentation artifact).
 
@@ -217,6 +227,7 @@ def test_infra_dependent_modules_require_showdown():
 
 # ── Level 3: POKE_ENV_AVAILABLE flag checks ───────────────────────────────────
 
+
 def test_battle_env_poke_env_flag():
     """Level 3: Import battle_env and record POKE_ENV_AVAILABLE value."""
     pytest.importorskip("numpy")  # top-level numpy import in battle_env
@@ -234,7 +245,9 @@ def test_battle_env_poke_env_flag():
 
 def test_train_policy_poke_env_flag():
     """Level 3: Import train_policy and record POKE_ENV_AVAILABLE value."""
-    pytest.importorskip("numpy")  # needed for top-level numpy import in battle_env (dep)
+    pytest.importorskip(
+        "numpy"
+    )  # needed for top-level numpy import in battle_env (dep)
 
     import src.ml.train_policy as train_policy_mod
 

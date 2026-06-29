@@ -7,6 +7,7 @@ ML Utils — 100% coverage tests for:
 Run:
     .venv/Scripts/python -m pytest tests/unit/test_ml_utils.py -v
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -44,17 +45,25 @@ def _exc_cm(exc):
 
 # ── showdown_modes ─────────────────────────────────────────────────────────────
 
+
 class TestShowdownModeConstants:
     """Verify the module-level constants are present and correct."""
 
     def test_mode_constants_exist(self):
         from src.ml.showdown_modes import MODE_LOCALHOST, MODE_SHOWDOWN, MODE_BROWSER
+
         assert MODE_LOCALHOST == "localhost"
         assert MODE_SHOWDOWN == "showdown"
         assert MODE_BROWSER == "browser"
 
     def test_valid_modes_contains_all_three(self):
-        from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_SHOWDOWN, MODE_BROWSER
+        from src.ml.showdown_modes import (
+            VALID_MODES,
+            MODE_LOCALHOST,
+            MODE_SHOWDOWN,
+            MODE_BROWSER,
+        )
+
         assert MODE_LOCALHOST in VALID_MODES
         assert MODE_SHOWDOWN in VALID_MODES
         assert MODE_BROWSER in VALID_MODES
@@ -96,6 +105,7 @@ class TestAccountConfigsForMode:
 
     def test_localhost_returns_none_pair(self):
         from src.ml.showdown_modes import account_configs_for_mode
+
         acc1, acc2 = account_configs_for_mode("localhost")
         assert acc1 is None
         assert acc2 is None
@@ -104,8 +114,16 @@ class TestAccountConfigsForMode:
         import os
         from unittest.mock import patch
         from src.ml.showdown_modes import account_configs_for_mode
-        blank = {k: "" for k in ("SHOWDOWN_TRAIN_USER1", "SHOWDOWN_TRAIN_PASS1",
-                                  "SHOWDOWN_TRAIN_USER2", "SHOWDOWN_TRAIN_PASS2")}
+
+        blank = {
+            k: ""
+            for k in (
+                "SHOWDOWN_TRAIN_USER1",
+                "SHOWDOWN_TRAIN_PASS1",
+                "SHOWDOWN_TRAIN_USER2",
+                "SHOWDOWN_TRAIN_PASS2",
+            )
+        }
         with patch.dict(os.environ, blank):
             with pytest.raises(ValueError, match="SHOWDOWN_TRAIN_USER1"):
                 account_configs_for_mode("browser")
@@ -134,9 +152,17 @@ class TestAccountConfigsForMode:
         from src.ml.showdown_modes import account_configs_for_mode
 
         # Remove all 4 env vars if present
-        clean_env = {k: v for k, v in os.environ.items()
-                     if k not in ("SHOWDOWN_TRAIN_USER1", "SHOWDOWN_TRAIN_PASS1",
-                                  "SHOWDOWN_TRAIN_USER2", "SHOWDOWN_TRAIN_PASS2")}
+        clean_env = {
+            k: v
+            for k, v in os.environ.items()
+            if k
+            not in (
+                "SHOWDOWN_TRAIN_USER1",
+                "SHOWDOWN_TRAIN_PASS1",
+                "SHOWDOWN_TRAIN_USER2",
+                "SHOWDOWN_TRAIN_PASS2",
+            )
+        }
         with patch.dict(os.environ, clean_env, clear=True):
             with pytest.raises(ValueError, match="SHOWDOWN_TRAIN_USER1"):
                 account_configs_for_mode("showdown")
@@ -150,9 +176,17 @@ class TestAccountConfigsForMode:
             "SHOWDOWN_TRAIN_USER1": "user1",
             "SHOWDOWN_TRAIN_PASS1": "pass1",
         }
-        clean_env = {k: v for k, v in os.environ.items()
-                     if k not in ("SHOWDOWN_TRAIN_USER1", "SHOWDOWN_TRAIN_PASS1",
-                                  "SHOWDOWN_TRAIN_USER2", "SHOWDOWN_TRAIN_PASS2")}
+        clean_env = {
+            k: v
+            for k, v in os.environ.items()
+            if k
+            not in (
+                "SHOWDOWN_TRAIN_USER1",
+                "SHOWDOWN_TRAIN_PASS1",
+                "SHOWDOWN_TRAIN_USER2",
+                "SHOWDOWN_TRAIN_PASS2",
+            )
+        }
         clean_env.update(partial_env)
         with patch.dict(os.environ, clean_env, clear=True):
             with pytest.raises(ValueError):
@@ -170,27 +204,44 @@ class TestClientPoolForMode:
 
     def test_localhost_mode_uses_local_url(self):
         from unittest.mock import MagicMock, patch as _patch
-        from src.ml.showdown_modes import LOCAL_WS_URL, ACCOUNT_A, ACCOUNT_B, client_pool_for_mode
+        from src.ml.showdown_modes import (
+            LOCAL_WS_URL,
+            ACCOUNT_A,
+            ACCOUNT_B,
+            client_pool_for_mode,
+        )
+
         mock_pool_cls = MagicMock()
         with _patch(self._PATCH_TARGET, mock_pool_cls):
             client_pool_for_mode("localhost")
         mock_pool_cls.assert_called_once_with(
-            username_a=ACCOUNT_A, username_b=ACCOUNT_B, url=LOCAL_WS_URL,
+            username_a=ACCOUNT_A,
+            username_b=ACCOUNT_B,
+            url=LOCAL_WS_URL,
         )
 
     def test_browser_mode_uses_local_url(self):
         from unittest.mock import MagicMock, patch as _patch
-        from src.ml.showdown_modes import LOCAL_WS_URL, ACCOUNT_A, ACCOUNT_B, client_pool_for_mode
+        from src.ml.showdown_modes import (
+            LOCAL_WS_URL,
+            ACCOUNT_A,
+            ACCOUNT_B,
+            client_pool_for_mode,
+        )
+
         mock_pool_cls = MagicMock()
         with _patch(self._PATCH_TARGET, mock_pool_cls):
             client_pool_for_mode("browser")
         mock_pool_cls.assert_called_once_with(
-            username_a=ACCOUNT_A, username_b=ACCOUNT_B, url=LOCAL_WS_URL,
+            username_a=ACCOUNT_A,
+            username_b=ACCOUNT_B,
+            url=LOCAL_WS_URL,
         )
 
     def test_showdown_mode_uses_public_url_and_env_creds(self):
         from unittest.mock import MagicMock, patch as _patch
         from src.ml.showdown_modes import client_pool_for_mode
+
         mock_pool_cls = MagicMock()
         env_vars = {
             "SHOWDOWN_TRAIN_USER1": "user1",
@@ -198,8 +249,10 @@ class TestClientPoolForMode:
             "SHOWDOWN_TRAIN_USER2": "user2",
             "SHOWDOWN_TRAIN_PASS2": "pass2",
         }
-        with _patch(self._PATCH_TARGET, mock_pool_cls), \
-             patch.dict(os.environ, env_vars):
+        with (
+            _patch(self._PATCH_TARGET, mock_pool_cls),
+            patch.dict(os.environ, env_vars),
+        ):
             client_pool_for_mode("showdown")
         call_kwargs = mock_pool_cls.call_args.kwargs
         assert call_kwargs["username_a"] == "user1"
@@ -212,12 +265,23 @@ class TestClientPoolForMode:
         """Without env vars, falls back to ACCOUNT_A/B with empty passwords."""
         from unittest.mock import MagicMock, patch as _patch
         from src.ml.showdown_modes import client_pool_for_mode, ACCOUNT_A, ACCOUNT_B
+
         mock_pool_cls = MagicMock()
-        clean_env = {k: v for k, v in os.environ.items()
-                     if k not in ("SHOWDOWN_TRAIN_USER1", "SHOWDOWN_TRAIN_PASS1",
-                                  "SHOWDOWN_TRAIN_USER2", "SHOWDOWN_TRAIN_PASS2")}
-        with _patch(self._PATCH_TARGET, mock_pool_cls), \
-             patch.dict(os.environ, clean_env, clear=True):
+        clean_env = {
+            k: v
+            for k, v in os.environ.items()
+            if k
+            not in (
+                "SHOWDOWN_TRAIN_USER1",
+                "SHOWDOWN_TRAIN_PASS1",
+                "SHOWDOWN_TRAIN_USER2",
+                "SHOWDOWN_TRAIN_PASS2",
+            )
+        }
+        with (
+            _patch(self._PATCH_TARGET, mock_pool_cls),
+            patch.dict(os.environ, clean_env, clear=True),
+        ):
             client_pool_for_mode("showdown")
         call_kwargs = mock_pool_cls.call_args.kwargs
         assert call_kwargs["username_a"] == ACCOUNT_A
@@ -226,6 +290,7 @@ class TestClientPoolForMode:
     def test_returns_pool_instance(self):
         from unittest.mock import MagicMock, patch as _patch
         from src.ml.showdown_modes import client_pool_for_mode
+
         mock_instance = MagicMock()
         mock_pool_cls = MagicMock(return_value=mock_instance)
         with _patch(self._PATCH_TARGET, mock_pool_cls):
@@ -234,6 +299,7 @@ class TestClientPoolForMode:
 
 
 # ── teambuilder ────────────────────────────────────────────────────────────────
+
 
 class TestRotatingTeambuilder:
     """RotatingTeambuilder cycles through teams round-robin."""
@@ -295,12 +361,14 @@ class TestRotatingTeambuilder:
         from src.ml.teambuilder import RotatingTeambuilder
 
         tb = RotatingTeambuilder([self.TEAM_A, self.TEAM_B])
-        first = tb.yield_team()   # index 0
+        first = tb.yield_team()  # index 0
         second = tb.yield_team()  # index 1
-        third = tb.yield_team()   # index 0 again (wraps)
+        third = tb.yield_team()  # index 0 again (wraps)
 
         assert first == third, "Round-robin should wrap back to first team"
-        assert first != second, "Two different teams should produce different packed strings"
+        assert first != second, (
+            "Two different teams should produce different packed strings"
+        )
 
     def test_yield_team_increments_index(self):
         pytest.importorskip("poke_env")
@@ -324,10 +392,13 @@ class TestRotatingTeambuilder:
         assert len(tb) == len(teams)
         # Cycle through all teams once
         results = [tb.yield_team() for _ in range(len(teams))]
-        assert len(set(results)) == len(teams), "Each team should produce a unique packed string"
+        assert len(set(results)) == len(teams), (
+            "Each team should produce a unique packed string"
+        )
 
 
 # ── replay_scraper ─────────────────────────────────────────────────────────────
+
 
 class TestReplayMeta:
     """ReplayMeta dataclass stores fields from API dict."""
@@ -376,7 +447,9 @@ class TestReplayMeta:
         pytest.importorskip("aiohttp")
         from src.ml.replay_scraper import ReplayMeta
 
-        meta = ReplayMeta({"id": "gen9ou-99", "p1": "Ash", "p2": "Gary", "rating": 1600})
+        meta = ReplayMeta(
+            {"id": "gen9ou-99", "p1": "Ash", "p2": "Gary", "rating": 1600}
+        )
         r = repr(meta)
         assert "gen9ou-99" in r
         assert "Ash" in r
@@ -440,14 +513,27 @@ class TestFetchSearchPage:
 
         scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
         page_data = [
-            {"id": "gen9ou-1", "format": "gen9ou", "p1": "Alice", "p2": "Bob",
-             "rating": 1700, "uploadtime": 1700000001},
-            {"id": "gen9ou-2", "format": "gen9ou", "p1": "Carol", "p2": "Dan",
-             "rating": 1650, "uploadtime": 1700000002},
+            {
+                "id": "gen9ou-1",
+                "format": "gen9ou",
+                "p1": "Alice",
+                "p2": "Bob",
+                "rating": 1700,
+                "uploadtime": 1700000001,
+            },
+            {
+                "id": "gen9ou-2",
+                "format": "gen9ou",
+                "p1": "Carol",
+                "p2": "Dan",
+                "rating": 1650,
+                "uploadtime": 1700000002,
+            },
         ]
 
         async def run():
             import aiohttp
+
             async with aiohttp.ClientSession() as session:
                 session.get = MagicMock(return_value=_resp_cm(payload=page_data))
                 return await scraper._fetch_search_page(session, page=1)
@@ -465,6 +551,7 @@ class TestFetchSearchPage:
 
         async def run():
             import aiohttp
+
             async with aiohttp.ClientSession() as session:
                 session.get = MagicMock(return_value=_resp_cm(status=503))
                 return await scraper._fetch_search_page(session, page=1)
@@ -480,8 +567,11 @@ class TestFetchSearchPage:
 
         async def run():
             import aiohttp
+
             async with aiohttp.ClientSession() as session:
-                session.get = MagicMock(return_value=_exc_cm(aiohttp.ClientError("network error")))
+                session.get = MagicMock(
+                    return_value=_exc_cm(aiohttp.ClientError("network error"))
+                )
                 return await scraper._fetch_search_page(session, page=1)
 
         result = asyncio.run(run())
@@ -495,8 +585,11 @@ class TestFetchSearchPage:
 
         async def run():
             import aiohttp
+
             async with aiohttp.ClientSession() as session:
-                session.get = MagicMock(return_value=_resp_cm(payload={"error": "not found"}))
+                session.get = MagicMock(
+                    return_value=_resp_cm(payload={"error": "not found"})
+                )
                 return await scraper._fetch_search_page(session, page=1)
 
         result = asyncio.run(run())
@@ -514,6 +607,7 @@ class TestFetchSearchPage:
 
         async def run():
             import aiohttp
+
             async with aiohttp.ClientSession() as session:
                 session.get = MagicMock(return_value=_resp_cm(payload=page_data))
                 return await scraper._fetch_search_page(session, page=1)
@@ -536,6 +630,7 @@ class TestFetchReplay:
 
         async def run():
             import aiohttp
+
             semaphore = asyncio.Semaphore(5)
             async with aiohttp.ClientSession() as session:
                 return await scraper._fetch_replay(session, meta, semaphore)
@@ -552,6 +647,7 @@ class TestFetchReplay:
 
         async def run():
             import aiohttp
+
             semaphore = asyncio.Semaphore(5)
             async with aiohttp.ClientSession() as session:
                 session.get = MagicMock(return_value=_resp_cm(status=404))
@@ -569,9 +665,12 @@ class TestFetchReplay:
 
         async def run():
             import aiohttp
+
             semaphore = asyncio.Semaphore(5)
             async with aiohttp.ClientSession() as session:
-                session.get = MagicMock(return_value=_exc_cm(aiohttp.ClientError("fail")))
+                session.get = MagicMock(
+                    return_value=_exc_cm(aiohttp.ClientError("fail"))
+                )
                 return await scraper._fetch_replay(session, meta, semaphore)
 
         result = asyncio.run(run())
@@ -587,6 +686,7 @@ class TestFetchReplay:
 
         async def run():
             import aiohttp
+
             semaphore = asyncio.Semaphore(5)
             async with aiohttp.ClientSession() as session:
                 session.get = MagicMock(return_value=_resp_cm(payload=replay_json))
@@ -611,9 +711,12 @@ class TestFetchReplay:
 
         async def run():
             import aiohttp
+
             semaphore = asyncio.Semaphore(5)
             async with aiohttp.ClientSession() as session:
-                session.get = MagicMock(return_value=_resp_cm(payload={"id": "gen9ou-track", "log": ""}))
+                session.get = MagicMock(
+                    return_value=_resp_cm(payload={"id": "gen9ou-track", "log": ""})
+                )
                 return await scraper._fetch_replay(session, meta, semaphore)
 
         asyncio.run(run())
@@ -631,6 +734,7 @@ class TestFetchReplay:
 
         async def run():
             import aiohttp
+
             semaphore = asyncio.Semaphore(5)
             async with aiohttp.ClientSession() as session:
                 session.get = MagicMock(return_value=_resp_cm(payload=replay_json))
@@ -659,7 +763,7 @@ class TestScrape:
         responses = [
             _resp_cm(payload=search_page),  # search page 1
             _resp_cm(payload=replay_data),  # replay download
-            _resp_cm(payload=[]),           # search page 2 → stops
+            _resp_cm(payload=[]),  # search page 2 → stops
         ]
 
         async def run():
@@ -680,7 +784,7 @@ class TestScrape:
 
         responses = [
             _resp_cm(payload=search_page),  # page 1: all already seen
-            _resp_cm(payload=[]),           # page 2: empty → stops
+            _resp_cm(payload=[]),  # page 2: empty → stops
         ]
 
         async def run():

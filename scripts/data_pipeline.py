@@ -12,6 +12,7 @@ Usage:
 CRITICAL: Do NOT import from src.config — Settings() raises ValidationError
 without a .env file. All paths are computed from Path(__file__).parent.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -26,10 +27,10 @@ from pathlib import Path
 # Paths — project root is the parent of scripts/ (this file lives in scripts/)
 # ---------------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).parent.parent
-DATA_DIR     = PROJECT_ROOT / "data"
-REPLAYS_DIR  = DATA_DIR / "replays"
-ML_DIR       = DATA_DIR / "ml"
-VOCAB_DIR    = ML_DIR / "vocab"
+DATA_DIR = PROJECT_ROOT / "data"
+REPLAYS_DIR = DATA_DIR / "replays"
+ML_DIR = DATA_DIR / "ml"
+VOCAB_DIR = ML_DIR / "vocab"
 SCRAPER_PATH = PROJECT_ROOT / "src" / "ml" / "replay_scraper.py"
 
 # ---------------------------------------------------------------------------
@@ -48,24 +49,40 @@ log = logging.getLogger("data_pipeline")
 
 ALL_FORMATS = [
     # Smogon Gen 9 (9 formats)
-    "gen9ou", "gen9ubers", "gen9uu", "gen9ru", "gen9nu",
-    "gen9pu", "gen9lc", "gen9monotype", "gen9doublesou",
+    "gen9ou",
+    "gen9ubers",
+    "gen9uu",
+    "gen9ru",
+    "gen9nu",
+    "gen9pu",
+    "gen9lc",
+    "gen9monotype",
+    "gen9doublesou",
     # VGC Gen 9 Regulations (10 formats — Reg A through H + 2025)
-    "gen9vgc2023regulationa", "gen9vgc2023regulationb",
-    "gen9vgc2023regulationc", "gen9vgc2023regulationd",
-    "gen9vgc2024rege", "gen9vgc2024regf",
-    "gen9vgc2024regg", "gen9vgc2024regh",
-    "gen9vgc2024reggregf", "gen9vgc2025regg",
+    "gen9vgc2023regulationa",
+    "gen9vgc2023regulationb",
+    "gen9vgc2023regulationc",
+    "gen9vgc2023regulationd",
+    "gen9vgc2024rege",
+    "gen9vgc2024regf",
+    "gen9vgc2024regg",
+    "gen9vgc2024regh",
+    "gen9vgc2024reggregf",
+    "gen9vgc2025regg",
     # Draft League (1 format — yields 0 replays; private battles not on public ladder)
     "draftleague",
 ]
 
 PRIORITY_FORMATS = [
     "gen9ou",
-    "gen9vgc2023regulationa", "gen9vgc2023regulationb",
-    "gen9vgc2023regulationc", "gen9vgc2023regulationd",
-    "gen9vgc2024regg", "gen9vgc2024regh",
-    "gen9vgc2024reggregf", "gen9vgc2025regg",
+    "gen9vgc2023regulationa",
+    "gen9vgc2023regulationb",
+    "gen9vgc2023regulationc",
+    "gen9vgc2023regulationd",
+    "gen9vgc2024regg",
+    "gen9vgc2024regh",
+    "gen9vgc2024reggregf",
+    "gen9vgc2025regg",
 ]
 
 SPARSE_WARN_THRESHOLD = 200  # Named constant — not a magic number
@@ -83,6 +100,7 @@ _SEP = "-" * len(_HEADER)
 # ---------------------------------------------------------------------------
 # Functions
 # ---------------------------------------------------------------------------
+
 
 def get_system_python() -> str:
     """Return the system Python executable path (not .venv).
@@ -149,10 +167,15 @@ def scrape_format(fmt: str, pages: int, min_rating: int) -> int:
     system_python = get_system_python()
     result = subprocess.run(
         [
-            system_python, "-m", "src.ml.replay_scraper",
-            "--format", fmt,
-            "--pages", str(pages),
-            "--min-rating", str(min_rating),
+            system_python,
+            "-m",
+            "src.ml.replay_scraper",
+            "--format",
+            fmt,
+            "--pages",
+            str(pages),
+            "--min-rating",
+            str(min_rating),
         ],
         cwd=PROJECT_ROOT,
     )
@@ -301,7 +324,13 @@ def run_pipeline(formats: list[str], pages: int, min_rating: int) -> None:
         records = parse_replay_dir(replay_dir)
         records = [r for r in records if r.rating >= min_rating]
         parsed = len(records)
-        log.info("%s: scraped=%d, parsed=%d (after min_rating=%d)", fmt, scraped, parsed, min_rating)
+        log.info(
+            "%s: scraped=%d, parsed=%d (after min_rating=%d)",
+            fmt,
+            scraped,
+            parsed,
+            min_rating,
+        )
 
         # Step 3: Extract features
         if records:
@@ -333,7 +362,11 @@ def run_pipeline(formats: list[str], pages: int, min_rating: int) -> None:
         )
 
         sparse = scraped < SPARSE_WARN_THRESHOLD
-        rows.append(_format_result_row(fmt, scraped, parsed, X_team.shape, X_state.shape, sparse))
+        rows.append(
+            _format_result_row(
+                fmt, scraped, parsed, X_team.shape, X_state.shape, sparse
+            )
+        )
         log.info("Saved .npy files to %s", fmt_ml_dir)
 
     # Print summary table
@@ -348,6 +381,7 @@ def run_pipeline(formats: list[str], pages: int, min_rating: int) -> None:
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
+
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(

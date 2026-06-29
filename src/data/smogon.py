@@ -3,6 +3,7 @@ Smogon strategy scraper — fetches tier data and strategy descriptions.
 Uses httpx (async) + BeautifulSoup to parse Smogon's analysis pages.
 Falls back gracefully if network is unavailable.
 """
+
 from __future__ import annotations
 
 import json
@@ -16,13 +17,20 @@ import httpx
 log = logging.getLogger(__name__)
 
 SMOGON_BASE = "https://www.smogon.com"
-SMOGON_DEX_API = "https://smogon.com/dex/_rg/pokemon"   # returns embedded JSON
+SMOGON_DEX_API = "https://smogon.com/dex/_rg/pokemon"  # returns embedded JSON
 LOCAL_TIERS_FILE = Path(__file__).parent.parent.parent / "data" / "tiers.json"
 
 # Mapping of Smogon gen slugs used in URLs
 GEN_SLUGS = {
-    9: "sv", 8: "ss", 7: "sm", 6: "xy", 5: "bw",
-    4: "dp", 3: "rs", 2: "gs", 1: "rb",
+    9: "sv",
+    8: "ss",
+    7: "sm",
+    6: "xy",
+    5: "bw",
+    4: "dp",
+    3: "rs",
+    2: "gs",
+    1: "rb",
 }
 
 
@@ -79,7 +87,7 @@ async def fetch_smogon_tiers(gen: int = 9) -> dict[str, str]:
             name: str = poke_data.get("name", "").lower()
             formats: list[str] = poke_data.get("formats", [])
             if name and formats:
-                tiers[name] = formats[0]   # First format is the primary tier
+                tiers[name] = formats[0]  # First format is the primary tier
 
     if tiers:
         _save_cached_tiers(tiers)
@@ -143,7 +151,7 @@ async def fetch_pokemon_strategy(pokemon_name: str, gen: int = 9) -> str:
                         overview = strategies[0].get("overview", "")
                         # Strip HTML tags
                         clean = re.sub(r"<[^>]+>", "", overview).strip()
-                        return clean[:300]   # Truncate for Discord embed
+                        return clean[:300]  # Truncate for Discord embed
     return ""
 
 
@@ -169,22 +177,30 @@ async def update_pokemon_strategies(
     if limit:
         to_update = to_update[:limit]
 
-    log.info("[smogon] Fetching strategies for %d Pokemon (gen %s)…", len(to_update), gen)
+    log.info(
+        "[smogon] Fetching strategies for %d Pokemon (gen %s)…", len(to_update), gen
+    )
     updated = 0
     for entry in to_update:
         strategy = await fetch_pokemon_strategy(entry["name"], gen)
         if strategy:
             entry["smogon_strategy"] = strategy
             updated += 1
-        await asyncio.sleep(0.5)   # Polite rate limit
+        await asyncio.sleep(0.5)  # Polite rate limit
 
     with pokemon_json_path.open("w", encoding="utf-8") as f:
-        json.dump(sorted(entries, key=lambda x: x["national_dex"]), f, indent=2, ensure_ascii=False)
+        json.dump(
+            sorted(entries, key=lambda x: x["national_dex"]),
+            f,
+            indent=2,
+            ensure_ascii=False,
+        )
 
     log.info("[smogon] Done — updated %d strategy descriptions", updated)
 
 
 # ── Cache helpers ──────────────────────────────────────────────
+
 
 def _load_cached_tiers() -> dict[str, str]:
     if LOCAL_TIERS_FILE.exists():

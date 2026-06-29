@@ -10,6 +10,7 @@ To run locally:
     #    node F:\\NCLPDLB\\pokemon-showdown\\pokemon-showdown start --no-security
     # 2. pytest tests/integration/test_transformer_selfplay.py -v
 """
+
 from __future__ import annotations
 
 import socket
@@ -25,7 +26,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.ml.battle_env import POKE_ENV_AVAILABLE  # noqa: E402
 
 
-def _server_reachable(host: str = "127.0.0.1", port: int = 8000, timeout: float = 1.0) -> bool:
+def _server_reachable(
+    host: str = "127.0.0.1", port: int = 8000, timeout: float = 1.0
+) -> bool:
     """Return True if a TCP connection to host:port succeeds within timeout seconds."""
     try:
         with socket.create_connection((host, port), timeout=timeout):
@@ -80,8 +83,7 @@ def test_train_produces_checkpoint_and_log(tmp_path: Path) -> None:
     assert log_file.exists(), "Training log file must exist"
 
     epoch_lines = [
-        ln for ln in log_file.read_text(encoding="utf-8").splitlines()
-        if "epoch=" in ln
+        ln for ln in log_file.read_text(encoding="utf-8").splitlines() if "epoch=" in ln
     ]
     assert len(epoch_lines) >= 1, (
         f"Expected >= 1 epoch log line; got {len(epoch_lines)}:\n"

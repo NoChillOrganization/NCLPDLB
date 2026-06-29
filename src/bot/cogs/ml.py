@@ -1,6 +1,7 @@
 """
 ML Cog — /ml-stats command and startup stats cache.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -16,6 +17,7 @@ log = logging.getLogger(__name__)
 
 try:
     from src.data.sheets import learning_sheets
+
     _SHEETS_AVAILABLE = True
 except Exception:  # pragma: no cover
     learning_sheets = None  # type: ignore
@@ -39,8 +41,8 @@ def _build_stats_table(rows: list[dict]) -> str:
     """Render stats as a fixed-width code-block table."""
     if not rows:
         return "No battle data recorded yet."
-    col_fmt    = max(len(r["format"]) for r in rows)
-    col_fmt    = max(col_fmt, 6)
+    col_fmt = max(len(r["format"]) for r in rows)
+    col_fmt = max(col_fmt, 6)
     header = (
         f"{'Format':<{col_fmt}}  {'Battles':>7}  {'Win%':>6}  "
         f"{'Last Ckpt':<20}  {'Step':>8}  Last Trained"
@@ -48,9 +50,9 @@ def _build_stats_table(rows: list[dict]) -> str:
     sep = "─" * len(header)
     lines = [header, sep]
     for r in rows:
-        ckpt  = _fmt_ckpt(r.get("last_checkpoint", "—"))
-        step  = r.get("last_step", "—")
-        ts    = r.get("last_trained", "—")
+        ckpt = _fmt_ckpt(r.get("last_checkpoint", "—"))
+        step = r.get("last_step", "—")
+        ts = r.get("last_trained", "—")
         # truncate timestamp to date only
         if ts and ts != "—":
             ts = ts[:10]
@@ -77,7 +79,9 @@ class MLCog(commands.Cog, name="ML"):
         if not _SHEETS_AVAILABLE or not learning_sheets or not learning_sheets.enabled:
             return
         try:
-            rows = await asyncio.get_running_loop().run_in_executor(None, learning_sheets.get_stats_table)
+            rows = await asyncio.get_running_loop().run_in_executor(
+                None, learning_sheets.get_stats_table
+            )
             async with self._cache_lock:
                 self._stats_cache = rows
             log.info("[MLCog] Stats cache refreshed: %d formats", len(rows))
@@ -86,7 +90,9 @@ class MLCog(commands.Cog, name="ML"):
 
     # ── /ml-stats ─────────────────────────────────────────────────────
 
-    @app_commands.command(name="ml-stats", description="Show ML training stats per format")
+    @app_commands.command(
+        name="ml-stats", description="Show ML training stats per format"
+    )
     @require_role(ROLE_COACH)
     @app_commands.describe(refresh="Re-fetch latest data from the sheet")
     async def ml_stats(
@@ -115,7 +121,8 @@ class MLCog(commands.Cog, name="ML"):
         formats_with_data = len(rows)
         overall_wr = (
             sum(r["win_rate"] * r["battles"] for r in rows) / total_battles
-            if total_battles > 0 else None
+            if total_battles > 0
+            else None
         )
 
         embed = discord.Embed(
@@ -124,9 +131,15 @@ class MLCog(commands.Cog, name="ML"):
             color=discord.Color.purple(),
         )
         embed.add_field(name="Total Battles", value=str(total_battles), inline=True)
-        embed.add_field(name="Formats Tracked", value=str(formats_with_data), inline=True)
-        embed.add_field(name="Overall Win Rate", value=_fmt_pct(overall_wr), inline=True)
-        embed.set_footer(text="Data from ML learning spreadsheet · /ml-stats refresh:True to update")
+        embed.add_field(
+            name="Formats Tracked", value=str(formats_with_data), inline=True
+        )
+        embed.add_field(
+            name="Overall Win Rate", value=_fmt_pct(overall_wr), inline=True
+        )
+        embed.set_footer(
+            text="Data from ML learning spreadsheet · /ml-stats refresh:True to update"
+        )
 
         await interaction.followup.send(embed=embed)
 

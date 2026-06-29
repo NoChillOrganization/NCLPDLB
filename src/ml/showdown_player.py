@@ -35,6 +35,7 @@ Requirements
 ────────────
   pip install poke-env>=0.8.1 stable-baselines3>=2.2.0
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -48,6 +49,7 @@ log = logging.getLogger(__name__)
 
 try:  # pragma: no cover
     from stable_baselines3 import PPO
+
     SB3_OK = True
 except ImportError:  # pragma: no cover
     SB3_OK = False
@@ -56,6 +58,7 @@ except ImportError:  # pragma: no cover
 try:
     from poke_env.battle import AbstractBattle
     from poke_env.player import Player
+
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
@@ -63,6 +66,7 @@ except ImportError:  # pragma: no cover
 
 try:
     from src.data.sheets import learning_sheets
+
     SHEETS_AVAILABLE = True
 except ImportError:  # pragma: no cover
     learning_sheets = None  # type: ignore
@@ -98,6 +102,7 @@ def resolve_transformer_checkpoint(path: str | Path | None = None) -> Path | Non
 # ── Bot player ────────────────────────────────────────────────────────────────
 
 if POKE_ENV_AVAILABLE:
+
     class ShowdownBotPlayer(Player):
         """
         poke-env Player that drives decisions from a trained PPO policy.
@@ -145,20 +150,28 @@ if POKE_ENV_AVAILABLE:
                     "Run: pip install stable-baselines3>=2.2.0"
                 )
             from src.ml.battle_env import OBS_DIM
+
             policy = PPO.load(str(path))
-            loaded_dim = policy.observation_space.shape[0] if policy.observation_space.shape else None
+            loaded_dim = (
+                policy.observation_space.shape[0]
+                if policy.observation_space.shape
+                else None
+            )
             if loaded_dim != OBS_DIM:
                 raise ValueError(
                     f"Model obs dim mismatch: model has {loaded_dim}, env expects {OBS_DIM}. "
                     f"Retrain with the current observation space before loading."
                 )
             self._policy = policy
-            log.info(f"[ShowdownBotPlayer] Policy loaded from {path} (obs_dim={OBS_DIM})")
+            log.info(
+                f"[ShowdownBotPlayer] Policy loaded from {path} (obs_dim={OBS_DIM})"
+            )
 
         def _load_transformer(self, path: str | Path) -> None:  # pragma: no cover
             """Load a BattleTransformer checkpoint (.pt) for MCTS inference."""
             try:
                 from src.ml.transformer_model import load_model as _load_tf
+
                 self._transformer = _load_tf(str(path))
                 log.info("[ShowdownBotPlayer] Transformer loaded from %s", path)
             except Exception as exc:
@@ -167,11 +180,14 @@ if POKE_ENV_AVAILABLE:
 
         # ── Move selection ─────────────────────────────────────────
 
-        def choose_move(self, battle: AbstractBattle) -> None:  # pragma: no cover  # type: ignore[override]
+        def choose_move(
+            self, battle: AbstractBattle
+        ) -> None:  # pragma: no cover  # type: ignore[override]
             # ── MCTS path ──────────────────────────────────────────
             if self._use_mcts and self._transformer is not None:
                 try:
                     from src.ml.mcts import MCTSConfig, _build_legal_mask, run_mcts
+
                     obs = build_observation(battle)
                     legal_mask = _build_legal_mask(battle, N_ACTIONS_GEN9)
                     cfg = MCTSConfig(n_simulations=self._mcts_n_simulations)
@@ -179,8 +195,12 @@ if POKE_ENV_AVAILABLE:
                     # Passing n_legal as n_actions was wrong — it truncated the tree and
                     # dropped the mask entirely, letting MCTS pick illegal actions.
                     action_id, _ = run_mcts(
-                        obs, self._transformer, N_ACTIONS_GEN9,
-                        config=cfg, legal_mask=legal_mask, deterministic=True,
+                        obs,
+                        self._transformer,
+                        N_ACTIONS_GEN9,
+                        config=cfg,
+                        legal_mask=legal_mask,
+                        deterministic=True,
                     )
                     return self._action_to_move(action_id, battle)
                 except Exception as exc:
@@ -203,18 +223,25 @@ if POKE_ENV_AVAILABLE:
                 log.error(f"[ShowdownBotPlayer] Policy predict failed: {exc}")
                 raise
             except Exception as exc:
-                log.warning(f"[ShowdownBotPlayer] Policy error: {exc} — falling back to random")
+                log.warning(
+                    f"[ShowdownBotPlayer] Policy error: {exc} — falling back to random"
+                )
                 return self.choose_random_move(battle)
 
-        def _action_to_move(self, action: int, battle: AbstractBattle):  # pragma: no cover
+        def _action_to_move(
+            self, action: int, battle: AbstractBattle
+        ):  # pragma: no cover
             """Map discrete action ID → poke-env BattleOrder using SinglesEnv mapper."""
             try:
                 from poke_env.environment.singles_env import SinglesEnv
+
                 return SinglesEnv.action_to_order(action, battle)
             except Exception:
                 return self.choose_random_move(battle)
 
-        async def save_replay(self, battle: AbstractBattle) -> str | None:  # pragma: no cover
+        async def save_replay(
+            self, battle: AbstractBattle
+        ) -> str | None:  # pragma: no cover
             """
             Send /savereplay to Showdown and return the replay URL.
 
@@ -230,15 +257,16 @@ if POKE_ENV_AVAILABLE:
                 return None
 
 else:  # pragma: no cover
+
     class ShowdownBotPlayer:  # type: ignore
         def __init__(self, *args, **kwargs):
             raise ImportError(
-                "poke-env is not properly installed. "
-                "Run: pip install poke-env>=0.8.1"
+                "poke-env is not properly installed. Run: pip install poke-env>=0.8.1"
             )
 
 
 # ── High-level challenger ─────────────────────────────────────────────────────
+
 
 class BotChallenger:
     """
@@ -267,16 +295,16 @@ class BotChallenger:
         fmt: str,
         username: str,
         password: str,
-        server: str = "showdown",   # "showdown" | "localhost"
+        server: str = "showdown",  # "showdown" | "localhost"
         transformer_path: str | Path | None = None,
     ) -> None:
         if not POKE_ENV_AVAILABLE:
             raise ImportError("poke-env is required for live battles.")
 
         self.model_path = Path(model_path)
-        self.fmt        = fmt
-        self.username   = username
-        self.password   = password
+        self.fmt = fmt
+        self.username = username
+        self.password = password
 
         server_cfg = server_config_for_mode(server)
 
@@ -338,7 +366,9 @@ class BotChallenger:
         )
         return result
 
-    async def accept_one_challenge(self, timeout: int = 600) -> dict:  # pragma: no cover
+    async def accept_one_challenge(
+        self, timeout: int = 600
+    ) -> dict:  # pragma: no cover
         """
         Wait for and accept the next incoming challenge.
 
@@ -368,22 +398,26 @@ class BotChallenger:
                     replay_url = await self._player.save_replay(battle)
                     result = self._format_result(battle, replay_url=replay_url)
                     if SHEETS_AVAILABLE:
-                        learning_sheets.save_replay_url({
-                            "format":        self.fmt,
-                            "battle_id":     battle.battle_tag,
-                            "bot":           self.username,
-                            "opponent":      _get_opponent_name(battle),
-                            "opponent_type": "human",
-                            "winner":        result["winner"],
-                            "turns":         result["turns"],
-                            "ko_count":      _count_fainted(battle),
-                            "checkpoint":    self.model_path.name,
-                            "training_step": "",
-                            "replay_url":    replay_url or "",
-                        })
+                        learning_sheets.save_replay_url(
+                            {
+                                "format": self.fmt,
+                                "battle_id": battle.battle_tag,
+                                "bot": self.username,
+                                "opponent": _get_opponent_name(battle),
+                                "opponent_type": "human",
+                                "winner": result["winner"],
+                                "turns": result["turns"],
+                                "ko_count": _count_fainted(battle),
+                                "checkpoint": self.model_path.name,
+                                "training_step": "",
+                                "replay_url": replay_url or "",
+                            }
+                        )
                     return result
 
-    def _format_result(self, battle: AbstractBattle, replay_url: str | None = None) -> dict:
+    def _format_result(
+        self, battle: AbstractBattle, replay_url: str | None = None
+    ) -> dict:
         if battle.won:
             winner = "bot"
         elif battle.lost:
@@ -392,18 +426,19 @@ class BotChallenger:
             winner = "tie"
 
         return {
-            "winner"     : winner,
-            "turns"      : getattr(battle, "turn", 0),
-            "replay_url" : replay_url,
-            "format"     : self.fmt,
-            "bot_name"   : self.username,
-            "opponent"   : _get_opponent_name(battle),
+            "winner": winner,
+            "turns": getattr(battle, "turn", 0),
+            "replay_url": replay_url,
+            "format": self.fmt,
+            "bot_name": self.username,
+            "opponent": _get_opponent_name(battle),
         }
 
 
 def _make_account_config(username: str, password: str):  # pragma: no cover
     """Build a poke-env AccountConfiguration."""
     from poke_env.ps_client.account_configuration import AccountConfiguration
+
     return AccountConfiguration(username, password)
 
 
@@ -426,6 +461,7 @@ def _count_fainted(battle: AbstractBattle) -> int:
 
 # ── Model selector ────────────────────────────────────────────────────────────
 
+
 def best_model_for_format(
     fmt: str,
     save_dir: str | None = None,
@@ -443,6 +479,7 @@ def best_model_for_format(
     """
     if save_dir is None:
         from src.config import settings
+
         save_dir = settings.ml_policy_dir
     # 1. Dated final models — check per-format subdir first, then flat root
     subdir_results = sorted((Path(results_dir) / fmt).glob(f"{fmt}_*.zip"))
@@ -489,16 +526,29 @@ if __name__ == "__main__":  # pragma: no cover
     )
 
     ap = argparse.ArgumentParser(description="Run the Showdown bot player")
-    ap.add_argument("--model",    required=True, help="Path to trained PPO model .zip")
-    ap.add_argument("--format",   default="gen9randombattle", help="Showdown battle format")
+    ap.add_argument("--model", required=True, help="Path to trained PPO model .zip")
+    ap.add_argument(
+        "--format", default="gen9randombattle", help="Showdown battle format"
+    )
     ap.add_argument("--username", required=True, help="Showdown account username")
     ap.add_argument("--password", required=True, help="Showdown account password")
-    ap.add_argument("--challenge",          default=None, metavar="USER",
-                    help="Challenge this Showdown username")
-    ap.add_argument("--accept-challenges",  action="store_true",
-                    help="Wait and accept the next incoming challenge")
-    ap.add_argument("--server", default="showdown", choices=["showdown", "localhost"],
-                    help="Server to connect to")
+    ap.add_argument(
+        "--challenge",
+        default=None,
+        metavar="USER",
+        help="Challenge this Showdown username",
+    )
+    ap.add_argument(
+        "--accept-challenges",
+        action="store_true",
+        help="Wait and accept the next incoming challenge",
+    )
+    ap.add_argument(
+        "--server",
+        default="showdown",
+        choices=["showdown", "localhost"],
+        help="Server to connect to",
+    )
     args = ap.parse_args()
 
     if not args.challenge and not args.accept_challenges:

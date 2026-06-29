@@ -2,6 +2,7 @@
 Unit tests for retry.py (no DB, no network).
 Integration dead-letter tests are guarded by PLATFORM_DATABASE_URL.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -21,6 +22,7 @@ from src.platform.retry import (
 
 
 # ─── is_transient classification ─────────────────────────────────────────────
+
 
 def test_transient_sentinel():
     assert is_transient(Transient("rate limit")) is True
@@ -77,6 +79,7 @@ def test_all_retry_statuses_transient():
 
 
 # ─── retry_async behaviour ────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_success_on_first_attempt():
@@ -214,15 +217,21 @@ async def test_dead_letter_on_parse_failure():
         payload = {"test": True, "key": key}
 
         # Land the raw record
-        raw_id = await land_raw(conn, source=source, route=route,
-                                natural_key=key, payload=payload)
+        raw_id = await land_raw(
+            conn, source=source, route=route, natural_key=key, payload=payload
+        )
         assert raw_id is not None, "First land should return an id"
 
         # Simulate parse failure
         await mark_raw_error(conn, raw_id=raw_id)
-        await to_dead_letter(conn, source=source, route=route,
-                             natural_key=key, payload=payload,
-                             error="ValueError: test error")
+        await to_dead_letter(
+            conn,
+            source=source,
+            route=route,
+            natural_key=key,
+            payload=payload,
+            error="ValueError: test error",
+        )
 
         # Verify raw_ingest status flipped
         status = await conn.fetchval(
@@ -237,8 +246,9 @@ async def test_dead_letter_on_parse_failure():
         assert dl_count >= 1, "dead_letter row not found"
 
         # Idempotency: re-landing the same payload returns None (no new row)
-        raw_id2 = await land_raw(conn, source=source, route=route,
-                                 natural_key=key, payload=payload)
+        raw_id2 = await land_raw(
+            conn, source=source, route=route, natural_key=key, payload=payload
+        )
         assert raw_id2 is None, "Second land of identical payload should return None"
 
     finally:

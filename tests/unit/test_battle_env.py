@@ -7,6 +7,7 @@ and the fallback stubs when poke-env is unavailable.
 
 __init__ methods are excluded (require live Showdown server).
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -35,6 +36,7 @@ from src.ml.battle_env import (
 
 # ── _move_features ────────────────────────────────────────────────────────────
 
+
 class TestMoveFeatures:
     def test_none_move_returns_zeros(self):
         assert _move_features(None) == [0.0, 0.0, 0.0, 0.0, 0.5]
@@ -49,7 +51,7 @@ class TestMoveFeatures:
         feats = _move_features(move)
         assert len(feats) == 5
         assert 0.0 <= feats[0] <= 1.0  # base_power normalized
-        assert feats[1] == 1.0          # accuracy 100 / 100
+        assert feats[1] == 1.0  # accuracy 100 / 100
         assert 0.0 <= feats[2] <= 1.0  # type_id normalized
         assert feats[3] == pytest.approx(0.5, abs=0.1)  # priority=0 → (0+5)/10=0.5
 
@@ -174,6 +176,7 @@ class TestMoveFeatures:
 
 # ── _pokemon_hp ───────────────────────────────────────────────────────────────
 
+
 class TestPokemonHp:
     def test_none_returns_zero(self):
         assert _pokemon_hp(None) == 0.0
@@ -204,6 +207,7 @@ class TestPokemonHp:
 
 # ── _stab_flag ────────────────────────────────────────────────────────────────
 
+
 class TestStabFlag:
     def _make_move(self, type_str: str):
         m = MagicMock()
@@ -228,16 +232,26 @@ class TestStabFlag:
         assert _stab_flag(self._make_move("fire"), None) == 0.0
 
     def test_stab_match(self):
-        assert _stab_flag(self._make_move("fire"), self._make_mon(["fire", "flying"])) == 1.0
+        assert (
+            _stab_flag(self._make_move("fire"), self._make_mon(["fire", "flying"]))
+            == 1.0
+        )
 
     def test_no_stab(self):
-        assert _stab_flag(self._make_move("water"), self._make_mon(["fire", "flying"])) == 0.0
+        assert (
+            _stab_flag(self._make_move("water"), self._make_mon(["fire", "flying"]))
+            == 0.0
+        )
 
     def test_dual_type_second_slot_stab(self):
-        assert _stab_flag(self._make_move("flying"), self._make_mon(["fire", "flying"])) == 1.0
+        assert (
+            _stab_flag(self._make_move("flying"), self._make_mon(["fire", "flying"]))
+            == 1.0
+        )
 
 
 # ── _speed_tier ───────────────────────────────────────────────────────────────
+
 
 class TestSpeedTier:
     def _make_mon_with_speed(self, spe: int):
@@ -252,25 +266,40 @@ class TestSpeedTier:
         assert _speed_tier(self._make_mon_with_speed(100), None) == 0.5
 
     def test_faster(self):
-        assert _speed_tier(self._make_mon_with_speed(120), self._make_mon_with_speed(80)) == 1.0
+        assert (
+            _speed_tier(self._make_mon_with_speed(120), self._make_mon_with_speed(80))
+            == 1.0
+        )
 
     def test_slower(self):
-        assert _speed_tier(self._make_mon_with_speed(60), self._make_mon_with_speed(100)) == 0.0
+        assert (
+            _speed_tier(self._make_mon_with_speed(60), self._make_mon_with_speed(100))
+            == 0.0
+        )
 
     def test_equal_returns_half(self):
-        assert _speed_tier(self._make_mon_with_speed(95), self._make_mon_with_speed(95)) == 0.5
+        assert (
+            _speed_tier(self._make_mon_with_speed(95), self._make_mon_with_speed(95))
+            == 0.5
+        )
 
     def test_both_zero_returns_half(self):
-        assert _speed_tier(self._make_mon_with_speed(0), self._make_mon_with_speed(0)) == 0.5
+        assert (
+            _speed_tier(self._make_mon_with_speed(0), self._make_mon_with_speed(0))
+            == 0.5
+        )
 
     def test_invalid_type_returns_half(self):
         # MagicMock base_stats should trigger the TypeError guard
-        fast = MagicMock()  # base_stats.get("spe") will return MagicMock, int() raises TypeError
+        fast = (
+            MagicMock()
+        )  # base_stats.get("spe") will return MagicMock, int() raises TypeError
         slow = MagicMock()
         assert _speed_tier(fast, slow) == 0.5
 
 
 # ── _ability_buckets ──────────────────────────────────────────────────────────
+
 
 class TestAbilityBuckets:
     def test_none_ability_own_all_zero(self):
@@ -313,10 +342,19 @@ class TestAbilityBuckets:
 
 # ── _item_buckets ─────────────────────────────────────────────────────────────
 
+
 class TestItemBuckets:
     def test_none_item_own_all_zero(self):
         result = _item_buckets(None, 1.0, is_own=True)
-        assert result == [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]  # speed_mod defaults to 1.0
+        assert result == [
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ]  # speed_mod defaults to 1.0
 
     def test_own_length(self):
         assert len(_item_buckets("leftovers", 1.0, is_own=True)) == 7
@@ -330,8 +368,8 @@ class TestItemBuckets:
 
     def test_choice_scarf(self):
         buckets = _item_buckets("choicescarf", 1.0, is_own=True)
-        assert buckets[1] == pytest.approx(1.0)   # choice slot
-        assert buckets[2] == pytest.approx(1.5)   # speed_mod slot
+        assert buckets[1] == pytest.approx(1.0)  # choice slot
+        assert buckets[2] == pytest.approx(1.5)  # speed_mod slot
 
     def test_focus_sash_at_full_hp(self):
         buckets = _item_buckets("focussash", 1.0, is_own=True)
@@ -353,8 +391,17 @@ class TestItemBuckets:
 
 # ── build_observation ─────────────────────────────────────────────────────────
 
-def _make_mock_battle(n_moves=4, n_team=6, n_opp_team=6, turn=10,
-                      won=False, lost=False, has_active=True, has_opp=True):
+
+def _make_mock_battle(
+    n_moves=4,
+    n_team=6,
+    n_opp_team=6,
+    turn=10,
+    won=False,
+    lost=False,
+    has_active=True,
+    has_opp=True,
+):
     """Build a minimal mock AbstractBattle."""
     battle = MagicMock()
 
@@ -364,7 +411,14 @@ def _make_mock_battle(n_moves=4, n_team=6, n_opp_team=6, turn=10,
         active.fainted = False
         active.current_hp_fraction = 0.8
         active.status = None
-        active.boosts = {"atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0, "accuracy": 0}
+        active.boosts = {
+            "atk": 0,
+            "def": 0,
+            "spa": 0,
+            "spd": 0,
+            "spe": 0,
+            "accuracy": 0,
+        }
         battle.active_pokemon = active
     else:
         battle.active_pokemon = None
@@ -483,6 +537,7 @@ class TestBuildObservation:
         """TERRAIN_IDS loop hits terrain=val; break for a known terrain key."""
         pytest.importorskip("poke_env")
         from poke_env.battle import Field
+
         battle = _make_mock_battle()
         battle.fields = {Field.ELECTRIC_TERRAIN: 1}
         obs = build_observation(battle)
@@ -525,6 +580,7 @@ class TestBuildObservation:
 
 
 # ── build_doubles_observation ─────────────────────────────────────────────────
+
 
 def _make_mock_doubles_battle():
     """Build a minimal mock doubles battle with 2 active per side."""
@@ -619,6 +675,7 @@ class TestBuildDoublesObservation:
         """TERRAIN_IDS loop in doubles hits terrain=val; break."""
         pytest.importorskip("poke_env")
         from poke_env.battle import Field
+
         battle = _make_mock_doubles_battle()
         battle.fields = {Field.ELECTRIC_TERRAIN: 1}
         obs = build_doubles_observation(battle)
@@ -650,6 +707,7 @@ class TestBuildDoublesObservation:
 
 
 # ── BattleEnv.calc_reward ─────────────────────────────────────────────────────
+
 
 @pytest.mark.skipif(not POKE_ENV_AVAILABLE, reason="poke-env not installed")
 class TestBattleEnvCalcReward:
@@ -730,6 +788,7 @@ class TestBattleEnvCalcReward:
 
 # ── BattleDoubleEnv.calc_reward + teampreview ─────────────────────────────────
 
+
 @pytest.mark.skipif(not POKE_ENV_AVAILABLE, reason="poke-env not installed")
 class TestBattleDoubleEnvMethods:
     def _make_env(self):
@@ -737,8 +796,15 @@ class TestBattleDoubleEnvMethods:
         env._prev_state = {}
         return env
 
-    def _make_battle(self, won=False, lost=False, opp_fainted=0, own_fainted=0,
-                     team_size=6, max_team_size=4):
+    def _make_battle(
+        self,
+        won=False,
+        lost=False,
+        opp_fainted=0,
+        own_fainted=0,
+        team_size=6,
+        max_team_size=4,
+    ):
         battle = MagicMock()
         battle.won = won
         battle.lost = lost
@@ -775,6 +841,7 @@ class TestBattleDoubleEnvMethods:
 
 # ── embed_battle delegates ─────────────────────────────────────────────────────
 
+
 @pytest.mark.skipif(not POKE_ENV_AVAILABLE, reason="poke-env not installed")
 class TestEmbedBattle:
     def test_battle_env_embed_battle_returns_observation(self):
@@ -792,15 +859,20 @@ class TestEmbedBattle:
 
 # ── Fallback stubs (no poke-env) ──────────────────────────────────────────────
 
+
 class TestFallbackStubs:
     """When poke-env is unavailable the stubs raise ImportError."""
 
-    @pytest.mark.skipif(POKE_ENV_AVAILABLE, reason="poke-env installed — stub not active")
+    @pytest.mark.skipif(
+        POKE_ENV_AVAILABLE, reason="poke-env installed — stub not active"
+    )
     def test_battle_env_stub_raises_import_error(self):
         with pytest.raises(ImportError):
             BattleEnv()
 
-    @pytest.mark.skipif(POKE_ENV_AVAILABLE, reason="poke-env installed — stub not active")
+    @pytest.mark.skipif(
+        POKE_ENV_AVAILABLE, reason="poke-env installed — stub not active"
+    )
     def test_battle_double_env_stub_raises_import_error(self):
         with pytest.raises(ImportError):
             BattleDoubleEnv()
@@ -818,6 +890,7 @@ class TestFallbackStubs:
 
 # ── BattleEnv.action_space property/setter + step() guard ────────────────────
 
+
 @pytest.mark.skipif(not POKE_ENV_AVAILABLE, reason="poke-env not installed")
 class TestBattleEnvActionSpace:
     """Cover action_space fallback property, setter, and AssertionError guard."""
@@ -825,6 +898,7 @@ class TestBattleEnvActionSpace:
     def test_fallback_returns_discrete_n_actions_gen9(self):
         """action_space property returns Discrete(N_ACTIONS_GEN9) when _sb3_action_space absent."""
         from src.ml.battle_env import N_ACTIONS_GEN9
+
         env = BattleEnv.__new__(BattleEnv)
         space = env.action_space
         assert space.n == N_ACTIONS_GEN9
@@ -832,6 +906,7 @@ class TestBattleEnvActionSpace:
     def test_setter_stores_custom_space(self):
         """action_space setter stores value and getter returns it (line 281 branch)."""
         from gymnasium.spaces import Discrete
+
         env = BattleEnv.__new__(BattleEnv)
         custom = Discrete(10)
         env.action_space = custom
@@ -842,6 +917,7 @@ class TestBattleEnvActionSpace:
         """step() catches AssertionError from poke-env and returns zero terminal step."""
         from gymnasium.spaces import Box, Discrete
         from poke_env.environment.singles_env import SinglesEnv
+
         env = BattleEnv.__new__(BattleEnv)
         fake_space = Box(low=0.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
         # poke-env's __setattr__ for observation_spaces reads self.action_spaces,
@@ -859,6 +935,7 @@ class TestBattleEnvActionSpace:
 
 # ── BattleDoubleEnv.action_space property/setter + step() guard ───────────────
 
+
 @pytest.mark.skipif(not POKE_ENV_AVAILABLE, reason="poke-env not installed")
 class TestBattleDoubleEnvActionSpace:
     """Cover doubles action_space fallback property, setter, and AssertionError guard."""
@@ -872,6 +949,7 @@ class TestBattleDoubleEnvActionSpace:
     def test_setter_stores_custom_space(self):
         """action_space setter stores value and getter returns it (line 511 branch)."""
         from gymnasium.spaces import Discrete
+
         env = BattleDoubleEnv.__new__(BattleDoubleEnv)
         custom = Discrete(5)
         env.action_space = custom
@@ -882,6 +960,7 @@ class TestBattleDoubleEnvActionSpace:
         """step() catches AssertionError and returns zero terminal step for doubles."""
         from gymnasium.spaces import Box, Discrete
         from poke_env.environment.doubles_env import DoublesEnv
+
         env = BattleDoubleEnv.__new__(BattleDoubleEnv)
         fake_space = Box(low=0.0, high=1.0, shape=(OBS_DIM_DOUBLES,), dtype=np.float32)
         # poke-env's __setattr__ for observation_spaces reads self.action_spaces,

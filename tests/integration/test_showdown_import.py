@@ -1,6 +1,7 @@
 """
 Integration tests for Showdown import/export, replay parsing, and console legality checking.
 """
+
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 
@@ -44,14 +45,17 @@ def _mock_db(known: list[str]):
                 m.types = ["normal"]
                 return m
         return None
+
     return find
 
 
 @pytest.mark.asyncio
 async def test_import_standard_format():
     svc = TeamService()
-    with patch("src.services.team_service.pokemon_db") as db, \
-         patch("src.services.team_service.sheets"):
+    with (
+        patch("src.services.team_service.pokemon_db") as db,
+        patch("src.services.team_service.sheets"),
+    ):
         db.find = _mock_db(["Garchomp", "Corviknight", "Toxapex"])
         result = await svc.import_showdown("g1", "p1", SAMPLE_TEAM)
     assert result.success
@@ -62,8 +66,10 @@ async def test_import_standard_format():
 @pytest.mark.asyncio
 async def test_import_nickname_format():
     svc = TeamService()
-    with patch("src.services.team_service.pokemon_db") as db, \
-         patch("src.services.team_service.sheets"):
+    with (
+        patch("src.services.team_service.pokemon_db") as db,
+        patch("src.services.team_service.sheets"),
+    ):
         db.find = _mock_db(["Garchomp", "Corviknight"])
         result = await svc.import_showdown("g2", "p2", NICKNAME_TEAM)
     assert result.success
@@ -74,8 +80,10 @@ async def test_import_nickname_format():
 @pytest.mark.asyncio
 async def test_import_empty_fails():
     svc = TeamService()
-    with patch("src.services.team_service.pokemon_db") as db, \
-         patch("src.services.team_service.sheets"):
+    with (
+        patch("src.services.team_service.pokemon_db") as db,
+        patch("src.services.team_service.sheets"),
+    ):
         db.find = MagicMock(return_value=None)
         result = await svc.import_showdown("g3", "p3", "")
     assert not result.success
@@ -161,7 +169,7 @@ MOCK_REPLAY_JSON = {
 |-damage|p1a: Garchomp|0 fnt
 |faint|p1a: Garchomp
 |win|Bob
-""".strip()
+""".strip(),
 }
 
 
@@ -210,7 +218,7 @@ async def test_replay_parse_duplicate_pokemon():
 |poke|p1|Garchomp, L50
 |poke|p1|Corviknight, L50
 |poke|p2|Dragapult, L50
-""".strip()
+""".strip(),
     }
     result = svc._parse_replay_data(replay_data)
 
@@ -221,10 +229,12 @@ async def test_replay_parse_duplicate_pokemon():
 
 # ── Showdown Export Tests ────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_export_round_trip():
     """Test import → export round-trip preserves core team data."""
     from src.data.models import Pokemon, PokemonStats, TeamRoster
+
     svc = TeamService()
 
     def make_mon(name: str) -> Pokemon:
@@ -236,8 +246,10 @@ async def test_export_round_trip():
             generation=8,
         )
 
-    with patch("src.services.team_service.pokemon_db") as db, \
-         patch("src.services.team_service.sheets"):
+    with (
+        patch("src.services.team_service.pokemon_db") as db,
+        patch("src.services.team_service.sheets"),
+    ):
         db.find = lambda name: make_mon(name)
 
         # Import team
@@ -245,7 +257,9 @@ async def test_export_round_trip():
         assert import_result.success
 
         # Build a TeamRoster from the imported pokemon (export_showdown expects TeamRoster)
-        roster = TeamRoster(player_id="p1", guild_id="g1", pokemon=import_result.pokemon)
+        roster = TeamRoster(
+            player_id="p1", guild_id="g1", pokemon=import_result.pokemon
+        )
 
         # Export team — returns a plain str
         with patch.object(svc, "get_team", new_callable=AsyncMock) as mock_get:
@@ -272,8 +286,10 @@ Jolly Nature
 """
     svc = TeamService()
 
-    with patch("src.services.team_service.pokemon_db") as db, \
-         patch("src.services.team_service.sheets"):
+    with (
+        patch("src.services.team_service.pokemon_db") as db,
+        patch("src.services.team_service.sheets"),
+    ):
         mon = MagicMock()
         mon.name = "Garchomp"
         mon.types = ["dragon", "ground"]
@@ -291,8 +307,10 @@ async def test_import_malformed_team():
     malformed = "This is not a valid team format at all!!!"
     svc = TeamService()
 
-    with patch("src.services.team_service.pokemon_db") as db, \
-         patch("src.services.team_service.sheets"):
+    with (
+        patch("src.services.team_service.pokemon_db") as db,
+        patch("src.services.team_service.sheets"),
+    ):
         db.find = MagicMock(return_value=None)
         result = await svc.import_showdown("g1", "p1", malformed)
 

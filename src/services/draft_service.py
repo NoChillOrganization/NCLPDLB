@@ -2,6 +2,7 @@
 Draft Service — Core draft engine.
 Handles Snake, Auction, Tiered, and Adaptive Ban draft formats.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -13,7 +14,14 @@ from typing import Awaitable, Callable
 
 from src.data.db import delete_draft as _db_delete_draft
 from src.data.db import load_all_drafts, save_draft as _db_save_draft
-from src.data.models import Draft, DraftBan, DraftFormat, DraftPick, DraftStatus, Pokemon
+from src.data.models import (
+    Draft,
+    DraftBan,
+    DraftFormat,
+    DraftPick,
+    DraftStatus,
+    Pokemon,
+)
 from src.data.pokeapi import pokemon_db
 from src.data.sheets import sheets
 
@@ -152,16 +160,21 @@ class DraftService:
         )
         _active_drafts[guild_id] = draft
         # Persist league setup to Google Sheets (fire-and-forget — don't block draft creation)
-        asyncio.get_running_loop().create_task(asyncio.to_thread(sheets.save_league_setup, {
-            "league_id": draft.draft_id,
-            "server_id": guild_id,
-            "commissioner_id": commissioner_id,
-            "format": format.value,
-            "total_rounds": rounds,
-            "timer_seconds": timer_seconds,
-            "status": "setup",
-            "created_at": draft.created_at,
-        }))
+        asyncio.get_running_loop().create_task(
+            asyncio.to_thread(
+                sheets.save_league_setup,
+                {
+                    "league_id": draft.draft_id,
+                    "server_id": guild_id,
+                    "commissioner_id": commissioner_id,
+                    "format": format.value,
+                    "total_rounds": rounds,
+                    "timer_seconds": timer_seconds,
+                    "status": "setup",
+                    "created_at": draft.created_at,
+                },
+            )
+        )
         log.info(f"Draft {draft.draft_id} created for guild {guild_id}")
         return draft
 
@@ -200,14 +213,19 @@ class DraftService:
         if player_id in draft.player_order:
             return AddPlayerResult(success=False, error="You've already joined.")
         if len(draft.player_order) >= draft.max_players:
-            return AddPlayerResult(success=False, error=f"Draft is full ({draft.max_players}/16 players max).")
+            return AddPlayerResult(
+                success=False,
+                error=f"Draft is full ({draft.max_players}/16 players max).",
+            )
         draft.player_order.append(player_id)
         if team_name:
             draft.team_names[player_id] = team_name
         # Initialize auction budget if auction format
         if draft.format == DraftFormat.AUCTION:
             draft.budget[player_id] = AUCTION_STARTING_BUDGET
-        log.info(f"Player {player_id} ({player_name}) joined draft {draft.draft_id} (pool {pool})")
+        log.info(
+            f"Player {player_id} ({player_name}) joined draft {draft.draft_id} (pool {pool})"
+        )
         return AddPlayerResult(success=True, player_count=len(draft.player_order))
 
     # ── Start ──────────────────────────────────────────────────
@@ -243,7 +261,9 @@ class DraftService:
             if draft.timer_seconds > 0:
                 self._start_timer(guild_id, draft, on_timeout)
 
-        log.info(f"Draft {draft.draft_id} started with {len(draft.player_order)} players")
+        log.info(
+            f"Draft {draft.draft_id} started with {len(draft.player_order)} players"
+        )
         await _persist_draft(draft)
         return draft
 
@@ -260,7 +280,12 @@ class DraftService:
         lock = _pick_locks.setdefault(guild_id, asyncio.Lock())
         async with lock:
             return await self._make_pick_locked(
-                guild_id, player_id, pokemon_name, tera_type, is_tera_captain, on_timeout
+                guild_id,
+                player_id,
+                pokemon_name,
+                tera_type,
+                is_tera_captain,
+                on_timeout,
             )
 
     async def _make_pick_locked(
@@ -296,7 +321,9 @@ class DraftService:
         # Validate Pokemon exists
         pokemon = pokemon_db.find(pokemon_name)
         if not pokemon:
-            return PickResult(success=False, error=f"Pokemon '{pokemon_name}' not found.")
+            return PickResult(
+                success=False, error=f"Pokemon '{pokemon_name}' not found."
+            )
 
         pick = DraftPick(
             draft_id=draft.draft_id,
@@ -367,8 +394,14 @@ class DraftService:
             await asyncio.sleep(sleep_secs)
             # Only auto-skip if still the same player's turn
             active = _active_drafts.get(guild_id)
-            if active and active.status == DraftStatus.ACTIVE and active.current_player_id == current_player:
-                log.info(f"Pick timer expired for {current_player} in guild {guild_id} — auto-skipping")
+            if (
+                active
+                and active.status == DraftStatus.ACTIVE
+                and active.current_player_id == current_player
+            ):
+                log.info(
+                    f"Pick timer expired for {current_player} in guild {guild_id} — auto-skipping"
+                )
                 self._advance_pick(active)
                 # M2: persist state after auto-skip so restarts see the correct turn
                 await _persist_draft(active)
@@ -390,7 +423,9 @@ class DraftService:
             task.cancel()
 
     # ── Ban ────────────────────────────────────────────────────
-    async def ban_pokemon(self, guild_id: str, player_id: str, pokemon_name: str) -> BanResult:
+    async def ban_pokemon(
+        self, guild_id: str, player_id: str, pokemon_name: str
+    ) -> BanResult:
         draft = _active_drafts.get(guild_id)
         if not draft:
             return BanResult(success=False, error="No active draft.")
@@ -398,11 +433,15 @@ class DraftService:
             return BanResult(success=False, error="Not in ban phase.")
         # C4: only registered participants may ban
         if player_id not in draft.player_order:
-            return BanResult(success=False, error="You are not a participant in this draft.")
+            return BanResult(
+                success=False, error="You are not a participant in this draft."
+            )
 
         pokemon = pokemon_db.find(pokemon_name)
         if not pokemon:
-            return BanResult(success=False, error=f"Pokemon '{pokemon_name}' not found.")
+            return BanResult(
+                success=False, error=f"Pokemon '{pokemon_name}' not found."
+            )
 
         ban = DraftBan(
             draft_id=draft.draft_id,
@@ -428,7 +467,9 @@ class DraftService:
         if amount < 1:
             return BidResult(success=False, error="Bid must be at least 1 coin.")
         if amount > budget:
-            return BidResult(success=False, error=f"Insufficient budget. You have {budget} coins.")
+            return BidResult(
+                success=False, error=f"Insufficient budget. You have {budget} coins."
+            )
 
         # Reject if bid does not exceed current high bid
         current_bids: dict[str, int] = draft.nomination_bids.setdefault(
@@ -480,7 +521,9 @@ class DraftService:
         )
         self._advance_pick(draft)
         await _persist_draft(draft)
-        log.info(f"Auction: {winner_id} won {pokemon.name} for {amount} coins in guild {guild_id}")
+        log.info(
+            f"Auction: {winner_id} won {pokemon.name} for {amount} coins in guild {guild_id}"
+        )
         return PickResult(success=True, pokemon=pokemon, round=draft.current_round)
 
     # ── Admin ops ──────────────────────────────────────────────
@@ -512,11 +555,16 @@ class DraftService:
         await _delete_persisted_draft(guild_id)
         log.warning(f"Draft reset for guild {guild_id}")
 
-    async def override_pick(self, guild_id: str, player_id: str, old_pokemon: str, new_pokemon: str) -> None:
+    async def override_pick(
+        self, guild_id: str, player_id: str, old_pokemon: str, new_pokemon: str
+    ) -> None:
         draft = _active_drafts.get(guild_id)
         if draft:
             for pick in draft.picks:
-                if pick.player_id == player_id and pick.pokemon_name.lower() == old_pokemon.lower():
+                if (
+                    pick.player_id == player_id
+                    and pick.pokemon_name.lower() == old_pokemon.lower()
+                ):
                     pick.pokemon_name = new_pokemon
                     break
 

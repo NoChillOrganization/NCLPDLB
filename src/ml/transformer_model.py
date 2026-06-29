@@ -37,6 +37,7 @@ Usage
   save_model(model, "models/latest.pt")
   model = load_model("models/latest.pt")
 """
+
 from __future__ import annotations
 
 import logging
@@ -51,6 +52,7 @@ log = logging.getLogger(__name__)
 try:
     import torch
     import torch.nn as nn
+
     TORCH_OK = True
 except ImportError:  # pragma: no cover
     TORCH_OK = False
@@ -81,6 +83,7 @@ from src.ml.battle_env import OBS_DIM, N_ACTIONS_GEN9  # noqa: E402
 
 # ── Positional encoding ───────────────────────────────────────────────────────
 
+
 class _PositionalEncoding(nn.Module):
     """Sinusoidal positional encoding — works for any sequence length."""
 
@@ -96,7 +99,7 @@ class _PositionalEncoding(nn.Module):
         )
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0)   # (1, max_len, d_model)
+        pe = pe.unsqueeze(0)  # (1, max_len, d_model)
         self.register_buffer("pe", pe)
 
     def forward(self, x: "torch.Tensor") -> "torch.Tensor":
@@ -106,6 +109,7 @@ class _PositionalEncoding(nn.Module):
 
 
 # ── Main model ────────────────────────────────────────────────────────────────
+
 
 class BattleTransformer(nn.Module):
     """
@@ -140,9 +144,9 @@ class BattleTransformer(nn.Module):
                 "PyTorch is required. Install it from https://pytorch.org/get-started/locally/"
             )
 
-        self.obs_dim   = obs_dim
+        self.obs_dim = obs_dim
         self.n_actions = n_actions
-        self.d_model   = d_model
+        self.d_model = d_model
 
         # Input projection: obs_dim → d_model
         self.input_proj = nn.Linear(obs_dim, d_model)
@@ -156,8 +160,8 @@ class BattleTransformer(nn.Module):
             nhead=n_heads,
             dim_feedforward=ffn_dim,
             dropout=dropout,
-            batch_first=True,    # (batch, seq, d_model)
-            norm_first=True,     # Pre-LN for training stability on CPU
+            batch_first=True,  # (batch, seq, d_model)
+            norm_first=True,  # Pre-LN for training stability on CPU
         )
         self.encoder = nn.TransformerEncoder(
             encoder_layer=encoder_layer,
@@ -208,20 +212,20 @@ class BattleTransformer(nn.Module):
             value         : (batch, 1)           — state value estimate
         """
         # Project input to model dimension
-        x = self.input_proj(obs)       # (batch, seq, d_model)
-        x = self.pos_enc(x)            # add positional encoding
+        x = self.input_proj(obs)  # (batch, seq, d_model)
+        x = self.pos_enc(x)  # add positional encoding
 
         # Encode sequence
         if mask is not None:
             x = self.encoder(x, src_key_padding_mask=mask)
         else:
-            x = self.encoder(x)        # (batch, seq, d_model)
+            x = self.encoder(x)  # (batch, seq, d_model)
 
         # Use the last timestep's representation for both heads
-        last = x[:, -1, :]             # (batch, d_model)
+        last = x[:, -1, :]  # (batch, d_model)
 
-        policy_logits = self.policy_head(last)   # (batch, n_actions)
-        value         = self.value_head(last)    # (batch, 1)
+        policy_logits = self.policy_head(last)  # (batch, n_actions)
+        value = self.value_head(last)  # (batch, 1)
 
         return policy_logits, value
 
@@ -245,6 +249,7 @@ class BattleTransformer(nn.Module):
             action_id (int), value_estimate (float)
         """
         import torch as _torch
+
         self.eval()
         with _torch.no_grad():
             x = _torch.as_tensor(obs_vec, dtype=_torch.float32)
@@ -267,7 +272,7 @@ class BattleTransformer(nn.Module):
             if _torch.isnan(probs).all():
                 probs = _torch.ones_like(probs) / probs.shape[-1]
             action = int(_torch.argmax(probs, dim=-1).item())
-            value  = float(val.squeeze().item())
+            value = float(val.squeeze().item())
 
         return action, value
 
@@ -281,6 +286,7 @@ class BattleTransformer(nn.Module):
         Illegal actions are masked to 0 probability.
         """
         import torch as _torch
+
         self.eval()
         with _torch.no_grad():
             x = _torch.as_tensor(obs_vec, dtype=_torch.float32)
@@ -312,6 +318,7 @@ class BattleTransformer(nn.Module):
 
 # ── Save / load helpers ───────────────────────────────────────────────────────
 
+
 def save_model(model: "BattleTransformer", path: str | Path) -> None:
     """
     Save model weights + config to a .pt file.
@@ -321,16 +328,20 @@ def save_model(model: "BattleTransformer", path: str | Path) -> None:
         config     : constructor kwargs for reconstruction
     """
     import torch as _torch
+
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    _torch.save({
-        "state_dict": model.state_dict(),
-        "config": {
-            "obs_dim":   model.obs_dim,
-            "n_actions": model.n_actions,
-            "d_model":   model.d_model,
+    _torch.save(
+        {
+            "state_dict": model.state_dict(),
+            "config": {
+                "obs_dim": model.obs_dim,
+                "n_actions": model.n_actions,
+                "d_model": model.d_model,
+            },
         },
-    }, path)
+        path,
+    )
     log.info("Model saved to %s  (%d params)", path, model.num_parameters())
 
 
@@ -346,6 +357,7 @@ def load_model(path: str | Path, device: str = "cpu") -> "BattleTransformer":
         BattleTransformer with weights loaded, set to eval mode.
     """
     import torch as _torch
+
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Model checkpoint not found: {path}")
