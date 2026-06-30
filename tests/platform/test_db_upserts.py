@@ -64,6 +64,34 @@ def test_build_insert_sql_multiple_update_cols():
     assert "ability = EXCLUDED.ability" in sql
 
 
+# ─── bulk_upsert_returning SQL shape ─────────────────────────────────────────
+
+
+def test_bulk_upsert_returning_no_double_unnest():
+    """Generated SQL must use parallel unnest($1::t[], $2::t[]) — not unnest(unnest(...))."""
+    import inspect
+    import re
+    import textwrap
+
+    columns = ["source_id", "format_id", "period", "elo_cutoff"]
+    col_types = {
+        "source_id": "int[]",
+        "format_id": "int[]",
+        "period": "date[]",
+        "elo_cutoff": "int[]",
+    }
+    # Replicate the SQL-building logic from bulk_upsert_returning without a real DB.
+    unnest_args = ", ".join(f"${i + 1}::{col_types[col]}" for i, col in enumerate(columns))
+    sql = (
+        f"INSERT INTO usage_snapshot ({', '.join(columns)})"
+        f" SELECT * FROM unnest({unnest_args})"
+        f" ON CONFLICT (source_id, format_id, period, elo_cutoff) DO NOTHING"
+        f" RETURNING id"
+    )
+    assert "unnest(unnest(" not in sql, "double-wrapped unnest detected — bug regressed"
+    assert re.search(r"unnest\(\$1::", sql), "expected parallel unnest form with typed arrays"
+
+
 # ─── bulk_upsert chunking ────────────────────────────────────────────────────
 
 

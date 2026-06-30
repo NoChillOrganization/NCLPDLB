@@ -133,7 +133,7 @@ async def bulk_upsert_returning(
     params = by_col  # $1 = first column array, $2 = second, etc.
 
     unnest_args = ", ".join(
-        f"unnest(${i + 1}::{col_types[col]})" for i, col in enumerate(columns)
+        f"${i + 1}::{col_types[col]}" for i, col in enumerate(columns)
     )
     col_list = ", ".join(columns)
     # Build: INSERT INTO t (c1,c2,...) SELECT * FROM unnest($1::t1[],$2::t2[],...)
