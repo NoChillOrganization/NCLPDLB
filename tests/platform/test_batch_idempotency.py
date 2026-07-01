@@ -17,6 +17,7 @@ SKIP = pytest.mark.skipif(
 
 # ─── Unit tests (no DB) ───────────────────────────────────────────────────────
 
+
 def test_conflict_target_expression_in_sql():
     """COALESCE conflict targets land correctly in generated SQL."""
     from src.platform.store.db_upserts import _build_insert_sql
@@ -24,12 +25,13 @@ def test_conflict_target_expression_in_sql():
     sql = _build_insert_sql(
         "tournament_team",
         ["event_id", "placement", "player_external_id"],
-        conflict_cols="event_id, COALESCE(placement, -1), COALESCE(player_external_id, '')",
+        conflict_target="event_id, COALESCE(placement, -1), COALESCE(player_external_id, '')",
         update_cols=["player_name"],
     )
     assert "COALESCE(placement, -1)" in sql
     assert "COALESCE(player_external_id, '')" in sql
     assert "DO UPDATE SET" in sql
+
 
 def test_conflict_target_overrides_conflict_cols():
     """conflict_target param takes precedence over conflict_cols."""
@@ -38,12 +40,14 @@ def test_conflict_target_overrides_conflict_cols():
     sql = _build_insert_sql(
         "match",
         ["event_id", "round"],
-        conflict_cols="event_id, COALESCE(round, -1)",
+        conflict_cols=["event_id", "round"],
+        conflict_target="event_id, COALESCE(round, -1)",
         update_cols=["winner_team_id"],
     )
     # Only the COALESCE form should appear, not the bare column list
     assert "COALESCE(round, -1)" in sql
     assert "ON CONFLICT (event_id, round)" not in sql
+
 
 def test_conflict_target_do_nothing():
     from src.platform.store.db_upserts import _build_insert_sql
@@ -51,11 +55,13 @@ def test_conflict_target_do_nothing():
     sql = _build_insert_sql(
         "match",
         ["event_id", "round"],
-        conflict_cols="event_id, COALESCE(round, -1)",
+        conflict_target="event_id, COALESCE(round, -1)",
     )
     assert "DO NOTHING" in sql
 
+
 # ─── Integration — requires live DB ──────────────────────────────────────────
+
 
 @SKIP
 @pytest.mark.asyncio
