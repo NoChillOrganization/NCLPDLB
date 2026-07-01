@@ -101,10 +101,11 @@ async def _from_smogon(
             }
         )
 
+    period = date.fromisoformat(f"{period_str}-01")
     snapshot = {
         "source_id": source_id,
         "format_id": format_id,
-        "period": f"{period_str}-01",
+        "period": period,
         "elo_cutoff": int(cutoff_str),
         "sample_size": info.get("number of battles"),
         "raw_ingest_id": raw_id,
@@ -117,7 +118,7 @@ async def _from_smogon(
         "SELECT id FROM usage_snapshot WHERE source_id=$1 AND format_id=$2 AND period=$3 AND elo_cutoff=$4",
         source_id,
         format_id,
-        f"{period_str}-01",
+        period,
         int(cutoff_str),
     )
     return row["id"]

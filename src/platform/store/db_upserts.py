@@ -18,6 +18,7 @@ Conflict-key notes:
 """
 
 import json
+from datetime import date
 from typing import Any
 
 import asyncpg
@@ -175,6 +176,11 @@ async def ingest_usage_batch(
     """
     if not snapshots:
         return 0
+
+    # asyncpg encodes date[] client-side: elements must be datetime.date, not str.
+    for s in snapshots:
+        if isinstance(s["period"], str):
+            s["period"] = date.fromisoformat(s["period"])
 
     async with conn.transaction():
         # 1. Upsert usage_snapshot → get id map keyed by (source_id, format_id, period, elo_cutoff)
