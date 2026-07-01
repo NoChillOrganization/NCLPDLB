@@ -24,7 +24,7 @@ def test_conflict_target_expression_in_sql():
     sql = _build_insert_sql(
         "tournament_team",
         ["event_id", "placement", "player_external_id"],
-        conflict_target="event_id, COALESCE(placement, -1), COALESCE(player_external_id, '')",
+        conflict_cols="event_id, COALESCE(placement, -1), COALESCE(player_external_id, '')",
         update_cols=["player_name"],
     )
     assert "COALESCE(placement, -1)" in sql
@@ -38,8 +38,7 @@ def test_conflict_target_overrides_conflict_cols():
     sql = _build_insert_sql(
         "match",
         ["event_id", "round"],
-        conflict_cols=["event_id", "round"],
-        conflict_target="event_id, COALESCE(round, -1)",
+        conflict_cols="event_id, COALESCE(round, -1)",
         update_cols=["winner_team_id"],
     )
     # Only the COALESCE form should appear, not the bare column list
@@ -52,7 +51,7 @@ def test_conflict_target_do_nothing():
     sql = _build_insert_sql(
         "match",
         ["event_id", "round"],
-        conflict_target="event_id, COALESCE(round, -1)",
+        conflict_cols="event_id, COALESCE(round, -1)",
     )
     assert "DO NOTHING" in sql
 
