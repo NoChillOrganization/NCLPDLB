@@ -12,12 +12,14 @@ from src.platform.store.db_upserts import _build_insert_sql
 
 # ─── _build_insert_sql unit tests ────────────────────────────────────────────
 
+
 def test_build_insert_sql_basic():
     sql = _build_insert_sql("usage_snapshot", ["source_id", "format_id", "period"])
     assert sql == (
         "INSERT INTO usage_snapshot (source_id, format_id, period) VALUES ($1, $2, $3)"
     )
     assert "ON CONFLICT" not in sql
+
 
 def test_build_insert_sql_do_nothing():
     sql = _build_insert_sql(
@@ -27,6 +29,7 @@ def test_build_insert_sql_do_nothing():
         update_cols=[],
     )
     assert "ON CONFLICT (source_id, format_id, period, elo_cutoff) DO NOTHING" in sql
+
 
 def test_build_insert_sql_do_update():
     sql = _build_insert_sql(
@@ -38,6 +41,7 @@ def test_build_insert_sql_do_update():
     assert "ON CONFLICT (event_id, placement)" in sql
     assert "DO UPDATE SET player_name = EXCLUDED.player_name" in sql
 
+
 def test_build_insert_sql_jsonb_cast():
     sql = _build_insert_sql(
         "replay_team",
@@ -46,6 +50,7 @@ def test_build_insert_sql_jsonb_cast():
     )
     assert "$1" in sql
     assert "$2::jsonb" in sql
+
 
 def test_build_insert_sql_multiple_update_cols():
     sql = _build_insert_sql(
@@ -57,7 +62,9 @@ def test_build_insert_sql_multiple_update_cols():
     assert "item = EXCLUDED.item" in sql
     assert "ability = EXCLUDED.ability" in sql
 
+
 # ─── bulk_upsert_returning SQL shape ─────────────────────────────────────────
+
 
 def test_bulk_upsert_returning_no_double_unnest():
     """Generated SQL must use parallel unnest($1::t[], $2::t[]) — not unnest(unnest(...))."""
@@ -84,7 +91,9 @@ def test_bulk_upsert_returning_no_double_unnest():
         "expected parallel unnest form with typed arrays"
     )
 
+
 # ─── bulk_upsert chunking ────────────────────────────────────────────────────
+
 
 def test_chunk_boundary():
     """Verify chunk slicing logic produces correct sub-batches."""
@@ -96,11 +105,13 @@ def test_chunk_boundary():
     assert batches[1] == list(range(10, 20))
     assert batches[2] == list(range(20, 25))
 
+
 def test_chunk_exact_multiple():
     rows = list(range(20))
     chunk = 10
     batches = [rows[i : i + chunk] for i in range(0, len(rows), chunk)]
     assert len(batches) == 2
+
 
 def test_chunk_single_row():
     rows = [(1, "a")]
@@ -108,12 +119,15 @@ def test_chunk_single_row():
     batches = [rows[i : i + chunk] for i in range(0, len(rows), chunk)]
     assert batches == [[(1, "a")]]
 
+
 # ─── JSONB pre-serialisation ─────────────────────────────────────────────────
+
 
 def test_moves_json_roundtrip():
     moves = ["Moonblast", "Dazzling Gleam", "Protect", "Follow Me"]
     serialized = json.dumps(moves)
     assert json.loads(serialized) == moves
+
 
 # ─── Integration — guarded by PLATFORM_DATABASE_URL ─────────────────────────
 
@@ -121,6 +135,7 @@ SKIP_INTEGRATION = pytest.mark.skipif(
     not os.environ.get("PLATFORM_DATABASE_URL"),
     reason="PLATFORM_DATABASE_URL not set — skipping live DB tests",
 )
+
 
 @SKIP_INTEGRATION
 @pytest.mark.asyncio
