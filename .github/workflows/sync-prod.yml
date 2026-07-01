@@ -74,7 +74,7 @@ jobs:
         if: >-
           github.event.schedule == '0 9 1 * *' ||
           github.event_name == 'workflow_dispatch' && (inputs.source == 'smogon' || inputs.source == 'all')
-        run: |
+        run: >
           # Derive last completed month (sync runs on the 1st, so previous month's data is ready).
           PERIOD=$(python -c "
           from datetime import date, timedelta
