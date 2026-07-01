@@ -29,6 +29,13 @@ jobs:
     name: Run production sync
     runs-on: [self-hosted]  # existing actions-runner; prod Postgres at localhost
 
+    # Pin shell explicitly — self-hosted Windows runner defaults to pwsh, and a
+    # prior bash-syntax step (backslash continuations, $VAR) parsed as pwsh and
+    # crashed before Python ran. Git Bash is present on the runner.
+    defaults:
+      run:
+        shell: bash
+
     env:
       PLATFORM_DATABASE_URL: ${{ secrets.PLATFORM_DATABASE_URL }}
 

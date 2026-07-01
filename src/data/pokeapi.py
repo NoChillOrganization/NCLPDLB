@@ -99,5 +99,15 @@ class PokemonDatabase:
         return list(self._db.values())
 
 
-# Global singleton — loaded on bot startup
-pokemon_db = PokemonDatabase()
+_pokemon_db: PokemonDatabase | None = None
+
+
+def get_pokemon_db() -> PokemonDatabase:
+    global _pokemon_db
+    if _pokemon_db is None:
+        _pokemon_db = PokemonDatabase()
+    return _pokemon_db
+
+
+# Backward-compat alias — prefer get_pokemon_db() in new code
+pokemon_db = get_pokemon_db()
