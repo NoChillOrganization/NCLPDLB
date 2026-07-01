@@ -190,10 +190,14 @@ async def _main(quiet: bool) -> int:
     return 1 if alerts else 0
 
 
-if __name__ == "__main__":
+def main() -> None:
     p = argparse.ArgumentParser(description="Check ingest pipeline health")
     p.add_argument(
         "--quiet", action="store_true", help="Suppress JSON output; use exit code only"
     )
     args = p.parse_args()
     sys.exit(asyncio.run(_main(args.quiet)))
+
+
+if __name__ == "__main__":
+    main()
