@@ -27,6 +27,9 @@ on:
       - ".github/workflows/train-transformer.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   train-transformer-smoke:
     name: Transformer MCTS self-play smoke

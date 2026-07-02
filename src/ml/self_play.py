@@ -264,8 +264,8 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
                 order = SinglesEnv.action_to_order(action_id, battle)
                 if order is not None:
                     return order
-            except Exception:
-                pass
+            except Exception as exc:
+                log.debug("[SelfPlay] action_to_order fallback to random: %s", exc)
             return self.choose_random_move(battle)
 
 else:  # pragma: no cover
@@ -391,8 +391,8 @@ class LadderLoop:
                     log.info("[Ladder] Status=stopped — waiting...")
                     await asyncio.sleep(2.0)
                     continue
-            except Exception:
-                pass
+            except Exception as exc:
+                log.debug("[Ladder] status-check failed: %s", exc)
 
             try:
                 snapshot = await self.run_game()
@@ -419,8 +419,8 @@ class LadderLoop:
                         ties=snapshot["ties"],
                         buffer_size=len(self.buffer),
                     )
-                except Exception:
-                    pass
+                except Exception as exc:
+                    log.debug("[Ladder] stats sync failed: %s", exc)
 
                 # Periodic training
                 if (
@@ -445,8 +445,8 @@ class LadderLoop:
                                 train_steps=metrics.get("step", 0),
                                 last_loss=round(metrics.get("total_loss", 0), 4),
                             )
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            log.debug("[Train] metrics sync failed: %s", exc)
                         self.trainer.save()
 
             except asyncio.CancelledError:
