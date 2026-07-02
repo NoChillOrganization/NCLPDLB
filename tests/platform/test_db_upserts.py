@@ -157,6 +157,15 @@ async def test_ingest_usage_batch_idempotent():
             ON CONFLICT (id) DO NOTHING
             """
         )
+        # FIX: Seed canonical_species(id=1) so the FK constraint on
+        # usage_entry.canonical_species_id is satisfied.
+        await conn.execute(
+            """
+            INSERT INTO canonical_species (id, slug, display_name)
+            VALUES (1, 'incineroar', 'Incineroar')
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
 
         snapshots = [
             {
