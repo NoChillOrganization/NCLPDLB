@@ -761,9 +761,11 @@ class TestBattleEnvCalcReward:
         # Simulate a previous state with 0 opponent fainted
         env._prev_state[battle_id] = {"opp_fainted": 0, "own_fainted": 0}
         battle = self._make_battle(opp_fainted=1)
-        # Override id(battle) by patching
-        with patch("builtins.id", return_value=battle_id):
-            reward = env.calc_reward(battle)
+        # calc_reward keys _prev_state on battle.battle_tag (falling back to
+        # id(battle) only when battle_tag is absent) — set it directly so the
+        # lookup hits the seeded state above.
+        battle.battle_tag = battle_id
+        reward = env.calc_reward(battle)
         assert reward == pytest.approx(0.3)
 
     def test_own_faint_reduces_reward(self):
@@ -771,8 +773,8 @@ class TestBattleEnvCalcReward:
         battle_id = 99
         env._prev_state[battle_id] = {"opp_fainted": 0, "own_fainted": 0}
         battle = self._make_battle(own_fainted=1)
-        with patch("builtins.id", return_value=battle_id):
-            reward = env.calc_reward(battle)
+        battle.battle_tag = battle_id
+        reward = env.calc_reward(battle)
         assert reward == pytest.approx(-0.3)
 
     def test_state_persists_across_calls(self):

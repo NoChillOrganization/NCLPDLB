@@ -152,8 +152,8 @@ async def test_ingest_usage_batch_idempotent():
         # so the FK constraint usage_snapshot_format_id_fkey is satisfied.
         await conn.execute(
             """
-            INSERT INTO canonical_format (id, name)
-            VALUES (1, 'gen9vgc2024regh')
+            INSERT INTO canonical_format (id, slug, label, generation, game_type)
+            VALUES (1, 'gen9vgc2024regh', 'VGC 2024 Reg H', 9, 'doubles')
             ON CONFLICT (id) DO NOTHING
             """
         )
