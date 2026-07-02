@@ -1,3 +1,5 @@
+target-version = "py311"  # CI test matrix floor (tests.yml runs 3.11-3.14)
+
 [lint.per-file-ignores]
 # sys.path bootstrap / pytest.importorskip guards require imports after
 # non-import statements — intentional, not an ordering bug.

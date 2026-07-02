@@ -679,7 +679,7 @@ class TestCurriculumCallbackTypeEff:
         assert cb._action_counts == {}
 
     def test_track_step_type_eff_exception_silently_ignored(self, tmp_path):
-        """Exception during obs_tensor processing → except: pass branch (lines 302-303)."""
+        """Exception during obs_tensor processing → except: pass branch (train_policy.py:454-455)."""
         import numpy as np
 
         cb, _ = self._make_cb(tmp_path)
@@ -690,7 +690,7 @@ class TestCurriculumCallbackTypeEff:
         assert len(cb._type_eff_window) == 0
 
     def test_check_policy_collapse_exception_silently_returns(self, tmp_path):
-        """Uncoercible actions value → except: return branch (lines 315-316)."""
+        """Uncoercible actions value → except: return branch (train_policy.py:467-468)."""
         cb, _ = self._make_cb(tmp_path)
         # A list of non-integer strings: np.asarray(["x"]) succeeds but int("x") raises
         cb.locals = {"infos": [], "actions": ["not-an-int"]}

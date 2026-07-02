@@ -17,6 +17,7 @@ jobs:
   dryrun:
     name: Real sync against ephemeral Postgres
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     services:
       postgres:

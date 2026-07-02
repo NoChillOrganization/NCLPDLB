@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # ── Clock skew fix ────────────────────────────────────────────
 # Shared helper — see scripts/_clock_skew.py for details (M33)
-from _clock_skew import apply_google_clock_skew
+from scripts._clock_skew import apply_google_clock_skew
 
 apply_google_clock_skew()
 
