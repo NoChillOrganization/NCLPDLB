@@ -61,7 +61,7 @@ jobs:
           --sources limitless replays
           --game VGC
           --limit 50
-          --replay-format gen9vgc2025regi
+          --replay-format gen9championsvgc2026regmb
           --pages 5
           --min-rating 1500
 
@@ -74,7 +74,7 @@ jobs:
         run: >
           python -m src.platform.sync_all
           --sources smogon pikalytics
-          --formats gen9vgc2025regi gen9ou gen9vgc2025regf
+          --formats gen9championsvgc2026regmb gen9ou gen9championsvgc2026regmbbo3
           --cutoff 1500
 
       # --- Post-sync health check + alerting ---
