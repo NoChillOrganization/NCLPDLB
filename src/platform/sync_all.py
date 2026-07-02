@@ -208,14 +208,14 @@ def main() -> None:
     parser.add_argument(
         "--formats",
         nargs="+",
-        default=["gen9vgc2025regi", "gen9ou"],
+        default=["gen9championsvgc2026regmb", "gen9ou"],
         help="Format slugs for usage sources",
     )
     parser.add_argument("--cutoff", type=int, default=1500, help="Smogon ELO cutoff")
     # Replay args
     parser.add_argument(
         "--replay-format",
-        default="gen9vgc2025regi",
+        default="gen9championsvgc2026regmb",
         dest="replay_format",
         help="Showdown format for replay sweep",
     )
