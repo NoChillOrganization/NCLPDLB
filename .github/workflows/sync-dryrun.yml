@@ -48,10 +48,16 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run Smogon sync (first pass)
+        # ponytail: period/format are pinned to a real, currently-published Smogon
+        # snapshot (verified live). Smogon only keeps the active regulation's chaos
+        # JSON up — when the ladder rotates past gen9championsvgc2026regmb, this
+        # 404s silently (get_json treats 404 as "not found", landed=0, no error)
+        # and only the idempotency assertion below will catch it. Bump both when
+        # that happens; check https://www.smogon.com/stats/ for the live slug.
         run: >
           python -m src.platform.sync_smogon
-          --period 2026-05
-          --formats gen9vgc2025regi
+          --period 2026-06
+          --formats gen9championsvgc2026regmb
           --cutoff 1500
 
       - name: Run Smogon sync (second pass — rerun-safety assertion)
@@ -59,8 +65,8 @@ jobs:
         # The sync prints stats; if errored > 0 it indicates a normalization failure.
         run: >
           python -m src.platform.sync_smogon
-          --period 2026-05
-          --formats gen9vgc2025regi
+          --period 2026-06
+          --formats gen9championsvgc2026regmb
           --cutoff 1500
 
       - name: Assert idempotency via raw_ingest count
