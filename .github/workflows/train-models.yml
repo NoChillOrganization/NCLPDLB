@@ -63,7 +63,6 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 env:
   # Directory where competitive meta data (CSVs + format_meta.json) is staged.
@@ -131,8 +130,12 @@ jobs:
           # are NOT FORMAT_TEAMS keys and don't exist on the Showdown server, so:
           #   • validate_teams.py → "No team pool mapped" → skips (non-fatal)
           #   • train_policy.py   → no custom pool → trains without curated teams
-          #     (battles still run via the gen9ou / gen9vgc2026regi alias in
-          #      TRAINING_FORMAT_ALIASES, train_policy.py:198-201)
+          #     (Champions formats aren't directly playable on the standard
+          #      Showdown server, so battles simulate under the closest
+          #      standard-server ruleset — gen9ou or gen9vgc2026regi — via
+          #      TRAINING_FORMAT_ALIASES, train_policy.py:204-216. The model
+          #      still targets the Champions format; regi is a battle-sim
+          #      compatibility shim only, not a training-target regression.)
           - { format: gen9championsou,              team_format: gen9championsou,              timesteps: 500000, train_timeout: 160 }
           - { format: gen9championsbssregmb,        team_format: gen9championsbssregmb,        timesteps: 500000, train_timeout: 160 }
           - { format: gen9championsvgc2026regmb,    team_format: gen9championsvgc2026regmb,    timesteps: 300000, train_timeout: 230 }
@@ -561,7 +564,6 @@ jobs:
     timeout-minutes: 15
 
     permissions:
-      actions: write
       contents: write
 
     steps:

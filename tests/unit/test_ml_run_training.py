@@ -145,7 +145,7 @@ class TestRunSelfPlayInThread:
         _run_self_play_in_thread(loop_obj)  # should not raise
 
     def test_error_path_import_fails_is_swallowed(self):
-        """When run_forever() raises AND api import fails, outer except: pass is hit."""
+        """When run_forever() raises AND api import fails, the outer except logs and swallows (run_training.py:101)."""
         loop_obj = MagicMock()
         loop_obj.run_forever = AsyncMock(side_effect=RuntimeError("boom"))
 
@@ -315,7 +315,7 @@ class TestMain:
                 main()
                 # closure now lives at mock_loop.run_game — call it (success path)
                 asyncio.run(mock_loop.run_game())
-                # call again with get_state raising → hits except: pass (lines 211-212)
+                # call again with get_state raising → hits the log-and-swallow except (run_training.py:206)
             with patch("src.ml.api.get_state", side_effect=RuntimeError("api gone")):
                 asyncio.run(mock_loop.run_game())
         mock_cfg_cls.assert_called()
