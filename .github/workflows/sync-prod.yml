@@ -28,6 +28,7 @@ jobs:
   sync:
     name: Run production sync
     runs-on: [self-hosted]  # existing actions-runner; prod Postgres at localhost
+    timeout-minutes: 60  # protects the single self-hosted runner from a hung sync/install
 
     # Pin shell explicitly — self-hosted Windows runner defaults to pwsh, and a
     # prior bash-syntax step (backslash continuations, $VAR) parsed as pwsh and

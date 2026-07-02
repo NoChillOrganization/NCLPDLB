@@ -441,7 +441,7 @@ class TestRunGame:
         assert set(snap.keys()) == {"games", "wins", "losses", "ties", "winrate"}
 
 
-# ── run_forever except: pass branches ─────────────────────────────────────────
+# ── run_forever log-and-swallow exception branches ────────────────────────────
 
 
 class TestRunForeverExceptionBranches:

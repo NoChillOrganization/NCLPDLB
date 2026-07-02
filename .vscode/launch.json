@@ -5,26 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "cmake",
+            "type": "debugpy",
             "request": "launch",
-            "name": "CMake: Externally launched",
-            "cmakeDebugType": "external",
-            "pipeName": "<...>"
+            "name": "Discord Bot (src/bot/main.py)",
+            "module": "src.bot.main",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
         },
         {
-            "type": "cmake",
+            "type": "debugpy",
             "request": "launch",
-            "name": "CMake: Externally launched",
-            "cmakeDebugType": "external",
-            "pipeName": "<...>"
-        },
-    {
-        "type": "cmake",
-        "request": "launch",
-        "name": "CMake: Configure project",
-        "cmakeDebugType": "configure",
-        "clean": false,
-        "configureAll": false
-    }
-    ],
- 
+            "name": "Python: Current File",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

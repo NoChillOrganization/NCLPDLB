@@ -98,8 +98,8 @@ def _run_self_play_in_thread(
             from src.ml.api import update_state
 
             update_state(status="error")
-        except Exception:
-            pass
+        except Exception as exc:
+            log.debug("[SelfPlayThread] status update failed: %s", exc)
     finally:
         new_loop.close()
 
@@ -161,8 +161,8 @@ def main(
         from src.ml.api import update_state
 
         update_state(mcts_sims=mcts_sims, status="stopped")
-    except Exception:
-        pass
+    except Exception as exc:
+        log.debug("initial API state sync failed: %s", exc)
 
     # ── Load Showdown credentials from config ────────────────────────────
     try:
@@ -203,8 +203,8 @@ def main(
 
             sims = get_state().get("mcts_sims", mcts_sims)
             loop_obj.mcts_config = MCTSConfig(n_simulations=sims)
-        except Exception:
-            pass
+        except Exception as exc:
+            log.debug("live mcts_sims refresh failed: %s", exc)
         return await _orig_run_game()
 
     loop_obj.run_game = _run_game_with_live_config  # type: ignore[method-assign]
@@ -246,8 +246,8 @@ def main(
             from src.ml.api import update_state
 
             update_state(status="stopped")
-        except Exception:
-            pass
+        except Exception as exc:
+            log.debug("shutdown status update failed: %s", exc)
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
