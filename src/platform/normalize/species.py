@@ -238,6 +238,7 @@ def canonicalize_species(
     Returns:
         SpeciesMatch with raw_name always set to the original *raw* string.
     """
+    _init()
     slug_set = _build_slug_set()
     overrides = (
         FORM_OVERRIDES if not extra_overrides else {**FORM_OVERRIDES, **extra_overrides}
@@ -338,16 +339,18 @@ def normalize_replay_pokemon(
 
 
 # ---------------------------------------------------------------------------
-# Module-level initialisation
+# Module-level initialisation (lazy — first call to canonicalize_species triggers it)
 # ---------------------------------------------------------------------------
-# Build and validate on first import so any pokemon.json gaps appear early in the
-# process, not mid-ingest. Using a private call avoids re-validating on every lookup.
+_INIT_DONE: bool = False
+
+
 def _init() -> None:
+    global _INIT_DONE
+    if _INIT_DONE:
+        return
+    _INIT_DONE = True
     slugs = _build_slug_set()
     _validate_overrides(slugs)
-
-
-_init()
 
 
 # ---------------------------------------------------------------------------

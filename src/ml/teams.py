@@ -49,10 +49,14 @@ def _load(fmt: str) -> list[str]:
 FORMAT_TEAMS: dict[str, list[str]] = {k: _load(k) for k in FORMAT_KEYS}
 
 
-if __name__ == "__main__":  # smoke test
+def main() -> None:
     assert len(FORMAT_TEAMS) == len(FORMAT_KEYS) == 23
     for _fmt, _teams in FORMAT_TEAMS.items():
         assert _teams, f"{_fmt} has no teams"
         assert any("@" in t for t in _teams), f"{_fmt} missing item notation"
     assert len(FORMAT_TEAMS["gen9ou"]) == 5
     print("teams.py OK:", sum(len(v) for v in FORMAT_TEAMS.values()), "teams")
+
+
+if __name__ == "__main__":
+    main()

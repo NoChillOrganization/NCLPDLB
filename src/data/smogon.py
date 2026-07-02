@@ -217,7 +217,8 @@ def _save_cached_tiers(tiers: dict[str, str]) -> None:
 
 # ── CLI entrypoint ─────────────────────────────────────────────
 
-if __name__ == "__main__":
+
+def main() -> None:
     import asyncio
     import sys
     from pathlib import Path
@@ -225,3 +226,7 @@ if __name__ == "__main__":
     pokemon_path = Path(__file__).parent.parent.parent / "data" / "pokemon.json"
     limit = int(sys.argv[1]) if len(sys.argv) > 1 else None
     asyncio.run(update_pokemon_strategies(pokemon_path, limit=limit))
+
+
+if __name__ == "__main__":
+    main()
