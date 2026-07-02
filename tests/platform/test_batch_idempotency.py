@@ -85,8 +85,8 @@ async def test_ingest_usage_batch_idempotent():
         # usage_snapshot.format_id is satisfied before the first ingest call.
         await conn.execute(
             """
-            INSERT INTO canonical_format (id, name)
-            VALUES (1, 'gen9vgc2024regh')
+            INSERT INTO canonical_format (id, slug, label, generation, game_type)
+            VALUES (1, 'gen9vgc2024regh', 'VGC 2024 Reg H', 9, 'doubles')
             ON CONFLICT (id) DO NOTHING
             """
         )
@@ -148,8 +148,8 @@ async def test_ingest_tournament_batch_null_key_idempotent():
         # FIX: Seed canonical_format(id=1) required by the FK on tournament_event.
         await conn.execute(
             """
-            INSERT INTO canonical_format (id, name)
-            VALUES (1, 'gen9vgc2024regh')
+            INSERT INTO canonical_format (id, slug, label, generation, game_type)
+            VALUES (1, 'gen9vgc2024regh', 'VGC 2024 Reg H', 9, 'doubles')
             ON CONFLICT (id) DO NOTHING
             """
         )
