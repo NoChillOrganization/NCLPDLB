@@ -63,16 +63,19 @@ jobs:
         run: pip install -r requirements.txt
       - name: Dry-run Smogon sync
         # Makes real HTTP call; validates fetch→RawRecord path without DB writes.
+        # ponytail: dry-run doesn't assert on landed count (only errored), so a
+        # 404'd format slug here goes unnoticed — see sync-dryrun.yml for the
+        # staleness ceiling note; keep this in sync with that file's slug.
         run: >
           python -m src.platform.sync_smogon
-          --period 2026-05
-          --formats gen9vgc2025regi
+          --period 2026-06
+          --formats gen9championsvgc2026regmb
           --cutoff 1500
           --dry-run
       - name: Dry-run Pikalytics sync
         run: >
           python -m src.platform.sync_pikalytics
-          --formats gen9vgc2025regi
+          --formats gen9championsvgc2026regmb
           --max-pages 1
           --dry-run
       - name: Dry-run Limitless sync
