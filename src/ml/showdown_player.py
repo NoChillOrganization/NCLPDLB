@@ -33,7 +33,7 @@ Usage (from Discord bot)
 
 Requirements
 ────────────
-  pip install poke-env>=0.8.1 stable-baselines3>=2.2.0
+  pip install poke-env>=0.15.0 stable-baselines3>=2.2.0
 """
 
 from __future__ import annotations
@@ -261,7 +261,7 @@ else:  # pragma: no cover
     class ShowdownBotPlayer:  # type: ignore
         def __init__(self, *args, **kwargs):
             raise ImportError(
-                "poke-env is not properly installed. Run: pip install poke-env>=0.8.1"
+                "poke-env is not properly installed. Run: pip install poke-env>=0.15.0"
             )
 
 
