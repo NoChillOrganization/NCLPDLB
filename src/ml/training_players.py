@@ -30,7 +30,7 @@ except ImportError:  # pragma: no cover
 
         def __init__(self, *args: object, **kwargs: object) -> None:
             raise ImportError(
-                "poke_env is not installed. Run: pip install poke-env>=0.8.1"
+                "poke_env is not installed. Run: pip install poke-env>=0.15.0"
             )
 
         def choose_random_move(self, battle: object) -> object:

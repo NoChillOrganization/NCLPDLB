@@ -20,7 +20,7 @@ Requirements
 ------------
   • One Showdown account (set in .env):
       SHOWDOWN_USERNAME / SHOWDOWN_PASSWORD
-  • pip install poke-env>=0.8.1 torch numpy
+  • pip install poke-env>=0.15.0 torch numpy
 
 Usage
 -----
@@ -273,7 +273,7 @@ else:  # pragma: no cover
     class MCTSPlayer:  # type: ignore
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise ImportError(
-                "poke-env is not installed. Run: pip install poke-env>=0.8.1"
+                "poke-env is not installed. Run: pip install poke-env>=0.15.0"
             )
 
 
@@ -339,7 +339,7 @@ class LadderLoop:
         if not POKE_ENV_OK or not POKE_ENV_AVAILABLE:
             raise RuntimeError(
                 "poke-env is required for LadderLoop. "
-                "Install with: pip install poke-env>=0.8.1"
+                "Install with: pip install poke-env>=0.15.0"
             )
 
         if not self.username:

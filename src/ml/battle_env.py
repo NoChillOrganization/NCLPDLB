@@ -664,7 +664,7 @@ else:  # pragma: no cover
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise ImportError(
-                "poke-env is not properly installed. Run: pip install poke-env>=0.8.1"
+                "poke-env is not properly installed. Run: pip install poke-env>=0.15.0"
             )
 
 
@@ -961,5 +961,5 @@ else:  # pragma: no cover
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise ImportError(
-                "poke-env is not properly installed. Run: pip install poke-env>=0.8.1"
+                "poke-env is not properly installed. Run: pip install poke-env>=0.15.0"
             )

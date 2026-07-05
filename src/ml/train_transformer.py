@@ -24,7 +24,7 @@ Requirements
 ------------
   • A local Pokemon Showdown server on ws://localhost:8000
     (node pokemon-showdown/pokemon-showdown start --no-security)
-  • pip install poke-env>=0.8.1 torch numpy
+  • pip install poke-env>=0.15.0 torch numpy
 """
 
 from __future__ import annotations

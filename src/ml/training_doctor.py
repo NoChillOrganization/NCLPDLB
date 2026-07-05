@@ -114,7 +114,7 @@ _DEP_TO_PACKAGE: dict[str, str] = {
     "numpy": "numpy",
     "torch": "torch",
     "stable_baselines3": "stable-baselines3>=2.2.0",
-    "poke_env": "poke-env>=0.8.1",
+    "poke_env": "poke-env>=0.15.0",
     "gymnasium": "gymnasium",
     "tensorboard": "tensorboard>=2.16.0",
     "shimmy": "shimmy",
