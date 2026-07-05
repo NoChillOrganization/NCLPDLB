@@ -612,10 +612,10 @@ if POKE_ENV_AVAILABLE:
                     raise
                 # Battle ended before SB3 could observe done=True.
                 # Return a terminal step with zero reward so the rollout closes cleanly.
-                # Note: self.observation_space is a method on the poke-env parent class,
-                # not a property — use the concrete space we set in __init__ instead.
-                obs_space = next(iter(self.observation_spaces.values()))
-                obs = np.zeros(obs_space.shape, dtype=obs_space.dtype)
+                # poke-env 0.15+ wraps observation_spaces in a Dict{action_mask, observation},
+                # whose .shape is None; build the flat terminal obs from the known embed dim
+                # instead (matches build_observation's output exactly).
+                obs = np.zeros(OBS_DIM, dtype=np.float32)
                 return obs, 0.0, True, True, {}
 
         def embed_battle(self, battle: AbstractBattle) -> np.ndarray:
@@ -910,10 +910,10 @@ if POKE_ENV_AVAILABLE:
                     raise
                 # Battle ended before SB3 could observe done=True.
                 # Return a terminal step with zero reward so the rollout closes cleanly.
-                # Note: self.observation_space is a method on the poke-env parent class,
-                # not a property — use the concrete space we set in __init__ instead.
-                obs_space = next(iter(self.observation_spaces.values()))
-                obs = np.zeros(obs_space.shape, dtype=obs_space.dtype)
+                # poke-env 0.15+ wraps observation_spaces in a Dict{action_mask, observation},
+                # whose .shape is None; build the flat terminal obs from the known embed dim
+                # instead (matches build_observation's output exactly).
+                obs = np.zeros(OBS_DIM_DOUBLES, dtype=np.float32)
                 return obs, 0.0, True, True, {}
 
         def embed_battle(self, battle: Any) -> np.ndarray:
