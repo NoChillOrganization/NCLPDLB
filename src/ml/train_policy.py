@@ -23,7 +23,7 @@ Requirements
 ────────────
   • A local Pokemon Showdown server on ws://localhost:8000
     (See scripts/setup_showdown_server.md)
-  • pip install poke-env>=0.8.1 stable-baselines3>=2.2.0 tensorboard>=2.16.0
+  • pip install poke-env>=0.15.0 stable-baselines3>=2.2.0 tensorboard>=2.16.0
 
 Usage
 ─────
@@ -763,7 +763,7 @@ def train(  # pragma: no cover
     if not POKE_ENV_AVAILABLE:
         raise RuntimeError(
             "poke-env is not installed or failed to import. "
-            "Run: pip install poke-env>=0.8.1"
+            "Run: pip install poke-env>=0.15.0"
         )
     if not SB3_OK:
         raise RuntimeError(
