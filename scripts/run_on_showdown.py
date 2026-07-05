@@ -34,7 +34,7 @@ How to watch
 
 Requirements
 ------------
-  pip install poke-env>=0.8.1 stable-baselines3>=2.2.0
+  pip install poke-env>=0.15.0 stable-baselines3>=2.2.0
 
   Two registered Pokémon Showdown accounts are required.
   Register free at: https://play.pokemonshowdown.com

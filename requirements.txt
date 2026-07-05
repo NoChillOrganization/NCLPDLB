@@ -53,9 +53,9 @@ pandas>=3.0.3
 # Local install: pip install torch  (or see https://pytorch.org/get-started/locally/ for CUDA)
 torch>=2.10.0
 stable-baselines3>=2.8.0   # PPO/DQN for battle policy RL
-gymnasium>=1.0.0            # required by poke-env==0.12.1; also imported directly (guarded) in battle_env.py/pretrain.py/train_policy.py
+gymnasium>=1.0.0            # required by poke-env==0.15.0; also imported directly (guarded) in battle_env.py/pretrain.py/train_policy.py
 tensorboard>=2.20.0         # training metrics visualisation
-# imitation is NOT listed here: poke-env==0.12.1 requires gymnasium>=1.0.0 while
+# imitation is NOT listed here: poke-env==0.15.0 requires gymnasium>=1.0.0 while
 # imitation>=1.0.0 requires gymnasium~=0.29 — they cannot coexist in one environment.
 # For local BC pre-training use a separate venv:
 #   pip install "imitation>=1.0.0" "gymnasium~=0.29" "stable-baselines3>=1.7"
@@ -63,7 +63,7 @@ tensorboard>=2.20.0         # training metrics visualisation
 
 # Pokemon Showdown battle environment (RL training)
 # poke-env connects to a local Showdown server for self-play
-poke-env==0.12.1            # pinned: 0.13+ has breaking API changes
+poke-env==0.15.0            # pinned: code uses the 0.13+ module layout (poke_env.battle, Singles/DoublesEnv); 0.12.x will break imports
 websockets>=16.0       # required by poke-env for Showdown WebSocket communication
 fastapi>=0.138.2       # ML training API server (src/ml/api.py, run_training.py)
 uvicorn>=0.48.0        # ASGI server for FastAPI ML API
