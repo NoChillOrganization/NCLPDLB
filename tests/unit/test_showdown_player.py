@@ -368,3 +368,85 @@ class TestBrowserTrainerImport:
         assert SHOWDOWN_URL == "https://play.pokemonshowdown.com"
         assert "data/ml/policy" in DEFAULT_SAVE_DIR
         assert "results" in DEFAULT_RESULTS_DIR
+
+
+# ── best_model_for_format: obs-dim compatibility guard ────────────────────────
+
+
+def _write_sb3_zip(path, obs_dim):
+    """Write a minimal SB3-style .zip whose ``data`` member records obs_dim.
+
+    Mirrors how stable-baselines3 serializes the observation space, so
+    _model_obs_dim() reads the shape without loading torch.
+    """
+    import json
+    import zipfile
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(path, "w") as zf:
+        zf.writestr("data", json.dumps({"observation_space": {"_shape": [obs_dim]}}))
+
+
+class TestBestModelObsDimGuard:
+    def test_skips_stale_dim_and_picks_compatible(self, tmp_path):
+        """A newer but dim-incompatible dated zip must NOT shadow a compatible one."""
+        from src.ml.battle_env import OBS_DIM
+
+        fmt = "gen9ou"
+        subdir = tmp_path / "results" / fmt
+        # Newer date, WRONG dim (stale) — would win on recency alone.
+        _write_sb3_zip(subdir / f"{fmt}_2026-06-03.zip", OBS_DIM - 30)
+        # Older date, CORRECT dim.
+        _write_sb3_zip(subdir / f"{fmt}_2025-01-01.zip", OBS_DIM)
+
+        result = best_model_for_format(
+            fmt,
+            save_dir=str(tmp_path / "policy"),
+            results_dir=str(tmp_path / "results"),
+        )
+        assert result is not None
+        assert "2025-01-01" in result.name  # skipped the stale 2026-06-03 zip
+
+    def test_falls_through_to_policy_dir_when_results_incompatible(self, tmp_path):
+        """The real /spar failure: stale results zip shadows the fresh policy model."""
+        from src.ml.battle_env import OBS_DIM
+
+        fmt = "gen9randombattle"
+        _write_sb3_zip(tmp_path / "results" / f"{fmt}_2026-06-03.zip", OBS_DIM - 30)
+        _write_sb3_zip(tmp_path / "policy" / fmt / "final_model.zip", OBS_DIM)
+
+        result = best_model_for_format(
+            fmt,
+            save_dir=str(tmp_path / "policy"),
+            results_dir=str(tmp_path / "results"),
+        )
+        assert result is not None
+        assert result.name == "final_model.zip"
+
+    def test_unreadable_zip_treated_as_compatible(self, tmp_path):
+        """Empty/corrupt zips (unknown dim) must not be skipped — back-compat."""
+        fmt = "gen9ou"
+        results_dir = tmp_path / "results"
+        results_dir.mkdir()
+        (results_dir / f"{fmt}_2025-03-01.zip").touch()  # not a real zip
+
+        result = best_model_for_format(
+            fmt,
+            save_dir=str(tmp_path / "policy"),
+            results_dir=str(results_dir),
+        )
+        assert result is not None
+        assert "2025-03-01" in result.name
+
+    def test_returns_none_when_all_incompatible(self, tmp_path):
+        from src.ml.battle_env import OBS_DIM
+
+        fmt = "gen9ou"
+        _write_sb3_zip(tmp_path / "results" / f"{fmt}_2026-06-03.zip", OBS_DIM - 30)
+
+        result = best_model_for_format(
+            fmt,
+            save_dir=str(tmp_path / "policy"),
+            results_dir=str(tmp_path / "results"),
+        )
+        assert result is None
