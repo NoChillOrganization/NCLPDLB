@@ -518,7 +518,9 @@ def best_model_for_format(
 
         save_dir = settings.ml_policy_dir
     # 1. Dated final models — check per-format subdir first, then flat root
-    subdir_results = sorted((Path(results_dir) / fmt).glob(f"{fmt}_*.zip"), reverse=True)
+    subdir_results = sorted(
+        (Path(results_dir) / fmt).glob(f"{fmt}_*.zip"), reverse=True
+    )
     for candidate in subdir_results:
         if _compatible(candidate):
             return candidate
