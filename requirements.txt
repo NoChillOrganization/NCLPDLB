@@ -62,7 +62,9 @@ tensorboard>=2.20.0         # training metrics visualisation
 # (BC pre-training in CI is skipped when no replay JSON files are present.)
 
 # Pokemon Showdown battle environment (RL training)
-# poke-env connects to a local Showdown server for self-play
+# poke-env connects to a local Showdown server for self-play training;
+# the Discord /spar command instead targets the public wss://sim3.psim.us
+# (see src/ml/showdown_modes.py) and needs a real registered bot account.
 poke-env==0.15.0            # pinned: code uses the 0.13+ module layout (poke_env.battle, Singles/DoublesEnv); 0.12.x will break imports
 websockets>=16.0       # required by poke-env for Showdown WebSocket communication
 fastapi>=0.138.2       # ML training API server (src/ml/api.py, run_training.py)
