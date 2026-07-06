@@ -44,7 +44,7 @@ locust>=2.44.4  # Load testing (tests/performance/locustfile.py)
 ruff>=0.15.20
 
 # Machine Learning — data pipeline
-numpy>=2.4.0,<2.5.0  # compatible with Python 3.11+
+numpy>=2.5.1,<2.6.0  # compatible with Python 3.11+
 scikit-learn>=1.9.0
 pandas>=3.0.3
 
