@@ -73,7 +73,7 @@ class ReplayBuffer:
 
     Args:
         capacity  : maximum number of transitions to store (FIFO eviction)
-        obs_dim   : observation vector size (default: OBS_DIM = 48)
+        obs_dim   : observation vector size (default: OBS_DIM = 78)
         n_actions : action space size (default: N_ACTIONS_GEN9 = 26)
     """
 

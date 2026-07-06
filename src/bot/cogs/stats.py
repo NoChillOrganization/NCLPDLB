@@ -387,7 +387,14 @@ class StatsCog(commands.Cog, name="Stats"):
             bot_username = None
             bot_password = None
 
-        if not bot_username or not bot_password:
+        # SecretStr has no __bool__/__len__ override, so SecretStr("") is truthy —
+        # unwrap before checking emptiness or an unset password slips past this guard.
+        bot_password_value = (
+            bot_password.get_secret_value()
+            if hasattr(bot_password, "get_secret_value")
+            else bot_password
+        )
+        if not bot_username or not bot_password_value:
             # No live bot configured — give instructions instead
             embed = discord.Embed(
                 title="Spar with the AI Bot",
@@ -524,6 +531,16 @@ async def _run_spar_challenge(
         # Challenge + battle can exceed the ~15-min interaction webhook TTL — use DM.
         await interaction.user.send(embed=embed)
 
+    except ValueError as exc:
+        # Model/config problems (e.g. obs-dim mismatch) — never a login/connection
+        # issue, so the "check your Showdown username" hint would be misleading.
+        log.error(f"[/spar] Live challenge failed (model error): {exc}", exc_info=True)
+        try:
+            await interaction.user.send(
+                f"The spar battle couldn't start: `{exc}`",
+            )
+        except Exception:
+            log.warning("[/spar] Could not DM result to user %s", interaction.user.id)
     except Exception as exc:
         log.error(f"[/spar] Live challenge failed: {exc}", exc_info=True)
         try:
