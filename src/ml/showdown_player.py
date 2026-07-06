@@ -436,9 +436,16 @@ class BotChallenger:
 
 
 def _make_account_config(username: str, password: str):  # pragma: no cover
-    """Build a poke-env AccountConfiguration."""
+    """Build a poke-env AccountConfiguration.
+
+    Accepts either a plain str or a pydantic SecretStr for ``password`` — callers
+    (e.g. the Discord /spar cog) pass settings.showdown_password straight through
+    without unwrapping it, and AccountConfiguration needs the raw string.
+    """
     from poke_env.ps_client.account_configuration import AccountConfiguration
 
+    if hasattr(password, "get_secret_value"):
+        password = password.get_secret_value()
     return AccountConfiguration(username, password)
 
 
@@ -462,6 +469,26 @@ def _count_fainted(battle: AbstractBattle) -> int:
 # ── Model selector ────────────────────────────────────────────────────────────
 
 
+def _model_obs_dim(path: str | Path) -> int | None:
+    """Read the saved SB3 policy's observation-space dim without loading torch weights.
+
+    SB3 zips store a JSON-serialized ``observation_space`` in the ``data`` member.
+    Returns None if the dim can't be determined (missing/corrupt zip, unexpected
+    schema) — callers treat None as "unknown, don't block on it" rather than
+    forcing a false-positive skip.
+    """
+    import json
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(path) as zf:
+            data = json.loads(zf.read("data"))
+        shape = data.get("observation_space", {}).get("_shape")
+        return shape[0] if shape else None
+    except Exception:
+        return None
+
+
 def best_model_for_format(
     fmt: str,
     save_dir: str | None = None,
@@ -471,45 +498,57 @@ def best_model_for_format(
     """
     Return the path to the best available model for a given format.
 
-    Preference order:
+    Preference order (each rung is skipped if its candidate's saved obs dim is
+    known and doesn't match the environment's current OBS_DIM — see
+    ``_model_obs_dim``; this stops stale checkpoints from shadowing a fresh
+    retrain after an observation-space change):
       1. Most recent dated model in results_dir  ({fmt}_YYYY-MM-DD.zip)
       2. final_model.zip in save_dir  (downloaded via /admin-pull-models)
       3. latest.zip in save_dir  (in-progress checkpoint)
       4. Newest ppo_ckpt_*.zip in save_dir
     """
+    from src.ml.battle_env import OBS_DIM
+
+    def _compatible(candidate: Path) -> bool:
+        dim = _model_obs_dim(candidate)
+        return dim is None or dim == OBS_DIM
+
     if save_dir is None:
         from src.config import settings
 
         save_dir = settings.ml_policy_dir
     # 1. Dated final models — check per-format subdir first, then flat root
-    subdir_results = sorted((Path(results_dir) / fmt).glob(f"{fmt}_*.zip"))
-    if subdir_results:
-        return subdir_results[-1]
-    flat_results = sorted(Path(results_dir).glob(f"{fmt}_*.zip"))
-    if flat_results:
-        return flat_results[-1]
+    subdir_results = sorted((Path(results_dir) / fmt).glob(f"{fmt}_*.zip"), reverse=True)
+    for candidate in subdir_results:
+        if _compatible(candidate):
+            return candidate
+    flat_results = sorted(Path(results_dir).glob(f"{fmt}_*.zip"), reverse=True)
+    for candidate in flat_results:
+        if _compatible(candidate):
+            return candidate
 
     base = Path(save_dir) / fmt
 
     # 2. Downloaded model from /admin-pull-models (CI release artifact)
     final = base / "final_model.zip"
-    if final.exists():
+    if final.exists() and _compatible(final):
         return final
 
     # 2b. Legacy model layout: {legacy_dir}/model-{fmt}/final_model.zip
     legacy_final = Path(legacy_dir) / f"model-{fmt}" / "final_model.zip"
-    if legacy_final.exists():
+    if legacy_final.exists() and _compatible(legacy_final):
         return legacy_final
 
     # 3. In-progress checkpoint
     latest = base / "latest.zip"
-    if latest.exists():
+    if latest.exists() and _compatible(latest):
         return latest
 
     # 4. Newest PPO checkpoint
-    ckpts = sorted(base.glob("ppo_ckpt_*.zip"))
-    if ckpts:
-        return ckpts[-1]
+    ckpts = sorted(base.glob("ppo_ckpt_*.zip"), reverse=True)
+    for candidate in ckpts:
+        if _compatible(candidate):
+            return candidate
 
     return None
 
