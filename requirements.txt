@@ -54,7 +54,7 @@ pandas>=3.0.3
 torch>=2.10.0
 stable-baselines3>=2.8.0   # PPO/DQN for battle policy RL
 gymnasium>=1.0.0            # required by poke-env==0.15.0; also imported directly (guarded) in battle_env.py/pretrain.py/train_policy.py
-tensorboard>=2.20.0         # training metrics visualisation
+tensorboard>=2.21.0         # training metrics visualisation
 # imitation is NOT listed here: poke-env==0.15.0 requires gymnasium>=1.0.0 while
 # imitation>=1.0.0 requires gymnasium~=0.29 — they cannot coexist in one environment.
 # For local BC pre-training use a separate venv:
