@@ -19,7 +19,7 @@ pydantic-settings>=2.14.2
 # HTTP Client (async, cross-platform)
 aiohttp>=3.14.1,<3.15
 httpx>=0.28.1
-requests>=2.33.0  # transitive dep of gspread, but also imported directly in src/data/sheets.py; floor covers CVE-2024-47081 (.netrc leak) + CVE-2026-25645 (insecure temp file)
+requests>=2.34.2  # transitive dep of gspread, but also imported directly in src/data/sheets.py; floor covers CVE-2024-47081 (.netrc leak) + CVE-2026-25645 (insecure temp file)
 
 # Data Scraping (Smogon)
 beautifulsoup4>=4.15.0
@@ -54,7 +54,7 @@ pandas>=3.0.3
 torch>=2.10.0
 stable-baselines3>=2.8.0   # PPO/DQN for battle policy RL
 gymnasium>=1.0.0            # required by poke-env==0.15.0; also imported directly (guarded) in battle_env.py/pretrain.py/train_policy.py
-tensorboard>=2.20.0         # training metrics visualisation
+tensorboard>=2.21.0         # training metrics visualisation
 # imitation is NOT listed here: poke-env==0.15.0 requires gymnasium>=1.0.0 while
 # imitation>=1.0.0 requires gymnasium~=0.29 — they cannot coexist in one environment.
 # For local BC pre-training use a separate venv:
@@ -67,8 +67,8 @@ tensorboard>=2.20.0         # training metrics visualisation
 # (see src/ml/showdown_modes.py) and needs a real registered bot account.
 poke-env==0.15.0            # pinned: code uses the 0.13+ module layout (poke_env.battle, Singles/DoublesEnv); 0.12.x will break imports
 websockets>=16.0       # required by poke-env for Showdown WebSocket communication
-fastapi>=0.138.2       # ML training API server (src/ml/api.py, run_training.py)
-uvicorn>=0.50.2        # ASGI server for FastAPI ML API
+fastapi>=0.139.0       # ML training API server (src/ml/api.py, run_training.py)
+uvicorn>=0.48.0        # ASGI server for FastAPI ML API
 
 # Packaging (build standalone .exe)
 pyinstaller>=6.21.0       # build: pyinstaller src/bot/NCLPDLB.spec
