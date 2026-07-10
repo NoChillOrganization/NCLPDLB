@@ -28,6 +28,12 @@ updates:
       # with the CPU-wheel channel used by dependency-submission and train-models.
       - dependency-name: "torch"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # numpy 2.5.0 dropped Python 3.11 (Requires-Python >=3.12). The test matrix
+      # in tests.yml still includes 3.11, so any bump to >=2.5.0 breaks the 3.11
+      # install job. Block those PRs until 3.11 support is dropped; the pin in
+      # requirements.txt stays numpy>=2.4.0,<2.5.0.
+      - dependency-name: "numpy"
+        versions: [">=2.5.0"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
