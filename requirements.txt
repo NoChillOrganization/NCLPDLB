@@ -41,7 +41,7 @@ pytest-timeout>=0.14.0
 locust>=2.44.4  # Load testing (tests/performance/locustfile.py)
 
 # Code Quality
-ruff>=0.15.20
+ruff>=0.15.21
 
 # Machine Learning — data pipeline
 numpy>=2.4.0,<2.5.0  # compatible with Python 3.11+
