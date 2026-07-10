@@ -15,6 +15,7 @@ SUPPORTED_FORMATS: dict[str, str] = {
     "gen9pu": "Gen 9 PU",
     "gen9lc": "Gen 9 Little Cup",
     "gen9monotype": "Gen 9 Monotype",
+    "gen9monotyperandombattle": "Gen 9 Monotype Random Battle",
     "gen9doublesou": "Gen 9 Doubles OU",
     # VGC Gen 9 Regulations — 2024 season
     "gen9vgc2024rega": "VGC 2024 Reg A",
@@ -27,8 +28,8 @@ SUPPORTED_FORMATS: dict[str, str] = {
     # VGC Gen 9 Regulations — 2026 season
     "gen9vgc2026regi": "VGC 2026 Reg I",
     # Pokémon Champions VGC — 2026 season (active May 29 2026+)
-    "gen9championsvgc2026regma": "Champions VGC 2026 Reg M-A",
-    "gen9championsvgc2026regmabo3": "Champions VGC 2026 Reg M-A (Bo3)",
+    "gen9championsvgc2026regmb": "Champions VGC 2026 Reg M-B",
+    "gen9championsvgc2026regmbbo3": "Champions VGC 2026 Reg M-B (Bo3)",
     # Draft League
     "draftleague": "Draft League",
 }

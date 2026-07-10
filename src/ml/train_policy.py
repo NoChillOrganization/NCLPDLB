@@ -192,8 +192,6 @@ DOUBLES_FORMATS = {
     "gen9vgc2026regi",
     "gen9vgc2026regibo3",
     # Champions Doubles
-    "gen9championsvgc2026regma",
-    "gen9championsvgc2026regmabo3",
     "gen9championsvgc2026regmb",
     "gen9championsvgc2026regmbbo3",
 }
@@ -207,10 +205,7 @@ TRAINING_FORMAT_ALIASES: dict[str, str] = {
     # Champions formats → not on the standard Showdown server; train as
     # the closest standard format so battles can actually start.
     "gen9championsou": "gen9ou",
-    "gen9championsbssregma": "gen9ou",
     "gen9championsbssregmb": "gen9ou",
-    "gen9championsvgc2026regma": "gen9vgc2026regi",
-    "gen9championsvgc2026regmabo3": "gen9vgc2026regi",
     "gen9championsvgc2026regmb": "gen9vgc2026regi",
     "gen9championsvgc2026regmbbo3": "gen9vgc2026regi",
 }
