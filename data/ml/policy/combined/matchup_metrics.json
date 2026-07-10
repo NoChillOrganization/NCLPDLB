@@ -1,0 +1,9 @@
+{
+  "format": "combined",
+  "n_samples": 2525,
+  "accuracy": 0.5124752475247525,
+  "accuracy_std": 0.02163405985544186,
+  "roc_auc": 0.5180634196360807,
+  "roc_auc_std": 0.018471076087880792,
+  "vocab_size": 670
+}
