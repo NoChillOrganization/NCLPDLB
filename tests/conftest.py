@@ -7,10 +7,32 @@ functions and async fixtures work without @pytest.mark.asyncio.
 """
 
 import pytest
+import pytest_asyncio
 import tracemalloc
 from unittest.mock import MagicMock, AsyncMock
 
 tracemalloc.start()
+
+
+# ── Async DB isolation ────────────────────────────────────────────────────────
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _reset_aiosqlite_conn():
+    """Reset the shared aiosqlite connection after every test.
+
+    pytest-asyncio (asyncio_mode=auto) runs each test on a fresh event loop, but
+    src.data.db holds a module-global connection bound to the loop that first
+    opened it. Left dangling, a later test's DB await targets the previous
+    (closed) loop and hangs — fatal under Python 3.14's strict closed-loop check.
+    Closing here runs on the current test's loop, so it unwinds cleanly and the
+    next test reopens on its own loop.
+    """
+    yield
+    from src.data import db
+
+    await db.close_db()
+
 
 from src.data.models import (  # noqa: E402
     Pokemon,

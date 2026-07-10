@@ -40,6 +40,7 @@ _DB_PATH: Path = Path(re.sub(r"^sqlite(?:\+\w+)?:///", "", _raw_url))
 # ── Shared connection state ───────────────────────────────────────────────────
 
 _conn: Optional[aiosqlite.Connection] = None
+_conn_loop: Optional[asyncio.AbstractEventLoop] = None  # loop the conn is bound to
 _open_lock: asyncio.Lock = asyncio.Lock()  # serialise lazy-open races
 _write_lock: asyncio.Lock = asyncio.Lock()  # serialise execute+commit pairs
 
@@ -49,17 +50,35 @@ def _now() -> str:
 
 
 async def _get_conn() -> aiosqlite.Connection:
-    """Return the shared connection, opening it lazily if needed."""
-    global _conn
-    if _conn is not None:
+    """Return the shared connection, opening it lazily if needed.
+
+    aiosqlite binds a connection (and its worker thread) to the event loop that
+    was running when it opened. Reusing it from a *different* loop deadlocks: the
+    worker calls ``call_soon_threadsafe`` on the old (often closed) loop, so the
+    future on the current loop is never resolved and the await hangs. Python 3.14
+    made the closed-loop check strict, turning this into a hard failure. Guard by
+    reopening whenever the running loop changed (prod uses one long-lived loop, so
+    this only fires under per-test event loops or a loop restart).
+    """
+    global _conn, _conn_loop
+    running = asyncio.get_running_loop()
+    if _conn is not None and _conn_loop is running:
         return _conn
     async with _open_lock:
+        if _conn is not None and _conn_loop is not running:
+            # Bound to a stale loop — abandon it. Do NOT await close(): a
+            # cross-loop close reproduces the same hang. Drop the reference and
+            # let the orphaned worker thread unwind on its own.
+            log.warning("aiosqlite connection loop changed; reopening (M19)")
+            _conn = None
+            _conn_loop = None
         if _conn is None:  # double-checked after acquiring lock
             _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
             _conn = await aiosqlite.connect(_DB_PATH)
             _conn.row_factory = aiosqlite.Row
             await _conn.execute("PRAGMA journal_mode=WAL")
             await _conn.commit()
+            _conn_loop = running
             log.debug("aiosqlite connection opened at %s (M19)", _DB_PATH)
     return _conn
 
@@ -96,13 +115,14 @@ async def init_db() -> None:
 
 async def close_db() -> None:
     """Close the shared connection. Call once on bot shutdown."""
-    global _conn
+    global _conn, _conn_loop
     if _conn is None:
         return
     async with _open_lock:
         if _conn is not None:
             await _conn.close()
             _conn = None
+            _conn_loop = None
             log.debug("aiosqlite connection closed (M19)")
 
 
