@@ -60,7 +60,7 @@ async def _get_conn() -> aiosqlite.Connection:
     reopening whenever the running loop changed (prod uses one long-lived loop, so
     this only fires under per-test event loops or a loop restart).
     """
-    global _conn, _conn_loop
+    global _conn, _conn_loop, _open_lock
     running = asyncio.get_running_loop()
     if _conn is not None and _conn_loop is running:
         return _conn
@@ -72,6 +72,13 @@ async def _get_conn() -> aiosqlite.Connection:
             log.warning("aiosqlite connection loop changed; reopening (M19)")
             _conn = None
             _conn_loop = None
+            # asyncio.Lock binds its loop lazily on first *contended* acquire
+            # (see asyncio.mixins._LoopBoundMixin) and raises RuntimeError if a
+            # later contended acquire runs on a different loop. Reassigning here
+            # is safe: this `async with` already holds a reference to the old
+            # lock object, so __aexit__ still releases it correctly; only future
+            # callers see the fresh, unbound lock.
+            _open_lock = asyncio.Lock()
         if _conn is None:  # double-checked after acquiring lock
             _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
             _conn = await aiosqlite.connect(_DB_PATH)
@@ -115,7 +122,7 @@ async def init_db() -> None:
 
 async def close_db() -> None:
     """Close the shared connection. Call once on bot shutdown."""
-    global _conn, _conn_loop
+    global _conn, _conn_loop, _open_lock
     if _conn is None:
         return
     async with _open_lock:
@@ -123,6 +130,13 @@ async def close_db() -> None:
             await _conn.close()
             _conn = None
             _conn_loop = None
+            # See the matching comment in _get_conn(): recreate the lock so a
+            # future contended acquire (e.g. from a test on a new event loop)
+            # doesn't hit a RuntimeError from _LoopBoundMixin binding to this
+            # loop. This is the path tests actually exercise: the conftest
+            # teardown fixture calls close_db() every test, nulling _conn
+            # before the next test's _get_conn() ever sees it.
+            _open_lock = asyncio.Lock()
             log.debug("aiosqlite connection closed (M19)")
 
 
