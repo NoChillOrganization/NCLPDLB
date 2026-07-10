@@ -46,6 +46,20 @@ from src.platform.store.db import get_pool, migrate
 
 ALL_SOURCES = ("smogon", "pikalytics", "limitless", "replays")
 
+# The `source` table (migrations/0001_init.sql) and monitoring.py's stale-sync
+# thresholds key on DB names that don't always match this module's CLI/branch
+# keys above — "replays" here is "showdown" in the DB. with_ingest_run resolves
+# source_id via `SELECT id FROM source WHERE name = $1`, which silently no-ops
+# (no DB error) on an unregistered name, so a missing mapping here lets ingest
+# run fine while never recording a health row. Keep in sync with the `source`
+# CHECK constraint if a source's CLI key ever diverges from its DB name again.
+_DB_SOURCE_NAME = {"replays": "showdown"}
+
+
+def _db_source_name(source: str) -> str:
+    """Map this module's CLI/branch source key to the `source` table's name."""
+    return _DB_SOURCE_NAME.get(source, source)
+
 
 async def _replay_normalize(
     conn: asyncpg.Connection,
@@ -119,14 +133,16 @@ async def _run_source(
         stats = await dry_run_normalize(records)
         return stats
 
+    db_source = _db_source_name(source)
+
     return await with_ingest_run(
         conn,
-        source=source if source != "pikalytics" else "pikalytics",
+        source=db_source,
         route=route,
         mode=mode,
         fn=lambda: land_and_normalize(
             conn,
-            source=source if source not in ("smogon", "pikalytics") else source,
+            source=db_source,
             route=route,
             records=records,
             normalize=normalize,

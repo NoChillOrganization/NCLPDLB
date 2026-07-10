@@ -138,7 +138,7 @@ async def with_ingest_run(
         Whatever *fn()* raises; the ingest_run row is updated with status='error'
         and the exception message in stats before re-raising.
     """
-    run_id: int = await conn.fetchval(
+    run_id: int | None = await conn.fetchval(
         """
         INSERT INTO ingest_run (source_id, route, mode)
         SELECT id, $2, $3 FROM source WHERE name = $1
@@ -148,6 +148,17 @@ async def with_ingest_run(
         route,
         mode,
     )
+    if run_id is None:
+        # SELECT ... WHERE name = $1 matched no row in `source` — an unregistered
+        # source name. The INSERT silently affected zero rows (no DB error), so
+        # without this guard fn() would still run and land real data, but the
+        # health-tracking row is never created and the source's stale-sync
+        # monitor would never see a successful run again. Fail loud instead of
+        # letting ingest work happen with no audit trail.
+        raise ValueError(
+            f"with_ingest_run: no `source` row named {source!r} — "
+            "check the `source` table's CHECK constraint / seed data."
+        )
     t0 = time.monotonic()
     try:
         stats = await fn()
