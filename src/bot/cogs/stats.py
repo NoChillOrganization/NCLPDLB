@@ -34,7 +34,7 @@ SPAR_FORMATS = [
 _FORMAT_DISPLAY = {
     # Random Battle
     "gen9randombattle": "Gen 9 Random Battle",
-    "gen9monorandom": "Gen 9 Monotype Random",
+    "gen9monotyperandombattle": "Gen 9 Monotype Random Battle",
     "gen9randomdoublesbattle": "Gen 9 Random Doubles",
     "gen7randombattle": "Gen 7 Random Battle",
     "gen6randombattle": "Gen 6 Random Battle",
@@ -67,9 +67,9 @@ _FORMAT_DISPLAY = {
     "gen9vgc2026regibo3": "VGC 2026 Reg I (Bo3)",
     # Champions
     "gen9championsou": "Champions OU",
-    "gen9championsbssregma": "Champions BSS Reg M-A",
-    "gen9championsvgc2026regma": "Champions VGC 2026 Reg M-A",
-    "gen9championsvgc2026regmabo3": "Champions VGC 2026 Reg M-A (Bo3)",
+    "gen9championsbssregmb": "Champions BSS Reg M-B",
+    "gen9championsvgc2026regmb": "Champions VGC 2026 Reg M-B",
+    "gen9championsvgc2026regmbbo3": "Champions VGC 2026 Reg M-B (Bo3)",
 }
 
 

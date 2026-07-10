@@ -9,6 +9,7 @@ Doubles formats use BattleDoubleEnv automatically (detected in train_policy.py).
 Format → Training format mapping  (22 formats; matches CI train-models.yml)
 ──────────────────────────────────
   gen9randombattle        → gen9randombattle        (direct, no teams)
+  gen9monotyperandombattle→ gen9monotyperandombattle(direct, no teams)
   gen9randomdoublesbattle → gen9randomdoublesbattle (direct, no teams, doubles)
   gen9ou                  → gen9ou                  (direct, RotatingTeambuilder)
   gen9ubers               → gen9ubers               (direct, RotatingTeambuilder)
@@ -27,9 +28,9 @@ Format → Training format mapping  (22 formats; matches CI train-models.yml)
   gen9vgc2026regi         → gen9vgc2026regi         (direct, RotatingTeambuilder, doubles)
   gen9vgc2026regibo3      → gen9vgc2026regibo3      (direct, RotatingTeambuilder, doubles)
   gen9championsou         → gen9championsou         (direct, no teams)
-  gen9championsbssregma   → gen9championsbssregma   (direct, no teams)
-  gen9championsvgc2026regma    → gen9championsvgc2026regma    (direct, no teams, doubles)
-  gen9championsvgc2026regmabo3 → gen9championsvgc2026regmabo3 (direct, no teams, doubles)
+  gen9championsbssregmb   → gen9championsbssregmb   (direct, no teams)
+  gen9championsvgc2026regmb    → gen9championsvgc2026regmb    (direct, no teams, doubles)
+  gen9championsvgc2026regmbbo3 → gen9championsvgc2026regmbbo3 (direct, no teams, doubles)
 
 Usage
 ─────
@@ -59,6 +60,7 @@ log = logging.getLogger(__name__)
 TRAINING_MAP: dict[str, tuple[str | None, str | None]] = {
     # Random Battle (no teams needed)
     "gen9randombattle": ("gen9randombattle", None),
+    "gen9monotyperandombattle": ("gen9monotyperandombattle", None),
     "gen9randomdoublesbattle": ("gen9randomdoublesbattle", None),
     # Smogon Singles
     "gen9ou": ("gen9ou", "gen9ou"),
@@ -78,9 +80,9 @@ TRAINING_MAP: dict[str, tuple[str | None, str | None]] = {
     "gen9doublesuu": ("gen9doublesuu", "gen9doublesuu"),
     # Champions
     "gen9championsou": ("gen9championsou", None),
-    "gen9championsbssregma": ("gen9championsbssregma", None),
-    "gen9championsvgc2026regma": ("gen9championsvgc2026regma", None),
-    "gen9championsvgc2026regmabo3": ("gen9championsvgc2026regmabo3", None),
+    "gen9championsbssregmb": ("gen9championsbssregmb", None),
+    "gen9championsvgc2026regmb": ("gen9championsvgc2026regmb", None),
+    "gen9championsvgc2026regmbbo3": ("gen9championsvgc2026regmbbo3", None),
 }
 
 DEFAULT_TIMESTEPS = 500_000

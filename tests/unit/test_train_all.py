@@ -124,7 +124,13 @@ class TestTrainingMap:
         assert team_fmt == "gen9ou"
 
     def test_vgc_format_present(self):
-        assert "gen9championsvgc2026regma" in TRAINING_MAP
+        assert "gen9championsvgc2026regmb" in TRAINING_MAP
+
+    def test_monotype_random_battle_has_no_teams(self):
+        assert TRAINING_MAP["gen9monotyperandombattle"] == (
+            "gen9monotyperandombattle",
+            None,
+        )
 
     def test_all_train_fmts_are_str_or_none(self):
         for fmt, (train_fmt, _) in TRAINING_MAP.items():
