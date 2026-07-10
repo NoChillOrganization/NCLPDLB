@@ -1,0 +1,10 @@
+{
+  "format": "gen9doublesou",
+  "n_samples": 351,
+  "accuracy": 0.5499396378269618,
+  "accuracy_std": 0.05535962726748086,
+  "roc_auc": 0.5547650951199339,
+  "roc_auc_std": 0.03796711193814967,
+  "log_loss": 0.7791644941175254,
+  "vocab_size": 227
+}
