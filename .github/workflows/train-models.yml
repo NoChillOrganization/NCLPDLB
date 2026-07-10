@@ -591,7 +591,6 @@ jobs:
         with:
           pattern: model-*
           path: all-models
-          if-no-files-found: warn
 
       - name: List models
         shell: bash
