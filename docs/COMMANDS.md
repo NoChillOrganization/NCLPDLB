@@ -802,7 +802,7 @@ Battle a trained PPO agent live on Pokemon Showdown.
 
 **Supported formats:**
 
-- `gen9randombattle`, `gen9ou`, `gen9doublesou`, `gen9nationaldex`, `gen9monotype`, `gen9anythinggoes`
+- `gen9randombattle`, `gen9monotyperandombattle`, `gen9ou`, `gen9doublesou`, `gen9nationaldex`, `gen9monotype`, `gen9anythinggoes`
 - `gen9vgc2026regi`, `gen9vgc2026regf`
 - `gen7randombattle`, `gen6randombattle`
 

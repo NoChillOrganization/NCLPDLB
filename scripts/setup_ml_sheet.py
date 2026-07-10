@@ -43,7 +43,7 @@ SCOPES = [
 # All formats that may have per-format tabs (mirrors SPAR_FORMATS in stats.py)
 SPAR_FORMATS = [
     "gen9randombattle",
-    "gen9monorandom",
+    "gen9monotyperandombattle",
     "gen9randomdoublesbattle",
     "gen7randombattle",
     "gen6randombattle",
@@ -71,9 +71,9 @@ SPAR_FORMATS = [
     "gen9vgc2026regi",
     "gen9vgc2026regibo3",
     "gen9championsou",
-    "gen9championsbssregma",
-    "gen9championsvgc2026regma",
-    "gen9championsvgc2026regmabo3",
+    "gen9championsbssregmb",
+    "gen9championsvgc2026regmb",
+    "gen9championsvgc2026regmbbo3",
 ]
 
 
