@@ -89,6 +89,4 @@ class TestMonotypeRandomBattleIntegration:
         )
 
         assert player.n_finished_battles == 1
-        assert (
-            player.n_won_battles + player.n_lost_battles + player.n_tied_battles == 1
-        )
+        assert player.n_won_battles + player.n_lost_battles + player.n_tied_battles == 1
