@@ -528,6 +528,7 @@ jobs:
           " && echo "Fallback stub ready" || { echo "Stub generation failed -- verify will fail"; exit 1; }
 
       - name: Verify model artifact exists
+        id: verify
         if: success() || failure()
         shell: bash
         env:
@@ -535,6 +536,7 @@ jobs:
         run: |
           if [ -f "data/ml/${TRAIN_FORMAT}/.format_skipped" ]; then
             echo "Format ${TRAIN_FORMAT} was skipped by format_filter — verify skipped"
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           MODEL_PATH="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
@@ -566,7 +568,7 @@ jobs:
 
       - name: Upload model artifact
         uses: actions/upload-artifact@v7
-        if: success()
+        if: success() && steps.verify.outputs.skipped != 'true'
         with:
           name: model-${{ matrix.config.format }}
           path: data/ml/policy/${{ matrix.config.format }}/final_model.zip
