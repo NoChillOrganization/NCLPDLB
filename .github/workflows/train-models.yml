@@ -540,7 +540,24 @@ jobs:
           MODEL_PATH="data/ml/policy/${TRAIN_FORMAT}/final_model.zip"
           if [ -f "$MODEL_PATH" ]; then
             SIZE=$(stat -c%s "$MODEL_PATH" 2>/dev/null || stat -f%z "$MODEL_PATH")
-            echo "✅ Model saved: $MODEL_PATH (${SIZE} bytes)"
+            # Same 160 000-byte floor used to reject stale cache hits above and
+            # to flag suspect models before publishing — keeps all three checks
+            # in sync. Stub is a deliberate fallback (Train step already failed
+            # and is visible red); label it here instead of failing so the job
+            # keeps its resilience behavior, but the distinction stops being
+            # invisible in the log / step summary.
+            MIN_REAL_BYTES=160000
+            if [ "${SIZE}" -ge "${MIN_REAL_BYTES}" ]; then
+              echo "✅ Real trained model: $MODEL_PATH (${SIZE} bytes)"
+            else
+              echo "⚠️  STUB fallback model (untrained): $MODEL_PATH (${SIZE} bytes < ${MIN_REAL_BYTES})"
+              echo "::warning::${TRAIN_FORMAT} shipped an untrained fallback stub — Train step failed upstream, check its log."
+            fi
+            {
+              echo "| Format | Size | Status |"
+              echo "|---|---|---|"
+              echo "| ${TRAIN_FORMAT} | ${SIZE} bytes | $([ "${SIZE}" -ge "${MIN_REAL_BYTES}" ] && echo 'real' || echo 'STUB') |"
+            } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "⚠️  final_model.zip not found at $MODEL_PATH"
             ls -la "data/ml/policy/${TRAIN_FORMAT}/" 2>/dev/null || echo "Directory does not exist"
@@ -627,7 +644,9 @@ jobs:
           # 160 000 bytes catches all known stubs with clear margin below real singles.
           MIN_PUBLISH_BYTES=160000
           SUSPECT_COUNT=0
+          TOTAL_COUNT=0
           for z in release-models/*.zip; do
+            TOTAL_COUNT=$(( TOTAL_COUNT + 1 ))
             ZSIZE=$(stat -c%s "$z" 2>/dev/null || stat -f%z "$z")
             if [ "${ZSIZE}" -lt "${MIN_PUBLISH_BYTES}" ]; then
               echo "::warning::Suspect model (${ZSIZE} bytes < ${MIN_PUBLISH_BYTES}) — likely untrained stub: $(basename "$z")"
@@ -635,7 +654,14 @@ jobs:
             fi
           done
           if [ "${SUSPECT_COUNT}" -gt 0 ]; then
-            echo "::warning::${SUSPECT_COUNT} suspect model(s) included in this release — review individual job logs for 'steps trained'."
+            echo "::warning::${SUSPECT_COUNT}/${TOTAL_COUNT} suspect model(s) included in this release — review individual job logs for 'steps trained'."
+          fi
+          # Full-matrix failure: every model is an untrained fallback stub.
+          # Don't let this masquerade as a green package job — fail loudly
+          # instead of relying on a warning nobody reads on a passing run.
+          if [ "${SUSPECT_COUNT}" -gt 0 ] && [ "${SUSPECT_COUNT}" -eq "${TOTAL_COUNT}" ]; then
+            echo "::error::All ${TOTAL_COUNT} model(s) in this release are untrained stubs — training failed across the board. Failing package job."
+            exit 1
           fi
 
           # Delete any pre-existing NON-immutable release at this exact tag (e.g. a
