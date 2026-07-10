@@ -1,0 +1,10 @@
+{
+  "format": "gen9nationaldex",
+  "n_samples": 520,
+  "accuracy": 0.528846153846154,
+  "accuracy_std": 0.04427255551238976,
+  "roc_auc": 0.5196118621020636,
+  "roc_auc_std": 0.04328764910141529,
+  "log_loss": 0.7973675717045845,
+  "vocab_size": 300
+}

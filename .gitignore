@@ -93,11 +93,14 @@ graphify-out/
 
 # ML training artifacts (large binaries — use releases or cloud storage)
 # Keep JSON files (vocab, metrics, matchup_metrics) but ignore .npy/.zip/.pt
+# (previously a `/data/ml/policy/` blanket rule sat here and re-ignored this
+# whole subtree, silently excluding its JSON vocab/metrics files too, contrary
+# to the "keep JSON" intent above — git can't re-include a file once its parent
+# dir is ignored. Removed; data/ml/** + the *.json negation below already do
+# exactly what's wanted without a policy/-specific carve-out.)
 data/ml/**
 !data/ml/**/
 !data/ml/**/*.json
-# Re-ignore the policy/ tree entirely (trained model zips; regenerable from training)
-/data/ml/policy/
 
 # Stray JSON snapshots
 *.json

@@ -1,0 +1,10 @@
+{
+  "format": "gen9randombattle",
+  "n_samples": 629,
+  "accuracy": 0.5118857142857143,
+  "accuracy_std": 0.014229215967495714,
+  "roc_auc": 0.5349972530771924,
+  "roc_auc_std": 0.033342708660604015,
+  "log_loss": 0.7220340255345444,
+  "vocab_size": 546
+}
