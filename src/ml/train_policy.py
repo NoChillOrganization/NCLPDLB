@@ -359,6 +359,35 @@ else:  # pragma: no cover
             )
 
 
+# ── Dict → Box observation unwrapper ───────────────────────────────────────────
+
+if SB3_OK:
+
+    class _UnwrapDictObs(_gym.ObservationWrapper):
+        """poke-env 0.15+ wraps env observations in Dict{action_mask, observation};
+        SB3's MlpPolicy requires the flat Box the rest of this module assumes
+        (BattleTransformerExtractor, checkpoint loading, inference obs-dim guard).
+        Extract 'observation' and pass flat arrays through unchanged — the
+        terminal-obs fast path in battle_env.py's step() override returns a bare
+        ndarray (not a dict) when a battle ends mid-rollout.
+        """
+
+        def __init__(self, env: Any) -> None:
+            super().__init__(env)
+            space = env.observation_space
+            if isinstance(space, _gym.spaces.Dict) and "observation" in space.spaces:
+                self.observation_space = space.spaces["observation"]
+
+        def observation(self, obs: Any) -> Any:
+            return obs["observation"] if isinstance(obs, dict) else obs
+
+else:  # pragma: no cover
+
+    class _UnwrapDictObs:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise ImportError("gymnasium/stable-baselines3 required for _UnwrapDictObs")
+
+
 # ── Curriculum callback ───────────────────────────────────────────────────────
 
 from collections import deque  # noqa: E402 (after SB3 guard)
@@ -870,7 +899,7 @@ def train(  # pragma: no cover
             poke_env = BattleDoubleEnv(**env_kwargs)
         else:
             poke_env = BattleEnv(**env_kwargs)
-        wrapped = SingleAgentWrapper(poke_env, opponent)
+        wrapped = _UnwrapDictObs(SingleAgentWrapper(poke_env, opponent))
         return Monitor(wrapped)
 
     vec_env = DummyVecEnv([make_env])
@@ -1092,7 +1121,7 @@ def evaluate(  # pragma: no cover
         server_configuration=srv_cfg,
         strict=False,
     )
-    env = SingleAgentWrapper(poke_env, opponent)
+    env = _UnwrapDictObs(SingleAgentWrapper(poke_env, opponent))
 
     wins = losses = ties = 0
     for i in range(n_battles):
