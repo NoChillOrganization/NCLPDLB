@@ -332,6 +332,11 @@ jobs:
           if [ ! -d "$PS_DIR/.git" ]; then
             git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
             cd "$PS_DIR" && npm install --ignore-scripts
+            # Build ahead of time (--ignore-scripts skips the postinstall build hook).
+            # Without this, `pokemon-showdown start` lazy-compiles TypeScript on first
+            # boot, which can push the boot past the readiness poll under runner load.
+            node build
+            cd - >/dev/null
           fi
 
           # Write config (overwrite each time to guarantee correct settings)
@@ -343,24 +348,44 @@ jobs:
             'exports.nothrottle = true;' \
             > "$PS_DIR/config/config.js"
 
-          # Start server in background
-          cd "$PS_DIR"
-          node pokemon-showdown start --no-security > /tmp/showdown.log 2>&1 &
-
-          # Wait up to 60 s for the server to accept connections
+          # Start the server, retrying a few times in case a single boot stalls
+          # (e.g. cold cache, loaded self-hosted runner). Each attempt waits up to
+          # 180 s and is considered ready on either a successful curl or the
+          # server's own "now listening" log line, whichever comes first.
           echo "Waiting for Showdown server on port 8000..."
-          for i in $(seq 1 30); do
-            sleep 2
-            if curl -sf --max-time 2 http://localhost:8000 >/dev/null 2>&1; then
-              echo "Showdown server ready (attempt ${i})"
+          READY=""
+          for attempt in 1 2 3; do
+            cd "$PS_DIR"
+            node pokemon-showdown start --no-security > /tmp/showdown.log 2>&1 &
+            SHOWDOWN_PID=$!
+            cd - >/dev/null
+
+            for i in $(seq 1 90); do
+              sleep 2
+              if curl -sf --max-time 2 http://localhost:8000 >/dev/null 2>&1 \
+                 || grep -q "now listening on" /tmp/showdown.log 2>/dev/null; then
+                echo "Showdown server ready (attempt ${attempt}, poll ${i})"
+                READY=1
+                break
+              fi
+            done
+
+            if [ -n "$READY" ]; then
               break
             fi
-            if [ "$i" -eq 30 ]; then
-              echo "Showdown server failed to start after 60 s:"
-              cat /tmp/showdown.log
-              exit 1
-            fi
+
+            echo "Showdown server did not become ready within 180 s (start attempt ${attempt}/3):"
+            cat /tmp/showdown.log
+            kill "$SHOWDOWN_PID" 2>/dev/null || true
+            pkill -f "node.*pokemon-showdown" 2>/dev/null || true
+            sleep 2
           done
+
+          if [ -z "$READY" ]; then
+            echo "Showdown server failed to start after 3 attempts:"
+            cat /tmp/showdown.log
+            exit 1
+          fi
 
       - name: Validate teams for ${{ matrix.config.format }}
         if: matrix.config.team_format != ''
