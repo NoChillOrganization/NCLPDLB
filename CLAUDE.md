@@ -182,6 +182,22 @@ src/
     training_players.py  — Player wrappers used during training
     type_chart.py        — Gen 9 type effectiveness chart
     showdown_modes.py    — Format/mode definitions for Showdown battles
+  platform/               — Postgres-backed competitive-meta ingestion pipeline (separate from
+                           the bot's SQLite/Sheets stack; own DB, own CI)
+    config.py             — PLATFORM_DATABASE_URL (asyncpg DSN, defaults to local Postgres)
+    orchestrate.py        — Shared land+normalize loop + with_ingest_run() wrapper, factored out
+                           of the 3x-duplicated pattern across sync_*.py entry points
+    sync_all.py, sync_smogon.py, sync_pikalytics.py, sync_limitless_vgc.py, sync_replays.py
+                          — Per-source CLI entry points (`--dry-run` validates adapters with no
+                           DB writes)
+    sources/              — Source adapters (smogon, pikalytics, limitless, showdown) yielding
+                           RawRecord; base.py + http.py are shared plumbing
+    normalize/             — RawRecord → typed rows (species, usage, tournament, replay)
+    store/                 — db.py (asyncpg pool + plain-SQL migration runner), db_upserts.py,
+                           repositories.py (land_raw/mark_raw_error/to_dead_letter);
+                           migrations/ is plain numbered .sql, no ORM
+    retry.py, throttle.py, monitoring.py — Shared ingest resilience/observability helpers
+    SCRAPING_POLICY.md     — Source-by-source scraping/ToS policy notes
 ```
 
 ### ML Format Routing
@@ -214,10 +230,15 @@ Four structures govern which ML format goes where — central to any ML format w
 
 ### CI Workflows
 
-5 workflows in `.github/workflows/`:
+8 workflows in `.github/workflows/`:
+- `ci.yml` — ruff format/lint (blocking) + pyright (advisory, `continue-on-error`)
 - `tests.yml` — unit test matrix (Python 3.11-3.14) + integration job
 - `train-models.yml` — PPO format training matrix, self-hosted Windows runner
 - `train-transformer.yml` — offline MCTS self-play smoke test
+- `sync-dryrun.yml` — full real sync against an ephemeral Postgres service container on push to
+  `src/platform/**`; runs twice to assert idempotency (2nd run lands 0 new raw rows)
+- `sync-prod.yml` — scheduled production sync on the self-hosted runner (monthly Smogon usage
+  stats, daily Limitless/replays); failures write to `dead_letter` and notify
 - `codeql.yml` — CodeQL security scanning
 - `dependency-submission.yml` — dependency graph submission
 
@@ -239,10 +260,13 @@ Optional:
 - `ML_LEARNING_SPREADSHEET_ID` — separate sheet for replay URL logging
 - `DATABASE_URL` — SQLAlchemy URL (default: `sqlite+aiosqlite:///./pokemon_draft.db`)
 - `LOG_LEVEL`, `LOG_FILE` — logging verbosity and output path
+- `PLATFORM_DATABASE_URL` — asyncpg DSN for `src/platform/` ingestion pipeline (default:
+  `postgresql://postgres:postgres@localhost:5432/nclpdlb_platform`); unrelated to `DATABASE_URL`
 
 ### Testing
 
-Tests live in `tests/unit/`, `tests/integration/`, `tests/e2e/`, and `tests/performance/`.
+Tests live in `tests/unit/`, `tests/integration/`, `tests/e2e/`, `tests/platform/`, and
+`tests/performance/`.
 Shared test data lives in `tests/fixtures/`.
 `pytest.ini` sets `asyncio_mode = auto` and default coverage across `src/`.
 Performance tests (`tests/performance/locustfile.py`) are excluded from normal runs.

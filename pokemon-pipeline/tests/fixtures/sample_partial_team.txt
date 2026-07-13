@@ -1,0 +1,14 @@
+Smeargle
+Ability: Own Tempo
+- Follow Me
+- Spore
+- Fake Out
+- Wide Guard
+
+Amoonguss @ Rocky Helmet
+Ability: Regenerator
+EVs: 244 HP / 172 Def / 92 SpD
+- Spore
+- Rage Powder
+- Pollen Puff
+- Protect
