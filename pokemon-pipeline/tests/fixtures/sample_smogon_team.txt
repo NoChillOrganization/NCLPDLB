@@ -1,0 +1,65 @@
+Great Tusk @ Leftovers
+Ability: Protosynthesis
+Level: 100
+Tera Type: Fire
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Rapid Spin
+- Earthquake
+- Ice Spinner
+- Knock Off
+
+Kingambit @ Leftovers
+Ability: Supreme Overlord
+Level: 100
+Tera Type: Fairy
+EVs: 232 HP / 216 Atk / 60 SpD
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Iron Head
+- Swords Dance
+
+Dragapult @ Choice Specs
+Ability: Infiltrator
+Level: 100
+Tera Type: Ghost
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Draco Meteor
+- Shadow Ball
+- U-turn
+- Flamethrower
+
+Gholisk @ Heavy-Duty Boots
+Ability: Frisk
+Level: 100
+Tera Type: Water
+EVs: 252 HP / 4 SpD / 252 Spe
+Bold Nature
+- Toxic Spikes
+- Recover
+- Sludge Bomb
+- Thunderbolt
+
+Skarmory @ Rocky Helmet
+Ability: Sturdy
+Level: 100
+Tera Type: Steel
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Body Press
+- Roost
+- Whirlwind
+
+Iron Valiant @ Booster Energy
+Ability: Quark Drive
+Level: 100
+Tera Type: Fighting
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Moonblast
+- Shadow Ball
+- Focus Blast
+- Encore
