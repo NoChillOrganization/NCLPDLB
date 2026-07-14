@@ -34,6 +34,11 @@ updates:
       # requirements.txt stays numpy>=2.4.0,<2.5.0.
       - dependency-name: "numpy"
         versions: [">=2.5.0"]
+      # poke-env 0.15.0 hard-pins websockets==16.0. Any Dependabot bump of our
+      # direct websockets constraint (e.g. >=16.1) creates an unresolvable pip
+      # conflict (see PR #242, closed 2026-07-13). Block all auto-PRs for
+      # websockets until poke-env relaxes its pin; then bump both together.
+      - dependency-name: "websockets"
 
   - package-ecosystem: "github-actions"
     directory: "/"
