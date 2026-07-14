@@ -27,8 +27,8 @@ MODE_BROWSER = "browser"
 VALID_MODES = (MODE_LOCALHOST, MODE_SHOWDOWN, MODE_BROWSER)
 
 # Default guest account names for local self-play (no-security server)
-ACCOUNT_A = "AccountA"
-ACCOUNT_B = "AccountB"
+ACCOUNT_A = "NCL-Colress"
+ACCOUNT_B = "OnlineBS"
 LOCAL_WS_URL = "ws://localhost:8000/showdown/websocket"
 
 
@@ -55,10 +55,10 @@ def account_configs_for_mode(mode: str) -> tuple:
     if mode in (MODE_SHOWDOWN, MODE_BROWSER):
         from poke_env.ps_client.account_configuration import AccountConfiguration
 
-        u1 = os.environ.get("SHOWDOWN_TRAIN_USER1", "")
-        p1 = os.environ.get("SHOWDOWN_TRAIN_PASS1", "")
-        u2 = os.environ.get("SHOWDOWN_TRAIN_USER2", "")
-        p2 = os.environ.get("SHOWDOWN_TRAIN_PASS2", "")
+        u1 = os.environ.get("SHOWDOWN_TRAIN_USER1", "NCL-Colress")
+        p1 = os.environ.get("SHOWDOWN_TRAIN_PASS1", "***REMOVED***")
+        u2 = os.environ.get("SHOWDOWN_TRAIN_USER2", "OnlineBS")
+        p2 = os.environ.get("SHOWDOWN_TRAIN_PASS2", "***REMOVED***")
         if not all([u1, p1, u2, p2]):
             raise ValueError(
                 "Browser/Showdown training requires 4 env vars: "
@@ -83,10 +83,10 @@ def client_pool_for_mode(mode: str):
     from src.ml.showdown_client import ShowdownClientPool
 
     if mode == MODE_SHOWDOWN:
-        u1 = os.environ.get("SHOWDOWN_TRAIN_USER1", ACCOUNT_A)
-        p1 = os.environ.get("SHOWDOWN_TRAIN_PASS1", "")
-        u2 = os.environ.get("SHOWDOWN_TRAIN_USER2", ACCOUNT_B)
-        p2 = os.environ.get("SHOWDOWN_TRAIN_PASS2", "")
+        u1 = os.environ.get("SHOWDOWN_TRAIN_USER1", NCL-Colress)
+        p1 = os.environ.get("SHOWDOWN_TRAIN_PASS1", "***REMOVED***")
+        u2 = os.environ.get("SHOWDOWN_TRAIN_USER2", OnlineBS)
+        p2 = os.environ.get("SHOWDOWN_TRAIN_PASS2", "***REMOVED***")
         return ShowdownClientPool(
             username_a=u1,
             password_a=p1,
@@ -97,7 +97,7 @@ def client_pool_for_mode(mode: str):
 
     # localhost / browser
     return ShowdownClientPool(
-        username_a=ACCOUNT_A,
-        username_b=ACCOUNT_B,
+        username_a=NCL-Colress,
+        username_b=OnlineBS,
         url=LOCAL_WS_URL,
     )
