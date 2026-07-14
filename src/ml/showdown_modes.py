@@ -79,19 +79,15 @@ def client_pool_for_mode(mode: str):
     Returns:
         ShowdownClientPool ready to connect().
     """
-    import os
     from src.ml.showdown_client import ShowdownClientPool
 
-    if mode == MODE_SHOWDOWN:
-        u1 = os.environ.get("SHOWDOWN_TRAIN_USER1", ACCOUNT_A)
-        p1 = os.environ.get("SHOWDOWN_TRAIN_PASS1", "")
-        u2 = os.environ.get("SHOWDOWN_TRAIN_USER2", ACCOUNT_B)
-        p2 = os.environ.get("SHOWDOWN_TRAIN_PASS2", "")
+    if mode in (MODE_SHOWDOWN, MODE_BROWSER):
+        acc1, acc2 = account_configs_for_mode(mode)
         return ShowdownClientPool(
-            username_a=u1,
-            password_a=p1,
-            username_b=u2,
-            password_b=p2,
+            username_a=acc1.username,
+            password_a=acc1.password,
+            username_b=acc2.username,
+            password_b=acc2.password,
             url="wss://sim3.psim.us/showdown/websocket",
         )
 
