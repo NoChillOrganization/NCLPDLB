@@ -46,7 +46,7 @@ ruff>=0.16.0
 # Machine Learning — data pipeline
 numpy>=2.4.6,<2.5.0  # compatible with Python 3.11+
 scikit-learn>=1.9.0
-pandas>=3.0.3
+pandas>=3.0.5
 
 # Machine Learning — deep learning + RL
 # CI installs torch via: pip install torch --index-url https://download.pytorch.org/whl/cpu
