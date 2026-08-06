@@ -41,7 +41,7 @@ pytest-timeout>=0.14.0
 locust>=2.46.2  # Load testing (tests/performance/locustfile.py)
 
 # Code Quality
-ruff>=0.16.0
+ruff>=0.16.1
 
 # Machine Learning — data pipeline
 numpy>=2.4.6,<2.5.0  # compatible with Python 3.11+
@@ -67,8 +67,8 @@ tensorboard>=2.21.0         # training metrics visualisation
 # (see src/ml/showdown_modes.py) and needs a real registered bot account.
 poke-env==0.15.0            # pinned: code uses the 0.13+ module layout (poke_env.battle, Singles/DoublesEnv); 0.12.x will break imports
 websockets>=16.0       # required by poke-env for Showdown WebSocket communication
-fastapi>=0.140.7       # ML training API server (src/ml/api.py, run_training.py)
-uvicorn>=0.52.0        # ASGI server for FastAPI ML API
+fastapi>=0.141.1       # ML training API server (src/ml/api.py, run_training.py)
+uvicorn>=0.51.0        # ASGI server for FastAPI ML API
 
 # Packaging (build standalone .exe)
 pyinstaller>=6.21.0       # build: pyinstaller src/bot/NCLPDLB.spec
