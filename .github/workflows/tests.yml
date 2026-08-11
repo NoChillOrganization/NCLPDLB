@@ -1,0 +1,45 @@
+name: Tests
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install PyTorch (CPU, prevents large PyPI CUDA download)
+        run: pip install "torch>=2.2.0" --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run unit tests (excludes tests/performance and the integration marker)
+        run: python scripts/ci_pytest.py tests/ --ignore=tests/performance --ignore=tests/integration -m "not integration"
+
+      - name: Enforce coverage gate on src.ml.self_play (>=80%)
+        run: >
+          python scripts/ci_pytest.py tests/unit/test_ml_self_play.py
+          -o addopts=""
+          --cov=src.ml.self_play --cov-report=term-missing --cov-fail-under=80
