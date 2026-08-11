@@ -399,8 +399,11 @@ class TestCurriculumOpponent:
         fake_zip.write_bytes(b"fake")
 
         with (
-            patch("src.ml.train_policy.PPO") as mock_ppo_cls,
-            patch("src.ml.train_policy.SB3_OK", True),
+            # CurriculumOpponent.load_policy lives in train_policy_components.py
+            # (extracted from train_policy.py to stay under the 800-line
+            # guideline) and reads its own PPO/SB3_OK imports from there.
+            patch("src.ml.train_policy_components.PPO") as mock_ppo_cls,
+            patch("src.ml.train_policy_components.SB3_OK", True),
         ):
             mock_model = MagicMock()
             mock_ppo_cls.load.return_value = mock_model
