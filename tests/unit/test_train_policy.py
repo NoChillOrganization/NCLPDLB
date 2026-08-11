@@ -52,17 +52,29 @@ class TestCheckShowdownServer:
 
 class TestCheckShowdownServerIfLocal:
     def test_localhost_mode_calls_check(self):
-        with patch("src.ml.train_policy._check_showdown_server") as mock_check:
+        # _check_showdown_server_if_local calls _check_showdown_server internally;
+        # both now live in train_policy_components.py (extracted from
+        # train_policy.py to stay under the 800-line guideline), so that's
+        # where the internal call resolves and must be patched.
+        with patch("src.ml.train_policy_components._check_showdown_server") as mock_check:
             _check_showdown_server_if_local("localhost")
             mock_check.assert_called_once()
 
     def test_non_localhost_skips_check(self):
-        with patch("src.ml.train_policy._check_showdown_server") as mock_check:
+        # _check_showdown_server_if_local calls _check_showdown_server internally;
+        # both now live in train_policy_components.py (extracted from
+        # train_policy.py to stay under the 800-line guideline), so that's
+        # where the internal call resolves and must be patched.
+        with patch("src.ml.train_policy_components._check_showdown_server") as mock_check:
             _check_showdown_server_if_local("showdown")
             mock_check.assert_not_called()
 
     def test_browser_mode_skips_check(self):
-        with patch("src.ml.train_policy._check_showdown_server") as mock_check:
+        # _check_showdown_server_if_local calls _check_showdown_server internally;
+        # both now live in train_policy_components.py (extracted from
+        # train_policy.py to stay under the 800-line guideline), so that's
+        # where the internal call resolves and must be patched.
+        with patch("src.ml.train_policy_components._check_showdown_server") as mock_check:
             _check_showdown_server_if_local("browser")
             mock_check.assert_not_called()
 
