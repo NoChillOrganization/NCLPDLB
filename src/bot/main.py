@@ -14,6 +14,7 @@ from pathlib import Path
 
 import discord
 from discord.ext import commands
+from pydantic import ValidationError
 
 # Ensure src/ is on path (cross-platform)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
