@@ -70,6 +70,9 @@ class PickResult:
     next_player_name: str = ""
     round: int = 1
     error: str = ""
+    # False when the post-pick SQLite write failed — the draft is currently
+    # unprotected against a bot restart. Callers should warn the user.
+    persistence_ok: bool = True
 
 
 @dataclass
