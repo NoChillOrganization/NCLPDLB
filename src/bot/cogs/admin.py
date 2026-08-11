@@ -4,8 +4,6 @@ Admin Cog — Commissioner and admin override commands.
 
 import asyncio
 import logging
-import sys
-from collections import deque
 from pathlib import Path
 
 import discord
