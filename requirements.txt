@@ -51,8 +51,8 @@ pandas>=3.0.5
 # Machine Learning — deep learning + RL
 # CI installs torch via: pip install torch --index-url https://download.pytorch.org/whl/cpu
 # Local install: pip install torch  (or see https://pytorch.org/get-started/locally/ for CUDA)
-torch>=2.10.0
-stable-baselines3>=2.8.0   # PPO/DQN for battle policy RL
+torch>=2.10.0,<3.0.0
+stable-baselines3>=2.8.0,<3.0.0   # PPO/DQN for battle policy RL
 gymnasium>=1.3.0            # required by poke-env==0.15.0; also imported directly (guarded) in battle_env.py/pretrain.py/train_policy.py
 tensorboard>=2.21.0         # training metrics visualisation
 # imitation is NOT listed here: poke-env==0.15.0 requires gymnasium>=1.3.0 while
