@@ -13,6 +13,9 @@ venv/
 
 # Environment / secrets
 .env
+.env *
+env
+env.example
 credentials.json
 
 # Database
