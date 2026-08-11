@@ -253,18 +253,20 @@ Four structures govern which ML format goes where — central to any ML format w
 
 ### CI Workflows
 
-3 workflows in `.github/workflows/`:
+4 workflows in `.github/workflows/`:
 - `train-models.yml` — PPO format training matrix (24 formats), `runs-on: self-hosted` targeting
   the Linux self-hosted runner (bash/`apt-get`/`.venv/bin`, not Windows — the runner box is a
   Linux VirtualBox machine); 280-minute job timeout, per-format `train_timeout` in the matrix.
+- `tests.yml` — unit test suite (`tests/`, excluding `tests/performance` and the `integration`
+  marker) on `ubuntu-latest`, plus a dedicated step enforcing the ≥80% coverage gate on
+  `src.ml.self_play`. Runs on push/PR to `master`.
 - `codeql.yml` — CodeQL security scanning (Python + GitHub Actions), scheduled weekly plus on
   push/PR to `master`.
 - `dependency-submission.yml` — submits a pip dependency snapshot to the GitHub Dependency Graph
   API on push to `master`.
 
-No workflow currently runs `ruff`/`pyright`/`pytest`/`mypy` in CI, and no coverage gate is
-enforced in CI — those all run locally only (see Commands above). If CI-side lint/type/test
-enforcement is wanted, it needs to be built; don't assume it already exists.
+No workflow runs `ruff`/`pyright`/`mypy` in CI — those run locally only (see Commands above).
+If CI-side lint/type enforcement is wanted, it needs to be built; don't assume it already exists.
 
 Dependabot blocks minor/major auto-PRs for `poke-env`/`stable-baselines3`/`torch` (tight
 coupling + CPU wheel requirement).
