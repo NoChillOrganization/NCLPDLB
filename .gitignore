@@ -83,6 +83,8 @@ src/ml/models/results/
 
 # GitHub Actions self-hosted runner (local binary — not tracked)
 actions-runner/
+actions-runner*/
+actions-runner*.tar.gz
 runners/
 
 # Graphify output cache
