@@ -68,7 +68,10 @@ python -m venv .venv
 # Lint / format / type-check
 .venv/Scripts/python -m ruff check src/ tests/
 .venv/Scripts/python -m ruff format src/ tests/   # auto-format
-.venv/Scripts/python -m mypy src/                 # type-check (authoritative; pyrightconfig.json sets typeCheckingMode: "off" — config-only, not enforced)
+.venv/Scripts/python -m mypy src/                 # type-check — NOT currently clean: 217 errors in 39 files as of this writing.
+                                                   # pyrightconfig.json sets typeCheckingMode: "off"; flipping it to "basic" surfaces
+                                                   # 204 separate errors. Neither checker is enforced anywhere — treat both as
+                                                   # unmaintained until someone does a real type-error cleanup pass.
 
 # Seed Pokemon data (one-time setup — fetches 1,025 mons from PokéAPI)
 .venv/Scripts/python scripts/seed_pokemon_data.py
