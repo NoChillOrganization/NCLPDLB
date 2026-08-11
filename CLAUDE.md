@@ -246,7 +246,13 @@ Four structures govern which ML format goes where — central to any ML format w
 
 ### Key Design Decisions
 
-**Draft state is in-memory only.** `_active_drafts: dict[str, Draft]` in `draft_service.py` is keyed by guild ID. There is no persistence layer for live draft state — a bot restart loses in-progress drafts.
+**Draft state is cached in-memory with a SQLite backup, not in-memory only.**
+`_active_drafts: dict[str, Draft]` in `draft_service.py` is keyed by guild ID and is the hot
+path every command reads/writes. Every mutation also persists to SQLite (`_persist_draft`), and
+`restore_active_drafts()` reloads it (including restarting pick timers) on bot startup — so a
+restart does *not* normally lose in-progress drafts. A failed SQLite write degrades to
+in-memory-only for that draft until the next successful save; `/pick` surfaces this to the user
+as a warning rather than failing silently.
 
 **Google Sheets is the database.** Completed drafts, standings, match history, and trades all write to a visual template spreadsheet. `sheets.py` uses gspread synchronously and must be called via `asyncio.get_event_loop().run_in_executor(None, ...)` from async contexts.
 
