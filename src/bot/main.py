@@ -3,6 +3,7 @@ Pokemon Draft League Bot — Main entrypoint.
 Discord.py 2.x with slash commands, views, and cogs.
 Cross-platform compatible (Windows, macOS, Linux).
 """
+
 import asyncio
 import csv
 import hashlib
@@ -13,12 +14,13 @@ from pathlib import Path
 
 import discord
 from discord.ext import commands
+from pydantic import ValidationError
 
 # Ensure src/ is on path (cross-platform)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.config import settings
-from src.data.db import init_db
+from src.data.db import init_db, close_db
 from src.services.draft_service import DraftService as _DraftService
 from src.services.elo_service import EloService as _EloService
 
@@ -47,14 +49,14 @@ def _setup_logging() -> None:
 _SYNC_HASH_FILE = Path(__file__).parent.parent.parent / ".discord_sync_hash"
 
 
-def _command_fingerprint(commands) -> str:
+def _command_fingerprint(cmds) -> str:
     """Stable hash of command names + descriptions + parameter names.
 
     Used to skip Discord sync when nothing has changed between restarts,
     avoiding the guild-commands rate limit (429 / 355 s retry).
     """
     parts = []
-    for cmd in sorted(commands, key=lambda c: c.name):
+    for cmd in sorted(cmds, key=lambda c: c.name):
         entry: dict = {"n": cmd.name, "d": getattr(cmd, "description", "")}
         if hasattr(cmd, "parameters"):
             entry["p"] = sorted(p.name for p in cmd.parameters)
@@ -74,6 +76,7 @@ def drift_check_commands(csv_names: set[str], registered_names: set[str]) -> set
     """
     return registered_names - csv_names
 
+
 # ── Bot Setup ─────────────────────────────────────────────────
 COGS = [
     "src.bot.cogs.draft",
@@ -81,9 +84,9 @@ COGS = [
     "src.bot.cogs.league",
     "src.bot.cogs.admin",
     "src.bot.cogs.stats",
-    "src.bot.cogs.sheet",    # Google Sheets management commands
-    "src.bot.cogs.misc",     # /help and utility commands
-    "src.bot.cogs.ml",       # ML training stats
+    "src.bot.cogs.sheet",  # Google Sheets management commands
+    "src.bot.cogs.misc",  # /help and utility commands
+    "src.bot.cogs.ml",  # ML training stats
 ]
 
 intents = discord.Intents.default()
@@ -127,15 +130,21 @@ class DraftLeagueBot(commands.Bot):
                     sorted(drift),
                 )
             else:
-                log.info("Command registry drift check passed — no missing CSV entries.")
+                log.info(
+                    "Command registry drift check passed — no missing CSV entries."
+                )
         else:
-            log.warning("discord_commands.csv not found at %s — skipping drift check.", csv_path)
+            log.warning(
+                "discord_commands.csv not found at %s — skipping drift check.", csv_path
+            )
 
         # Hash-gated sync: only call the Discord API when commands actually changed.
         # The guild-commands PUT endpoint is rate-limited (~2–5 calls/10 min per app).
         # Syncing on every restart burns through that budget; the hash avoids it.
         current_hash = _command_fingerprint(self.tree.get_commands())
-        stored_hash = _SYNC_HASH_FILE.read_text().strip() if _SYNC_HASH_FILE.exists() else ""
+        stored_hash = (
+            _SYNC_HASH_FILE.read_text().strip() if _SYNC_HASH_FILE.exists() else ""
+        )
         commands_changed = current_hash != stored_hash
 
         if settings.discord_guild_id:
@@ -144,18 +153,28 @@ class DraftLeagueBot(commands.Bot):
             if commands_changed:
                 await self.tree.sync(guild=guild)
                 _SYNC_HASH_FILE.write_text(current_hash)
-                log.info("Slash commands synced to guild %s (commands changed)", settings.discord_guild_id)
+                log.info(
+                    "Slash commands synced to guild %s (commands changed)",
+                    settings.discord_guild_id,
+                )
             else:
-                log.info("Slash commands unchanged — skipping sync (hash: %s)", current_hash)
+                log.info(
+                    "Slash commands unchanged — skipping sync (hash: %s)", current_hash
+                )
         elif settings.sync_commands_on_startup:
             if commands_changed:
                 await self.tree.sync()
                 _SYNC_HASH_FILE.write_text(current_hash)
                 log.info("Slash commands synced globally (commands changed)")
             else:
-                log.info("Slash commands unchanged — skipping global sync (hash: %s)", current_hash)
+                log.info(
+                    "Slash commands unchanged — skipping global sync (hash: %s)",
+                    current_hash,
+                )
         else:
-            log.info("Skipping command sync — set DISCORD_GUILD_ID for auto-sync or use /admin-sync")
+            log.info(
+                "Skipping command sync — set DISCORD_GUILD_ID for auto-sync or use /admin-sync"
+            )
 
     async def on_ready(self) -> None:
         log.info(f"Bot ready! Logged in as {self.user} (ID: {self.user.id})")
@@ -166,6 +185,11 @@ class DraftLeagueBot(commands.Bot):
                 name=settings.bot_status,
             )
         )
+
+    async def close(self) -> None:
+        """Graceful shutdown — release SQLite connection before discord.py exits."""
+        await close_db()
+        await super().close()
 
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
         log.error(f"Command error: {error}", exc_info=True)
