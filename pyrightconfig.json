@@ -1,7 +1,8 @@
 {
-  "pythonVersion": "3.14",
+  "pythonVersion": "3.13",
   "pythonPlatform": "Windows",
-  "pythonPath": "C:/Program Files/Python314/python.exe",
+  "venvPath": ".",
+  "venv": ".venv",
   "include": [
     "src",
     "tests"
@@ -9,6 +10,6 @@
   "extraPaths": [
     "."
   ],
-  "typeCheckingMode": "off",
+  "typeCheckingMode": "basic",
   "useLibraryCodeForTypes": true
 }
