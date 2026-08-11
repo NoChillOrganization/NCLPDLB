@@ -16,7 +16,7 @@ from src.bot.permissions import ROLE_COACH, require_role
 log = logging.getLogger(__name__)
 
 try:
-    from src.data.sheets import learning_sheets
+    from src.data.learning_sheets import learning_sheets
 
     _SHEETS_AVAILABLE = True
 except Exception:  # pragma: no cover

@@ -89,7 +89,7 @@ from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER  # n
 from src.ml.showdown_modes import server_config_for_mode, account_configs_for_mode  # noqa: E402
 
 try:
-    from src.data.sheets import learning_sheets as _learning_sheets
+    from src.data.learning_sheets import learning_sheets as _learning_sheets
 
     _SHEETS_OK = True
 except Exception:  # pragma: no cover
