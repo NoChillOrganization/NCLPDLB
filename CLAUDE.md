@@ -105,7 +105,29 @@ run_bot.bat
 
 # Force Discord command re-sync without restarting the bot
 .venv/Scripts/python scripts/sync_commands.py
+
+# Interactive first-time setup wizard (collects credentials, writes .env)
+.venv/Scripts/python scripts/setup_wizard.py
+
+# Full replay pipeline orchestrator (scrape → parse → extract features → manifest.json)
+.venv/Scripts/python scripts/data_pipeline.py
+
+# Run the bot on the public Showdown ladder (self-play on sim3.psim.us)
+.venv/Scripts/python scripts/run_on_showdown.py
+
+# Validate all teams in a format pool against the local Showdown validator
+TRAIN_TEAM_FORMAT=gen9zu .venv/Scripts/python scripts/validate_teams.py
+
+# Sync per-issue SOLUTION notes with issues.md (also runs automatically via the
+# post-commit hook in scripts/hooks/ once `git config core.hooksPath scripts/hooks` is set)
+.venv/Scripts/python scripts/sync_closed_issues.py
+
+# Serve the local Showdown web client over HTTP, connected to the local sim server (Windows)
+scripts/start-local-client.ps1
 ```
+
+`scripts/_clock_skew.py` is not a standalone script — it's a shared clock-skew correction
+helper imported by scripts that generate Google Auth JWTs.
 
 ## Gotchas
 
