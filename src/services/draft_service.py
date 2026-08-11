@@ -41,12 +41,18 @@ _timer_tasks: dict[str, asyncio.Task] = {}
 _cleanup_tasks: set[asyncio.Task] = set()
 
 
-async def _persist_draft(draft: Draft) -> None:
-    """Write draft state to SQLite.  Errors are logged but not re-raised."""
+async def _persist_draft(draft: Draft) -> bool:
+    """Write draft state to SQLite.  Errors are logged but not re-raised.
+
+    Returns False on failure so callers can warn users that a restart would
+    lose this draft (see PickResult.persistence_ok).
+    """
     try:
         await _db_save_draft(draft.guild_id, draft.model_dump_json())
+        return True
     except Exception as exc:
         log.error("Failed to persist draft %s to SQLite: %s", draft.guild_id, exc)
+        return False
 
 
 async def _delete_persisted_draft(guild_id: str) -> None:
