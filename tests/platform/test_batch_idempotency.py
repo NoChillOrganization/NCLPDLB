@@ -135,7 +135,7 @@ async def test_ingest_tournament_batch_null_key_idempotent():
     """tournament_team rows with NULL placement must deduplicate on re-run (0005 fix)."""
     import asyncpg
 
-    from src.platform.store.db_upserts import ingest_tournament_batch
+    from src.platform.store.upserts_tournament import ingest_tournament_batch
 
     # FIX: Do NOT call migrate() here — it uses an internal pool that may be
     # bound to a different event loop when tests run sequentially with
