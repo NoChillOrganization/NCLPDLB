@@ -494,7 +494,10 @@ class TestCurriculumOpponent:
         battle = MagicMock()
 
         with (
-            patch("src.ml.train_policy.build_observation") as mock_obs,
+            # CurriculumOpponent lives in train_policy_components.py (extracted
+            # from train_policy.py to stay under the 800-line guideline) and
+            # reads its own build_observation import from there.
+            patch("src.ml.train_policy_components.build_observation") as mock_obs,
             patch(
                 "poke_env.environment.singles_env.SinglesEnv.action_to_order",
                 return_value="ppo_order",
