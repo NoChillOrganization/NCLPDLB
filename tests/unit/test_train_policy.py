@@ -429,7 +429,7 @@ class TestCurriculumOpponent:
         """If PPO.load raises, _policy stays None and no exception propagates."""
         fake_zip = tmp_path / "missing.zip"
 
-        with patch("src.ml.train_policy.PPO") as mock_ppo_cls:
+        with patch("src.ml.train_policy_components.PPO") as mock_ppo_cls:
             mock_ppo_cls.load.side_effect = FileNotFoundError("no file")
 
             import src.ml.train_policy as tp
