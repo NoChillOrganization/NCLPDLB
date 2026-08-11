@@ -355,13 +355,14 @@ class DraftService:
         if draft.status == DraftStatus.ACTIVE and draft.timer_seconds > 0:
             self._start_timer(guild_id, draft, on_timeout)
 
-        await _persist_draft(draft)
+        persisted = await _persist_draft(draft)
         next_id = draft.current_player_id
         return PickResult(
             success=True,
             pokemon=pokemon,
             next_player_name=f"<@{next_id}>" if next_id else "Draft complete!",
             round=draft.current_round,
+            persistence_ok=persisted,
         )
 
     def _advance_pick(self, draft: Draft) -> None:
