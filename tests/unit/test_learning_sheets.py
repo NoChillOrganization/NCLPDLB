@@ -268,7 +268,7 @@ def test_learning_sheets_get_win_rate_no_data():
 
 
 def test_learning_sheets_get_win_rate_with_data():
-    from src.data.sheets import REPLAY_HEADERS, _WINNER_COL
+    from src.data.learning_sheets import REPLAY_HEADERS, _WINNER_COL
 
     fresh = _fresh_ls()
     mock_ws = MagicMock()
@@ -311,7 +311,7 @@ def test_learning_sheets_get_latest_checkpoint_no_rows():
 
 
 def test_learning_sheets_get_latest_checkpoint_found():
-    from src.data.sheets import TRAINING_RUN_HEADERS
+    from src.data.learning_sheets import TRAINING_RUN_HEADERS
 
     fresh = _fresh_ls()
     mock_ws = MagicMock()
@@ -339,7 +339,7 @@ def test_learning_sheets_get_latest_checkpoint_found():
 
 
 def test_learning_sheets_get_latest_checkpoint_format_not_found():
-    from src.data.sheets import TRAINING_RUN_HEADERS
+    from src.data.learning_sheets import TRAINING_RUN_HEADERS
 
     fresh = _fresh_ls()
     mock_ws = MagicMock()
@@ -371,7 +371,7 @@ def test_learning_sheets_get_stats_table_disabled():
 
 
 def test_learning_sheets_get_stats_table_with_data():
-    from src.data.sheets import (
+    from src.data.learning_sheets import (
         REPLAY_HEADERS,
         TRAINING_RUN_HEADERS,
         _FORMAT_COL,
