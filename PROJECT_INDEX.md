@@ -10,7 +10,7 @@ Full-featured Discord bot for running Pokemon draft leagues. Supports Snake/Auct
 Banning drafts, Google Sheets integration (17 tabs), ELO matchmaking, and ML-powered Showdown
 battles. Ships as a standalone Windows .exe — no server or Docker required.
 
-- **GitHub**: <https://github.com/NoChillModeOnline/NCLPDLB>
+- **GitHub**: <https://github.com/NoChillOrganization/NCLPDLB>
 - **Spreadsheet**: 16F9FP5wkyzDdF8C7vD9xwY2j2JkcWYR1EUK_MtRt7zs
 - **Status**: 49/50 commands working. ML `/spar` blocked on ARM64 (needs x86 for training)
 

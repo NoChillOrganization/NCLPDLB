@@ -10,9 +10,9 @@ updates:
       - "dependencies"
       - "python"
     reviewers:
-      - "NoChillModeOnline"
+      - "NoChillOrganization"
     assignees:
-      - "NoChillModeOnline"
+      - "NoChillOrganization"
     # poke-env, stable-baselines3, and torch are tightly coupled with specific
     # gym/numpy versions used by the RL training pipeline.
     # Only allow patch updates automatically; minor/major require manual review.
@@ -39,6 +39,6 @@ updates:
       - "dependencies"
       - "github-actions"
     reviewers:
-      - "NoChillModeOnline"
+      - "NoChillOrganization"
     assignees:
-      - "NoChillModeOnline"
+      - "NoChillOrganization"

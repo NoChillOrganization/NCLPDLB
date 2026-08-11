@@ -50,7 +50,7 @@ Progress: `[x][ ][ ]` 1/3 phases complete (Phase 04 done)
 ## Repo Location
 
 - Local clone: `/home/vboxuser/Documents/No Chill Draft League Bot/NCLPDLB`
-- Remote: `NoChillModeOnline/NCLPDLB`
+- Remote: `NoChillOrganization/NCLPDLB`
 - Branch: `master` (push directly)
 
 ---

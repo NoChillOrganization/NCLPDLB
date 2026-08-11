@@ -553,7 +553,7 @@ class AdminCog(commands.Cog, name="Admin"):
         await interaction.response.defer(ephemeral=True)
         if "/" not in repo or repo.count("/") != 1:
             await interaction.followup.send(
-                "❌ Invalid format. Use `owner/repo` (e.g. `NoChillModeOnline/NCLPDLB`).",
+                "❌ Invalid format. Use `owner/repo` (e.g. `NoChillOrganization/NCLPDLB`).",
                 ephemeral=True,
             )
             return
