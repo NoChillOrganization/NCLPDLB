@@ -561,6 +561,14 @@ class DraftCog(commands.Cog, name="Draft"):
                 )
             embed.set_footer(text=f"Next up — Round {result.round}")
             await interaction.followup.send(embed=embed)
+            if not result.persistence_ok:
+                await interaction.followup.send(
+                    "⚠️ **Draft state failed to save.** If the bot restarts before "
+                    "the next successful save, this draft will need to be resumed "
+                    "manually. Commissioners should retry the next pick if this "
+                    "keeps happening.",
+                    ephemeral=True,
+                )
         else:
             await interaction.followup.send(f"❌ {result.error}", ephemeral=True)
 
