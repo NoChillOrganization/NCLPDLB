@@ -116,7 +116,9 @@ run_bot.bat
 
 **`actions-runner/` at repo root is the self-hosted CI runner installation.** Do not edit files inside it; they are runner binaries and config, not project source.
 
-**Draft state is not persisted across bot restarts.** In-progress drafts live only in `_active_drafts` in memory — a restart loses them. See Key Design Decisions below.
+**Draft state IS persisted to SQLite, not just in-memory.** `draft_service.py` writes to SQLite
+after every state mutation (`_persist_draft`) and reloads active drafts, including pick timers,
+on bot startup (`restore_active_drafts()`, called from `main()`). See Key Design Decisions below.
 
 **Observation-space break (ISS-007/008).** `OBS_DIM` changed 48→78 in `battle_env.py`; `OBS_DIM_DOUBLES = 140`. Checkpoints trained before the change are incompatible and must be retrained. (Source: `STATUS.md`, `docs/design/ISS-007*`, `ISS-008*`.)
 
