@@ -289,10 +289,13 @@ Optional:
 
 ### Testing
 
-Tests live in `tests/unit/`, `tests/integration/`, `tests/e2e/`, `tests/platform/`, and
-`tests/performance/`.
+Tests live in `tests/unit/` (bulk of coverage), `tests/integration/`, `tests/e2e/`, and
+`tests/platform/`. `tests/e2e/` currently has a single flow test
+(`test_full_draft.py`) — treat it as a starting point, not full coverage of critical flows.
+`tests/performance/` contains `locustfile.py`, a Locust load-test script — it is **not** a
+pytest suite (no `test_*.py` files there) and must be run separately via `locust`, not `pytest`.
 Shared test data lives in `tests/fixtures/`.
 `pytest.ini` sets `asyncio_mode = auto` and default coverage across `src/`.
-Performance tests (`tests/performance/locustfile.py`) are excluded from normal runs.
 The `conftest.py` at root and `tests/conftest.py` provide shared fixtures.
-CI enforces a coverage gate of ≥80% on `src.ml.self_play`.
+CI (`.github/workflows/tests.yml`) runs the unit suite on every push/PR to `master` and enforces
+a coverage gate of ≥80% on `src.ml.self_play` specifically (not the whole codebase).
