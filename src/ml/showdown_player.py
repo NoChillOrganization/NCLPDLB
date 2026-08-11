@@ -33,8 +33,9 @@ Usage (from Discord bot)
 
 Requirements
 ────────────
-  pip install poke-env>=0.8.1 stable-baselines3>=2.2.0
+  pip install poke-env>=0.15.0 stable-baselines3>=2.2.0
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -48,6 +49,7 @@ log = logging.getLogger(__name__)
 
 try:  # pragma: no cover
     from stable_baselines3 import PPO
+
     SB3_OK = True
 except ImportError:  # pragma: no cover
     SB3_OK = False
@@ -56,13 +58,15 @@ except ImportError:  # pragma: no cover
 try:
     from poke_env.battle import AbstractBattle
     from poke_env.player import Player
+
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
     Player = object  # type: ignore
 
 try:
-    from src.data.sheets import learning_sheets
+    from src.data.learning_sheets import learning_sheets
+
     SHEETS_AVAILABLE = True
 except ImportError:  # pragma: no cover
     learning_sheets = None  # type: ignore
@@ -71,9 +75,34 @@ except ImportError:  # pragma: no cover
 from src.ml.battle_env import N_ACTIONS_GEN9, POKE_ENV_AVAILABLE, build_observation  # noqa: E402
 from src.ml.showdown_modes import server_config_for_mode  # noqa: E402
 
+# ── Transformer checkpoint resolver ───────────────────────────────────────────
+
+# Default path produced by train_transformer.py (DEFAULT_CHECKPOINT_OUT).
+# Kept in sync so /spar auto-detects a freshly trained checkpoint with no code change.
+DEFAULT_TRANSFORMER_CHECKPOINT = Path("src/ml/models/transformer_checkpoint.pt")
+
+
+def resolve_transformer_checkpoint(path: str | Path | None = None) -> Path | None:
+    """Return the transformer checkpoint Path if it exists on disk, else None.
+
+    Pure helper (no torch / poke-env imports) so it is testable with ``tmp_path``
+    without any heavy dependencies — mirrors the pattern of ``best_model_for_format``.
+
+    This drives /spar inference-mode selection (Phase 06 criterion 4):
+    - File present  → MCTS inference via BattleTransformer + MCTS lookahead
+    - File absent   → PPO fallback (silent, no UX degradation)
+
+    Args:
+        path: Explicit checkpoint path; defaults to DEFAULT_TRANSFORMER_CHECKPOINT.
+    """
+    candidate = Path(path) if path else DEFAULT_TRANSFORMER_CHECKPOINT
+    return candidate if candidate.is_file() else None
+
+
 # ── Bot player ────────────────────────────────────────────────────────────────
 
 if POKE_ENV_AVAILABLE:
+
     class ShowdownBotPlayer(Player):
         """
         poke-env Player that drives decisions from a trained PPO policy.
@@ -98,7 +127,7 @@ if POKE_ENV_AVAILABLE:
             *args: Any,
             use_mcts: bool = False,
             transformer_path: str | Path | None = None,
-            mcts_n_simulations: int = 30,
+            mcts_n_simulations: int = 0,
             **kwargs: Any,
         ) -> None:
             super().__init__(*args, **kwargs)
@@ -120,13 +149,29 @@ if POKE_ENV_AVAILABLE:
                     "stable-baselines3 is required. "
                     "Run: pip install stable-baselines3>=2.2.0"
                 )
-            self._policy = PPO.load(str(path))
-            log.info(f"[ShowdownBotPlayer] Policy loaded from {path}")
+            from src.ml.battle_env import OBS_DIM
+
+            policy = PPO.load(str(path))
+            loaded_dim = (
+                policy.observation_space.shape[0]
+                if policy.observation_space.shape
+                else None
+            )
+            if loaded_dim != OBS_DIM:
+                raise ValueError(
+                    f"Model obs dim mismatch: model has {loaded_dim}, env expects {OBS_DIM}. "
+                    f"Retrain with the current observation space before loading."
+                )
+            self._policy = policy
+            log.info(
+                f"[ShowdownBotPlayer] Policy loaded from {path} (obs_dim={OBS_DIM})"
+            )
 
         def _load_transformer(self, path: str | Path) -> None:  # pragma: no cover
             """Load a BattleTransformer checkpoint (.pt) for MCTS inference."""
             try:
                 from src.ml.transformer_model import load_model as _load_tf
+
                 self._transformer = _load_tf(str(path))
                 log.info("[ShowdownBotPlayer] Transformer loaded from %s", path)
             except Exception as exc:
@@ -135,20 +180,28 @@ if POKE_ENV_AVAILABLE:
 
         # ── Move selection ─────────────────────────────────────────
 
-        def choose_move(self, battle: AbstractBattle) -> None:  # pragma: no cover  # type: ignore[override]
+        def choose_move(
+            self, battle: AbstractBattle
+        ) -> None:  # pragma: no cover  # type: ignore[override]
             # ── MCTS path ──────────────────────────────────────────
             if self._use_mcts and self._transformer is not None:
                 try:
                     from src.ml.mcts import MCTSConfig, _build_legal_mask, run_mcts
+
                     obs = build_observation(battle)
                     legal_mask = _build_legal_mask(battle, N_ACTIONS_GEN9)
-                    n_legal = (
-                        int((~legal_mask).sum())
-                        if legal_mask is not None
-                        else N_ACTIONS_GEN9
-                    )
                     cfg = MCTSConfig(n_simulations=self._mcts_n_simulations)
-                    action_id, _ = run_mcts(obs, self._transformer, n_legal, cfg)
+                    # Pass full action space + legal_mask so MCTS can prune illegal nodes.
+                    # Passing n_legal as n_actions was wrong — it truncated the tree and
+                    # dropped the mask entirely, letting MCTS pick illegal actions.
+                    action_id, _ = run_mcts(
+                        obs,
+                        self._transformer,
+                        N_ACTIONS_GEN9,
+                        config=cfg,
+                        legal_mask=legal_mask,
+                        deterministic=True,
+                    )
                     return self._action_to_move(action_id, battle)
                 except Exception as exc:
                     log.warning(
@@ -165,19 +218,30 @@ if POKE_ENV_AVAILABLE:
                 action, _ = self._policy.predict(obs, deterministic=True)
                 action_id = int(action[0])
                 return self._action_to_move(action_id, battle)
+            except (ValueError, RuntimeError) as exc:
+                # Hard errors (shape mismatch, etc.) — re-raise so the caller sees them
+                log.error(f"[ShowdownBotPlayer] Policy predict failed: {exc}")
+                raise
             except Exception as exc:
-                log.warning(f"[ShowdownBotPlayer] Policy error: {exc} — falling back to random")
+                log.warning(
+                    f"[ShowdownBotPlayer] Policy error: {exc} — falling back to random"
+                )
                 return self.choose_random_move(battle)
 
-        def _action_to_move(self, action: int, battle: AbstractBattle):  # pragma: no cover
+        def _action_to_move(
+            self, action: int, battle: AbstractBattle
+        ):  # pragma: no cover
             """Map discrete action ID → poke-env BattleOrder using SinglesEnv mapper."""
             try:
                 from poke_env.environment.singles_env import SinglesEnv
+
                 return SinglesEnv.action_to_order(action, battle)
             except Exception:
                 return self.choose_random_move(battle)
 
-        async def save_replay(self, battle: AbstractBattle) -> str | None:  # pragma: no cover
+        async def save_replay(
+            self, battle: AbstractBattle
+        ) -> str | None:  # pragma: no cover
             """
             Send /savereplay to Showdown and return the replay URL.
 
@@ -193,15 +257,16 @@ if POKE_ENV_AVAILABLE:
                 return None
 
 else:  # pragma: no cover
+
     class ShowdownBotPlayer:  # type: ignore
         def __init__(self, *args, **kwargs):
             raise ImportError(
-                "poke-env is not properly installed. "
-                "Run: pip install poke-env>=0.8.1"
+                "poke-env is not properly installed. Run: pip install poke-env>=0.15.0"
             )
 
 
 # ── High-level challenger ─────────────────────────────────────────────────────
+
 
 class BotChallenger:
     """
@@ -209,6 +274,19 @@ class BotChallenger:
 
     Manages a ShowdownBotPlayer, initiates or accepts a battle challenge,
     and returns a structured result dict when the battle finishes.
+
+    Inference-mode selection (Phase 06)
+    ------------------------------------
+    On construction, ``resolve_transformer_checkpoint(transformer_path)`` is called:
+
+    - If a checkpoint is found on disk → ``ShowdownBotPlayer`` is built with
+      ``use_mcts=True`` and the transformer loaded; battle decisions run through
+      MCTS lookahead backed by the BattleTransformer.
+    - If no checkpoint is present → PPO-only player is built (existing behaviour);
+      a log line is emitted so ops can see which mode is active.
+
+    No code change is required to switch modes — only the presence or absence of
+    ``transformer_checkpoint.pt`` on disk (Phase 06 criterion 4).
     """
 
     def __init__(  # pragma: no cover
@@ -217,24 +295,44 @@ class BotChallenger:
         fmt: str,
         username: str,
         password: str,
-        server: str = "showdown",   # "showdown" | "localhost"
+        server: str = "showdown",  # "showdown" | "localhost"
+        transformer_path: str | Path | None = None,
     ) -> None:
         if not POKE_ENV_AVAILABLE:
             raise ImportError("poke-env is required for live battles.")
 
         self.model_path = Path(model_path)
-        self.fmt        = fmt
-        self.username   = username
-        self.password   = password
+        self.fmt = fmt
+        self.username = username
+        self.password = password
 
         server_cfg = server_config_for_mode(server)
 
-        self._player = ShowdownBotPlayer(
-            model_path=self.model_path,
-            battle_format=fmt,
-            server_configuration=server_cfg,
-            account_configuration=_make_account_config(username, password),
-        )
+        # Auto-detect transformer checkpoint → choose inference mode
+        ckpt = resolve_transformer_checkpoint(transformer_path)
+        if ckpt is not None:
+            log.info(
+                "[BotChallenger] Transformer checkpoint found at %s — using MCTS inference",
+                ckpt,
+            )
+            self._player = ShowdownBotPlayer(
+                model_path=self.model_path,
+                battle_format=fmt,
+                server_configuration=server_cfg,
+                account_configuration=_make_account_config(username, password),
+                use_mcts=True,
+                transformer_path=ckpt,
+            )
+        else:
+            log.info(
+                "[BotChallenger] No transformer checkpoint — /spar using PPO inference (fallback)"
+            )
+            self._player = ShowdownBotPlayer(
+                model_path=self.model_path,
+                battle_format=fmt,
+                server_configuration=server_cfg,
+                account_configuration=_make_account_config(username, password),
+            )
 
     # ── Public API ─────────────────────────────────────────────────────
 
@@ -268,7 +366,9 @@ class BotChallenger:
         )
         return result
 
-    async def accept_one_challenge(self, timeout: int = 600) -> dict:  # pragma: no cover
+    async def accept_one_challenge(
+        self, timeout: int = 600
+    ) -> dict:  # pragma: no cover
         """
         Wait for and accept the next incoming challenge.
 
@@ -298,22 +398,26 @@ class BotChallenger:
                     replay_url = await self._player.save_replay(battle)
                     result = self._format_result(battle, replay_url=replay_url)
                     if SHEETS_AVAILABLE:
-                        learning_sheets.save_replay_url({
-                            "format":        self.fmt,
-                            "battle_id":     battle.battle_tag,
-                            "bot":           self.username,
-                            "opponent":      _get_opponent_name(battle),
-                            "opponent_type": "human",
-                            "winner":        result["winner"],
-                            "turns":         result["turns"],
-                            "ko_count":      _count_fainted(battle),
-                            "checkpoint":    self.model_path.name,
-                            "training_step": "",
-                            "replay_url":    replay_url or "",
-                        })
+                        learning_sheets.save_replay_url(
+                            {
+                                "format": self.fmt,
+                                "battle_id": battle.battle_tag,
+                                "bot": self.username,
+                                "opponent": _get_opponent_name(battle),
+                                "opponent_type": "human",
+                                "winner": result["winner"],
+                                "turns": result["turns"],
+                                "ko_count": _count_fainted(battle),
+                                "checkpoint": self.model_path.name,
+                                "training_step": "",
+                                "replay_url": replay_url or "",
+                            }
+                        )
                     return result
 
-    def _format_result(self, battle: AbstractBattle, replay_url: str | None = None) -> dict:
+    def _format_result(
+        self, battle: AbstractBattle, replay_url: str | None = None
+    ) -> dict:
         if battle.won:
             winner = "bot"
         elif battle.lost:
@@ -322,18 +426,26 @@ class BotChallenger:
             winner = "tie"
 
         return {
-            "winner"     : winner,
-            "turns"      : getattr(battle, "turn", 0),
-            "replay_url" : replay_url,
-            "format"     : self.fmt,
-            "bot_name"   : self.username,
-            "opponent"   : _get_opponent_name(battle),
+            "winner": winner,
+            "turns": getattr(battle, "turn", 0),
+            "replay_url": replay_url,
+            "format": self.fmt,
+            "bot_name": self.username,
+            "opponent": _get_opponent_name(battle),
         }
 
 
 def _make_account_config(username: str, password: str):  # pragma: no cover
-    """Build a poke-env AccountConfiguration."""
+    """Build a poke-env AccountConfiguration.
+
+    Accepts either a plain str or a pydantic SecretStr for ``password`` — callers
+    (e.g. the Discord /spar cog) pass settings.showdown_password straight through
+    without unwrapping it, and AccountConfiguration needs the raw string.
+    """
     from poke_env.ps_client.account_configuration import AccountConfiguration
+
+    if hasattr(password, "get_secret_value"):
+        password = password.get_secret_value()
     return AccountConfiguration(username, password)
 
 
@@ -356,6 +468,27 @@ def _count_fainted(battle: AbstractBattle) -> int:
 
 # ── Model selector ────────────────────────────────────────────────────────────
 
+
+def _model_obs_dim(path: str | Path) -> int | None:
+    """Read the saved SB3 policy's observation-space dim without loading torch weights.
+
+    SB3 zips store a JSON-serialized ``observation_space`` in the ``data`` member.
+    Returns None if the dim can't be determined (missing/corrupt zip, unexpected
+    schema) — callers treat None as "unknown, don't block on it" rather than
+    forcing a false-positive skip.
+    """
+    import json
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(path) as zf:
+            data = json.loads(zf.read("data"))
+        shape = data.get("observation_space", {}).get("_shape")
+        return shape[0] if shape else None
+    except Exception:
+        return None
+
+
 def best_model_for_format(
     fmt: str,
     save_dir: str | None = None,
@@ -365,44 +498,59 @@ def best_model_for_format(
     """
     Return the path to the best available model for a given format.
 
-    Preference order:
+    Preference order (each rung is skipped if its candidate's saved obs dim is
+    known and doesn't match the environment's current OBS_DIM — see
+    ``_model_obs_dim``; this stops stale checkpoints from shadowing a fresh
+    retrain after an observation-space change):
       1. Most recent dated model in results_dir  ({fmt}_YYYY-MM-DD.zip)
       2. final_model.zip in save_dir  (downloaded via /admin-pull-models)
       3. latest.zip in save_dir  (in-progress checkpoint)
       4. Newest ppo_ckpt_*.zip in save_dir
     """
+    from src.ml.battle_env import OBS_DIM
+
+    def _compatible(candidate: Path) -> bool:
+        dim = _model_obs_dim(candidate)
+        return dim is None or dim == OBS_DIM
+
     if save_dir is None:
         from src.config import settings
+
         save_dir = settings.ml_policy_dir
     # 1. Dated final models — check per-format subdir first, then flat root
-    subdir_results = sorted((Path(results_dir) / fmt).glob(f"{fmt}_*.zip"))
-    if subdir_results:
-        return subdir_results[-1]
-    flat_results = sorted(Path(results_dir).glob(f"{fmt}_*.zip"))
-    if flat_results:
-        return flat_results[-1]
+    subdir_results = sorted(
+        (Path(results_dir) / fmt).glob(f"{fmt}_*.zip"), reverse=True
+    )
+    for candidate in subdir_results:
+        if _compatible(candidate):
+            return candidate
+    flat_results = sorted(Path(results_dir).glob(f"{fmt}_*.zip"), reverse=True)
+    for candidate in flat_results:
+        if _compatible(candidate):
+            return candidate
 
     base = Path(save_dir) / fmt
 
     # 2. Downloaded model from /admin-pull-models (CI release artifact)
     final = base / "final_model.zip"
-    if final.exists():
+    if final.exists() and _compatible(final):
         return final
 
     # 2b. Legacy model layout: {legacy_dir}/model-{fmt}/final_model.zip
     legacy_final = Path(legacy_dir) / f"model-{fmt}" / "final_model.zip"
-    if legacy_final.exists():
+    if legacy_final.exists() and _compatible(legacy_final):
         return legacy_final
 
     # 3. In-progress checkpoint
     latest = base / "latest.zip"
-    if latest.exists():
+    if latest.exists() and _compatible(latest):
         return latest
 
     # 4. Newest PPO checkpoint
-    ckpts = sorted(base.glob("ppo_ckpt_*.zip"))
-    if ckpts:
-        return ckpts[-1]
+    ckpts = sorted(base.glob("ppo_ckpt_*.zip"), reverse=True)
+    for candidate in ckpts:
+        if _compatible(candidate):
+            return candidate
 
     return None
 
@@ -419,16 +567,29 @@ if __name__ == "__main__":  # pragma: no cover
     )
 
     ap = argparse.ArgumentParser(description="Run the Showdown bot player")
-    ap.add_argument("--model",    required=True, help="Path to trained PPO model .zip")
-    ap.add_argument("--format",   default="gen9randombattle", help="Showdown battle format")
+    ap.add_argument("--model", required=True, help="Path to trained PPO model .zip")
+    ap.add_argument(
+        "--format", default="gen9randombattle", help="Showdown battle format"
+    )
     ap.add_argument("--username", required=True, help="Showdown account username")
     ap.add_argument("--password", required=True, help="Showdown account password")
-    ap.add_argument("--challenge",          default=None, metavar="USER",
-                    help="Challenge this Showdown username")
-    ap.add_argument("--accept-challenges",  action="store_true",
-                    help="Wait and accept the next incoming challenge")
-    ap.add_argument("--server", default="showdown", choices=["showdown", "localhost"],
-                    help="Server to connect to")
+    ap.add_argument(
+        "--challenge",
+        default=None,
+        metavar="USER",
+        help="Challenge this Showdown username",
+    )
+    ap.add_argument(
+        "--accept-challenges",
+        action="store_true",
+        help="Wait and accept the next incoming challenge",
+    )
+    ap.add_argument(
+        "--server",
+        default="showdown",
+        choices=["showdown", "localhost"],
+        help="Server to connect to",
+    )
     args = ap.parse_args()
 
     if not args.challenge and not args.accept_challenges:

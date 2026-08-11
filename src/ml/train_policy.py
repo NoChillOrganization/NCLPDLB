@@ -23,7 +23,7 @@ Requirements
 ────────────
   • A local Pokemon Showdown server on ws://localhost:8000
     (See scripts/setup_showdown_server.md)
-  • pip install poke-env>=0.8.1 stable-baselines3>=2.2.0 tensorboard>=2.16.0
+  • pip install poke-env>=0.15.0 stable-baselines3>=2.2.0 tensorboard>=2.16.0
 
 Usage
 ─────
@@ -31,6 +31,7 @@ Usage
   python -m src.ml.train_policy --format gen9ou --timesteps 2000000 --swap-every 50000
   python -m src.ml.train_policy --eval-only data/ml/policy/gen9randombattle/best_model.zip
 """
+
 from __future__ import annotations
 
 import argparse
@@ -53,6 +54,7 @@ try:  # pragma: no cover
     from stable_baselines3.common.vec_env import DummyVecEnv
     import torch as _torch
     import gymnasium as _gym
+
     SB3_OK = True
 except ImportError:  # pragma: no cover
     SB3_OK = False
@@ -64,6 +66,7 @@ except ImportError:  # pragma: no cover
 
     class BaseCallback:  # type: ignore
         """Stub so class definitions below don't crash when SB3 is absent."""
+
         def __init__(self, verbose: int = 0) -> None:
             self.verbose = verbose
             self.model: object = None
@@ -73,9 +76,11 @@ except ImportError:  # pragma: no cover
         def _on_step(self) -> bool:
             return True
 
+
 try:
     from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
     from poke_env.player import MaxBasePowerPlayer, RandomPlayer
+
     POKE_ENV_OK = True
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
@@ -84,7 +89,8 @@ from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER  # n
 from src.ml.showdown_modes import server_config_for_mode, account_configs_for_mode  # noqa: E402
 
 try:
-    from src.data.sheets import learning_sheets as _learning_sheets
+    from src.data.learning_sheets import learning_sheets as _learning_sheets
+
     _SHEETS_OK = True
 except Exception:  # pragma: no cover
     _learning_sheets = None  # type: ignore
@@ -133,9 +139,12 @@ def _log_meta_context(fmt: str, meta_path: str | None) -> None:
     if not meta_path:
         return
     import json as _json
+
     meta_file = Path(meta_path) / "format_meta.json"
     if not meta_file.exists():
-        log.info(f"[meta] No format_meta.json found in {meta_path} — skipping context log")
+        log.info(
+            f"[meta] No format_meta.json found in {meta_path} — skipping context log"
+        )
         return
     try:
         data = _json.loads(meta_file.read_text())
@@ -153,15 +162,15 @@ def _log_meta_context(fmt: str, meta_path: str | None) -> None:
     archetypes = entry.get("archetypes", [])
     for arch in archetypes[:4]:
         label = arch.get("archetype", arch.get("style", "?"))
-        core  = arch.get("core_pokemon", arch.get("restricted", ""))
+        core = arch.get("core_pokemon", arch.get("restricted", ""))
         log.info(f"[meta] {fmt} archetype: {label} — {core}")
 
 
-DEFAULT_FORMAT      = "gen9randombattle"
-DEFAULT_TIMESTEPS   = 500_000
-DEFAULT_SWAP_EVERY  = 50_000          # steps between opponent model swaps
-N_MAX_EPOCH0_STEPS  = 2_000_000       # force-graduate after this many warmup steps
-DEFAULT_SAVE_DIR    = "data/ml/policy"
+DEFAULT_FORMAT = "gen9randombattle"
+DEFAULT_TIMESTEPS = 500_000
+DEFAULT_SWAP_EVERY = 50_000  # steps between opponent model swaps
+N_MAX_EPOCH0_STEPS = 2_000_000  # force-graduate after this many warmup steps
+DEFAULT_SAVE_DIR = "data/ml/policy"
 DEFAULT_RESULTS_DIR = "data/ml/results"
 
 # Formats that use the doubles environment
@@ -180,13 +189,11 @@ DOUBLES_FORMATS = {
     "gen9vgc2025reghbo3",
     "gen9vgc2025regibo3",
     # VGC 2026
-    "gen9vgc2026regf",
     "gen9vgc2026regi",
-    "gen9vgc2026regfbo3",
     "gen9vgc2026regibo3",
     # Champions Doubles
-    "gen9championsvgc2026regma",
-    "gen9championsvgc2026regmabo3",
+    "gen9championsvgc2026regmb",
+    "gen9championsvgc2026regmbbo3",
 }
 
 # Some formats use the same Showdown battle mechanics as a base format.
@@ -194,29 +201,28 @@ DOUBLES_FORMATS = {
 # using the base single-battle format while keeping artifact paths intact.
 TRAINING_FORMAT_ALIASES: dict[str, str] = {
     # BO3 variants → train as the equivalent single-battle format
-    "gen9vgc2026regibo3"          : "gen9vgc2026regi",
-    "gen9vgc2026regfbo3"          : "gen9vgc2026regf",
+    "gen9vgc2026regibo3": "gen9vgc2026regi",
     # Champions formats → not on the standard Showdown server; train as
     # the closest standard format so battles can actually start.
-    "gen9championsou"             : "gen9ou",
-    "gen9championsbssregma"       : "gen9ou",
-    "gen9championsvgc2026regma"   : "gen9vgc2026regi",
-    "gen9championsvgc2026regmabo3": "gen9vgc2026regi",
+    "gen9championsou": "gen9ou",
+    "gen9championsbssregmb": "gen9ou",
+    "gen9championsvgc2026regmb": "gen9vgc2026regi",
+    "gen9championsvgc2026regmbbo3": "gen9vgc2026regi",
 }
 
 PPO_HYPERPARAMS: dict[str, Any] = {
-    "learning_rate"      : 3e-4,
-    "n_steps"            : 2048,
-    "batch_size"         : 64,
-    "n_epochs"           : 10,
-    "gamma"              : 0.99,
-    "gae_lambda"         : 0.95,
-    "clip_range"         : 0.2,
-    "ent_coef"           : 0.01,
-    "vf_coef"            : 0.5,
-    "max_grad_norm"      : 0.5,
-    "policy_kwargs"      : {"net_arch": [64, 64]},
-    "verbose"            : 1,
+    "learning_rate": 3e-4,
+    "n_steps": 2048,
+    "batch_size": 64,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "ent_coef": 0.01,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "policy_kwargs": {"net_arch": [64, 64]},
+    "verbose": 1,
 }
 
 # ── BC pre-training helpers ────────────────────────────────────────────────────
@@ -231,10 +237,10 @@ PPO_HYPERPARAMS: dict[str, Any] = {
 # We need total_timesteps to convert back to absolute step counts, so
 # `make_bc_ent_coef_schedule` closes over that value.
 
-_BC_ENT_HIGH   = 0.05
-_BC_ENT_LOW    = 0.01
-_BC_ENT_STEPS1 = 100_000   # hold high until this many steps
-_BC_ENT_STEPS2 = 200_000   # finish anneal by this many steps
+_BC_ENT_HIGH = 0.05
+_BC_ENT_LOW = 0.01
+_BC_ENT_STEPS1 = 100_000  # hold high until this many steps
+_BC_ENT_STEPS2 = 200_000  # finish anneal by this many steps
 
 
 def make_bc_ent_coef_schedule(total_timesteps: int):
@@ -249,6 +255,7 @@ def make_bc_ent_coef_schedule(total_timesteps: int):
         100k – 200k     : linear anneal 0.05 → 0.01
         200k+           : 0.01
     """
+
     def _schedule(remaining_progress: float) -> float:
         step = (1.0 - remaining_progress) * total_timesteps
         if step <= _BC_ENT_STEPS1:
@@ -278,7 +285,7 @@ def _load_pretrain_weights(model: Any, checkpoint_path: str | Path) -> None:
         raise ImportError("torch is required for --pretrain weight loading") from exc
 
     checkpoint_path = Path(checkpoint_path)
-    state = torch.load(checkpoint_path, map_location="cpu")
+    state = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
     policy_sd = model.policy.state_dict()
     loaded_keys: list[str] = []
     for k, v in state.items():
@@ -296,6 +303,7 @@ def _load_pretrain_weights(model: Any, checkpoint_path: str | Path) -> None:
 # ── Transformer feature extractor ─────────────────────────────────────────────
 
 if SB3_OK:
+
     class BattleTransformerExtractor(BaseFeaturesExtractor):
         """
         SB3-compatible features extractor backed by BattleTransformer's encoder.
@@ -318,73 +326,61 @@ if SB3_OK:
         ) -> None:
             super().__init__(observation_space, features_dim=d_model)
             from src.ml.transformer_model import BattleTransformer
+
             obs_dim = observation_space.shape[0]
             self._transformer = BattleTransformer(
-                obs_dim  = obs_dim,
-                n_actions = 1,       # heads unused; only encoder is called
-                d_model  = d_model,
-                n_heads  = n_heads,
-                n_layers = n_layers,
-                ffn_dim  = ffn_dim,
-                dropout  = dropout,
+                obs_dim=obs_dim,
+                n_actions=1,  # heads unused; only encoder is called
+                d_model=d_model,
+                n_heads=n_heads,
+                n_layers=n_layers,
+                ffn_dim=ffn_dim,
+                dropout=dropout,
             )
 
         def forward(self, obs: "_torch.Tensor") -> "_torch.Tensor":
             # obs: (batch, obs_dim) — SB3 flat vector format
-            x = obs.unsqueeze(1)                        # (batch, 1, obs_dim)
-            x = self._transformer.input_proj(x)         # (batch, 1, d_model)
-            x = self._transformer.pos_enc(x)            # add positional encoding
-            x = self._transformer.encoder(x)            # (batch, 1, d_model)
-            return x[:, -1, :]                          # (batch, d_model)
+            x = obs.unsqueeze(1)  # (batch, 1, obs_dim)
+            x = self._transformer.input_proj(x)  # (batch, 1, d_model)
+            x = self._transformer.pos_enc(x)  # add positional encoding
+            x = self._transformer.encoder(x)  # (batch, 1, d_model)
+            return x[:, -1, :]  # (batch, d_model)
 else:  # pragma: no cover
+
     class BattleTransformerExtractor:  # type: ignore
         def __init__(self, *args: Any, **kwargs: Any) -> None:
-            raise ImportError("stable-baselines3 is required for BattleTransformerExtractor")
-
-
-# ── Self-play callback ────────────────────────────────────────────────────────
-
-class SelfPlayCallback(BaseCallback):
-    """
-    Every `swap_every` steps:
-      1. Save the latest agent weights to <save_dir>/latest.zip
-      2. Signal the opponent player to reload from that checkpoint
-    """
-
-    def __init__(
-        self,
-        opponent_player: "SelfPlayOpponent",
-        save_dir: Path,
-        swap_every: int = DEFAULT_SWAP_EVERY,
-        verbose: int = 0,
-    ) -> None:
-        super().__init__(verbose=verbose)
-        self.opponent_player  = opponent_player
-        self.save_dir         = save_dir
-        self.swap_every       = swap_every
-        self._last_swap       = 0
-        self._swap_count      = 0
-
-    def _on_step(self) -> bool:
-        if self.num_timesteps - self._last_swap >= self.swap_every:
-            self._save_and_swap()
-            self._last_swap = self.num_timesteps
-        return True
-
-    def _save_and_swap(self) -> None:
-        self._swap_count += 1
-        ckpt_path = self.save_dir / f"swap_{self._swap_count:04d}.zip"
-        latest_path = self.save_dir / "latest.zip"
-
-        self.model.save(str(ckpt_path))
-        self.model.save(str(latest_path))
-        self.opponent_player.load_policy(latest_path)
-
-        if self.verbose:
-            log.info(
-                f"[SelfPlay] Swap #{self._swap_count} at step "
-                f"{self.num_timesteps}: saved {ckpt_path.name}"
+            raise ImportError(
+                "stable-baselines3 is required for BattleTransformerExtractor"
             )
+
+
+# ── Dict → Box observation unwrapper ───────────────────────────────────────────
+
+if SB3_OK:
+
+    class _UnwrapDictObs(_gym.ObservationWrapper):
+        """poke-env 0.15+ wraps env observations in Dict{action_mask, observation};
+        SB3's MlpPolicy requires the flat Box the rest of this module assumes
+        (BattleTransformerExtractor, checkpoint loading, inference obs-dim guard).
+        Extract 'observation' and pass flat arrays through unchanged — the
+        terminal-obs fast path in battle_env.py's step() override returns a bare
+        ndarray (not a dict) when a battle ends mid-rollout.
+        """
+
+        def __init__(self, env: Any) -> None:
+            super().__init__(env)
+            space = env.observation_space
+            if isinstance(space, _gym.spaces.Dict) and "observation" in space.spaces:
+                self.observation_space = space.spaces["observation"]
+
+        def observation(self, obs: Any) -> Any:
+            return obs["observation"] if isinstance(obs, dict) else obs
+
+else:  # pragma: no cover
+
+    class _UnwrapDictObs:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise ImportError("gymnasium/stable-baselines3 required for _UnwrapDictObs")
 
 
 # ── Curriculum callback ───────────────────────────────────────────────────────
@@ -405,7 +401,7 @@ class CurriculumCallback(BaseCallback):
 
     Phase 2 — selfplay:
         Every `swap_every` steps we save a new checkpoint and reload it into
-        the opponent, keeping a rolling-lag opponent just like SelfPlayCallback.
+        the opponent, keeping a rolling-lag opponent.
     """
 
     def __init__(
@@ -422,23 +418,23 @@ class CurriculumCallback(BaseCallback):
         verbose: int = 0,
     ) -> None:
         super().__init__(verbose=verbose)
-        self.opponent_player          = opponent_player
-        self.save_dir                 = save_dir
-        self.fmt                      = fmt
-        self.swap_every               = swap_every
-        self.win_threshold            = win_threshold
-        self.min_episodes             = min_episodes
-        self.mean_type_eff_threshold  = mean_type_eff_threshold
-        self.min_type_eff_samples     = min_type_eff_samples
-        self.n_max_epoch0_steps       = n_max_epoch0_steps
+        self.opponent_player = opponent_player
+        self.save_dir = save_dir
+        self.fmt = fmt
+        self.swap_every = swap_every
+        self.win_threshold = win_threshold
+        self.min_episodes = min_episodes
+        self.mean_type_eff_threshold = mean_type_eff_threshold
+        self.min_type_eff_samples = min_type_eff_samples
+        self.n_max_epoch0_steps = n_max_epoch0_steps
 
-        self._phase           = "warmup"
-        self._win_window: deque      = deque(maxlen=min_episodes)
+        self._phase = "warmup"
+        self._win_window: deque = deque(maxlen=min_episodes)
         self._type_eff_window: deque = deque(maxlen=min_type_eff_samples)
-        self._last_swap       = 0
-        self._swap_count      = 0
+        self._last_swap = 0
+        self._swap_count = 0
         self._action_counts: dict[int, int] = {}
-        self._action_total    = 0
+        self._action_total = 0
 
     # ── helpers ───────────────────────────────────────────────────
 
@@ -459,8 +455,9 @@ class CurriculumCallback(BaseCallback):
     def _track_step_type_eff(self) -> None:
         """Append the raw type-effectiveness multiplier for the chosen move to the rolling window."""
         from src.ml.battle_env import MOVE_TYPE_EFF_OBS_IDXS
+
         obs_tensor = self.locals.get("obs_tensor")
-        actions    = self.locals.get("actions")
+        actions = self.locals.get("actions")
         if obs_tensor is None or actions is None:
             return
         try:
@@ -471,7 +468,7 @@ class CurriculumCallback(BaseCallback):
             )
             for i, a in enumerate(np.asarray(actions).flatten()):
                 action = int(a)
-                if 6 <= action <= 25:   # move action (not a switch)
+                if 6 <= action <= 25:  # move action (not a switch)
                     move_slot = (action - 6) % 4
                     eff_obs_val = float(obs_np[i, MOVE_TYPE_EFF_OBS_IDXS[move_slot]])
                     # Convert log2-normalized value to raw damage multiplier.
@@ -505,66 +502,77 @@ class CurriculumCallback(BaseCallback):
                 )
             # Reset counters for the next check window.
             self._action_counts = {}
-            self._action_total  = 0
+            self._action_total = 0
 
     def _graduate(self) -> None:
         """Save first checkpoint and promote opponent to self-play mode."""
         self._swap_count += 1
-        ckpt  = self.save_dir / f"swap_{self._swap_count:04d}.zip"
+        ckpt = self.save_dir / f"swap_{self._swap_count:04d}.zip"
         latest = self.save_dir / "latest.zip"
         self.model.save(str(ckpt))
         self.model.save(str(latest))
         self.opponent_player.load_policy(latest)
-        self._phase     = "selfplay"
+        self._phase = "selfplay"
         self._last_swap = self.num_timesteps
-        win_rate = sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
+        win_rate = (
+            sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
+        )
         if self.verbose:
             mean_eff = (
                 sum(self._type_eff_window) / len(self._type_eff_window)
-                if self._type_eff_window else float("nan")
+                if self._type_eff_window
+                else float("nan")
             )
             log.info(
                 "[Curriculum] Graduated to self-play at step %d "
                 "(win-rate=%.1f%%, mean_type_eff=%.3f)",
-                self.num_timesteps, win_rate * 100, mean_eff,
+                self.num_timesteps,
+                win_rate * 100,
+                mean_eff,
             )
         if _SHEETS_OK and _learning_sheets:
-            _learning_sheets.save_training_run({
-                "format":        self.fmt,
-                "phase":         "graduated",
-                "checkpoint":    ckpt.name,
-                "training_step": self.num_timesteps,
-                "win_rate":      f"{win_rate:.4f}",
-                "episodes":      len(self._win_window),
-                "mean_reward":   "",
-                "notes":         "warmup → self-play",
-            })
+            _learning_sheets.save_training_run(
+                {
+                    "format": self.fmt,
+                    "phase": "graduated",
+                    "checkpoint": ckpt.name,
+                    "training_step": self.num_timesteps,
+                    "win_rate": f"{win_rate:.4f}",
+                    "episodes": len(self._win_window),
+                    "mean_reward": "",
+                    "notes": "warmup → self-play",
+                }
+            )
 
     def _save_and_swap(self) -> None:
         """Save a self-play checkpoint and reload into the opponent."""
         self._swap_count += 1
-        ckpt   = self.save_dir / f"swap_{self._swap_count:04d}.zip"
+        ckpt = self.save_dir / f"swap_{self._swap_count:04d}.zip"
         latest = self.save_dir / "latest.zip"
         self.model.save(str(ckpt))
         self.model.save(str(latest))
         self.opponent_player.load_policy(latest)
-        win_rate = sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
+        win_rate = (
+            sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
+        )
         if self.verbose:
             log.info(
                 f"[Curriculum] Swap #{self._swap_count} at step "
                 f"{self.num_timesteps}: saved {ckpt.name}"
             )
         if _SHEETS_OK and _learning_sheets:
-            _learning_sheets.save_training_run({
-                "format":        self.fmt,
-                "phase":         "selfplay",
-                "checkpoint":    ckpt.name,
-                "training_step": self.num_timesteps,
-                "win_rate":      f"{win_rate:.4f}",
-                "episodes":      len(self._win_window),
-                "mean_reward":   "",
-                "notes":         f"swap #{self._swap_count}",
-            })
+            _learning_sheets.save_training_run(
+                {
+                    "format": self.fmt,
+                    "phase": "selfplay",
+                    "checkpoint": ckpt.name,
+                    "training_step": self.num_timesteps,
+                    "win_rate": f"{win_rate:.4f}",
+                    "episodes": len(self._win_window),
+                    "mean_reward": "",
+                    "notes": f"swap #{self._swap_count}",
+                }
+            )
 
     # ── main hook ─────────────────────────────────────────────────
 
@@ -580,10 +588,15 @@ class CurriculumCallback(BaseCallback):
 
         if self._phase == "warmup":
             if self.num_timesteps >= self.n_max_epoch0_steps:
-                win_rate = sum(self._win_window) / len(self._win_window) if self._win_window else 0.0
+                win_rate = (
+                    sum(self._win_window) / len(self._win_window)
+                    if self._win_window
+                    else 0.0
+                )
                 log.warning(
                     "forced graduation after %d steps — win rate %.2f%% below threshold",
-                    self.num_timesteps, win_rate * 100,
+                    self.num_timesteps,
+                    win_rate * 100,
                 )
                 self._graduate()
             elif self._should_graduate():
@@ -599,6 +612,7 @@ class CurriculumCallback(BaseCallback):
 # ── Opponent wrapper ──────────────────────────────────────────────────────────
 
 if POKE_ENV_AVAILABLE and POKE_ENV_OK:
+
     class SelfPlayOpponent(RandomPlayer):
         """
         poke-env player that uses a frozen PPO policy to choose moves.
@@ -606,7 +620,9 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
         Supports both singles and doubles battle formats.
         """
 
-        def __init__(self, *args: Any, is_doubles: bool = False, **kwargs: Any) -> None:  # pragma: no cover
+        def __init__(
+            self, *args: Any, is_doubles: bool = False, **kwargs: Any
+        ) -> None:  # pragma: no cover
             super().__init__(*args, **kwargs)
             self._policy: "PPO | None" = None
             self._is_doubles = is_doubles
@@ -629,11 +645,13 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
                     obs = build_doubles_observation(battle).reshape(1, -1)
                     action, _ = self._policy.predict(obs, deterministic=False)
                     from poke_env.environment.doubles_env import DoublesEnv
+
                     return DoublesEnv.action_to_order(int(action[0]), battle)
                 else:
                     obs = build_observation(battle).reshape(1, -1)
                     action, _ = self._policy.predict(obs, deterministic=False)
                     from poke_env.environment.singles_env import SinglesEnv
+
                     return SinglesEnv.action_to_order(int(action[0]), battle)
             except Exception as exc:
                 log.warning(f"[Opponent] Prediction error: {exc}")
@@ -651,7 +669,9 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
         PPO checkpoint to pick moves.
         """
 
-        def __init__(self, *args: Any, is_doubles: bool = False, **kwargs: Any) -> None:  # pragma: no cover
+        def __init__(
+            self, *args: Any, is_doubles: bool = False, **kwargs: Any
+        ) -> None:  # pragma: no cover
             super().__init__(*args, **kwargs)
             self._policy: "PPO | None" = None
             self._is_doubles = is_doubles
@@ -674,17 +694,20 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
                     obs = build_doubles_observation(battle).reshape(1, -1)
                     action, _ = self._policy.predict(obs, deterministic=False)
                     from poke_env.environment.doubles_env import DoublesEnv
+
                     return DoublesEnv.action_to_order(int(action[0]), battle)
                 else:
                     obs = build_observation(battle).reshape(1, -1)
                     action, _ = self._policy.predict(obs, deterministic=False)
                     from poke_env.environment.singles_env import SinglesEnv
+
                     return SinglesEnv.action_to_order(int(action[0]), battle)
             except Exception as exc:
                 log.warning(f"[CurriculumOpponent] Prediction error: {exc}")
                 return super().choose_move(battle)
 
 else:  # pragma: no cover
+
     class SelfPlayOpponent:  # type: ignore
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise ImportError("poke-env is not available")
@@ -695,6 +718,7 @@ else:  # pragma: no cover
 
 
 # ── Training ──────────────────────────────────────────────────────────────────
+
 
 def train(  # pragma: no cover
     fmt: str,
@@ -709,6 +733,8 @@ def train(  # pragma: no cover
     save_replays: str | None = None,
     use_transformer: bool = False,
     meta_path: str | None = None,
+    opponent_type: str = "curriculum",
+    opponent_checkpoint: str | None = None,
 ) -> Path:
     """
     Run PPO self-play training for the given Showdown format.
@@ -735,6 +761,7 @@ def train(  # pragma: no cover
     # Delegate browser mode entirely to the Playwright trainer
     if server == MODE_BROWSER:
         from src.ml.browser_trainer import train_browser
+
         return train_browser(
             fmt=fmt,
             total_timesteps=total_timesteps,
@@ -750,7 +777,9 @@ def train(  # pragma: no cover
         log.info(f"[train] Format alias: {fmt!r} -> {training_fmt!r}")
         if not team_format:
             team_format = training_fmt
-            log.info(f"[train] Auto-inherited team_format from base format: {team_format!r}")
+            log.info(
+                f"[train] Auto-inherited team_format from base format: {team_format!r}"
+            )
 
     _check_showdown_server_if_local(server)
     _log_meta_context(fmt, meta_path)
@@ -758,12 +787,11 @@ def train(  # pragma: no cover
     if not POKE_ENV_AVAILABLE:
         raise RuntimeError(
             "poke-env is not installed or failed to import. "
-            "Run: pip install poke-env>=0.8.1"
+            "Run: pip install poke-env>=0.15.0"
         )
     if not SB3_OK:
         raise RuntimeError(
-            "stable-baselines3 not installed. "
-            "Run: pip install stable-baselines3>=2.2.0"
+            "stable-baselines3 not installed. Run: pip install stable-baselines3>=2.2.0"
         )
 
     is_doubles = training_fmt in DOUBLES_FORMATS
@@ -774,12 +802,17 @@ def train(  # pragma: no cover
         try:
             from src.ml.teambuilder import RotatingTeambuilder
             from src.ml.teams import FORMAT_TEAMS
+
             teams = FORMAT_TEAMS.get(team_format)
             if teams:
                 team_builder = RotatingTeambuilder(teams)
-                log.info(f"[train] Using RotatingTeambuilder for {team_format} ({len(teams)} teams)")
+                log.info(
+                    f"[train] Using RotatingTeambuilder for {team_format} ({len(teams)} teams)"
+                )
             else:
-                log.warning(f"[train] No teams found for {team_format}, training without custom teams")
+                log.warning(
+                    f"[train] No teams found for {team_format}, training without custom teams"
+                )
         except Exception as exc:
             log.warning(f"[train] Could not load teams for {team_format}: {exc}")
 
@@ -804,7 +837,36 @@ def train(  # pragma: no cover
     if team_builder is not None:
         opp_kwargs["team"] = team_builder
 
-    opponent = CurriculumOpponent(**opp_kwargs)
+    if opponent_type == "mcts":
+        if is_doubles:
+            raise ValueError(
+                "--opponent mcts is not supported for doubles formats. "
+                "MCTSPlayer uses a gen9-singles action space only."
+            )
+        from src.ml.self_play import MCTSPlayer
+        from src.ml.mcts import MCTSConfig
+        from src.ml.transformer_model import build_default_model, load_model
+
+        # Strip is_doubles — MCTSPlayer does not accept that kwarg
+        mcts_kwargs = {k: v for k, v in opp_kwargs.items() if k != "is_doubles"}
+        tmodel = (
+            load_model(opponent_checkpoint)
+            if opponent_checkpoint
+            else build_default_model()
+        )
+        opponent = MCTSPlayer(
+            model=tmodel,
+            mcts_config=MCTSConfig(),
+            replay_buffer=None,
+            stats=None,
+            **mcts_kwargs,
+        )
+        log.info(
+            "[train] Using MCTSPlayer as self-play opponent (checkpoint=%s)",
+            opponent_checkpoint,
+        )
+    else:
+        opponent = CurriculumOpponent(**opp_kwargs)
 
     # ── Build Gymnasium-compatible env via SingleAgentWrapper ───────
     # strict=False: invalid actions (e.g. tera when unavailable) fall back
@@ -832,7 +894,7 @@ def train(  # pragma: no cover
             poke_env = BattleDoubleEnv(**env_kwargs)
         else:
             poke_env = BattleEnv(**env_kwargs)
-        wrapped = SingleAgentWrapper(poke_env, opponent)
+        wrapped = _UnwrapDictObs(SingleAgentWrapper(poke_env, opponent))
         return Monitor(wrapped)
 
     vec_env = DummyVecEnv([make_env])
@@ -846,11 +908,13 @@ def train(  # pragma: no cover
             tensorboard_log=str(log_dir),
         )
     elif use_transformer:
-        transformer_kwargs = {k: v for k, v in PPO_HYPERPARAMS.items() if k != "policy_kwargs"}
+        transformer_kwargs = {
+            k: v for k, v in PPO_HYPERPARAMS.items() if k != "policy_kwargs"
+        }
         transformer_kwargs["policy_kwargs"] = {
-            "features_extractor_class"  : BattleTransformerExtractor,
-            "features_extractor_kwargs" : {"d_model": 64},
-            "net_arch"                  : [64, 64],
+            "features_extractor_class": BattleTransformerExtractor,
+            "features_extractor_kwargs": {"d_model": 64},
+            "net_arch": [64, 64],
         }
         log.info("[train] Using BattleTransformerExtractor as PPO feature encoder")
         model = PPO(
@@ -896,11 +960,14 @@ def train(  # pragma: no cover
 
     _server_desc = {
         "localhost": "ws://127.0.0.1:8000 (local Node.js server)",
-        "showdown":  "wss://sim3.psim.us (public Showdown)",
+        "showdown": "wss://sim3.psim.us (public Showdown)",
     }.get(server, server)
     log.info("============================================================")
     log.info("  PPO Curriculum Training")
-    log.info(f"  Format       : {fmt}" + (f" (training as {training_fmt})" if training_fmt != fmt else ""))
+    log.info(
+        f"  Format       : {fmt}"
+        + (f" (training as {training_fmt})" if training_fmt != fmt else "")
+    )
     log.info(f"  Server mode  : {server} — {_server_desc}")
     log.info(f"  Total steps  : {total_timesteps:,}")
     log.info(f"  Swap every   : {swap_every:,} (after graduation)")
@@ -913,57 +980,113 @@ def train(  # pragma: no cover
         log.info("Make sure Pokemon Showdown server is running on ws://localhost:8000")
     log.info("Press Ctrl+C to stop training early.")
 
+    # Drop per-message WS traffic logs (<<< / >>>) so the job log stays under
+    # GitHub's ~1 GB API limit and the actual crash (if any) remains visible.
+    # Must attach to handlers, not the root logger: child logger propagation calls
+    # callHandlers() directly, bypassing the root logger's own filter() method.
+    class _DropWSTraffic(logging.Filter):
+        def filter(self, record):
+            if record.levelno < logging.WARNING:
+                msg = record.getMessage()
+                return "<<<" not in msg and ">>>" not in msg
+            return True
+
+    _ws_filter = _DropWSTraffic()
+    _root = logging.getLogger()
+    _root.addFilter(_ws_filter)
+    for _h in _root.handlers:
+        _h.addFilter(_ws_filter)
+
     _train_exc: BaseException | None = None
+    # Declare final_path before try/finally so the finally block can reference it.
+    final_path = fmt_save_dir / "final_model.zip"
     try:
         model.learn(
             total_timesteps=total_timesteps,
             callback=[checkpoint_cb, curriculum_cb],
-            reset_num_timesteps=(resume is None),  # pretrain also resets (it's not resume)
+            reset_num_timesteps=(
+                resume is None
+            ),  # pretrain also resets (it's not resume)
             tb_log_name=f"ppo_{fmt}",
         )
     except KeyboardInterrupt:
         log.info("Training interrupted by user.")
-    except Exception as exc:
-        log.warning(f"[train] Training error: {exc}; saving checkpoint before raising.")
+    except BaseException as exc:
+        # Catches asyncio.CancelledError (BaseException since Python 3.8) that fires when
+        # the poke_env event loop shuts down after Showdown server dies (WinError 64).
+        log.warning(
+            f"[train] Training error: {type(exc).__name__}: {exc}; saving checkpoint."
+        )
         _train_exc = exc
-
-    # ── Save final model ────────────────────────────────────────────
-    # Primary: save_dir/fmt/final_model.zip (CI + resume checkpoint)
-    # Saved even on unexpected exception so CI artifact upload always has a file.
-    final_path = fmt_save_dir / "final_model.zip"
-    model.save(str(final_path))
-    log.info(f"\nFinal model saved to {final_path}")
+    finally:
+        # ── Save final model ──────────────────────────────────────────
+        # In finally so the model is always written to disk, even if BaseException
+        # (CancelledError, SystemExit, etc.) is propagating.
+        try:
+            model.save(str(final_path))
+            log.info(f"\nFinal model saved to {final_path}")
+        except Exception as save_exc:
+            log.error(f"[train] model.save() FAILED: {save_exc!r}")
     if _SHEETS_OK and _learning_sheets:
         final_win_rate = (
             sum(curriculum_cb._win_window) / len(curriculum_cb._win_window)
-            if curriculum_cb._win_window else 0.0
+            if curriculum_cb._win_window
+            else 0.0
         )
-        _learning_sheets.save_training_run({
-            "format":        fmt,
-            "phase":         "final",
-            "checkpoint":    final_path.name,
-            "training_step": curriculum_cb.num_timesteps,
-            "win_rate":      f"{final_win_rate:.4f}",
-            "episodes":      len(curriculum_cb._win_window),
-            "mean_reward":   "",
-            "notes":         f"training complete — {total_timesteps:,} steps",
-        })
+        _learning_sheets.save_training_run(
+            {
+                "format": fmt,
+                "phase": "final",
+                "checkpoint": final_path.name,
+                "training_step": curriculum_cb.num_timesteps,
+                "win_rate": f"{final_win_rate:.4f}",
+                "episodes": len(curriculum_cb._win_window),
+                "mean_reward": "",
+                "notes": f"training complete — {total_timesteps:,} steps",
+            }
+        )
 
     # Dated copy in results_dir so _model_done() can detect completion
     _results_dir = results_dir if results_dir is not None else Path(DEFAULT_RESULTS_DIR)
     _results_dir.mkdir(parents=True, exist_ok=True)
     from datetime import date as _date
+
     dated_path = _results_dir / f"{fmt}_{_date.today()}.zip"
     model.save(str(dated_path))
     log.info(f"Dated model saved to {dated_path}")
 
     if _train_exc is not None:
-        raise _train_exc
+        # "Agent is not challenging" = poke-env challenge timeout (team rejection
+        # or transient server issue).  Model was already saved above; treat as a
+        # clean early-stop ONLY when meaningful training occurred.  A 0-step or
+        # near-zero checkpoint is indistinguishable from an untrained stub and must
+        # not be published as a real model.
+        if "not challenging" in str(_train_exc):
+            steps_done = getattr(curriculum_cb, "num_timesteps", 0)
+            # Floor: at least 1 % of requested timesteps, minimum 1 000 steps.
+            # Anything below signals the server rejected every challenge before
+            # training could start — raise so the CI job goes red.
+            min_steps = max(1_000, total_timesteps // 100)
+            log.warning(
+                f"[train] Battle challenge timeout — "
+                f"{steps_done:,} steps trained (floor: {min_steps:,}). "
+                f"Model saved at {final_path}."
+            )
+            if steps_done < min_steps:
+                raise RuntimeError(
+                    f"[train] Aborting: only {steps_done:,} steps completed before "
+                    f"'Agent is not challenging' (floor={min_steps:,}). "
+                    f"The model at {final_path} is untrained. "
+                    f"Fix the Showdown server / team generation for '{fmt}' and retry."
+                ) from _train_exc
+        else:
+            raise _train_exc
 
     return final_path
 
 
 # ── Evaluation ────────────────────────────────────────────────────────────────
+
 
 def evaluate(  # pragma: no cover
     model_path: str,
@@ -977,7 +1100,9 @@ def evaluate(  # pragma: no cover
     Returns win/loss/tie rates.
     """
     if not POKE_ENV_AVAILABLE or not SB3_OK:
-        raise RuntimeError("poke-env and stable-baselines3 are required for evaluation.")
+        raise RuntimeError(
+            "poke-env and stable-baselines3 are required for evaluation."
+        )
 
     srv_cfg = server_config_for_mode(server)
     model = PPO.load(model_path)
@@ -991,7 +1116,7 @@ def evaluate(  # pragma: no cover
         server_configuration=srv_cfg,
         strict=False,
     )
-    env = SingleAgentWrapper(poke_env, opponent)
+    env = _UnwrapDictObs(SingleAgentWrapper(poke_env, opponent))
 
     wins = losses = ties = 0
     for i in range(n_battles):
@@ -1002,47 +1127,53 @@ def evaluate(  # pragma: no cover
             obs, reward, terminated, truncated, _ = env.step(int(action))
             done = terminated or truncated
 
-        battle = poke_env.battle1
-        if battle and battle.won:
+        # poke_env.battle1 is version-dependent; use getattr fallback (M23)
+        battle = getattr(poke_env, "battle1", None) or getattr(
+            poke_env, "_current_battle", None
+        )
+        if battle and getattr(battle, "won", False):
             wins += 1
-        elif battle and battle.lost:
+        elif battle and getattr(battle, "lost", False):
             losses += 1
         else:
             ties += 1
 
         if (i + 1) % 10 == 0:
-            log.info(f"  Battle {i+1}/{n_battles}: W={wins} L={losses} T={ties}")
+            log.info(f"  Battle {i + 1}/{n_battles}: W={wins} L={losses} T={ties}")
 
     total = wins + losses + ties
     results = {
-        "format"    : fmt,
-        "battles"   : total,
-        "wins"      : wins,
-        "losses"    : losses,
-        "ties"      : ties,
-        "win_rate"  : wins / total if total > 0 else 0.0,
-        "loss_rate" : losses / total if total > 0 else 0.0,
+        "format": fmt,
+        "battles": total,
+        "wins": wins,
+        "losses": losses,
+        "ties": ties,
+        "win_rate": wins / total if total > 0 else 0.0,
+        "loss_rate": losses / total if total > 0 else 0.0,
     }
     log.info(f"\n=== Evaluation vs RandomPlayer ({n_battles} battles) ===")
-    log.info(f"  Win rate : {results['win_rate']*100:.1f}%")
-    log.info(f"  Loss rate: {results['loss_rate']*100:.1f}%")
+    log.info(f"  Win rate : {results['win_rate'] * 100:.1f}%")
+    log.info(f"  Loss rate: {results['loss_rate'] * 100:.1f}%")
     log.info(f"  Ties     : {ties}")
     return results
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+
 def _parse_args() -> argparse.Namespace:  # pragma: no cover
     ap = argparse.ArgumentParser(
         description="Train / evaluate PPO battle policy via poke-env self-play"
     )
     ap.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         default=DEFAULT_FORMAT,
         help=f"Showdown battle format (default: {DEFAULT_FORMAT})",
     )
     ap.add_argument(
-        "--timesteps", "-t",
+        "--timesteps",
+        "-t",
         type=int,
         default=DEFAULT_TIMESTEPS,
         help=f"Total training timesteps (default: {DEFAULT_TIMESTEPS:,})",
@@ -1096,14 +1227,14 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
         default=None,
         metavar="FORMAT",
         help="Load teams from FORMAT_TEAMS[FORMAT] for custom-team formats "
-             "(e.g. gen9ou, gen9doublesou, gen9vgc2026regi)",
+        "(e.g. gen9ou, gen9doublesou, gen9vgc2026regi)",
     )
     ap.add_argument(
         "--save-replays",
         default=None,
         metavar="DIR",
         help="Directory to save HTML battle replays (viewable in any browser). "
-             "Each battle is saved as a .html file.",
+        "Each battle is saved as a .html file.",
     )
     ap.add_argument(
         "--server",
@@ -1127,7 +1258,26 @@ def _parse_args() -> argparse.Namespace:  # pragma: no cover
         default=None,
         metavar="DIR",
         help="Directory containing competitive meta data (format_meta.json). "
-             "When set, usage leaders and archetypes are logged before training.",
+        "When set, usage leaders and archetypes are logged before training.",
+    )
+    ap.add_argument(
+        "--opponent",
+        default="curriculum",
+        choices=["curriculum", "mcts"],
+        help=(
+            "Self-play opponent type: "
+            "'curriculum' (MaxBasePowerPlayer → frozen PPO checkpoint, default) or "
+            "'mcts' (BattleTransformer + MCTS tree search, singles formats only)"
+        ),
+    )
+    ap.add_argument(
+        "--opponent-checkpoint",
+        default=None,
+        metavar="TRANSFORMER.pt",
+        help=(
+            "Path to a BattleTransformer checkpoint (.pt) used when --opponent mcts. "
+            "Defaults to randomly-initialised weights when omitted."
+        ),
     )
     return ap.parse_args()
 
@@ -1163,4 +1313,6 @@ if __name__ == "__main__":  # pragma: no cover
             save_replays=args.save_replays,
             use_transformer=args.use_transformer,
             meta_path=args.meta_path,
+            opponent_type=args.opponent,
+            opponent_checkpoint=args.opponent_checkpoint,
         )
