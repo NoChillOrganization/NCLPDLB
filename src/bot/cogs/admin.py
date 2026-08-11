@@ -14,10 +14,13 @@ from discord.ext import commands
 
 from src.bot.permissions import ROLE_GUILDMASTER, ROLE_MOD, require_role
 from src.config import settings
-from src.ml.showdown_modes import MODE_LOCALHOST
 from src.ml.train_all import TRAINING_MAP
 from src.services.draft_service import DraftService
-from src.bot.cogs.admin_training import (
+
+# Re-exported for backward compatibility: training orchestration logic lives in
+# admin_training.py (extracted to keep this file under the 800-line guideline),
+# but tests and other modules still import some of these names from here.
+from src.bot.cogs.admin_training import (  # noqa: F401
     ConfirmResetView,
     _build_progress_embed,
     _build_queue_embed,
