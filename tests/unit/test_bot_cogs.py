@@ -2247,10 +2247,13 @@ async def test_run_training_all_force_and_server_flags():
         captured_cmds.append(list(cmd))
         return proc
 
-    # Limit TRAINING_MAP to one entry so only one subprocess is spawned
+    # Limit TRAINING_MAP to one entry so only one subprocess is spawned.
+    # _run_training_all lives in admin_training.py (extracted from admin.py to
+    # stay under the 800-line guideline) and reads its own module-level
+    # TRAINING_MAP import, so that's what needs patching here.
     single_entry = {one_fmt: TRAINING_MAP[one_fmt]}
     with (
-        patch("src.bot.cogs.admin.TRAINING_MAP", single_entry),
+        patch("src.bot.cogs.admin_training.TRAINING_MAP", single_entry),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None),
         patch("asyncio.create_subprocess_exec", side_effect=fake_exec),
