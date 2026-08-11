@@ -12,7 +12,7 @@ import asyncpg
 
 from src.ml.replay_parser import parse_replay_json
 from src.platform.normalize.species import normalize_replay_pokemon
-from src.platform.store.db_upserts import ingest_replays_batch
+from src.platform.store.upserts_replays import ingest_replays_batch
 from src.platform.store.repositories import (
     mark_raw_processed,
     resolve_source_id,
