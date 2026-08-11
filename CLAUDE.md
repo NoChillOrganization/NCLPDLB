@@ -231,17 +231,18 @@ Four structures govern which ML format goes where — central to any ML format w
 
 ### CI Workflows
 
-8 workflows in `.github/workflows/`:
-- `ci.yml` — ruff format/lint (blocking) + pyright (advisory, `continue-on-error`)
-- `tests.yml` — unit test matrix (Python 3.11-3.14) + integration job
-- `train-models.yml` — PPO format training matrix, self-hosted Windows runner
-- `train-transformer.yml` — offline MCTS self-play smoke test
-- `sync-dryrun.yml` — full real sync against an ephemeral Postgres service container on push to
-  `src/platform/**`; runs twice to assert idempotency (2nd run lands 0 new raw rows)
-- `sync-prod.yml` — scheduled production sync on the self-hosted runner (monthly Smogon usage
-  stats, daily Limitless/replays); failures write to `dead_letter` and notify
-- `codeql.yml` — CodeQL security scanning
-- `dependency-submission.yml` — dependency graph submission
+3 workflows in `.github/workflows/`:
+- `train-models.yml` — PPO format training matrix (24 formats), `runs-on: self-hosted` targeting
+  the Linux self-hosted runner (bash/`apt-get`/`.venv/bin`, not Windows — the runner box is a
+  Linux VirtualBox machine); 280-minute job timeout, per-format `train_timeout` in the matrix.
+- `codeql.yml` — CodeQL security scanning (Python + GitHub Actions), scheduled weekly plus on
+  push/PR to `master`.
+- `dependency-submission.yml` — submits a pip dependency snapshot to the GitHub Dependency Graph
+  API on push to `master`.
+
+No workflow currently runs `ruff`/`pyright`/`pytest`/`mypy` in CI, and no coverage gate is
+enforced in CI — those all run locally only (see Commands above). If CI-side lint/type/test
+enforcement is wanted, it needs to be built; don't assume it already exists.
 
 Dependabot blocks minor/major auto-PRs for `poke-env`/`stable-baselines3`/`torch` (tight
 coupling + CPU wheel requirement).
