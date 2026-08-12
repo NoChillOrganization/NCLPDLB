@@ -41,12 +41,18 @@ _timer_tasks: dict[str, asyncio.Task] = {}
 _cleanup_tasks: set[asyncio.Task] = set()
 
 
-async def _persist_draft(draft: Draft) -> None:
-    """Write draft state to SQLite.  Errors are logged but not re-raised."""
+async def _persist_draft(draft: Draft) -> bool:
+    """Write draft state to SQLite.  Errors are logged but not re-raised.
+
+    Returns False on failure so callers can warn users that a restart would
+    lose this draft (see PickResult.persistence_ok).
+    """
     try:
         await _db_save_draft(draft.guild_id, draft.model_dump_json())
+        return True
     except Exception as exc:
         log.error("Failed to persist draft %s to SQLite: %s", draft.guild_id, exc)
+        return False
 
 
 async def _delete_persisted_draft(guild_id: str) -> None:
@@ -64,6 +70,9 @@ class PickResult:
     next_player_name: str = ""
     round: int = 1
     error: str = ""
+    # False when the post-pick SQLite write failed — the draft is currently
+    # unprotected against a bot restart. Callers should warn the user.
+    persistence_ok: bool = True
 
 
 @dataclass
@@ -346,13 +355,14 @@ class DraftService:
         if draft.status == DraftStatus.ACTIVE and draft.timer_seconds > 0:
             self._start_timer(guild_id, draft, on_timeout)
 
-        await _persist_draft(draft)
+        persisted = await _persist_draft(draft)
         next_id = draft.current_player_id
         return PickResult(
             success=True,
             pokemon=pokemon,
             next_player_name=f"<@{next_id}>" if next_id else "Draft complete!",
             round=draft.current_round,
+            persistence_ok=persisted,
         )
 
     def _advance_pick(self, draft: Draft) -> None:

@@ -11,7 +11,7 @@ from datetime import datetime
 
 from src.platform.normalize.replay import _normalized_key
 from src.platform.normalize.species import normalize_team_member
-from src.platform.store.db_upserts import ingest_tournament_batch
+from src.platform.store.upserts_tournament import ingest_tournament_batch
 from src.platform.store.repositories import (
     mark_raw_processed,
     resolve_source_id,

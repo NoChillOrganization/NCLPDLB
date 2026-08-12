@@ -67,7 +67,10 @@ python -m venv .venv
 # Lint / format / type-check
 .venv/Scripts/python -m ruff check src/ tests/
 .venv/Scripts/python -m ruff format src/ tests/   # auto-format
-.venv/Scripts/python -m mypy src/                 # type-check (authoritative; pyrightconfig.json sets typeCheckingMode: "off" — config-only, not enforced)
+.venv/Scripts/python -m mypy src/                 # type-check — NOT currently clean: 220 errors in 45 files as of this writing.
+                                                   # pyrightconfig.json sets typeCheckingMode: "off"; flipping it to "basic" surfaces
+                                                   # 215 separate errors. Neither checker is enforced anywhere — treat both as
+                                                   # unmaintained until someone does a real type-error cleanup pass.
 
 # Seed Pokemon data (one-time setup — fetches 1,025 mons from PokéAPI)
 .venv/Scripts/python scripts/seed_pokemon_data.py
@@ -104,7 +107,29 @@ run_bot.bat
 
 # Force Discord command re-sync without restarting the bot
 .venv/Scripts/python scripts/sync_commands.py
+
+# Interactive first-time setup wizard (collects credentials, writes .env)
+.venv/Scripts/python scripts/setup_wizard.py
+
+# Full replay pipeline orchestrator (scrape → parse → extract features → manifest.json)
+.venv/Scripts/python scripts/data_pipeline.py
+
+# Run the bot on the public Showdown ladder (self-play on sim3.psim.us)
+.venv/Scripts/python scripts/run_on_showdown.py
+
+# Validate all teams in a format pool against the local Showdown validator
+TRAIN_TEAM_FORMAT=gen9zu .venv/Scripts/python scripts/validate_teams.py
+
+# Sync per-issue SOLUTION notes with issues.md (also runs automatically via the
+# post-commit hook in scripts/hooks/ once `git config core.hooksPath scripts/hooks` is set)
+.venv/Scripts/python scripts/sync_closed_issues.py
+
+# Serve the local Showdown web client over HTTP, connected to the local sim server (Windows)
+scripts/start-local-client.ps1
 ```
+
+`scripts/_clock_skew.py` is not a standalone script — it's a shared clock-skew correction
+helper imported by scripts that generate Google Auth JWTs.
 
 ## Gotchas
 
@@ -116,7 +141,9 @@ run_bot.bat
 
 **`actions-runner/` at repo root is the self-hosted CI runner installation.** Do not edit files inside it; they are runner binaries and config, not project source.
 
-**Draft state is not persisted across bot restarts.** In-progress drafts live only in `_active_drafts` in memory — a restart loses them. See Key Design Decisions below.
+**Draft state IS persisted to SQLite, not just in-memory.** `draft_service.py` writes to SQLite
+after every state mutation (`_persist_draft`) and reloads active drafts, including pick timers,
+on bot startup (`restore_active_drafts()`, called from `main()`). See Key Design Decisions below.
 
 **Observation-space break (ISS-007/008).** `OBS_DIM` changed 48→78 in `battle_env.py`; `OBS_DIM_DOUBLES = 140`. Checkpoints trained before the change are incompatible and must be retrained. (Source: `STATUS.md`, `docs/design/ISS-007*`, `ISS-008*`.)
 
@@ -216,7 +243,12 @@ Four structures govern which ML format goes where — central to any ML format w
 
 ### Key Design Decisions
 
-**Draft state is in-memory only.** `_active_drafts: dict[str, Draft]` in `draft_service.py` is keyed by guild ID. There is no persistence layer for live draft state — a bot restart loses in-progress drafts.
+**Draft state is cached in-memory with a SQLite backup, not in-memory only.**
+`_active_drafts: dict[str, Draft]` in `draft_service.py` is keyed by guild ID and is the hot
+path every command reads/writes. Every mutation also persists to SQLite (`_persist_draft`), and
+`restore_active_drafts()` reloads it (including restarting pick timers) on bot startup — so a
+restart does *not* normally lose in-progress drafts. A failed SQLite write degrades to
+in-memory-only for that draft until the next successful save.
 
 **Google Sheets is the database.** Completed drafts, standings, match history, and trades all write to a visual template spreadsheet. `sheets.py` uses gspread synchronously and must be called via `asyncio.get_event_loop().run_in_executor(None, ...)` from async contexts.
 

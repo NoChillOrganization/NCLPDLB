@@ -70,7 +70,7 @@ async def test_ingest_usage_batch_idempotent():
     import asyncpg
 
     from src.platform.store.db import migrate
-    from src.platform.store.db_upserts import ingest_usage_batch
+    from src.platform.store.upserts_usage import ingest_usage_batch
 
     # FIX: Call migrate() using its own internal pool/connection — do NOT share
     # the pool across the event-loop boundary. migrate() is called first so the
@@ -135,7 +135,7 @@ async def test_ingest_tournament_batch_null_key_idempotent():
     """tournament_team rows with NULL placement must deduplicate on re-run (0005 fix)."""
     import asyncpg
 
-    from src.platform.store.db_upserts import ingest_tournament_batch
+    from src.platform.store.upserts_tournament import ingest_tournament_batch
 
     # FIX: Do NOT call migrate() here — it uses an internal pool that may be
     # bound to a different event loop when tests run sequentially with

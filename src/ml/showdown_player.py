@@ -65,7 +65,7 @@ except ImportError:  # pragma: no cover
     Player = object  # type: ignore
 
 try:
-    from src.data.sheets import learning_sheets
+    from src.data.learning_sheets import learning_sheets
 
     SHEETS_AVAILABLE = True
 except ImportError:  # pragma: no cover

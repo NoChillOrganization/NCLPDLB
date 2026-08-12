@@ -52,17 +52,35 @@ class TestCheckShowdownServer:
 
 class TestCheckShowdownServerIfLocal:
     def test_localhost_mode_calls_check(self):
-        with patch("src.ml.train_policy._check_showdown_server") as mock_check:
+        # _check_showdown_server_if_local calls _check_showdown_server internally;
+        # both now live in train_policy_components.py (extracted from
+        # train_policy.py to stay under the 800-line guideline), so that's
+        # where the internal call resolves and must be patched.
+        with patch(
+            "src.ml.train_policy_components._check_showdown_server"
+        ) as mock_check:
             _check_showdown_server_if_local("localhost")
             mock_check.assert_called_once()
 
     def test_non_localhost_skips_check(self):
-        with patch("src.ml.train_policy._check_showdown_server") as mock_check:
+        # _check_showdown_server_if_local calls _check_showdown_server internally;
+        # both now live in train_policy_components.py (extracted from
+        # train_policy.py to stay under the 800-line guideline), so that's
+        # where the internal call resolves and must be patched.
+        with patch(
+            "src.ml.train_policy_components._check_showdown_server"
+        ) as mock_check:
             _check_showdown_server_if_local("showdown")
             mock_check.assert_not_called()
 
     def test_browser_mode_skips_check(self):
-        with patch("src.ml.train_policy._check_showdown_server") as mock_check:
+        # _check_showdown_server_if_local calls _check_showdown_server internally;
+        # both now live in train_policy_components.py (extracted from
+        # train_policy.py to stay under the 800-line guideline), so that's
+        # where the internal call resolves and must be patched.
+        with patch(
+            "src.ml.train_policy_components._check_showdown_server"
+        ) as mock_check:
             _check_showdown_server_if_local("browser")
             mock_check.assert_not_called()
 
@@ -387,8 +405,11 @@ class TestCurriculumOpponent:
         fake_zip.write_bytes(b"fake")
 
         with (
-            patch("src.ml.train_policy.PPO") as mock_ppo_cls,
-            patch("src.ml.train_policy.SB3_OK", True),
+            # CurriculumOpponent.load_policy lives in train_policy_components.py
+            # (extracted from train_policy.py to stay under the 800-line
+            # guideline) and reads its own PPO/SB3_OK imports from there.
+            patch("src.ml.train_policy_components.PPO") as mock_ppo_cls,
+            patch("src.ml.train_policy_components.SB3_OK", True),
         ):
             mock_model = MagicMock()
             mock_ppo_cls.load.return_value = mock_model
@@ -414,7 +435,7 @@ class TestCurriculumOpponent:
         """If PPO.load raises, _policy stays None and no exception propagates."""
         fake_zip = tmp_path / "missing.zip"
 
-        with patch("src.ml.train_policy.PPO") as mock_ppo_cls:
+        with patch("src.ml.train_policy_components.PPO") as mock_ppo_cls:
             mock_ppo_cls.load.side_effect = FileNotFoundError("no file")
 
             import src.ml.train_policy as tp
@@ -432,9 +453,10 @@ class TestCurriculumOpponent:
     def test_choose_move_delegates_to_max_base_power_when_no_policy(self):
         """With _policy=None, choose_move should delegate to MaxBasePowerPlayer."""
         import src.ml.train_policy as tp
+        import src.ml.train_policy_components as tpc
 
         if not hasattr(tp.CurriculumOpponent, "choose_move") or not hasattr(
-            tp, "MaxBasePowerPlayer"
+            tpc, "MaxBasePowerPlayer"
         ):
             pytest.skip(
                 "CurriculumOpponent.choose_move not available (POKE_ENV_OK=False)"
@@ -445,7 +467,7 @@ class TestCurriculumOpponent:
         # Patch MaxBasePowerPlayer.choose_move at the class level so that Python's
         # super() mechanics can find it via normal MRO (avoids unbound-call TypeError).
         with patch.object(
-            tp.MaxBasePowerPlayer, "choose_move", return_value="max_power_order"
+            tpc.MaxBasePowerPlayer, "choose_move", return_value="max_power_order"
         ):
             # Create a minimal real subclass instance so super() works properly.
             class _TestableCurriculumOpponent(tp.CurriculumOpponent):
@@ -479,7 +501,10 @@ class TestCurriculumOpponent:
         battle = MagicMock()
 
         with (
-            patch("src.ml.train_policy.build_observation") as mock_obs,
+            # CurriculumOpponent lives in train_policy_components.py (extracted
+            # from train_policy.py to stay under the 800-line guideline) and
+            # reads its own build_observation import from there.
+            patch("src.ml.train_policy_components.build_observation") as mock_obs,
             patch(
                 "poke_env.environment.singles_env.SinglesEnv.action_to_order",
                 return_value="ppo_order",

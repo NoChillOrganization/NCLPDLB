@@ -14,6 +14,7 @@ from pathlib import Path
 
 import discord
 from discord.ext import commands
+from pydantic import ValidationError
 
 # Ensure src/ is on path (cross-platform)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -194,7 +195,27 @@ class DraftLeagueBot(commands.Bot):
         log.error(f"Command error: {error}", exc_info=True)
 
 
+def _validate_settings() -> None:
+    """Force Settings() construction before anything else runs.
+
+    ``settings`` is a lazy singleton (see src/config.py) that only builds and
+    validates itself on first attribute access. Touching it here, as the very
+    first thing main() does, turns a missing/invalid .env into one clear
+    failure at startup instead of a pydantic ValidationError surfacing later
+    from whichever module happens to touch `settings` first.
+    """
+    try:
+        _ = settings.discord_token
+    except ValidationError as exc:
+        raise SystemExit(
+            f"Invalid or incomplete .env configuration:\n{exc}\n\n"
+            "Check required fields (DISCORD_TOKEN, DISCORD_CLIENT_ID, "
+            "GOOGLE_SHEETS_SPREADSHEET_ID) in your .env file."
+        ) from exc
+
+
 async def main() -> None:  # pragma: no cover
+    _validate_settings()
     _setup_logging()
     creds = settings.google_sheets_credentials_file
     if not creds.exists():

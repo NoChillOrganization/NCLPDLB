@@ -13,7 +13,7 @@ from datetime import date
 
 from src.platform.normalize.replay import _normalized_key
 from src.platform.normalize.species import canonicalize_species
-from src.platform.store.db_upserts import ingest_usage_batch
+from src.platform.store.upserts_usage import ingest_usage_batch
 from src.platform.store.repositories import (
     mark_raw_processed,
     resolve_source_id,
