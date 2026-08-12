@@ -10,6 +10,6 @@
   "extraPaths": [
     "."
   ],
-  "typeCheckingMode": "off",
+  "typeCheckingMode": "basic",
   "useLibraryCodeForTypes": true
 }
