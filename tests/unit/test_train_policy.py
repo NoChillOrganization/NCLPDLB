@@ -453,9 +453,10 @@ class TestCurriculumOpponent:
     def test_choose_move_delegates_to_max_base_power_when_no_policy(self):
         """With _policy=None, choose_move should delegate to MaxBasePowerPlayer."""
         import src.ml.train_policy as tp
+        import src.ml.train_policy_components as tpc
 
         if not hasattr(tp.CurriculumOpponent, "choose_move") or not hasattr(
-            tp, "MaxBasePowerPlayer"
+            tpc, "MaxBasePowerPlayer"
         ):
             pytest.skip(
                 "CurriculumOpponent.choose_move not available (POKE_ENV_OK=False)"
@@ -466,7 +467,7 @@ class TestCurriculumOpponent:
         # Patch MaxBasePowerPlayer.choose_move at the class level so that Python's
         # super() mechanics can find it via normal MRO (avoids unbound-call TypeError).
         with patch.object(
-            tp.MaxBasePowerPlayer, "choose_move", return_value="max_power_order"
+            tpc.MaxBasePowerPlayer, "choose_move", return_value="max_power_order"
         ):
             # Create a minimal real subclass instance so super() works properly.
             class _TestableCurriculumOpponent(tp.CurriculumOpponent):
