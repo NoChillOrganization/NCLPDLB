@@ -142,7 +142,7 @@ SKIP_INTEGRATION = pytest.mark.skipif(
 async def test_ingest_usage_batch_idempotent():
     """Running the same batch twice yields identical row counts and updated values."""
     import asyncpg
-    from src.platform.store.db_upserts import ingest_usage_batch
+    from src.platform.store.upserts_usage import ingest_usage_batch
 
     # FIX: Open a fresh standalone connection (not from any shared pool) so this
     # connection is bound exclusively to the current test's event loop.
