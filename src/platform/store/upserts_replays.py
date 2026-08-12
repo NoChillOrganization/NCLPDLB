@@ -260,4 +260,3 @@ async def ingest_replays_batch(
         )
 
     return len(replays)
-

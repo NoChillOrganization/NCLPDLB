@@ -174,4 +174,3 @@ async def ingest_usage_batch(
         )
 
     return len(snapshots)
-

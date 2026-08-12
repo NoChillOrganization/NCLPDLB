@@ -156,4 +156,3 @@ async def bulk_upsert_returning(
         key = tuple(rec[k] for k in key_cols)
         result[key] = rec[return_col]
     return result
-

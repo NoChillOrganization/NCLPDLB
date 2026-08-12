@@ -725,5 +725,3 @@ async def _pull_models(
             await interaction.followup.send(fallback, ephemeral=True)
         except discord.NotFound:
             await interaction.user.send(fallback)
-
-

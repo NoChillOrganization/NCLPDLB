@@ -853,8 +853,6 @@ def test_get_coach_tab_not_found():
     assert result is None
 
 
-
-
 # ── read_all ──────────────────────────────────────────────────────────────────
 
 

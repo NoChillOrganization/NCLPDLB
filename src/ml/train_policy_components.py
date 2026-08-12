@@ -73,8 +73,12 @@ from src.ml.battle_env import (  # noqa: E402
 
 SHOWDOWN_HOST = "127.0.0.1"
 SHOWDOWN_PORT = 8000
-DEFAULT_SWAP_EVERY = 50_000  # steps between opponent model swaps — mirrors train_policy.py
-N_MAX_EPOCH0_STEPS = 2_000_000  # force-graduate after this many warmup steps — mirrors train_policy.py
+DEFAULT_SWAP_EVERY = (
+    50_000  # steps between opponent model swaps — mirrors train_policy.py
+)
+N_MAX_EPOCH0_STEPS = (
+    2_000_000  # force-graduate after this many warmup steps — mirrors train_policy.py
+)
 
 
 def _check_showdown_server() -> None:
@@ -131,6 +135,7 @@ def _log_meta_context(fmt: str, meta_path: str | None) -> None:
         label = arch.get("archetype", arch.get("style", "?"))
         core = arch.get("core_pokemon", arch.get("restricted", ""))
         log.info(f"[meta] {fmt} archetype: {label} — {core}")
+
 
 # ── BC pre-training helpers ────────────────────────────────────────────────────
 
@@ -622,5 +627,3 @@ else:  # pragma: no cover
     class CurriculumOpponent:  # type: ignore
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             raise ImportError("poke-env is not available")
-
-

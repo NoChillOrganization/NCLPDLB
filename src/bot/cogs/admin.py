@@ -14,6 +14,7 @@ from src.bot.permissions import ROLE_GUILDMASTER, ROLE_MOD, require_role
 from src.config import settings
 from src.ml.train_all import TRAINING_MAP
 from src.services.draft_service import DraftService
+
 # Re-exported for backward compatibility: training orchestration logic lives in
 # admin_training.py (extracted to keep this file under the 800-line guideline),
 # but tests and other modules still import some of these names from here.
@@ -561,8 +562,6 @@ class AdminCog(commands.Cog, name="Admin"):
             f"✅ GitHub repo set to `{repo}` for this session. Restart the bot to revert.",
             ephemeral=True,
         )
-
-
 
 
 async def setup(bot: commands.Bot) -> None:

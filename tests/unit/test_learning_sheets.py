@@ -123,7 +123,6 @@ def test_learning_sheets_save_replay_url_exception_suppressed():
         fresh.save_replay_url({"format": "gen9ou"})  # exception caught internally
 
 
-
 # ── LearningSheets — new methods ───────────────────────────────────────────────
 
 

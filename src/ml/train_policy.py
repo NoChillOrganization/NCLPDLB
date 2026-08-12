@@ -101,7 +101,6 @@ SHOWDOWN_HOST = "127.0.0.1"
 SHOWDOWN_PORT = 8000
 
 
-
 # Re-exported for backward compatibility: BC pre-training helpers, the
 # transformer feature extractor, the Dict->Box observation unwrapper, the
 # self-play curriculum callback, and opponent wrappers live in
@@ -179,7 +178,6 @@ PPO_HYPERPARAMS: dict[str, Any] = {
     "policy_kwargs": {"net_arch": [64, 64]},
     "verbose": 1,
 }
-
 
 
 # ── Training ──────────────────────────────────────────────────────────────────
