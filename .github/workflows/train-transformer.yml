@@ -30,6 +30,11 @@ on:
 permissions:
   contents: read
 
+env:
+  # Pinned so an upstream Showdown change cannot break CI unannounced. Bump on purpose
+  # (same value in tests.yml and train-models.yml).
+  SHOWDOWN_REF: ccfaa20f32af363569cd21a9d501b2bc1ded26b1
+
 jobs:
   train-transformer-smoke:
     name: Transformer MCTS self-play smoke
@@ -46,7 +51,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "22"  # Showdown requires Node >= 22.18
 
       - name: Install Python dependencies
         run: |
@@ -58,7 +63,9 @@ jobs:
         run: |
           PS_DIR="$HOME/pokemon-showdown"
           if [ ! -d "$PS_DIR/.git" ]; then
-            git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
+            git init -q "$PS_DIR"
+            git -C "$PS_DIR" fetch -q --depth=1 https://github.com/smogon/pokemon-showdown.git "$SHOWDOWN_REF"
+            git -C "$PS_DIR" checkout -q FETCH_HEAD
             cd "$PS_DIR" && npm install --ignore-scripts
           fi
           printf '%s\n' \

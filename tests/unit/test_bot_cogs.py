@@ -3,6 +3,7 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from pydantic import SecretStr
 
 import discord
@@ -2597,27 +2598,41 @@ async def test_pull_models_with_specific_release_downloads_asset():
     from src.bot.cogs.admin import _pull_models
 
     interaction = make_interaction()
+    wrote, replaced = await _run_pull_models(
+        interaction, b"fake model bytes", _sha256_digest(b"fake model bytes")
+    )
 
-    mock_release = {
-        "tag_name": "ml-models-r1",
-        "assets": [
-            {
-                "name": "gen9ou_final_model.zip",
-                "browser_download_url": "https://example.com/gen9ou.zip",
-            }
-        ],
+    interaction.followup.send.assert_awaited_once()
+    wrote.assert_called_once_with(b"fake model bytes")
+    replaced.assert_called_once()
+
+
+def _sha256_digest(content: bytes) -> str:
+    import hashlib
+
+    return "sha256:" + hashlib.sha256(content).hexdigest()
+
+
+async def _run_pull_models(interaction, content: bytes, digest):
+    """Run _pull_models for gen9ou against one mocked asset; return the write mocks."""
+    from src.bot.cogs.admin import _pull_models
+
+    asset = {
+        "name": "gen9ou_final_model.zip",
+        "url": "https://api.github.com/assets/1",
     }
+    if digest is not None:
+        asset["digest"] = digest
     release_resp = MagicMock()
     release_resp.raise_for_status = MagicMock()
-    release_resp.json.return_value = mock_release
+    release_resp.json.return_value = {"tag_name": "ml-models-r1", "assets": [asset]}
 
     dl_resp = MagicMock()
     dl_resp.raise_for_status = MagicMock()
-    dl_resp.content = b"fake model bytes"
+    dl_resp.content = content
 
     mock_client = AsyncMock()
     mock_client.get = AsyncMock(side_effect=[release_resp, dl_resp])
-
     mock_ctx = MagicMock()
     mock_ctx.__aenter__ = AsyncMock(return_value=mock_client)
     mock_ctx.__aexit__ = AsyncMock(return_value=False)
@@ -2626,13 +2641,36 @@ async def test_pull_models_with_specific_release_downloads_asset():
         patch("httpx.AsyncClient", return_value=mock_ctx),
         patch("src.config.settings") as ms,
         patch("pathlib.Path.mkdir"),
-        patch("pathlib.Path.write_bytes"),
+        patch("pathlib.Path.write_bytes") as wrote,
+        patch("os.replace") as replaced,
     ):
         ms.github_repo = "test/repo"
         ms.github_token = ""
         await _pull_models(interaction, fmt="gen9ou", release_tag="ml-models-r1")
+    return wrote, replaced
 
-    interaction.followup.send.assert_awaited_once()
+
+@pytest.mark.parametrize("digest", [None, "", "sha256:" + "0" * 64, "md5:abc"])
+async def test_pull_models_rejects_missing_or_wrong_checksum(digest):
+    """No digest, a wrong digest, or an unsupported algorithm: nothing is installed."""
+    interaction = make_interaction()
+    wrote, replaced = await _run_pull_models(interaction, b"tampered", digest)
+
+    wrote.assert_not_called()
+    replaced.assert_not_called()
+    embed = interaction.followup.send.await_args.kwargs["embed"]
+    assert "checksum" in embed.fields[0].value
+
+
+def test_digest_matches_is_case_insensitive_and_fails_closed():
+    from src.bot.cogs.admin_training import _digest_matches
+
+    good = _sha256_digest(b"abc")
+    assert _digest_matches(b"abc", good)
+    assert _digest_matches(b"abc", good.upper().replace("SHA256", "sha256"))
+    assert not _digest_matches(b"abd", good)
+    assert not _digest_matches(b"abc", None)
+    assert not _digest_matches(b"abc", "sha256:")
 
 
 async def test_pull_models_latest_release_no_ml_release_sends_message():
