@@ -277,3 +277,48 @@ async def test_restore_ratings_from_db_populates_cache():
     assert "g1" in elo_mod._elo_cache
     assert elo_mod._elo_cache["g1"]["pA"].elo == 1150
     assert elo_mod._elo_cache["g1"]["pA"].wins == 6
+
+
+# ── durability order ──────────────────────────────────────────
+
+
+def _seed_pair(guild: str):
+    import src.services.elo_service as elo_mod
+    from src.data.models import PlayerElo
+
+    elo_mod._elo_cache[guild] = {
+        "w": PlayerElo(player_id="w", guild_id=guild, elo=1000),
+        "l": PlayerElo(player_id="l", guild_id=guild, elo=1000),
+    }
+    return elo_mod._elo_cache[guild]
+
+
+@pytest.mark.asyncio
+async def test_failed_sqlite_write_changes_nothing():
+    cache = _seed_pair("g_db_fail")
+    svc = EloService()
+    with (
+        patch.object(svc, "_save_player") as sheets_save,
+        patch.object(svc, "_save_player_to_db", side_effect=RuntimeError("disk")),
+    ):
+        with pytest.raises(RuntimeError):
+            await svc.record_match("g_db_fail", "w", "l")
+
+    assert (cache["w"].elo, cache["w"].wins) == (1000, 0)
+    assert (cache["l"].elo, cache["l"].losses) == (1000, 0)
+    sheets_save.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_sheets_mirror_failure_does_not_undo_a_saved_match():
+    cache = _seed_pair("g_sheets_fail")
+    svc = EloService()
+    with (
+        patch.object(svc, "_save_player", side_effect=RuntimeError("quota")),
+        patch.object(svc, "_save_player_to_db") as db_save,
+    ):
+        result = await svc.record_match("g_sheets_fail", "w", "l")
+
+    assert result.winner_new_elo > 1000
+    assert cache["w"].elo == result.winner_new_elo
+    assert db_save.await_count == 2

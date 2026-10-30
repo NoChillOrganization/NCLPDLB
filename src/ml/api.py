@@ -24,18 +24,20 @@ Usage
 
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 import threading
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 log = logging.getLogger(__name__)
 
 # ── Dependency guard ──────────────────────────────────────────────────────────
 
 try:
-    from fastapi import Depends, FastAPI, Header, HTTPException
+    from fastapi import Depends, FastAPI, Header, HTTPException, Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse, JSONResponse
     from pydantic import BaseModel, Field
@@ -102,11 +104,24 @@ if FASTAPI_OK:
 
     _TRAIN_TOKEN: str | None = os.environ.get("TRAIN_API_TOKEN")
 
-    def _require_token(x_train_token: str | None = Header(default=None)) -> None:
-        if _TRAIN_TOKEN and x_train_token != _TRAIN_TOKEN:
-            raise HTTPException(
-                status_code=401, detail="Invalid or missing X-Train-Token"
-            )
+    def _require_token(
+        request: Request, x_train_token: str | None = Header(default=None)
+    ) -> None:
+        if _TRAIN_TOKEN:
+            supplied = (x_train_token or "").encode()
+            if not hmac.compare_digest(supplied, _TRAIN_TOKEN.encode()):
+                raise HTTPException(
+                    status_code=401, detail="Invalid or missing X-Train-Token"
+                )
+            return
+        # No token configured: only same-origin callers may use the control routes.
+        # A browser attaches Origin to cross-site POSTs, so a web page the owner
+        # happens to visit cannot start or stop training. curl sends no Origin.
+        origin = request.headers.get("origin")
+        if origin is not None and urlparse(origin).netloc != request.headers.get(
+            "host", ""
+        ):
+            raise HTTPException(status_code=403, detail="Cross-origin request refused")
 
     # ── Request / response models ────────────────────────────────────────
 
