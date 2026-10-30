@@ -101,7 +101,8 @@ class TestUpdateState:
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    # Loopback base URL: the control routes refuse non-loopback Host headers.
+    return TestClient(app, base_url="http://127.0.0.1:8080")
 
 
 class TestStatsRoute:
@@ -200,3 +201,52 @@ class TestConfigRoute:
     def test_mcts_sims_at_boundary_max(self, client):
         body = client.post("/config", json={"mcts_sims": 200}).json()
         assert body["ok"] is True
+
+
+class TestControlRouteAuth:
+    def test_wrong_or_missing_token_is_rejected(self, client, monkeypatch):
+        monkeypatch.setattr(api_module, "_TRAIN_TOKEN", "s3cret-token")
+        assert client.post("/start").status_code == 401
+        bad = client.post("/start", headers={"X-Train-Token": "nope"})
+        assert bad.status_code == 401
+        assert get_state()["status"] == "stopped"
+
+    def test_correct_token_is_accepted(self, client, monkeypatch):
+        monkeypatch.setattr(api_module, "_TRAIN_TOKEN", "s3cret-token")
+        r = client.post("/start", headers={"X-Train-Token": "s3cret-token"})
+        assert r.status_code == 200
+
+    def test_cross_origin_post_is_refused_when_no_token_is_set(
+        self, client, monkeypatch
+    ):
+        monkeypatch.setattr(api_module, "_TRAIN_TOKEN", None)
+        r = client.post("/start", headers={"Origin": "http://evil.example"})
+        assert r.status_code == 403
+        assert get_state()["status"] == "stopped"
+
+    def test_same_origin_and_non_browser_posts_work_when_no_token_is_set(
+        self, client, monkeypatch
+    ):
+        monkeypatch.setattr(api_module, "_TRAIN_TOKEN", None)
+        same = client.post("/stop", headers={"Origin": "http://127.0.0.1:8080"})
+        assert same.status_code == 200
+        assert client.post("/stop").status_code == 200
+
+    def test_other_loopback_port_is_refused_when_no_token_is_set(
+        self, client, monkeypatch
+    ):
+        monkeypatch.setattr(api_module, "_TRAIN_TOKEN", None)
+        r = client.post("/start", headers={"Origin": "http://localhost:3000"})
+        assert r.status_code == 403
+        assert get_state()["status"] == "stopped"
+
+    def test_dns_rebinding_is_refused_when_no_token_is_set(self, client, monkeypatch):
+        # A hostile site rebinds its own name to 127.0.0.1: Host and Origin match
+        # each other but neither is loopback.
+        monkeypatch.setattr(api_module, "_TRAIN_TOKEN", None)
+        r = client.post(
+            "/start",
+            headers={"Host": "evil.example:8080", "Origin": "http://evil.example:8080"},
+        )
+        assert r.status_code == 403
+        assert get_state()["status"] == "stopped"

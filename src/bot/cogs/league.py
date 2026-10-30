@@ -5,17 +5,83 @@ League Cog — League management, schedules, multi-server support.
 import asyncio
 import logging
 import uuid
+from collections.abc import Awaitable, Callable
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from src.bot.permissions import ROLE_COACH, ROLE_GUILDMASTER, require_role
+from src.bot.permissions import (
+    ROLE_COACH,
+    ROLE_GUILDMASTER,
+    member_has_role,
+    require_role,
+)
 from src.data.sheets import Tab, sheets
 from src.services.elo_service import EloService
 from src.services.notification_service import NotificationService
 
 log = logging.getLogger(__name__)
+
+RESULT_CONFIRM_TIMEOUT_SECONDS = 300
+
+
+class ResultConfirmView(discord.ui.View):
+    """Only the named opponent can confirm; the result is applied at most once."""
+
+    def __init__(
+        self,
+        *,
+        opponent: discord.Member,
+        on_confirm: Callable[[discord.Interaction], Awaitable[None]],
+    ) -> None:
+        super().__init__(timeout=RESULT_CONFIRM_TIMEOUT_SECONDS)
+        self._opponent = opponent
+        self._on_confirm = on_confirm
+        self._settled = False
+        self.message: discord.Message | None = None
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id == self._opponent.id:
+            return True
+        await interaction.response.send_message(
+            f"Only {self._opponent.display_name} can answer this.", ephemeral=True
+        )
+        return False
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.success)
+    async def confirm(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        if self._settled:
+            return
+        self._settled = True
+        self.stop()
+        if interaction.message is not None:
+            await interaction.message.edit(view=None)
+        await self._on_confirm(interaction)
+
+    @discord.ui.button(label="Decline", style=discord.ButtonStyle.danger)
+    async def decline(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        if self._settled:
+            return
+        self._settled = True
+        self.stop()
+        await interaction.response.edit_message(
+            content="Result declined. Nothing was recorded.", view=None
+        )
+
+    async def on_timeout(self) -> None:
+        if self._settled or self.message is None:
+            return
+        try:
+            await self.message.edit(
+                content="Result expired. Nothing was recorded.", view=None
+            )
+        except discord.HTTPException:
+            pass
 
 
 class LeagueCog(commands.Cog, name="League"):
@@ -108,10 +174,39 @@ class LeagueCog(commands.Cog, name="League"):
         opponent: discord.Member,
         won: bool,
     ) -> None:
-        await interaction.response.defer()
+        if opponent.id == interaction.user.id or opponent.bot:
+            await interaction.response.send_message(
+                "Pick another league coach as your opponent.", ephemeral=True
+            )
+            return
+        if not member_has_role(opponent, ROLE_COACH):
+            await interaction.response.send_message(
+                f"{opponent.mention} is not a league coach.", ephemeral=True
+            )
+            return
+
         loser = opponent if won else interaction.user
         winner = interaction.user if won else opponent
+        view = ResultConfirmView(
+            opponent=opponent,
+            on_confirm=lambda i: self._record_result(i, winner, loser),
+        )
+        await interaction.response.send_message(
+            f"{opponent.mention}, {interaction.user.mention} reports **{winner.display_name}** "
+            f"beat **{loser.display_name}**. Confirm within 5 minutes to record it.",
+            view=view,
+            allowed_mentions=discord.AllowedMentions(users=[opponent]),
+        )
+        view.message = await interaction.original_response()
 
+    async def _record_result(
+        self,
+        interaction: discord.Interaction,
+        winner: discord.Member,
+        loser: discord.Member,
+    ) -> None:
+        """Apply a confirmed result. `interaction` is the opponent's button click."""
+        await interaction.response.defer()
         match_result = await self.elo.record_match(
             guild_id=str(interaction.guild_id),
             winner_id=str(winner.id),

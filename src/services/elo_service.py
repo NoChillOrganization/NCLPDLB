@@ -123,8 +123,9 @@ class EloService:
         # M7: serialize concurrent record_match calls per guild
         lock = _elo_locks.setdefault(guild_id, asyncio.Lock())
         async with lock:
-            winner = await self._get_player(guild_id, winner_id)
-            loser = await self._get_player(guild_id, loser_id)
+            # Work on copies: the cache only changes once the durable write succeeded.
+            winner = (await self._get_player(guild_id, winner_id)).model_copy()
+            loser = (await self._get_player(guild_id, loser_id)).model_copy()
             if winner_name:
                 winner.display_name = winner_name
             if loser_name:
@@ -143,14 +144,20 @@ class EloService:
             winner.streak = winner.streak + 1 if winner.streak >= 0 else 1
             loser.streak = loser.streak - 1 if loser.streak <= 0 else -1
 
-            # Persist to Sheets (off-loop via to_thread)
-            await self._save_player(winner)
-            await self._save_player(loser)
-
-            # Persist to SQLite write-through cache — raise on failure so the
-            # caller knows the update was not durably stored.
+            # SQLite is the durable record (restored on startup): write it first and
+            # raise on failure so nothing is half-saved.
             await self._save_player_to_db(winner)
             await self._save_player_to_db(loser)
+            _elo_cache[guild_id][winner_id] = winner
+            _elo_cache[guild_id][loser_id] = loser
+
+            # Sheets is a mirror for humans (off-loop via to_thread). A failure here
+            # must not undo or hide a rating change that is already stored.
+            try:
+                await self._save_player(winner)
+                await self._save_player(loser)
+            except Exception:
+                log.exception("ELO saved to SQLite but the Sheets mirror update failed")
 
         log.info(
             f"Match recorded: {winner_id} ({old_winner_elo}→{winner.elo}) "

@@ -24,18 +24,20 @@ Usage
 
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 import threading
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 log = logging.getLogger(__name__)
 
 # ── Dependency guard ──────────────────────────────────────────────────────────
 
 try:
-    from fastapi import Depends, FastAPI, Header, HTTPException
+    from fastapi import Depends, FastAPI, Header, HTTPException, Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse, JSONResponse
     from pydantic import BaseModel, Field
@@ -101,12 +103,40 @@ if FASTAPI_OK:
     # ── Auth dependency ──────────────────────────────────────────────────
 
     _TRAIN_TOKEN: str | None = os.environ.get("TRAIN_API_TOKEN")
+    _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
-    def _require_token(x_train_token: str | None = Header(default=None)) -> None:
-        if _TRAIN_TOKEN and x_train_token != _TRAIN_TOKEN:
-            raise HTTPException(
-                status_code=401, detail="Invalid or missing X-Train-Token"
-            )
+    def _hostname(netloc: str) -> str:
+        """Host part of 'host:port' (also '[::1]:port'), lowercased."""
+        host = netloc.rsplit("@", 1)[-1]
+        if host.startswith("["):
+            return host[1:].split("]", 1)[0].lower()
+        return host.split(":", 1)[0].lower()
+
+    def _require_token(
+        request: Request, x_train_token: str | None = Header(default=None)
+    ) -> None:
+        if _TRAIN_TOKEN:
+            supplied = (x_train_token or "").encode()
+            if not hmac.compare_digest(supplied, _TRAIN_TOKEN.encode()):
+                raise HTTPException(
+                    status_code=401, detail="Invalid or missing X-Train-Token"
+                )
+            return
+        # No token configured: only loopback callers may use the control routes.
+        # Host must be a loopback name (blocks DNS rebinding, where a hostile site
+        # points its own name at 127.0.0.1) and any Origin a browser attaches must
+        # be loopback too (blocks cross-site POSTs). curl sends no Origin.
+        if _hostname(request.headers.get("host", "")) not in _LOOPBACK_HOSTS:
+            raise HTTPException(status_code=403, detail="Host not allowed")
+        # The Origin must also be this exact host:port, so a page served from another
+        # loopback port (a different local app) cannot drive the API either.
+        origin = request.headers.get("origin")
+        if (
+            origin is not None
+            and urlparse(origin).netloc.lower()
+            != request.headers.get("host", "").lower()
+        ):
+            raise HTTPException(status_code=403, detail="Cross-origin request refused")
 
     # ── Request / response models ────────────────────────────────────────
 
