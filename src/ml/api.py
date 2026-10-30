@@ -128,9 +128,13 @@ if FASTAPI_OK:
         # be loopback too (blocks cross-site POSTs). curl sends no Origin.
         if _hostname(request.headers.get("host", "")) not in _LOOPBACK_HOSTS:
             raise HTTPException(status_code=403, detail="Host not allowed")
+        # The Origin must also be this exact host:port, so a page served from another
+        # loopback port (a different local app) cannot drive the API either.
         origin = request.headers.get("origin")
-        if origin is not None and _hostname(urlparse(origin).netloc) not in (
-            _LOOPBACK_HOSTS
+        if (
+            origin is not None
+            and urlparse(origin).netloc.lower()
+            != request.headers.get("host", "").lower()
         ):
             raise HTTPException(status_code=403, detail="Cross-origin request refused")
 

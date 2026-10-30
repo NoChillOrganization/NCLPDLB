@@ -232,6 +232,14 @@ class TestControlRouteAuth:
         assert same.status_code == 200
         assert client.post("/stop").status_code == 200
 
+    def test_other_loopback_port_is_refused_when_no_token_is_set(
+        self, client, monkeypatch
+    ):
+        monkeypatch.setattr(api_module, "_TRAIN_TOKEN", None)
+        r = client.post("/start", headers={"Origin": "http://localhost:3000"})
+        assert r.status_code == 403
+        assert get_state()["status"] == "stopped"
+
     def test_dns_rebinding_is_refused_when_no_token_is_set(self, client, monkeypatch):
         # A hostile site rebinds its own name to 127.0.0.1: Host and Origin match
         # each other but neither is loopback.
