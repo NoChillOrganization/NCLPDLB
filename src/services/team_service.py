@@ -19,7 +19,7 @@ from src.data.sheets import Tab, sheets
 log = logging.getLogger(__name__)
 
 _roster_cache: dict[str, TeamRoster] = {}  # f"{guild_id}:{player_id}" -> roster
-_trade_locks: dict[str, asyncio.Lock] = {}  # trade_id -> lock
+_trade_locks: dict[str, asyncio.Lock] = {}  # guild_id -> lock
 
 
 @dataclass
@@ -193,10 +193,20 @@ class TeamService:
         return TradeResult(success=True, trade_id=trade.trade_id)
 
     async def accept_trade(self, player_id: str, trade_id: str) -> TradeResult:
-        # Serialize per trade: the status check and the later write are separate
-        # Sheets calls, so two concurrent accepts/declines could both pass the check.
-        async with _trade_locks.setdefault(trade_id, asyncio.Lock()):
+        # Serialize per guild, not per trade: two different trades can offer the same
+        # Pokémon, and the ownership check and the Sheets write are separate calls.
+        # The record is re-read inside the lock, so a stale status is never trusted.
+        guild_id = await self._trade_guild(trade_id)
+        if guild_id is None:
+            return TradeResult(success=False, error="Trade not found.")
+        async with _trade_locks.setdefault(guild_id, asyncio.Lock()):
             return await self._accept_trade_locked(player_id, trade_id)
+
+    async def _trade_guild(self, trade_id: str) -> str | None:
+        record = await asyncio.to_thread(
+            sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id
+        )
+        return str(record.get("league_id", "")) if record else None
 
     async def _accept_trade_locked(self, player_id: str, trade_id: str) -> TradeResult:
         record = await asyncio.to_thread(
@@ -248,15 +258,19 @@ class TeamService:
         # Persist both rosters to Sheets before touching the cache or marking the
         # trade accepted. If either write raises, the exception propagates so the
         # caller knows the trade was NOT committed durably (H1).
-        for pid, mons in ((from_player_id, new_from), (player_id, new_to)):
+        def page(pid: str, mons: list) -> dict:
+            slots = [(p.name, getattr(p, "tera_type", "")) for p in mons]
+            return {"player_id": pid, "guild_id": guild_id, "slots": slots}
+
+        await asyncio.to_thread(sheets.upsert_team_page, page(from_player_id, new_from))
+        try:
+            await asyncio.to_thread(sheets.upsert_team_page, page(player_id, new_to))
+        except Exception:
+            # Second write failed: put the first roster back so no Pokémon is duplicated.
             await asyncio.to_thread(
-                sheets.upsert_team_page,
-                {
-                    "player_id": pid,
-                    "guild_id": guild_id,
-                    "slots": [(p.name, getattr(p, "tera_type", "")) for p in mons],
-                },
+                sheets.upsert_team_page, page(from_player_id, from_team.pokemon)
             )
+            raise
         from_team.pokemon = new_from
         to_team.pokemon = new_to
 
@@ -268,7 +282,10 @@ class TeamService:
         )
 
     async def decline_trade(self, player_id: str, trade_id: str) -> TradeResult:
-        async with _trade_locks.setdefault(trade_id, asyncio.Lock()):
+        guild_id = await self._trade_guild(trade_id)
+        if guild_id is None:
+            return TradeResult(success=False, error="Trade not found.")
+        async with _trade_locks.setdefault(guild_id, asyncio.Lock()):
             record = await asyncio.to_thread(
                 sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id
             )

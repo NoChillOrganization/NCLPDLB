@@ -134,6 +134,46 @@ async def test_two_simultaneous_accepts_only_one_wins():
     assert sorted([first.success, second.success]) == [False, True]
 
 
+async def test_same_pokemon_in_two_trades_is_only_traded_once():
+    # Alice offered Garchomp to both Bob and Carol; both accept at the same moment.
+    alice = seed("alice", ["Garchomp"])
+    bob = seed("bob", ["Gholdengo"])
+    carol = seed("carol", ["Kingambit"])
+    records = {
+        "t1": make_record(),
+        "t2": make_record(
+            transaction_id="t2", to_player_id="carol", pokemon_received="Kingambit"
+        ),
+    }
+    with patch("src.services.team_service.sheets") as sheets:
+        sheets.find_row.side_effect = lambda tab, col, value: records[value]
+        svc = TeamService()
+        first, second = await asyncio.gather(
+            svc.accept_trade("bob", "t1"), svc.accept_trade("carol", "t2")
+        )
+
+    assert sorted([first.success, second.success]) == [False, True]
+    everyone = names(alice) + names(bob) + names(carol)
+    assert everyone.count("Garchomp") == 1
+    assert len(everyone) == 3
+
+
+async def test_second_roster_write_failure_restores_the_first():
+    alice = seed("alice", ["Garchomp"])
+    bob = seed("bob", ["Gholdengo"])
+    with patch("src.services.team_service.sheets") as sheets:
+        sheets.find_row.return_value = make_record()
+        sheets.upsert_team_page.side_effect = [None, RuntimeError("quota"), None]
+        with pytest.raises(RuntimeError):
+            await TeamService().accept_trade("bob", "t1")
+
+    written = [c.args[0] for c in sheets.upsert_team_page.call_args_list]
+    assert [w["player_id"] for w in written] == ["alice", "bob", "alice"]
+    assert written[2]["slots"] == [("Garchomp", "")]  # alice put back as it was
+    assert names(alice) == ["Garchomp"]
+    assert names(bob) == ["Gholdengo"]
+
+
 async def test_accept_and_decline_cannot_both_succeed():
     seed("alice", ["Garchomp"])
     seed("bob", ["Gholdengo"])

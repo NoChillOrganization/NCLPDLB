@@ -40,7 +40,8 @@ def reset_state():
 
 @pytest.fixture()
 def client():
-    return TestClient(app)
+    # Loopback base URL: the control routes refuse non-loopback Host headers.
+    return TestClient(app, base_url="http://127.0.0.1:8080")
 
 
 # ── get_state / update_state ──────────────────────────────────────────────────

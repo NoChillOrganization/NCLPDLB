@@ -103,6 +103,14 @@ if FASTAPI_OK:
     # ── Auth dependency ──────────────────────────────────────────────────
 
     _TRAIN_TOKEN: str | None = os.environ.get("TRAIN_API_TOKEN")
+    _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
+    def _hostname(netloc: str) -> str:
+        """Host part of 'host:port' (also '[::1]:port'), lowercased."""
+        host = netloc.rsplit("@", 1)[-1]
+        if host.startswith("["):
+            return host[1:].split("]", 1)[0].lower()
+        return host.split(":", 1)[0].lower()
 
     def _require_token(
         request: Request, x_train_token: str | None = Header(default=None)
@@ -114,12 +122,15 @@ if FASTAPI_OK:
                     status_code=401, detail="Invalid or missing X-Train-Token"
                 )
             return
-        # No token configured: only same-origin callers may use the control routes.
-        # A browser attaches Origin to cross-site POSTs, so a web page the owner
-        # happens to visit cannot start or stop training. curl sends no Origin.
+        # No token configured: only loopback callers may use the control routes.
+        # Host must be a loopback name (blocks DNS rebinding, where a hostile site
+        # points its own name at 127.0.0.1) and any Origin a browser attaches must
+        # be loopback too (blocks cross-site POSTs). curl sends no Origin.
+        if _hostname(request.headers.get("host", "")) not in _LOOPBACK_HOSTS:
+            raise HTTPException(status_code=403, detail="Host not allowed")
         origin = request.headers.get("origin")
-        if origin is not None and urlparse(origin).netloc != request.headers.get(
-            "host", ""
+        if origin is not None and _hostname(urlparse(origin).netloc) not in (
+            _LOOPBACK_HOSTS
         ):
             raise HTTPException(status_code=403, detail="Cross-origin request refused")
 
