@@ -2595,8 +2595,6 @@ async def test_run_training_all_time_throttle_edits_progress():
 
 async def test_pull_models_with_specific_release_downloads_asset():
     """Lines 878-922: direct release_tag path downloads matching asset."""
-    from src.bot.cogs.admin import _pull_models
-
     interaction = make_interaction()
     wrote, replaced = await _run_pull_models(
         interaction, b"fake model bytes", _sha256_digest(b"fake model bytes")
