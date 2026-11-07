@@ -13,10 +13,10 @@ from src.bot.cogs.admin import (
     _model_exists,
     _build_progress_embed,
     _build_queue_embed,
-    _try_edit,
     ConfirmResetView,
     AdminCog,
 )
+from src.bot.cogs.admin_training import _try_edit
 from src.bot.cogs.misc import build_help_embed, MiscCog
 
 
