@@ -9,7 +9,6 @@ from src.data.sheets import (
     Tab,
     sheets,
     _col_letter,
-    _col_num,
 )
 
 
@@ -102,7 +101,6 @@ def test_get_tab_found():
 
 def test_get_tab_creates_when_not_found():
     """get_tab creates the tab when WorksheetNotFound is raised."""
-    import gspread
 
     fresh = SheetsClient.__new__(SheetsClient)
     mock_sp = MagicMock()
@@ -115,7 +113,7 @@ def test_get_tab_creates_when_not_found():
     new_ws.append_row.assert_called_once()
 
 
-# ── read_all / append_row / update_row ───────────────────────────────────────
+# ── read_all / append_row ───────────────────────────────────────
 
 
 def test_read_all(patched_get_tab):
@@ -131,12 +129,6 @@ def test_append_row(patched_get_tab):
     mock_ws.append_row.assert_called_once_with(
         ["a", "b", "c"], value_input_option="USER_ENTERED"
     )
-
-
-def test_update_row(patched_get_tab):
-    mock_ws, _ = patched_get_tab
-    sheets.update_row(Tab.STANDINGS, 3, ["x", "y"])
-    mock_ws.update.assert_called_once_with("A3", [["x", "y"]])
 
 
 # ── find_row / find_rows ──────────────────────────────────────────────────────
@@ -225,38 +217,6 @@ def test_save_pick(patched_get_tab):
     mock_ws.append_row.assert_called()
 
 
-def test_get_draft_picks(patched_get_tab):
-    mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = [
-        {"draft_id": "d1", "pokemon": "Garchomp"},
-        {"draft_id": "d2", "pokemon": "Other"},
-    ]
-    result = sheets.get_draft_picks("d1")
-    assert len(result) == 1
-
-
-def test_update_pool_roster_pool_a(patched_get_tab):
-    mock_ws, _ = patched_get_tab
-    mock_ws.row_values.return_value = ["player_id"]
-    mock_ws.find.return_value = None
-    sheets.update_pool_roster(
-        "A",
-        {"player_id": "p1", "player_name": "Alice", "team_name": "Team A"},
-        ["Garchomp"],
-    )
-    mock_ws.append_row.assert_called()
-
-
-def test_update_pool_roster_pool_b(patched_get_tab):
-    mock_ws, _ = patched_get_tab
-    mock_ws.row_values.return_value = ["player_id"]
-    mock_ws.find.return_value = None
-    sheets.update_pool_roster(
-        "B", {"player_id": "p2", "player_name": "Bob", "team_name": "Team B"}, []
-    )
-    mock_ws.append_row.assert_called()
-
-
 def test_save_schedule_match(patched_get_tab):
     mock_ws, _ = patched_get_tab
     mock_ws.row_values.return_value = ["match_id"]
@@ -323,24 +283,6 @@ def test_get_standings_filtered_by_pool(patched_get_tab):
     result = sheets.get_standings(pool="A")
     assert len(result) == 1
     assert result[0]["player_id"] == "p1"
-
-
-def test_update_pokemon_stat(patched_get_tab):
-    mock_ws, _ = patched_get_tab
-    mock_ws.row_values.return_value = ["stat_id"]
-    mock_ws.find.return_value = None
-    sheets.update_pokemon_stat({"stat_id": "s1", "pokemon": "Garchomp", "wins": 5})
-    mock_ws.append_row.assert_called()
-
-
-def test_refresh_mvp_race(patched_get_tab):
-    mock_ws, _ = patched_get_tab
-    entries = [
-        {"rank": 1, "player_id": "p1", "mvp_pokemon": "Garchomp", "mvp_count": 3}
-    ]
-    sheets.refresh_mvp_race(entries)
-    mock_ws.resize.assert_called()
-    mock_ws.append_row.assert_called()
 
 
 def test_save_transaction(patched_get_tab):
@@ -422,32 +364,6 @@ def test_upsert_team_page_no_slots(patched_get_tab):
     mock_ws.append_row.assert_called()
 
 
-def test_set_data(patched_get_tab):
-    mock_ws, _ = patched_get_tab
-    mock_ws.row_values.return_value = ["key"]
-    mock_ws.find.return_value = None
-    sheets.set_data("season", "3", "string", "Current season")
-    mock_ws.append_row.assert_called()
-
-
-def test_get_data_found(patched_get_tab):
-    mock_ws, _ = patched_get_tab
-    cell = MagicMock()
-    cell.row = 2
-    mock_ws.row_values.side_effect = lambda row: (
-        ["key", "value"] if row == 1 else ["season", "3"]
-    )
-    mock_ws.find.return_value = cell
-    result = sheets.get_data("season")
-    assert result == "3"
-
-
-def test_get_data_not_found(patched_get_tab):
-    mock_ws, _ = patched_get_tab
-    mock_ws.get_all_records.return_value = []
-    assert sheets.get_data("missing_key") is None
-
-
 def test_save_replay_no_existing_match(patched_get_tab):
     """save_replay does nothing when match is not found."""
     mock_ws, _ = patched_get_tab
@@ -498,7 +414,7 @@ def test_save_video(patched_get_tab):
     mock_ws.append_row.assert_called()
 
 
-# ── _col_letter / _col_num ────────────────────────────────────────────────────
+# ── _col_letter ────────────────────────────────────────────────────
 
 
 def test_col_letter_single_digits():
@@ -512,41 +428,6 @@ def test_col_letter_double_digits():
     assert _col_letter(702) == "ZZ"
 
 
-def test_col_num_single():
-    assert _col_num("A") == 1
-    assert _col_num("Z") == 26
-
-
-def test_col_num_double():
-    assert _col_num("AA") == 27
-
-
-def test_col_num_roundtrip():
-    for n in [1, 13, 26, 27, 702]:
-        assert _col_num(_col_letter(n)) == n
-
-
-# ── _get_cell ─────────────────────────────────────────────────────────────────
-
-
-def test_get_cell_returns_value():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    mock_sp = MagicMock()
-    mock_sp.values_get.return_value = {"values": [["MyValue"]]}
-    fresh._spreadsheet = mock_sp
-    assert fresh._get_cell("Sheet1", "A1") == "MyValue"
-
-
-def test_get_cell_empty_response():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    mock_sp = MagicMock()
-    mock_sp.values_get.return_value = {"values": []}
-    fresh._spreadsheet = mock_sp
-    assert fresh._get_cell("Sheet1", "A1") == ""
-
-
 # ── _get_range ────────────────────────────────────────────────────────────────
 
 
@@ -558,33 +439,6 @@ def test_get_range_returns_data():
     fresh._spreadsheet = mock_sp
     result = fresh._get_range("Sheet1", "A1:B2")
     assert result == [["a", "b"], ["c", "d"]]
-
-
-# ── _set_cell ─────────────────────────────────────────────────────────────────
-
-
-def test_set_cell():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    mock_ws = MagicMock()
-    with patch.object(fresh, "get_tab", return_value=mock_ws):
-        fresh._set_cell("Sheet1", "A1", "NewValue")
-    mock_ws.update.assert_called_once_with(
-        [["NewValue"]], "A1", value_input_option="USER_ENTERED"
-    )
-
-
-# ── _append_to_range ──────────────────────────────────────────────────────────
-
-
-def test_append_to_range():
-    fresh = SheetsClient.__new__(SheetsClient)
-    mock_ws = MagicMock()
-    fresh._append_to_range(mock_ws, "A1:Z100", ["x", "y", "z"])
-    mock_ws.append_row.assert_called_once_with(
-        ["x", "y", "z"], value_input_option="USER_ENTERED", table_range="A1:Z100"
-    )
 
 
 # ── get_league_setup (no server_id) ──────────────────────────────────────────
@@ -602,71 +456,6 @@ def test_get_league_setup_no_server_id_empty(patched_get_tab):
     mock_ws.get_all_records.return_value = []
     result = sheets.get_league_setup()
     assert result == {}
-
-
-# ── get_schedule ──────────────────────────────────────────────────────────────
-
-
-def test_get_schedule_parses_match():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    week_row = ["Week #1"] + [""] * 12
-    match_row = [
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "TrainerA",
-        "W",
-        "2-0",
-        "vs.",
-        "0-2",
-        "L",
-        "TrainerB",
-    ]
-    with patch.object(fresh, "_get_range", return_value=[week_row, match_row]):
-        result = fresh.get_schedule()
-    assert len(result) == 1
-    assert result[0]["coach1"] == "TrainerA"
-    assert result[0]["week"] == "Week #1"
-
-
-def test_get_schedule_skips_non_vs_rows():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    week_row = ["Week #2"] + [""] * 12
-    match_row = ["", "", "", "", "", "", "TrainerA", "W", "", "bye", "", "", ""]
-    with patch.object(fresh, "_get_range", return_value=[week_row, match_row]):
-        result = fresh.get_schedule()
-    assert len(result) == 0
-
-
-def test_get_schedule_skips_empty_rows():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    with patch.object(fresh, "_get_range", return_value=[[]]):
-        result = fresh.get_schedule()
-    assert len(result) == 0
-
-
-def test_get_schedule_pads_short_rows():
-    """Rows with fewer than 13 elements are padded with empty strings."""
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    week_row = ["Week #1"] + [""] * 12
-    # Only 10 columns — triggers the row padding branch (line 250)
-    short_row = ["", "", "", "", "", "", "TrainerA", "W", "2-0", "vs."]
-    with patch.object(fresh, "_get_range", return_value=[week_row, short_row]):
-        result = fresh.get_schedule()
-    # coach1="TrainerA", vs_="vs." → match is appended
-    assert len(result) == 1
-    assert result[0]["coach1"] == "TrainerA"
 
 
 # ── get_match_results ─────────────────────────────────────────────────────────
@@ -719,138 +508,6 @@ def test_get_match_results_non_match_rows_skipped():
     with patch.object(fresh, "_get_range", side_effect=mock_get_range):
         result = fresh.get_match_results()
     assert result == []
-
-
-# ── get_transactions ──────────────────────────────────────────────────────────
-
-
-def test_get_transactions_parses_rows():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    raw = [
-        ["1", "2", "Trade", "Alice", "Garchomp", "X", "Tyranitar", "Y", "Bob", "Notes"],
-        ["", "", "", "", "", "", "", "", "", ""],
-    ]
-    with patch.object(fresh, "_get_range", return_value=raw):
-        result = fresh.get_transactions()
-    assert len(result) == 1
-    assert result[0]["number"] == "1"
-    assert result[0]["coach1"] == "Alice"
-    assert result[0]["coach2"] == "Bob"
-
-
-def test_get_transactions_short_row():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    with patch.object(fresh, "_get_range", return_value=[["1", "3", "FA"]]):
-        result = fresh.get_transactions()
-    assert len(result) == 1
-    assert result[0]["pokemon2"] == ""
-    assert result[0]["coach2"] == ""
-
-
-# ── get_rules / append_rule ───────────────────────────────────────────────────
-
-
-def test_get_rules_returns_non_empty():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    raw = [["No mega evolution"], [""], ["Terastallize allowed"]]
-    with patch.object(fresh, "_get_range", return_value=raw):
-        result = fresh.get_rules()
-    assert result == ["No mega evolution", "Terastallize allowed"]
-
-
-def test_append_rule_with_category():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    mock_ws = MagicMock()
-    mock_ws.col_values.return_value = ["Header", "Rule 1", "Rule 2"]
-    with patch.object(fresh, "get_tab", return_value=mock_ws):
-        fresh.append_rule("Battle", "No timeout", "Do not let the timer run out")
-    mock_ws.update.assert_called_once()
-    args = mock_ws.update.call_args[0]
-    # gspread 6.x: update(values, range_name) — values is args[0], range is args[1]
-    assert "[Battle]" in args[0][0][1]
-
-
-def test_append_rule_without_category():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    mock_ws = MagicMock()
-    mock_ws.col_values.return_value = []
-    with patch.object(fresh, "get_tab", return_value=mock_ws):
-        fresh.append_rule("", "Simple Rule", "Description")
-    args = mock_ws.update.call_args[0]
-    # gspread 6.x: update(values, range_name) — values is args[0], range is args[1]
-    assert "[" not in args[0][0][1]
-
-
-# ── get_mvp_race ──────────────────────────────────────────────────────────────
-
-
-def test_get_mvp_race_finds_record():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    row = (
-        ["TrainerAlice"] + [""] * 8 + ["3+2 in LC"]
-    )  # 10 elements; value has "+" and "in"
-    with patch.object(fresh, "_get_range", return_value=[row]):
-        result = fresh.get_mvp_race()
-    assert len(result) == 1
-    assert result[0]["coach"] == "TrainerAlice"
-
-
-def test_get_mvp_race_row_too_short():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    with patch.object(fresh, "_get_range", return_value=[["Alice"] * 5]):  # < 10
-        result = fresh.get_mvp_race()
-    assert result == []
-
-
-def test_get_mvp_race_no_matching_value():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    fresh._spreadsheet = MagicMock()
-    row = ["Alice"] + ["NoMatch"] * 9  # has 10 cols but no "+" and "in" together
-    with patch.object(fresh, "_get_range", return_value=[row]):
-        result = fresh.get_mvp_race()
-    assert result == []
-
-
-# ── get_coach_tab ─────────────────────────────────────────────────────────────
-
-
-def test_get_coach_tab_found():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    mock_sp = MagicMock()
-    mock_ws = MagicMock()
-    mock_sp.worksheet.return_value = mock_ws
-    mock_ws.get_all_values.return_value = [["a", "b"]] * 5
-    fresh._spreadsheet = mock_sp
-    result = fresh.get_coach_tab("Alice")
-    assert result is not None
-    assert result["coach"] == "Alice"
-    assert len(result["rows"]) == 5
-
-
-def test_get_coach_tab_not_found():
-    fresh = SheetsClient.__new__(SheetsClient)
-    fresh._client = None
-    mock_sp = MagicMock()
-    mock_sp.worksheet.side_effect = gspread.WorksheetNotFound
-    fresh._spreadsheet = mock_sp
-    result = fresh.get_coach_tab("NoCoach")
-    assert result is None
 
 
 # ── read_all ──────────────────────────────────────────────────────────────────

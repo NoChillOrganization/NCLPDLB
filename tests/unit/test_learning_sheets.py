@@ -35,16 +35,17 @@ def test_learning_sheets_connect_success(tmp_path):
     fresh._spreadsheet = None
     fresh._client = None
     with (
-        patch("src.data.learning_sheets.settings") as ms,
-        patch("src.data.learning_sheets.Credentials.from_service_account_file"),
-        patch("src.data.learning_sheets.gspread.authorize") as mock_auth,
+        patch("src.data.sheets.settings") as ms,
+        patch("src.data.learning_sheets.settings", ms),
+        patch("src.data.sheets.Credentials.from_service_account_file"),
+        patch("src.data.sheets.gspread.authorize") as mock_auth,
     ):
         ms.google_sheets_credentials_file = creds_file
         ms.ml_learning_spreadsheet_id = "sheetid"
         mock_sp = MagicMock()
         mock_sp.title = "Learning"
         mock_auth.return_value.open_by_key.return_value = mock_sp
-        fresh._connect()
+        fresh.connect()
     assert fresh._spreadsheet is mock_sp
 
 
@@ -52,10 +53,10 @@ def test_learning_sheets_connect_missing_creds(tmp_path):
     fresh = LearningSheets.__new__(LearningSheets)
     fresh._spreadsheet = None
     fresh._client = None
-    with patch("src.data.learning_sheets.settings") as ms:
+    with patch("src.data.sheets.settings") as ms:
         ms.google_sheets_credentials_file = tmp_path / "missing.json"
         with pytest.raises(FileNotFoundError):
-            fresh._connect()
+            fresh.connect()
 
 
 def test_learning_sheets_spreadsheet_property_calls_connect():
@@ -64,7 +65,7 @@ def test_learning_sheets_spreadsheet_property_calls_connect():
     fresh._client = None
     mock_sp = MagicMock()
     with patch.object(
-        fresh, "_connect", side_effect=lambda: setattr(fresh, "_spreadsheet", mock_sp)
+        fresh, "connect", side_effect=lambda: setattr(fresh, "_spreadsheet", mock_sp)
     ):
         sp = fresh.spreadsheet
     assert sp is mock_sp
@@ -244,123 +245,6 @@ def test_learning_sheets_save_training_run_exception_suppressed():
     ):
         ms.ml_learning_spreadsheet_id = "sheetid"
         fresh.save_training_run({"format": "gen9ou"})  # exception caught internally
-
-
-def test_learning_sheets_get_win_rate_disabled():
-    fresh = _fresh_ls()
-    with patch("src.data.learning_sheets.settings") as ms:
-        ms.ml_learning_spreadsheet_id = ""
-        assert fresh.get_win_rate("gen9ou") is None
-
-
-def test_learning_sheets_get_win_rate_no_data():
-    fresh = _fresh_ls()
-    mock_ws = MagicMock()
-    mock_ws.get_all_values.return_value = [
-        ["Timestamp", "Format", "Winner"]
-    ]  # header only
-    with (
-        patch("src.data.learning_sheets.settings") as ms,
-        patch.object(fresh, "_get_format_sheet", return_value=mock_ws),
-    ):
-        ms.ml_learning_spreadsheet_id = "sheetid"
-        assert fresh.get_win_rate("gen9ou") is None
-
-
-def test_learning_sheets_get_win_rate_with_data():
-    from src.data.learning_sheets import REPLAY_HEADERS, _WINNER_COL
-
-    fresh = _fresh_ls()
-    mock_ws = MagicMock()
-    # Build rows: 3 bot wins, 2 losses (5 total)
-    winner_idx = _WINNER_COL
-
-    def make_row(winner):
-        row = [""] * len(REPLAY_HEADERS)
-        row[winner_idx] = winner
-        return row
-
-    rows = [REPLAY_HEADERS] + [make_row("bot")] * 3 + [make_row("opponent")] * 2
-    mock_ws.get_all_values.return_value = rows
-    with (
-        patch("src.data.learning_sheets.settings") as ms,
-        patch.object(fresh, "_get_format_sheet", return_value=mock_ws),
-    ):
-        ms.ml_learning_spreadsheet_id = "sheetid"
-        result = fresh.get_win_rate("gen9ou")
-    assert result == pytest.approx(0.6)
-
-
-def test_learning_sheets_get_latest_checkpoint_disabled():
-    fresh = _fresh_ls()
-    with patch("src.data.learning_sheets.settings") as ms:
-        ms.ml_learning_spreadsheet_id = ""
-        assert fresh.get_latest_checkpoint("gen9ou") is None
-
-
-def test_learning_sheets_get_latest_checkpoint_no_rows():
-    fresh = _fresh_ls()
-    mock_ws = MagicMock()
-    mock_ws.get_all_values.return_value = []
-    with (
-        patch("src.data.learning_sheets.settings") as ms,
-        patch.object(fresh, "_get_training_runs_sheet", return_value=mock_ws),
-    ):
-        ms.ml_learning_spreadsheet_id = "sheetid"
-        assert fresh.get_latest_checkpoint("gen9ou") is None
-
-
-def test_learning_sheets_get_latest_checkpoint_found():
-    from src.data.learning_sheets import TRAINING_RUN_HEADERS
-
-    fresh = _fresh_ls()
-    mock_ws = MagicMock()
-    row = [
-        "2026-01-01",
-        "gen9ou",
-        "final",
-        "model.zip",
-        "2000",
-        "0.7",
-        "200",
-        "1.5",
-        "",
-    ]
-    mock_ws.get_all_values.return_value = [TRAINING_RUN_HEADERS, row]
-    with (
-        patch("src.data.learning_sheets.settings") as ms,
-        patch.object(fresh, "_get_training_runs_sheet", return_value=mock_ws),
-    ):
-        ms.ml_learning_spreadsheet_id = "sheetid"
-        result = fresh.get_latest_checkpoint("gen9ou")
-    assert result is not None
-    assert result["Format"] == "gen9ou"
-    assert result["Phase"] == "final"
-
-
-def test_learning_sheets_get_latest_checkpoint_format_not_found():
-    from src.data.learning_sheets import TRAINING_RUN_HEADERS
-
-    fresh = _fresh_ls()
-    mock_ws = MagicMock()
-    row = [
-        "2026-01-01",
-        "gen9uu",
-        "final",
-        "model.zip",
-        "2000",
-        "0.7",
-        "200",
-        "1.5",
-        "",
-    ]
-    mock_ws.get_all_values.return_value = [TRAINING_RUN_HEADERS, row]
-    with (
-        patch("src.data.learning_sheets.settings") as ms,
-        patch.object(fresh, "_get_training_runs_sheet", return_value=mock_ws),
-    ):
-        ms.ml_learning_spreadsheet_id = "sheetid"
-        assert fresh.get_latest_checkpoint("gen9ou") is None
 
 
 def test_learning_sheets_get_stats_table_disabled():

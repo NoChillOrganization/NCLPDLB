@@ -106,11 +106,6 @@ def test_load_populates_db(db_with_data):
     assert db_with_data.find("Charizard") is not None
 
 
-def test_load_by_dex(db_with_data):
-    assert db_with_data.find_by_dex(1) is not None
-    assert db_with_data.find_by_dex(6) is not None
-
-
 def test_find_direct_match(db_with_data):
     mon = db_with_data.find("Bulbasaur")
     assert mon is not None
@@ -129,58 +124,6 @@ def test_find_partial_match(db_with_data):
 
 def test_find_not_found(db_with_data):
     assert db_with_data.find("Mewtwo") is None
-
-
-def test_find_by_dex_found(db_with_data):
-    mon = db_with_data.find_by_dex(6)
-    assert mon.name == "Charizard"
-
-
-def test_find_by_dex_not_found(db_with_data):
-    assert db_with_data.find_by_dex(999) is None
-
-
-def test_filter_by_tier(db_with_data):
-    ou = db_with_data.filter_by_tier("OU")
-    assert len(ou) == 1
-    assert ou[0].name == "Charizard"
-
-
-def test_filter_by_tier_empty(db_with_data):
-    assert db_with_data.filter_by_tier("Uber") == []
-
-
-def test_filter_by_generation(db_with_data):
-    gen1 = db_with_data.filter_by_generation(1)
-    assert len(gen1) == 3
-
-
-def test_filter_by_generation_empty(db_with_data):
-    assert db_with_data.filter_by_generation(9) == []
-
-
-def test_filter_vgc_legal(db_with_data):
-    legal = db_with_data.filter_vgc_legal()
-    names = [p.name for p in legal]
-    assert "Bulbasaur" in names
-    assert "Charizard" in names
-    assert "Articuno" not in names
-
-
-def test_filter_console_legal_sv(db_with_data):
-    sv = db_with_data.filter_console_legal("sv")
-    names = [p.name for p in sv]
-    assert "Bulbasaur" in names
-    assert "Charizard" in names
-    assert "Articuno" not in names
-
-
-def test_filter_console_legal_swsh(db_with_data):
-    swsh = db_with_data.filter_console_legal("swsh")
-    names = [p.name for p in swsh]
-    assert "Charizard" in names
-    assert "Articuno" in names
-    assert "Bulbasaur" not in names
 
 
 def test_search_by_prefix(db_with_data):

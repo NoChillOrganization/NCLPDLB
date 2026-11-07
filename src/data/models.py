@@ -295,18 +295,6 @@ class TeamRoster(BaseModel):
 # ── Match / ELO ───────────────────────────────────────────────
 
 
-class MatchResult(BaseModel):
-    match_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
-    league_id: str
-    player1_id: str
-    player2_id: str
-    winner_id: str
-    game_format: GameFormat = GameFormat.SHOWDOWN
-    replay_url: str = ""
-    video_url: str = ""
-    timestamp: str = ""
-
-
 class PlayerElo(BaseModel):
     player_id: str
     guild_id: str

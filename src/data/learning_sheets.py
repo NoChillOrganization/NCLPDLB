@@ -11,10 +11,9 @@ from __future__ import annotations
 import logging
 
 import gspread
-from google.oauth2.service_account import Credentials
 
 from src.config import settings
-from src.data.sheets import SCOPES, UTC_NOW
+from src.data.sheets import UTC_NOW, SheetsClient
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +52,7 @@ _WINNER_COL = REPLAY_HEADERS.index("Winner")
 _FORMAT_COL = REPLAY_HEADERS.index("Format")
 
 
-class LearningSheets:
+class LearningSheets(SheetsClient):
     """
     Writes/reads ML training data in the master learning spreadsheet.
 
@@ -68,70 +67,24 @@ class LearningSheets:
     """
 
     _instance: "LearningSheets | None" = None
-    _client: gspread.Client | None = None
-    _spreadsheet: gspread.Spreadsheet | None = None
-
-    def __new__(cls) -> "LearningSheets":
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
     @property
     def enabled(self) -> bool:
         return bool(settings.ml_learning_spreadsheet_id)
 
-    def _connect(self) -> None:
-        creds_path = settings.google_sheets_credentials_file
-        if not creds_path.exists():
-            raise FileNotFoundError(f"Google credentials not found: {creds_path}")
-        creds = Credentials.from_service_account_file(str(creds_path), scopes=SCOPES)
-        self._client = gspread.authorize(creds)
-        self._spreadsheet = self._client.open_by_key(
-            settings.ml_learning_spreadsheet_id
-        )
-        log.info(f"Connected to learning spreadsheet: '{self._spreadsheet.title}'")
-
-    @property
-    def spreadsheet(self) -> gspread.Spreadsheet:
-        if self._spreadsheet is None:
-            self._connect()
-        return self._spreadsheet
+    def _spreadsheet_id(self) -> str:
+        return settings.ml_learning_spreadsheet_id
 
     # ── Tab helpers ────────────────────────────────────────────────────
 
     def _get_replays_sheet(self) -> gspread.Worksheet:
-        try:
-            return self.spreadsheet.worksheet("Replays")
-        except gspread.WorksheetNotFound:
-            ws = self.spreadsheet.add_worksheet(
-                title="Replays", rows=10000, cols=len(REPLAY_HEADERS)
-            )
-            ws.append_row(REPLAY_HEADERS, value_input_option="USER_ENTERED")
-            log.info("Created 'Replays' tab in learning spreadsheet")
-            return ws
+        return self.get_tab("Replays", create=True, headers=REPLAY_HEADERS)
 
     def _get_format_sheet(self, fmt: str) -> gspread.Worksheet:
-        tab = fmt[:100]
-        try:
-            return self.spreadsheet.worksheet(tab)
-        except gspread.WorksheetNotFound:
-            ws = self.spreadsheet.add_worksheet(
-                title=tab, rows=10000, cols=len(REPLAY_HEADERS)
-            )
-            ws.append_row(REPLAY_HEADERS, value_input_option="USER_ENTERED")
-            log.info(f"Created '{tab}' tab in learning spreadsheet")
-            return ws
+        return self.get_tab(fmt[:100], create=True, headers=REPLAY_HEADERS)
 
     def _get_training_runs_sheet(self) -> gspread.Worksheet:
-        try:
-            return self.spreadsheet.worksheet("Training Runs")
-        except gspread.WorksheetNotFound:
-            ws = self.spreadsheet.add_worksheet(
-                title="Training Runs", rows=10000, cols=len(TRAINING_RUN_HEADERS)
-            )
-            ws.append_row(TRAINING_RUN_HEADERS, value_input_option="USER_ENTERED")
-            log.info("Created 'Training Runs' tab in learning spreadsheet")
-            return ws
+        return self.get_tab("Training Runs", create=True, headers=TRAINING_RUN_HEADERS)
 
     # ── Write helpers ──────────────────────────────────────────────────
 
@@ -213,43 +166,6 @@ class LearningSheets:
             log.warning(f"Failed to save training run: {exc}")
 
     # ── Read helpers ───────────────────────────────────────────────────
-
-    def get_win_rate(self, fmt: str, last_n: int = 100) -> float | None:
-        """Return win rate over the last `last_n` battles for `fmt`, or None if no data."""
-        if not self.enabled:
-            return None
-        try:
-            ws = self._get_format_sheet(fmt)
-            rows = ws.get_all_values()
-            data_rows = rows[1:]  # skip header
-            if not data_rows:
-                return None
-            recent = data_rows[-last_n:]
-            wins = sum(
-                1 for r in recent if len(r) > _WINNER_COL and r[_WINNER_COL] == "bot"
-            )
-            return wins / len(recent)
-        except Exception as exc:
-            log.warning(f"Failed to read win rate for {fmt}: {exc}")
-            return None
-
-    def get_latest_checkpoint(self, fmt: str) -> dict | None:
-        """Return the most recent Training Runs row for `fmt`, or None."""
-        if not self.enabled:
-            return None
-        try:
-            ws = self._get_training_runs_sheet()
-            rows = ws.get_all_values()
-            if len(rows) < 2:
-                return None
-            header = rows[0]
-            for row in reversed(rows[1:]):
-                if len(row) > 1 and row[1] == fmt:
-                    return dict(zip(header, row))
-            return None
-        except Exception as exc:
-            log.warning(f"Failed to read latest checkpoint for {fmt}: {exc}")
-            return None
 
     def get_stats_table(self) -> list[dict]:
         """
