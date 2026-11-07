@@ -12,10 +12,12 @@ from pathlib import Path
 
 import aiohttp
 
+from src.config import PROJECT_ROOT
+
 log = logging.getLogger(__name__)
 
 TIERS_URL = "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/formats-data.ts"
-DATA_FILE = Path(__file__).parent.parent.parent / "data" / "tiers.json"
+DATA_FILE = PROJECT_ROOT / "data" / "tiers.json"
 
 # Showdown tier names mapped to canonical short names
 TIER_MAP = {

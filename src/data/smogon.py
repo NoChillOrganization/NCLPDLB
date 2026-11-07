@@ -14,11 +14,13 @@ from typing import Any
 
 import httpx
 
+from src.config import PROJECT_ROOT
+
 log = logging.getLogger(__name__)
 
 SMOGON_BASE = "https://www.smogon.com"
 SMOGON_DEX_API = "https://smogon.com/dex/_rg/pokemon"  # returns embedded JSON
-LOCAL_TIERS_FILE = Path(__file__).parent.parent.parent / "data" / "tiers.json"
+LOCAL_TIERS_FILE = PROJECT_ROOT / "data" / "tiers.json"
 
 # Mapping of Smogon gen slugs used in URLs
 GEN_SLUGS = {
@@ -221,9 +223,8 @@ def _save_cached_tiers(tiers: dict[str, str]) -> None:
 def main() -> None:
     import asyncio
     import sys
-    from pathlib import Path
 
-    pokemon_path = Path(__file__).parent.parent.parent / "data" / "pokemon.json"
+    pokemon_path = PROJECT_ROOT / "data" / "pokemon.json"
     limit = int(sys.argv[1]) if len(sys.argv) > 1 else None
     asyncio.run(update_pokemon_strategies(pokemon_path, limit=limit))
 
