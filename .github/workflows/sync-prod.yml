@@ -27,6 +27,8 @@ permissions:
 jobs:
   sync:
     name: Run production sync
+    # Skipped until the nclpdlb_platform DB exists; enable by setting repo variable SYNC_PROD_ENABLED=true.
+    if: vars.SYNC_PROD_ENABLED == 'true'
     runs-on: [self-hosted]  # existing actions-runner; prod Postgres at localhost
     timeout-minutes: 60  # protects the single self-hosted runner from a hung sync/install
 
