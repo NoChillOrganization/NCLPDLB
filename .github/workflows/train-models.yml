@@ -65,6 +65,9 @@ permissions:
   contents: write
 
 env:
+  # Pinned so an upstream Showdown change cannot break training unannounced. Bump on
+  # purpose (same value in tests.yml and train-transformer.yml).
+  SHOWDOWN_REF: ccfaa20f32af363569cd21a9d501b2bc1ded26b1
   # Directory where competitive meta data (CSVs + format_meta.json) is staged.
   # Passed to train_policy.py via --meta-path to log usage context per format.
   COMPETITIVE_DATA_DIR: data/competitive
@@ -330,7 +333,9 @@ jobs:
           until mkdir "$LOCK" 2>/dev/null; do sleep 1; done
           trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
           if [ ! -d "$PS_DIR/.git" ]; then
-            git clone --depth=1 https://github.com/smogon/pokemon-showdown.git "$PS_DIR"
+            git init -q "$PS_DIR"
+            git -C "$PS_DIR" fetch -q --depth=1 https://github.com/smogon/pokemon-showdown.git "$SHOWDOWN_REF"
+            git -C "$PS_DIR" checkout -q FETCH_HEAD
             cd "$PS_DIR" && npm install --ignore-scripts
             # Build ahead of time (--ignore-scripts skips the postinstall build hook).
             # Without this, `pokemon-showdown start` lazy-compiles TypeScript on first

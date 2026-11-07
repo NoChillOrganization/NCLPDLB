@@ -166,10 +166,14 @@ async def _run(args: argparse.Namespace) -> int:
     dry_run = args.dry_run
     errors: list[str] = []
 
-    if not dry_run:
-        await migrate()
+    try:
+        if not dry_run:
+            await migrate()
+        pool = await get_pool()
+    except (OSError, asyncpg.PostgresError) as exc:
+        print(f"[db] FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
 
-    pool = await get_pool()
     for source in sources:
         async with pool.acquire() as conn:
             try:
