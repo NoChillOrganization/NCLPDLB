@@ -96,11 +96,9 @@ jobs:
             const isSync   = '${{ job.status }}' === 'failure';
             const isStale  = '${{ steps.monitoring.outcome }}' === 'failure';
             const titleTag = isSync ? 'Production sync failed' : 'Ingest health alert';
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `${titleTag}: ${context.workflow} (${new Date().toISOString().slice(0,10)})`,
-              body: [
+            const { owner, repo } = context.repo;
+            const title = `${titleTag}: ${context.workflow} (${new Date().toISOString().slice(0,10)})`;
+            const body = [
                 `**Workflow:** ${context.workflow}`,
                 `**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
                 `**Trigger:** ${context.eventName}`,
@@ -113,6 +111,13 @@ jobs:
                 'SELECT * FROM source_health;',
                 'SELECT * FROM recent_dead_letters;',
                 '```',
-              ].filter(l => l !== undefined).join('\n'),
-              labels: ['sync-failure'],
+            ].filter(l => l !== undefined).join('\n');
+            // One open issue per outage: comment on it instead of opening a new one daily.
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner, repo, labels: 'sync-failure', state: 'open', per_page: 1,
             });
+            if (open.length) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: open[0].number, body: `${title}\n\n${body}` });
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body, labels: ['sync-failure'] });
+            }

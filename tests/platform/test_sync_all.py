@@ -8,6 +8,11 @@ INSERT...SELECT no-op in orchestrate.with_ingest_run), leaving showdown's
 STALE_SYNC monitor frozen at its last manually-run success.
 """
 
+import argparse
+
+import asyncpg
+
+from src.platform import sync_all
 from src.platform.sync_all import _db_source_name
 
 
@@ -23,3 +28,14 @@ def test_unmapped_sources_pass_through():
 def test_unknown_source_passes_through_unchanged():
     """No mapping entry -> identity, not an error (validity is _run_source's job)."""
     assert _db_source_name("not_a_real_source") == "not_a_real_source"
+
+
+async def test_db_connect_error_returns_one_line_failure(monkeypatch, capsys):
+    async def boom():
+        raise asyncpg.InvalidCatalogNameError('database "x" does not exist')
+
+    monkeypatch.setattr(sync_all, "migrate", boom)
+    args = argparse.Namespace(sources=["limitless"], deadline_seconds=0, dry_run=False)
+
+    assert await sync_all._run(args) == 1
+    assert "[db] FAILED: InvalidCatalogNameError" in capsys.readouterr().err
