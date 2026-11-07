@@ -13,13 +13,13 @@ from src.bot.permissions import ROLE_GUILDMASTER, ROLE_MOD, require_role
 from src.config import PROJECT_ROOT, settings
 from src.ml.train_all import TRAINING_MAP
 from src.services.draft_service import DraftService
+from src.services.model_pull_service import _pull_models, github_headers
 
 from src.bot.cogs.admin_training import (
     ConfirmResetView,
     _build_progress_embed,
     _build_queue_embed,
     _model_exists,
-    _pull_models,
     _run_training,
     _run_training_all,
     _try_dm,
@@ -469,14 +469,7 @@ class AdminCog(commands.Cog, name="Admin"):
 
         await interaction.response.defer(ephemeral=True)
         repo = settings.github_repo
-        headers: dict[str, str] = {
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-        }
-        if settings.github_token.get_secret_value():
-            headers["Authorization"] = (
-                f"Bearer {settings.github_token.get_secret_value()}"
-            )
+        headers = github_headers()
 
         try:
             async with httpx.AsyncClient(
