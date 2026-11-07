@@ -4,30 +4,25 @@ Admin Cog — Commissioner and admin override commands.
 
 import asyncio
 import logging
-from pathlib import Path
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
 from src.bot.permissions import ROLE_GUILDMASTER, ROLE_MOD, require_role
-from src.config import settings
+from src.config import PROJECT_ROOT, settings
 from src.ml.train_all import TRAINING_MAP
 from src.services.draft_service import DraftService
+from src.services.model_pull_service import _pull_models, github_headers
 
-# Re-exported for backward compatibility: training orchestration logic lives in
-# admin_training.py (extracted to keep this file under the 800-line guideline),
-# but tests and other modules still import some of these names from here.
-from src.bot.cogs.admin_training import (  # noqa: F401
+from src.bot.cogs.admin_training import (
     ConfirmResetView,
     _build_progress_embed,
     _build_queue_embed,
-    _chunk_lines,
     _model_exists,
-    _pull_models,
     _run_training,
     _run_training_all,
-    _try_edit,
+    _try_dm,
 )
 
 log = logging.getLogger(__name__)
@@ -171,8 +166,11 @@ class AdminCog(commands.Cog, name="Admin"):
                 f"❌ Sync failed (HTTP {exc.status}).{hint}\n`{exc.text}`",
                 ephemeral=True,
             )
-        except Exception as exc:
-            await interaction.followup.send(f"❌ Sync error: {exc}", ephemeral=True)
+        except Exception:
+            log.exception("admin-sync failed")
+            await interaction.followup.send(
+                "❌ Sync error. Check the bot logs.", ephemeral=True
+            )
 
     # ── /admin-update ──────────────────────────────────────────
     @app_commands.command(
@@ -183,7 +181,7 @@ class AdminCog(commands.Cog, name="Admin"):
     async def admin_update(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(thinking=True, ephemeral=True)
 
-        project_root = Path(__file__).parents[3]
+        project_root = PROJECT_ROOT
         lines: list[str] = []
 
         # ── 1. git pull ─────────────────────────────────────────
@@ -203,8 +201,9 @@ class AdminCog(commands.Cog, name="Admin"):
         except asyncio.TimeoutError:
             lines.append("❌ **git pull** timed out after 30 s")
             ok = False
-        except Exception as exc:
-            lines.append(f"❌ **git pull** failed: `{exc}`")
+        except Exception:
+            log.exception("admin-update git pull failed")
+            lines.append("❌ **git pull** failed. Check the bot logs.")
             ok = False
 
         # ── 2. Reload cogs ──────────────────────────────────────
@@ -238,8 +237,9 @@ class AdminCog(commands.Cog, name="Admin"):
             lines.append(
                 f"❌ **Command sync failed** (HTTP {exc.status}).{hint} `{exc.text}`"
             )
-        except Exception as exc:
-            lines.append(f"❌ **Command sync failed**: `{exc}`")
+        except Exception:
+            log.exception("admin-update command sync failed")
+            lines.append("❌ **Command sync failed**. Check the bot logs.")
 
         await interaction.followup.send("\n\n".join(lines), ephemeral=True)
 
@@ -286,7 +286,7 @@ class AdminCog(commands.Cog, name="Admin"):
             )
             return
 
-        results_dir = Path(__file__).parents[3] / "data" / "ml" / "results"
+        results_dir = PROJECT_ROOT / "data" / "ml" / "results"
         if not force and _model_exists(results_dir, format):
             await interaction.followup.send(
                 f"Model for `{format}` already exists. Use `force: True` to retrain.",
@@ -304,13 +304,11 @@ class AdminCog(commands.Cog, name="Admin"):
             log.warning(
                 "[admin-train] followup.send got 10062 (interaction expired); continuing without channel embed"
             )
-            try:
-                await interaction.user.send(
-                    "⚠️ Couldn't post the training status embed (Discord interaction expired), "
-                    "but training is starting. You'll receive a DM when done."
-                )
-            except Exception:
-                log.debug("Best-effort Discord notification failed", exc_info=True)
+            await _try_dm(
+                interaction.user,
+                "⚠️ Couldn't post the training status embed (Discord interaction expired), "
+                "but training is starting. You'll receive a DM when done.",
+            )
 
         _create_background_task(
             _run_training(
@@ -355,7 +353,7 @@ class AdminCog(commands.Cog, name="Admin"):
         await interaction.response.defer(thinking=True)
 
         total = len([f for f, e in TRAINING_MAP.items() if e[0] is not None])
-        results_dir = Path(__file__).parents[3] / "data" / "ml" / "results"
+        results_dir = PROJECT_ROOT / "data" / "ml" / "results"
         already_done = sum(
             1
             for fmt in TRAINING_MAP
@@ -373,13 +371,11 @@ class AdminCog(commands.Cog, name="Admin"):
             log.warning(
                 "[admin-train-all] followup.send got 10062 (interaction expired); continuing without channel embed"
             )
-            try:
-                await interaction.user.send(
-                    "⚠️ Couldn't post the train-all status embed in the channel (Discord interaction expired), "
-                    "but training is starting. You'll receive DM updates per format."
-                )
-            except Exception:
-                log.debug("Best-effort Discord notification failed", exc_info=True)
+            await _try_dm(
+                interaction.user,
+                "⚠️ Couldn't post the train-all status embed in the channel (Discord interaction expired), "
+                "but training is starting. You'll receive DM updates per format.",
+            )
 
         _create_background_task(
             _run_training_all(
@@ -473,14 +469,7 @@ class AdminCog(commands.Cog, name="Admin"):
 
         await interaction.response.defer(ephemeral=True)
         repo = settings.github_repo
-        headers: dict[str, str] = {
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-        }
-        if settings.github_token.get_secret_value():
-            headers["Authorization"] = (
-                f"Bearer {settings.github_token.get_secret_value()}"
-            )
+        headers = github_headers()
 
         try:
             async with httpx.AsyncClient(
@@ -489,9 +478,10 @@ class AdminCog(commands.Cog, name="Admin"):
                 resp = await client.get(f"https://api.github.com/repos/{repo}/releases")
                 resp.raise_for_status()
                 releases = resp.json()
-        except Exception as exc:
+        except Exception:
+            log.exception("admin-list-releases GitHub API call failed")
             await interaction.followup.send(
-                f"❌ GitHub API error: `{exc}`", ephemeral=True
+                "❌ GitHub API error. Check the bot logs.", ephemeral=True
             )
             return
 

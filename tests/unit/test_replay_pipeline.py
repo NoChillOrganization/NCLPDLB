@@ -1,5 +1,5 @@
 """
-Phase 10 — Replay Pipeline test suite (Wave 0 contract).
+Replay pipeline tests.
 
 All 12 test stubs defined here. Tests that depend on the Plan 02 parser
 formatid fix (test_parse_formatid_preferred, test_vgc_fixture_parses) will

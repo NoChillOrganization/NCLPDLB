@@ -127,13 +127,6 @@ def _col_letter(n: int) -> str:
     return result
 
 
-def _col_num(s: str) -> int:
-    result = 0
-    for ch in s.upper():
-        result = result * 26 + (ord(ch) - 64)
-    return result
-
-
 # ── Client ─────────────────────────────────────────────────────────────────────
 
 
@@ -158,9 +151,8 @@ class SheetsClient:
             )
         creds = Credentials.from_service_account_file(str(creds_path), scopes=SCOPES)
         self._client = gspread.authorize(creds)
-        self._spreadsheet = self._client.open_by_key(
-            settings.google_sheets_spreadsheet_id
-        )
+        self._client.set_timeout(30)  # (s) so a stalled Sheets call can't hang forever
+        self._spreadsheet = self._client.open_by_key(self._spreadsheet_id())
         log.info(f"Connected to Google Sheets: '{self._spreadsheet.title}'")
 
     @property
@@ -169,7 +161,12 @@ class SheetsClient:
             self.connect()
         return self._spreadsheet
 
-    def get_tab(self, tab_name: str, create: bool = False) -> gspread.Worksheet:
+    def _spreadsheet_id(self) -> str:
+        return settings.google_sheets_spreadsheet_id
+
+    def get_tab(
+        self, tab_name: str, create: bool = False, headers: list[str] | None = None
+    ) -> gspread.Worksheet:
         """Return a worksheet by name.
 
         Args:
@@ -178,6 +175,8 @@ class SheetsClient:
                       Read-only callers must leave this False (default) so a
                       missing tab raises WorksheetNotFound rather than silently
                       creating an empty sheet (H4).
+            headers:  When creating, write this header row (sized to fit)
+                      instead of the default single-cell title row.
         """
         try:
             return self.spreadsheet.worksheet(tab_name)
@@ -185,18 +184,15 @@ class SheetsClient:
             if not create:
                 raise
             log.warning(f"Tab '{tab_name}' not found — creating it.")
-            ws = self.spreadsheet.add_worksheet(title=tab_name, rows=1000, cols=26)
-            ws.append_row([tab_name], value_input_option="USER_ENTERED")
+            if headers:
+                ws = self.spreadsheet.add_worksheet(
+                    title=tab_name, rows=10000, cols=len(headers)
+                )
+                ws.append_row(headers, value_input_option="USER_ENTERED")
+            else:
+                ws = self.spreadsheet.add_worksheet(title=tab_name, rows=1000, cols=26)
+                ws.append_row([tab_name], value_input_option="USER_ENTERED")
             return ws
-
-    def _get_cell(self, tab_name: str, cell: str) -> str:
-        """Read a single cell's formatted value."""
-        result = self.spreadsheet.values_get(
-            f"'{tab_name}'!{cell}",
-            params={"valueRenderOption": "FORMATTED_VALUE"},
-        )
-        vals = result.get("values", [[]])
-        return vals[0][0] if vals and vals[0] else ""
 
     def _get_range(self, tab_name: str, range_: str) -> list[list[str]]:
         """Read a range returning a 2D list (empty strings for empty cells)."""
@@ -206,28 +202,12 @@ class SheetsClient:
         )
         return result.get("values", [])
 
-    def _set_cell(self, tab_name: str, cell: str, value: Any) -> None:
-        """Write a single cell."""
-        ws = self.get_tab(tab_name)
-        _with_retry(ws.update, [[value]], cell, value_input_option="USER_ENTERED")
-
-    def _append_to_range(
-        self, ws: gspread.Worksheet, range_: str, row: list[Any]
-    ) -> None:
-        """Append a row using USER_ENTERED so formulas are evaluated."""
-        ws.append_row(row, value_input_option="USER_ENTERED", table_range=range_)
-
     # ── Generic helpers ───────────────────────────────────────────────────────
 
     def append_row(self, tab_name: str, row: list[Any]) -> None:
         """Append a row to any tab."""
         ws = self.get_tab(tab_name, create=True)
         _with_retry(ws.append_row, row, value_input_option="USER_ENTERED")
-
-    def update_row(self, tab_name: str, row_num: int, row_data: list) -> None:
-        """Overwrite a specific row (1-indexed) starting from column A."""
-        ws = self.get_tab(tab_name, create=True)
-        _with_retry(ws.update, f"A{row_num}", [row_data])
 
     def upsert_row(
         self, tab_name: str, key_col: str, key_val: str, row_data: list
@@ -376,41 +356,6 @@ class SheetsClient:
     #   Row 5: "Week #1" label in col D
     #   Rows 6-13: match rows for week 1
 
-    def get_schedule(self) -> list[dict]:
-        """Read all scheduled matches from the visual Schedule template."""
-        raw = self._get_range(Tab.SCHEDULE, "D5:P260")
-        matches = []
-        current_week = ""
-        for row in raw:
-            if not row:
-                continue
-            d_val = row[0].strip() if len(row) > 0 else ""
-            if d_val.startswith("Week"):
-                current_week = d_val
-                continue
-            if len(row) < 13:
-                row = row + [""] * (13 - len(row))
-            coach1 = row[6].strip()
-            result1 = row[7].strip()
-            score1 = row[8].strip()
-            vs_ = row[9].strip()
-            score2 = row[10].strip()
-            result2 = row[11].strip()
-            coach2 = row[12].strip()
-            if coach1 and vs_ == "vs.":
-                matches.append(
-                    {
-                        "week": current_week,
-                        "coach1": coach1,
-                        "result1": result1,
-                        "score1": score1,
-                        "score2": score2,
-                        "result2": result2,
-                        "coach2": coach2,
-                    }
-                )
-        return matches
-
     def save_schedule_match(self, match: dict) -> None:
         """Write a scheduled match row."""
         row_data = [
@@ -521,27 +466,6 @@ class SheetsClient:
     #   Rows 4-5: empty template rows
     #   Row 6+: data rows
 
-    def get_transactions(self) -> list[dict]:
-        """Read all logged transactions."""
-        raw = self._get_range(Tab.TRANSACTIONS, "D6:M200")
-        transactions = []
-        for row in raw:
-            if not row or not row[0].strip():
-                continue
-            transactions.append(
-                {
-                    "number": row[0].strip() if len(row) > 0 else "",
-                    "week": row[1].strip() if len(row) > 1 else "",
-                    "event": row[2].strip() if len(row) > 2 else "",
-                    "coach1": row[3].strip() if len(row) > 3 else "",
-                    "pokemon1": row[4].strip() if len(row) > 4 else "",
-                    "pokemon2": row[6].strip() if len(row) > 6 else "",
-                    "coach2": row[8].strip() if len(row) > 8 else "",
-                    "notes": row[9].strip() if len(row) > 9 else "",
-                }
-            )
-        return transactions
-
     def save_transaction(self, txn: dict) -> None:
         """Append a transaction row."""
         row_data = [
@@ -573,24 +497,6 @@ class SheetsClient:
             UTC_NOW(),
         ]
         self.upsert_row(Tab.DRAFT, "pick_id", pick.get("pick_id", ""), row_data)
-
-    def get_draft_picks(self, draft_id: str) -> list[dict]:
-        """Return all picks for a given draft_id."""
-        return self.find_rows(Tab.DRAFT, "draft_id", draft_id)
-
-    # ── Pool rosters ──────────────────────────────────────────────────────────
-
-    def update_pool_roster(self, pool: str, player: dict, pokemon: list[str]) -> None:
-        """Insert or update a player's roster in the pool board tab."""
-        tab = Tab.POOL_A if pool == "A" else Tab.POOL_B
-        row_data = [
-            player.get("player_id", ""),
-            player.get("player_name", ""),
-            player.get("team_name", ""),
-            ",".join(pokemon),
-            UTC_NOW(),
-        ]
-        self.upsert_row(tab, "player_id", player.get("player_id", ""), row_data)
 
     # ── Pokédex tab ───────────────────────────────────────────────────────────
     #
@@ -633,79 +539,6 @@ class SheetsClient:
         ws.append_rows(rows, value_input_option="USER_ENTERED")
         log.info(f"Pokédex tab populated with {len(rows)} Pokémon")
 
-    # ── Rules tab ─────────────────────────────────────────────────────────────
-    #
-    # Layout: visual template; rules in col E starting row 4; col D has ✵ bullet.
-
-    def get_rules(self) -> list[str]:
-        """Return all rule text strings from column E (rows 4+)."""
-        raw = self._get_range(Tab.RULES, "E4:E100")
-        return [row[0].strip() for row in raw if row and row[0].strip()]
-
-    def append_rule(self, category: str, title: str, description: str) -> None:
-        """Append a new rule to the Rules tab (col D=✵, col E=text)."""
-        ws = self.get_tab(Tab.RULES, create=True)
-        e_col = ws.col_values(5)  # column E
-        next_row = len(e_col) + 1
-        text = (
-            f"[{category}] {title}: {description}"
-            if category
-            else f"{title}: {description}"
-        )
-        ws.update(
-            [["✵", text]], f"D{next_row}:E{next_row}", value_input_option="USER_ENTERED"
-        )
-        log.info(f"Rule appended at row {next_row}")
-
-    # ── MVP Race tab ──────────────────────────────────────────────────────────
-
-    def get_mvp_race(self) -> list[dict]:
-        """Read the MVP Race tab."""
-        raw = self._get_range(Tab.MVP_RACE, "A1:Z50")
-        results = []
-        for row in raw:
-            if len(row) >= 10:
-                for v in row:
-                    if v and "+" in v and "in" in v:
-                        results.append(
-                            {
-                                "coach": row[0].strip() if row else "",
-                                "record": v.strip(),
-                            }
-                        )
-                        break
-        return results
-
-    def refresh_mvp_race(self, mvp_entries: list[dict]) -> None:
-        """Clear and re-write the MVP Race tab with updated entries."""
-        ws = self.get_tab(Tab.MVP_RACE, create=True)
-        ws.resize(rows=max(1, len(mvp_entries) + 1))
-        for entry in mvp_entries:
-            ws.append_row(
-                [
-                    entry.get("rank", ""),
-                    entry.get("player_id", ""),
-                    entry.get("mvp_pokemon", ""),
-                    entry.get("mvp_count", ""),
-                ],
-                value_input_option="USER_ENTERED",
-            )
-
-    # ── Pokémon Stats tab ─────────────────────────────────────────────────────
-
-    def update_pokemon_stat(self, stat: dict) -> None:
-        """Insert or update a Pokémon stat row."""
-        row_data = [
-            stat.get("stat_id", ""),
-            stat.get("pokemon", ""),
-            stat.get("wins", ""),
-            stat.get("losses", ""),
-            stat.get("kills", ""),
-            stat.get("deaths", ""),
-            UTC_NOW(),
-        ]
-        self.upsert_row(Tab.POKEMON_STATS, "stat_id", stat.get("stat_id", ""), row_data)
-
     # ── Playoffs tab ──────────────────────────────────────────────────────────
 
     def save_playoff_match(self, match: dict) -> None:
@@ -723,16 +556,6 @@ class SheetsClient:
         )
 
     # ── Team page (individual coach tabs) ─────────────────────────────────────
-
-    def get_coach_tab(self, coach_name: str) -> dict | None:
-        """Read a coach's individual team tab (e.g. 'Hannah4Ever')."""
-        try:
-            ws = self.spreadsheet.worksheet(coach_name)
-        except gspread.WorksheetNotFound:
-            log.warning(f"No tab found for coach '{coach_name}'")
-            return None
-        raw = ws.get_all_values()
-        return {"coach": coach_name, "rows": raw[:10]}
 
     def upsert_team_page(self, team: dict) -> None:
         """Insert or update a team row in the Team Page Template tab.
@@ -758,25 +581,6 @@ class SheetsClient:
         self._upsert_record(
             Tab.TEAM_TEMPLATE, "player_id", team.get("player_id", ""), record
         )
-
-    # ── Data tab ──────────────────────────────────────────────────────────────
-
-    def set_data(
-        self, key: str, value: str, type_: str = "string", description: str = ""
-    ) -> None:
-        """Upsert a key-value pair in the Data tab."""
-        self.upsert_row(
-            Tab.DATA, "key", key, [key, value, type_, description, UTC_NOW()]
-        )
-
-    def get_data_value(self, label: str) -> str | None:
-        """Read a labelled value from the Data tab."""
-        row = self.find_row(Tab.DATA, "key", label)
-        return row.get("value") if row else None
-
-    def get_data(self, key: str) -> str | None:
-        """Return the value for a key in the Data tab."""
-        return self.get_data_value(key)
 
 
 # Global singleton

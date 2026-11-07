@@ -4,13 +4,21 @@ Cross-platform: uses pathlib for all file paths.
 """
 
 import re
+import sys
 from pathlib import Path
 
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Project root — works on Windows, macOS, Linux
-PROJECT_ROOT = Path(__file__).parent.parent
+# Project root — works on Windows, macOS, Linux.
+# Frozen (PyInstaller) builds: __file__ lives in a temp dir wiped on exit, so
+# mutable files (.env, DB, logs) must live beside the exe. Bundled read-only
+# files stay under sys._MEIPASS.
+PROJECT_ROOT = (
+    Path(sys.executable).parent
+    if getattr(sys, "frozen", False)
+    else Path(__file__).parent.parent
+)
 
 
 class Settings(BaseSettings):

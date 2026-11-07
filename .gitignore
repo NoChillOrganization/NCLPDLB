@@ -138,3 +138,6 @@ repo-info.json
 actions-run-snapshot.md
 workflows-dir.txt
 train-models-workflow.txt
+
+# Local /court trial output
+.court/
