@@ -152,9 +152,7 @@ class SheetsClient:
         creds = Credentials.from_service_account_file(str(creds_path), scopes=SCOPES)
         self._client = gspread.authorize(creds)
         self._client.set_timeout(30)  # (s) so a stalled Sheets call can't hang forever
-        self._spreadsheet = self._client.open_by_key(
-            settings.google_sheets_spreadsheet_id
-        )
+        self._spreadsheet = self._client.open_by_key(self._spreadsheet_id())
         log.info(f"Connected to Google Sheets: '{self._spreadsheet.title}'")
 
     @property
@@ -163,7 +161,12 @@ class SheetsClient:
             self.connect()
         return self._spreadsheet
 
-    def get_tab(self, tab_name: str, create: bool = False) -> gspread.Worksheet:
+    def _spreadsheet_id(self) -> str:
+        return settings.google_sheets_spreadsheet_id
+
+    def get_tab(
+        self, tab_name: str, create: bool = False, headers: list[str] | None = None
+    ) -> gspread.Worksheet:
         """Return a worksheet by name.
 
         Args:
@@ -172,6 +175,8 @@ class SheetsClient:
                       Read-only callers must leave this False (default) so a
                       missing tab raises WorksheetNotFound rather than silently
                       creating an empty sheet (H4).
+            headers:  When creating, write this header row (sized to fit)
+                      instead of the default single-cell title row.
         """
         try:
             return self.spreadsheet.worksheet(tab_name)
@@ -179,8 +184,14 @@ class SheetsClient:
             if not create:
                 raise
             log.warning(f"Tab '{tab_name}' not found — creating it.")
-            ws = self.spreadsheet.add_worksheet(title=tab_name, rows=1000, cols=26)
-            ws.append_row([tab_name], value_input_option="USER_ENTERED")
+            if headers:
+                ws = self.spreadsheet.add_worksheet(
+                    title=tab_name, rows=10000, cols=len(headers)
+                )
+                ws.append_row(headers, value_input_option="USER_ENTERED")
+            else:
+                ws = self.spreadsheet.add_worksheet(title=tab_name, rows=1000, cols=26)
+                ws.append_row([tab_name], value_input_option="USER_ENTERED")
             return ws
 
     def _get_range(self, tab_name: str, range_: str) -> list[list[str]]:
