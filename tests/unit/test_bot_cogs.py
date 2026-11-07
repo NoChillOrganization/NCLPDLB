@@ -1218,7 +1218,7 @@ async def test_run_training_all_no_formats_sends_summary():
     interaction = make_interaction()
 
     with (
-        patch("src.bot.cogs.admin._model_exists", return_value=True),
+        patch("src.bot.cogs.admin_training._model_exists", return_value=True),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
     ):
         await _run_training_all(interaction, 100_000, force=False)
@@ -1234,7 +1234,7 @@ async def test_run_training_all_blocking_preflight_aborts():
 
     blocking = [{"type": "SHOWDOWN_OFFLINE", "description": "down", "fixable": False}]
     with (
-        patch("src.bot.cogs.admin._model_exists", return_value=False),
+        patch("src.bot.cogs.admin_training._model_exists", return_value=False),
         patch("src.ml.training_doctor.preflight_check", return_value=blocking),
         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec,
     ):
@@ -1257,7 +1257,7 @@ async def test_run_training_all_one_format_success():
         return fmt != one_fmt
 
     with (
-        patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn),
+        patch("src.bot.cogs.admin_training._model_exists", side_effect=model_exists_fn),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None),
         patch(
@@ -1286,7 +1286,7 @@ async def test_run_training_all_failure_applies_fix():
         return fmt != one_fmt
 
     with (
-        patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn),
+        patch("src.bot.cogs.admin_training._model_exists", side_effect=model_exists_fn),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None),
         patch("src.ml.training_doctor.diagnose_output", return_value=fixable),
@@ -2194,7 +2194,7 @@ async def test_run_training_all_blocking_dm_send_raises():
 
     blocking = [{"type": "SHOWDOWN_OFFLINE", "description": "down", "fixable": False}]
     with (
-        patch("src.bot.cogs.admin._model_exists", return_value=False),
+        patch("src.bot.cogs.admin_training._model_exists", return_value=False),
         patch("src.ml.training_doctor.preflight_check", return_value=blocking),
         patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec,
     ):
@@ -2221,7 +2221,7 @@ async def test_run_training_all_startup_dm_raises():
     interaction.user.send = AsyncMock(side_effect=send_side_effect)
 
     with (
-        patch("src.bot.cogs.admin._model_exists", return_value=True),
+        patch("src.bot.cogs.admin_training._model_exists", return_value=True),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
     ):
         # Should complete without raising
@@ -2297,7 +2297,7 @@ async def test_run_training_all_progress_dm_raises():
         return fmt != one_fmt
 
     with (
-        patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn),
+        patch("src.bot.cogs.admin_training._model_exists", side_effect=model_exists_fn),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None),
         patch(
@@ -2323,7 +2323,7 @@ async def test_run_training_all_subprocess_streaming_lines():
         return fmt != one_fmt
 
     with (
-        patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn),
+        patch("src.bot.cogs.admin_training._model_exists", side_effect=model_exists_fn),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
         patch("src.ml.training_doctor.parse_timestep_progress", return_value=500),
         patch(
@@ -2347,7 +2347,7 @@ async def test_run_training_all_subprocess_exception_continues():
         return fmt != one_fmt
 
     with (
-        patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn),
+        patch("src.bot.cogs.admin_training._model_exists", side_effect=model_exists_fn),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None),
         patch("src.ml.training_doctor.diagnose_output", return_value=[]),
@@ -2381,7 +2381,7 @@ async def test_run_training_all_summary_dm_raises():
     interaction.user.send = AsyncMock(side_effect=send_side_effect)
 
     with (
-        patch("src.bot.cogs.admin._model_exists", return_value=True),
+        patch("src.bot.cogs.admin_training._model_exists", return_value=True),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
     ):
         # Should complete without re-raising
@@ -2407,7 +2407,7 @@ async def test_run_training_all_progress_update_when_time_elapsed():
         return fmt != one_fmt
 
     with (
-        patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn),
+        patch("src.bot.cogs.admin_training._model_exists", side_effect=model_exists_fn),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None),
         patch("asyncio.get_event_loop", return_value=mock_loop),
@@ -2538,7 +2538,7 @@ async def test_run_training_all_proc_stdout_none_continues():
         return fmt != one_fmt  # only one format needs training
 
     with (
-        patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn),
+        patch("src.bot.cogs.admin_training._model_exists", side_effect=model_exists_fn),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
         patch(
             "asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=proc
@@ -2571,7 +2571,7 @@ async def test_run_training_all_time_throttle_edits_progress():
         return fmt != one_fmt
 
     with (
-        patch("src.bot.cogs.admin._model_exists", side_effect=model_exists_fn),
+        patch("src.bot.cogs.admin_training._model_exists", side_effect=model_exists_fn),
         patch("src.ml.training_doctor.preflight_check", return_value=[]),
         patch("src.ml.training_doctor.parse_timestep_progress", return_value=None),
         patch("asyncio.get_running_loop", return_value=mock_loop),
