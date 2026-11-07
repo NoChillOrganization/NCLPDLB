@@ -6,6 +6,10 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
+    # One PR per ecosystem for patch+minor bumps; majors stay individual PRs.
+    groups:
+      pip-minor-patch:
+        update-types: ["minor", "patch"]
     labels:
       - "dependencies"
       - "python"
@@ -46,6 +50,10 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
+    # One PR per ecosystem for patch+minor bumps; majors stay individual PRs.
+    groups:
+      actions-minor-patch:
+        update-types: ["minor", "patch"]
     labels:
       - "dependencies"
       - "github-actions"
