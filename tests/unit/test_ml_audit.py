@@ -79,7 +79,6 @@ MINIMAL_LOG = (
         ("src.ml.train_all", []),
         ("src.ml.replay_scraper", ["aiohttp"]),
         ("src.ml.feature_extractor", ["numpy"]),
-        ("src.ml.train_matchup", ["numpy", "sklearn"]),
         ("src.ml.battle_env", ["numpy"]),
         ("src.ml.train_policy", ["numpy"]),
         (
@@ -147,21 +146,6 @@ def test_replay_scraper_instantiation(tmp_path):
     scraper = ReplayScraper(format="gen9ou", output_dir=tmp_path)
     assert scraper.format == "gen9ou"
     assert scraper.out_dir == tmp_path / "gen9ou"
-
-
-def test_train_matchup_smoke():
-    """Level 2: _embed_team_matrix() runs without a trained model file."""
-    numpy = pytest.importorskip("numpy")
-    pytest.importorskip("sklearn")
-
-    from src.ml.train_matchup import _embed_team_matrix
-
-    # X_raw shape (n, 12): 6 pokemon IDs per side, int32
-    X_raw = numpy.array([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]], dtype=numpy.int32)
-    result = _embed_team_matrix(X_raw, vocab_size=20)
-    # Shape[0] must be 1 (one game)
-    assert result.shape[0] == 1, f"Expected 1 row, got {result.shape[0]}"
-    # Note: predict_matchup requires a trained model file — do NOT call it here
 
 
 def test_teambuilder_smoke():

@@ -78,6 +78,7 @@ async def test_modal_on_submit_success():
     sent_text = interaction.followup.send.call_args[0][0]
     assert "2" in sent_text
     assert "imported" in sent_text.lower() or "loaded" in sent_text.lower()
+    assert "Pokemon" in sent_text
 
 
 async def test_modal_on_submit_failure():
@@ -245,6 +246,7 @@ async def test_team_register_invalid_logo_content_type_rejects_early():
     interaction.response.send_message.assert_awaited_once()
     sent_text = interaction.response.send_message.call_args[0][0]
     assert "PNG" in sent_text or "logo" in sent_text.lower()
+    assert "❌" in sent_text
     # register_team must NOT have been called
     cog.team_service.register_team.assert_not_awaited()
 
@@ -417,6 +419,7 @@ async def test_trade_failure_sends_ephemeral_error():
     assert call_kwargs.get("ephemeral") is True
     sent_text = interaction.followup.send.call_args[0][0]
     assert "You don't have Mewtwo." in sent_text
+    assert "Trade failed" in sent_text
 
 
 # ── /trade-accept ─────────────────────────────────────────────────────────────
@@ -441,6 +444,7 @@ async def test_trade_accept_success_sends_confirmation():
     sent_text = interaction.followup.send.call_args[0][0]
     assert "Trade complete!" in sent_text
     assert "✅" in sent_text
+    assert "accepted" in sent_text.lower()
 
 
 async def test_trade_accept_failure_sends_ephemeral_error():
@@ -459,6 +463,7 @@ async def test_trade_accept_failure_sends_ephemeral_error():
     sent_text = interaction.followup.send.call_args[0][0]
     assert "Trade not found." in sent_text
     assert "❌" in sent_text
+    assert "Trade error" in sent_text
 
 
 # ── /trade-decline ────────────────────────────────────────────────────────────
@@ -499,6 +504,7 @@ async def test_trade_decline_failure_sends_ephemeral_error():
     assert call_kwargs.get("ephemeral") is True
     sent_text = interaction.followup.send.call_args[0][0]
     assert "This trade is not for you." in sent_text
+    assert "❌" in sent_text
 
 
 # ── /teamimport ───────────────────────────────────────────────────────────────
@@ -637,6 +643,30 @@ async def test_teamimport_autocomplete_returns_matching_formats():
 
     assert len(choices) >= 1
     assert any(c.value == "gen9ou" for c in choices)
+
+
+async def test_teamimport_autocomplete_partial_input_all_match():
+    """Every returned choice contains the partial input in its name or value."""
+    cog = make_cog()
+    interaction = make_interaction()
+
+    choices = await cog.teamimport_format_autocomplete(interaction, "gen9")
+
+    assert len(choices) > 0
+    for choice in choices:
+        assert "gen9" in choice.name.lower() or "gen9" in choice.value.lower()
+
+
+async def test_teamimport_autocomplete_empty_query_returns_min_of_formats_and_25():
+    """Empty query returns exactly min(len(SUPPORTED_FORMATS), 25) choices."""
+    from src.bot.constants import SUPPORTED_FORMATS
+
+    cog = make_cog()
+    interaction = make_interaction()
+
+    choices = await cog.teamimport_format_autocomplete(interaction, "")
+
+    assert len(choices) == min(len(SUPPORTED_FORMATS), 25)
 
 
 async def test_teamimport_autocomplete_empty_query_returns_up_to_25():
