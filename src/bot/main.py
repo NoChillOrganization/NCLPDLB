@@ -228,14 +228,18 @@ def _validate_credentials_file(path: Path) -> None:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
-        raise SystemExit(f"Google Sheets credentials at '{path}' are not valid JSON: {exc}") from exc
+        raise SystemExit(
+            f"Google Sheets credentials at '{path}' are not valid JSON: {exc}"
+        ) from exc
     if not isinstance(data, dict) or data.get("type") != "service_account":
         raise SystemExit(
-            f"'{path}' is not a service account key (expected \"type\": \"service_account\")."
+            f'\'{path}\' is not a service account key (expected "type": "service_account").'
         )
     missing = [f for f in _CREDS_REQUIRED_FIELDS if not data.get(f)]
     if missing:
-        raise SystemExit(f"Service account key '{path}' is missing: {', '.join(missing)}.")
+        raise SystemExit(
+            f"Service account key '{path}' is missing: {', '.join(missing)}."
+        )
 
 
 async def main() -> None:  # pragma: no cover

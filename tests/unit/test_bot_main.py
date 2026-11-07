@@ -22,7 +22,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _write_creds(tmp_path: Path, **overrides) -> Path:
-    data = json.loads((_REPO_ROOT / "credentials.json.example").read_text(encoding="utf-8"))
+    data = json.loads(
+        (_REPO_ROOT / "credentials.json.example").read_text(encoding="utf-8")
+    )
     data.update(overrides)
     p = tmp_path / "credentials.json"
     p.write_text(json.dumps(data), encoding="utf-8")
