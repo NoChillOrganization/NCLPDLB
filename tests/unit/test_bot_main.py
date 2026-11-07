@@ -1,16 +1,58 @@
 """Tests for src/bot/main.py — pure helper functions and bot lifecycle."""
 
+import json
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
+import pytest
 
 from src.bot.main import (
     _command_fingerprint,
+    _validate_credentials_file,
     drift_check_commands,
     DraftLeagueBot,
     COGS,
 )
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+# ── _validate_credentials_file ────────────────────────────────────────────────
+
+
+def _write_creds(tmp_path: Path, **overrides) -> Path:
+    data = json.loads((_REPO_ROOT / "credentials.json.example").read_text(encoding="utf-8"))
+    data.update(overrides)
+    p = tmp_path / "credentials.json"
+    p.write_text(json.dumps(data), encoding="utf-8")
+    return p
+
+
+def test_validate_credentials_accepts_example_shape(tmp_path):
+    _validate_credentials_file(_write_creds(tmp_path))
+
+
+def test_validate_credentials_missing_file(tmp_path):
+    with pytest.raises(SystemExit, match="not found"):
+        _validate_credentials_file(tmp_path / "nope.json")
+
+
+def test_validate_credentials_invalid_json(tmp_path):
+    p = tmp_path / "credentials.json"
+    p.write_text("{not json", encoding="utf-8")
+    with pytest.raises(SystemExit, match="not valid JSON"):
+        _validate_credentials_file(p)
+
+
+def test_validate_credentials_wrong_type(tmp_path):
+    with pytest.raises(SystemExit, match="not a service account"):
+        _validate_credentials_file(_write_creds(tmp_path, type="authorized_user"))
+
+
+def test_validate_credentials_missing_field_named(tmp_path):
+    with pytest.raises(SystemExit, match="client_email"):
+        _validate_credentials_file(_write_creds(tmp_path, client_email=""))
 
 
 # ── _command_fingerprint ──────────────────────────────────────────────────────
@@ -425,12 +467,12 @@ async def test_main_starts_bot_with_token():
     with (
         patch("src.bot.main.DraftLeagueBot") as MockBot,
         patch("src.bot.main._setup_logging"),
+        patch("src.bot.main._validate_credentials_file"),
         patch("src.bot.main.settings") as mock_settings,
     ):
         from pydantic import SecretStr
 
         mock_settings.discord_token = SecretStr("fake-token")
-        mock_settings.google_sheets_credentials_file.exists.return_value = True
 
         # Bot acts as async context manager
         mock_bot_instance = MagicMock()

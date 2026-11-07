@@ -13,7 +13,10 @@
   - Setup, Rules, Cover, Draft, Draft Board, Pool A/B Boards
   - Schedule, Match Stats, Standings, Pokemon Stats, MVP Race
   - Transactions, Playoffs, Pokédex (populated with all 1,025 Pokemon), Team Template, Data
-- ✅ **Configuration Files**: `.env` and `credentials.json` in place
+- ⚠️ **Configuration Files**: `.env` and `credentials.json` are per-machine and gitignored.
+  Neither is present in the repo checkout as of 2026-11-06. Copy `.env.example` to `.env` and
+  place your service-account key as `credentials.json` (see `credentials.json.example`,
+  `docs/DEPLOYMENT.md`).
 - ✅ **Spreadsheet ID**: set via `GOOGLE_SHEETS_SPREADSHEET_ID` in `.env`
 
 ### Tests

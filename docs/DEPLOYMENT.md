@@ -16,9 +16,13 @@ How to run the Pokemon Draft League Bot — standalone exe or from source.
 2. **Google Sheets Setup:**
    - Create Google Cloud project: <https://console.cloud.google.com>
    - Enable **Google Sheets API**
-   - Create service account → download `credentials.json`
+   - Enable **Google Drive API** as well (gspread needs it to open sheets)
+   - Create service account → Keys → Add key → JSON → save it as `credentials.json`
+     in the project root (or elsewhere, and point `GOOGLE_SHEETS_CREDENTIALS_FILE` at it).
+     `credentials.json.example` shows the expected shape; the real file is gitignored — never commit it.
    - Create a new Google Sheet
-   - Share it with the service account email (Editor access)
+   - Share it with the service account email (the `client_email` in the JSON; Editor access)
+   - The bot validates the key at startup and names any missing field
    - Copy the spreadsheet ID from the URL
 
 3. **Pokemon Data Seed (first run only):**
