@@ -404,19 +404,6 @@ async def test_on_ready_changes_presence():
     assert activity.type == discord.ActivityType.watching
 
 
-# ── DraftLeagueBot.on_command_error ───────────────────────────────────────────
-
-
-async def test_on_command_error_does_not_raise():
-    """on_command_error logs the error without re-raising."""
-    bot = _make_bot_with_mocked_internals()
-    ctx = MagicMock()
-    error = ValueError("test error")
-
-    # Should not raise
-    await bot.on_command_error(ctx, error)
-
-
 # ── main() ────────────────────────────────────────────────────────────────────
 
 

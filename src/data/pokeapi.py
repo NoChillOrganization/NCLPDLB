@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 
 from src.config import settings
 from src.data.models import Pokemon, PokemonStats
 
 log = logging.getLogger(__name__)
 
-DATA_DIR = settings.data_dir
+DATA_DIR: Path | None = None  # None -> settings.data_dir, resolved on first use
 
 
 class PokemonDatabase:
@@ -21,11 +22,10 @@ class PokemonDatabase:
 
     def __init__(self) -> None:
         self._db: dict[str, Pokemon] = {}  # name_lower -> Pokemon
-        self._by_dex: dict[int, Pokemon] = {}
 
     def load(self) -> None:
         """Load all Pokemon from local JSON cache."""
-        pokemon_file = DATA_DIR / "pokemon.json"
+        pokemon_file = (DATA_DIR or settings.data_dir) / "pokemon.json"
         if not pokemon_file.exists():
             log.warning(
                 f"Pokemon data file not found at {pokemon_file}. Run seed script first."
@@ -58,7 +58,6 @@ class PokemonDatabase:
             )
             key = p.name.lower().replace(" ", "-").replace("'", "").replace(".", "")
             self._db[key] = p
-            self._by_dex[p.national_dex] = p
         log.info(f"Loaded {len(self._db)} Pokemon from {pokemon_file}")
 
     def find(self, name: str) -> Pokemon | None:
@@ -72,22 +71,6 @@ class PokemonDatabase:
             if k.startswith(key) or key.startswith(k):
                 return p
         return None
-
-    def find_by_dex(self, dex: int) -> Pokemon | None:
-        return self._by_dex.get(dex)
-
-    def filter_by_tier(self, tier: str) -> list[Pokemon]:
-        return [p for p in self._db.values() if p.showdown_tier.lower() == tier.lower()]
-
-    def filter_by_generation(self, gen: int) -> list[Pokemon]:
-        return [p for p in self._db.values() if p.generation == gen]
-
-    def filter_vgc_legal(self) -> list[Pokemon]:
-        return [p for p in self._db.values() if p.vgc_legal]
-
-    def filter_console_legal(self, game: str) -> list[Pokemon]:
-        """Return Pokemon legal in a specific console game (sv, swsh, bdsp, legends)."""
-        return [p for p in self._db.values() if p.console_legal.get(game, False)]
 
     def search(self, query: str, limit: int = 25) -> list[Pokemon]:
         """Autocomplete search — returns up to `limit` matching Pokemon."""

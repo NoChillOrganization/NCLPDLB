@@ -13,13 +13,11 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 # Resolve project root (2 levels up from src/bot/ → pokemon-draft-bot/)
 project_root = str(Path(SPECPATH).parent.parent)
 
-# Include credentials.json only if it exists at project root
+# credentials.json and .env are deliberately NOT bundled (secrets); place them
+# next to the exe at runtime.
 datas = [
     (str(Path(project_root) / 'data' / 'pokemon.json'), 'data'),
 ]
-creds = Path(project_root) / 'credentials.json'
-if creds.exists():
-    datas.append((str(creds), '.'))
 
 a = Analysis(
     ['main.py'],
@@ -41,6 +39,8 @@ a = Analysis(
         'src.bot.cogs.admin',
         'src.bot.cogs.stats',
         'src.bot.cogs.sheet',
+        'src.bot.cogs.misc',
+        'src.bot.cogs.ml',
         'src.bot.views.draft_view',
         'src.bot.views.team_view',
         'src.services.draft_service',
@@ -50,6 +50,8 @@ a = Analysis(
         'src.services.battle_sim',
         'src.services.video_service',
         'src.services.notification_service',
+        'src.data.db',
+        'src.data.learning_sheets',
         'src.data.models',
         'src.data.pokeapi',
         'src.data.sheets',

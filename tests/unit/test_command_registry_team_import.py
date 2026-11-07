@@ -1,5 +1,5 @@
 """
-Phase 9 test suite — Command Registry & Team Import.
+Command registry and team import tests.
 
 Test stubs are created first (Wave 0) to establish Nyquist compliance.
 Implementations in later plans replace the pytest.fail() bodies.

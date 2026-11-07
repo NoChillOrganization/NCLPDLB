@@ -352,11 +352,10 @@ class StatsCog(commands.Cog, name="Stats"):
         showdown_name: str,
         format: str | None = None,
     ) -> None:
-        await interaction.response.defer(thinking=True)
-
         fmt = format if format else "gen9randombattle"
 
-        # Check if a trained model is available for this format
+        # Check if a trained model is available for this format. Done before
+        # defer so the "no model" reply can be ephemeral.
         from src.ml.showdown_player import best_model_for_format
 
         model_path = best_model_for_format(fmt)
@@ -365,27 +364,22 @@ class StatsCog(commands.Cog, name="Stats"):
             embed = discord.Embed(
                 title="No Trained Model Available",
                 description=(
-                    f"The bot hasn't been trained for **{fmt}** yet.\n\n"
-                    "Available formats after training:\n"
-                    + "\n".join(f"• `{f}`" for f in SPAR_FORMATS)
+                    f"No trained model is installed for **{fmt}**.\n\n"
+                    "Pick a format from the autocomplete list, or ask an admin "
+                    "whether a model for this one is available."
                 ),
                 color=discord.Color.orange(),
             )
-            embed.set_footer(
-                text="Run: python -m src.ml.train_policy --format gen9randombattle"
-            )
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        # Bot Showdown credentials from settings
-        try:
-            from src.config import settings
+        await interaction.response.defer(thinking=True)
 
-            bot_username = getattr(settings, "showdown_username", None)
-            bot_password = getattr(settings, "showdown_password", None)
-        except Exception:
-            bot_username = None
-            bot_password = None
+        # Bot Showdown credentials from settings
+        from src.config import settings
+
+        bot_username = settings.showdown_username
+        bot_password = settings.showdown_password
 
         # SecretStr has no __bool__/__len__ override, so SecretStr("") is truthy —
         # unwrap before checking emptiness or an unset password slips past this guard.
@@ -537,7 +531,7 @@ async def _run_spar_challenge(
         log.error(f"[/spar] Live challenge failed (model error): {exc}", exc_info=True)
         try:
             await interaction.user.send(
-                f"The spar battle couldn't start: `{exc}`",
+                "The spar battle couldn't start (model error). An admin can check the bot logs.",
             )
         except Exception:
             log.warning("[/spar] Could not DM result to user %s", interaction.user.id)
@@ -545,7 +539,7 @@ async def _run_spar_challenge(
         log.error(f"[/spar] Live challenge failed: {exc}", exc_info=True)
         try:
             await interaction.user.send(
-                f"The spar battle encountered an error: `{exc}`\n"
+                "The spar battle encountered an error.\n"
                 "Make sure your Showdown username is correct and you are online.",
             )
         except Exception:
