@@ -32,6 +32,7 @@ from src.config import settings
 
 log = logging.getLogger(__name__)
 
+
 # Strip SQLAlchemy driver prefix so we get a plain filesystem path
 # e.g. "sqlite+aiosqlite:///path/to/db" → "path/to/db"
 def _db_path() -> Path:
