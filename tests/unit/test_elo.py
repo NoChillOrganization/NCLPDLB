@@ -338,3 +338,65 @@ async def test_loser_sheets_row_saved_when_winner_sheets_save_fails():
         await svc.record_match("g_sheets_each", "w", "l")
 
     assert saved == ["w", "l"]
+
+
+# ── atomic SQLite writes ──────────────────────────────────────
+
+
+@pytest.fixture
+def tmp_db(tmp_path):
+    from src.data import db
+
+    with patch.object(db, "_db_path", return_value=tmp_path / "t.db"):
+        yield db
+
+
+async def _rows(db):
+    await db.init_db()
+    return {r["player_id"]: r for r in await db.load_all_elo()}
+
+
+@pytest.mark.asyncio
+async def test_transaction_rolls_back_and_reraises(tmp_db):
+    await tmp_db.init_db()
+    with pytest.raises(RuntimeError, match="boom"):
+        async with tmp_db.transaction() as conn:
+            await tmp_db.save_elo("g", "p", 1100, 1, 0, 1, "P", conn)
+            raise RuntimeError("boom")
+    assert await tmp_db.load_all_elo() == []
+
+
+@pytest.mark.asyncio
+async def test_record_match_failure_after_first_write_rolls_back(tmp_db):
+    await tmp_db.init_db()
+    _seed_pair("g_atomic")
+    svc = EloService()
+    real = svc._save_player_to_db
+
+    async def fail_on_loser(player, conn=None):
+        await real(player, conn)
+        if player.player_id == "l":
+            raise RuntimeError("disk")
+
+    with (
+        patch.object(svc, "_save_player"),
+        patch.object(svc, "_save_player_to_db", side_effect=fail_on_loser),
+    ):
+        with pytest.raises(RuntimeError):
+            await svc.record_match("g_atomic", "w", "l")
+
+    assert await _rows(tmp_db) == {}
+
+
+@pytest.mark.asyncio
+async def test_record_match_commits_both_rows_once(tmp_db):
+    await tmp_db.init_db()
+    _seed_pair("g_ok")
+    svc = EloService()
+    with patch.object(svc, "_save_player"):
+        result = await svc.record_match("g_ok", "w", "l")
+
+    rows = await _rows(tmp_db)
+    assert set(rows) == {"w", "l"}
+    assert (rows["w"]["elo"], rows["w"]["wins"]) == (result.winner_new_elo, 1)
+    assert (rows["l"]["elo"], rows["l"]["losses"]) == (result.loser_new_elo, 1)

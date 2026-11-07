@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from src.config import settings
 from src.data.db import load_all_elo, save_elo as _db_save_elo
+from src.data.db import transaction as db_transaction
 from src.data.models import PlayerElo
 from src.data.sheets import Tab, sheets
 
@@ -69,8 +70,9 @@ class EloService:
         if rows:
             log.info("Restored %d ELO record(s) from SQLite", len(rows))
 
-    async def _save_player_to_db(self, player: PlayerElo) -> None:
+    async def _save_player_to_db(self, player: PlayerElo, conn=None) -> None:
         await _db_save_elo(
+            conn=conn,
             guild_id=player.guild_id,
             player_id=player.player_id,
             elo=player.elo,
@@ -145,9 +147,11 @@ class EloService:
             loser.streak = loser.streak - 1 if loser.streak <= 0 else -1
 
             # SQLite is the durable record (restored on startup): write it first and
-            # raise on failure so nothing is half-saved.
-            await self._save_player_to_db(winner)
-            await self._save_player_to_db(loser)
+            # raise on failure so nothing is half-saved. One transaction: both rows
+            # commit together or neither does.
+            async with db_transaction() as conn:
+                await self._save_player_to_db(winner, conn)
+                await self._save_player_to_db(loser, conn)
             _elo_cache[guild_id][winner_id] = winner
             _elo_cache[guild_id][loser_id] = loser
 
