@@ -11,11 +11,17 @@ from discord import app_commands
 from discord.ext import commands
 
 from src.bot.permissions import ROLE_COACH, ROLE_GUILDMASTER, ROLE_MOD, require_role
-from src.config import settings
+from src.config import PROJECT_ROOT, settings
 
 log = logging.getLogger(__name__)
 
-_CSV_PATH = Path(__file__).parent.parent.parent.parent / "discord_commands.csv"
+_CSV_PATH = PROJECT_ROOT / "discord_commands.csv"
+
+
+def read_command_rows(csv_path: Path) -> list[dict[str, str]]:
+    """Parse discord_commands.csv (shared by the help embed and main's drift check)."""
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
 
 
 def build_help_embed(csv_path: Path = _CSV_PATH) -> discord.Embed:
@@ -26,12 +32,11 @@ def build_help_embed(csv_path: Path = _CSV_PATH) -> discord.Embed:
         return embed
 
     categories: dict[str, list[str]] = {}
-    with open(csv_path, newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            cat = row.get("Category", "Other")
-            cmd = row.get("Command", "")
-            if cmd:
-                categories.setdefault(cat, []).append(cmd)
+    for row in read_command_rows(csv_path):
+        cat = row.get("Category", "Other")
+        cmd = row.get("Command", "")
+        if cmd:
+            categories.setdefault(cat, []).append(cmd)
 
     for cat, cmds in categories.items():
         value = "\n".join(cmds)[:1024]
@@ -111,7 +116,7 @@ class MiscCog(commands.Cog, name="Misc"):
         await interaction.response.defer(ephemeral=True)
         from src.ml.train_all import TRAINING_MAP
 
-        policy_dir = Path(__file__).parents[3] / settings.ml_policy_dir
+        policy_dir = PROJECT_ROOT / settings.ml_policy_dir
         lines: list[str] = []
         for fmt in TRAINING_MAP:
             model_path = policy_dir / fmt / "final_model.zip"
