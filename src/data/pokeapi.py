@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 
 from src.config import settings
 from src.data.models import Pokemon, PokemonStats
 
 log = logging.getLogger(__name__)
 
-DATA_DIR = settings.data_dir
+DATA_DIR: Path | None = None  # None -> settings.data_dir, resolved on first use
 
 
 class PokemonDatabase:
@@ -25,7 +26,7 @@ class PokemonDatabase:
 
     def load(self) -> None:
         """Load all Pokemon from local JSON cache."""
-        pokemon_file = DATA_DIR / "pokemon.json"
+        pokemon_file = (DATA_DIR or settings.data_dir) / "pokemon.json"
         if not pokemon_file.exists():
             log.warning(
                 f"Pokemon data file not found at {pokemon_file}. Run seed script first."

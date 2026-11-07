@@ -34,8 +34,10 @@ log = logging.getLogger(__name__)
 
 # Strip SQLAlchemy driver prefix so we get a plain filesystem path
 # e.g. "sqlite+aiosqlite:///path/to/db" → "path/to/db"
-_raw_url: str = settings.database_url
-_DB_PATH: Path = Path(re.sub(r"^sqlite(?:\+\w+)?:///", "", _raw_url))
+def _db_path() -> Path:
+    # Resolved on first use, not at import, so a bad .env fails in main's validation.
+    return Path(re.sub(r"^sqlite(?:\+\w+)?:///", "", settings.database_url))
+
 
 # ── Shared connection state ───────────────────────────────────────────────────
 
@@ -80,13 +82,14 @@ async def _get_conn() -> aiosqlite.Connection:
             # callers see the fresh, unbound lock.
             _open_lock = asyncio.Lock()
         if _conn is None:  # double-checked after acquiring lock
-            _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-            _conn = await aiosqlite.connect(_DB_PATH)
+            db_path = _db_path()
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            _conn = await aiosqlite.connect(db_path)
             _conn.row_factory = aiosqlite.Row
             await _conn.execute("PRAGMA journal_mode=WAL")
             await _conn.commit()
             _conn_loop = running
-            log.debug("aiosqlite connection opened at %s (M19)", _DB_PATH)
+            log.debug("aiosqlite connection opened at %s (M19)", db_path)
     return _conn
 
 
@@ -117,7 +120,7 @@ async def init_db() -> None:
             );
         """)
         await conn.commit()
-    log.debug("SQLite tables initialised at %s", _DB_PATH)
+    log.debug("SQLite tables initialised at %s", _db_path())
 
 
 async def close_db() -> None:
