@@ -1,0 +1,63 @@
+name: Sync Watchdog
+
+# Production Sync runs on a self-hosted runner. If that runner is offline the runs sit
+# queued for 24 h and end "cancelled": no job starts, so sync-prod.yml's own failure
+# alert never fires. This job runs on a GitHub-hosted runner and opens an issue when
+# there has been no successful Production Sync for MAX_AGE_DAYS.
+on:
+  schedule:
+    - cron: '30 14 * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  watchdog:
+    name: Check last successful Production Sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      MAX_AGE_DAYS: '3'
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const maxAgeDays = Number(process.env.MAX_AGE_DAYS);
+            const label = 'sync-stale';
+
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner, repo,
+              workflow_id: 'sync-prod.yml',
+              status: 'success',
+              per_page: 1,
+            });
+            const last = data.workflow_runs[0];
+            const ageDays = last
+              ? (Date.now() - new Date(last.created_at).getTime()) / 86_400_000
+              : Infinity;
+            core.info(`Last successful Production Sync: ${last ? last.created_at : 'never'}`);
+            if (ageDays <= maxAgeDays) return;
+
+            // One open issue at a time, so a long outage does not file one per day.
+            const open = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: label, per_page: 1,
+            });
+            if (open.data.length > 0) return;
+
+            const lastText = last ? last.created_at : 'never';
+            await github.rest.issues.create({
+              owner, repo,
+              title: `Production Sync has not succeeded in over ${maxAgeDays} days`,
+              labels: [label],
+              body: [
+                `Last successful run: **${lastText}**.`,
+                '',
+                'Most likely the self-hosted runner is offline, so scheduled runs queue and are',
+                'cancelled after 24 h without ever starting. Check',
+                `${context.serverUrl}/${owner}/${repo}/settings/actions/runners and the runner`,
+                'service on the host, then re-run "Production Sync" from the Actions tab.',
+              ].join('\n'),
+            });
