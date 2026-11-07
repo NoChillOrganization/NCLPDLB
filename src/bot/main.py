@@ -214,16 +214,38 @@ def _validate_settings() -> None:
         ) from exc
 
 
+_CREDS_REQUIRED_FIELDS = ("client_email", "private_key", "token_uri")
+
+
+def _validate_credentials_file(path: Path) -> None:
+    """Fail fast, with an actionable message, if the service-account JSON is unusable."""
+    if not path.is_file():
+        raise SystemExit(
+            f"Google Sheets credentials not found at '{path}'. "
+            "Download a service account JSON key (see credentials.json.example for the "
+            "expected shape) and place it there, or set GOOGLE_SHEETS_CREDENTIALS_FILE in .env."
+        )
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SystemExit(
+            f"Google Sheets credentials at '{path}' are not valid JSON: {exc}"
+        ) from exc
+    if not isinstance(data, dict) or data.get("type") != "service_account":
+        raise SystemExit(
+            f'\'{path}\' is not a service account key (expected "type": "service_account").'
+        )
+    missing = [f for f in _CREDS_REQUIRED_FIELDS if not data.get(f)]
+    if missing:
+        raise SystemExit(
+            f"Service account key '{path}' is missing: {', '.join(missing)}."
+        )
+
+
 async def main() -> None:  # pragma: no cover
     _validate_settings()
     _setup_logging()
-    creds = settings.google_sheets_credentials_file
-    if not creds.exists():
-        raise FileNotFoundError(
-            f"Google Sheets credentials not found at '{creds}'. "
-            "Download your service account JSON and place it there, or set "
-            "GOOGLE_SHEETS_CREDENTIALS_FILE in .env."
-        )
+    _validate_credentials_file(settings.google_sheets_credentials_file)
     bot = DraftLeagueBot()
     async with bot:
         await bot.start(settings.discord_token.get_secret_value())
