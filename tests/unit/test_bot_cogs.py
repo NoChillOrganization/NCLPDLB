@@ -2661,7 +2661,7 @@ async def test_pull_models_rejects_missing_or_wrong_checksum(digest):
 
 
 def test_digest_matches_is_case_insensitive_and_fails_closed():
-    from src.bot.cogs.admin_training import _digest_matches
+    from src.services.model_pull_service import _digest_matches
 
     good = _sha256_digest(b"abc")
     assert _digest_matches(b"abc", good)

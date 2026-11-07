@@ -8,20 +8,19 @@ logic those commands kick off via _create_background_task live here.
 """
 
 import asyncio
-import hashlib
-import hmac
 import logging
-import os
 import sys
 from collections import deque
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 import discord
 
-from src.config import settings
+from src.config import PROJECT_ROOT, settings
 from src.ml.showdown_modes import MODE_LOCALHOST
 from src.ml.train_all import TRAINING_MAP
 from src.services.draft_service import DraftService
+from src.services.model_pull_service import _chunk_lines
 
 log = logging.getLogger(__name__)
 
@@ -58,6 +57,22 @@ def _model_exists(results_dir: Path, fmt: str) -> bool:
     )
 
 
+async def _try_dm(
+    user: discord.abc.User,
+    text: str = "",
+    *,
+    embed: discord.Embed | None = None,
+) -> None:
+    """Best-effort DM; failure (DMs closed, etc.) is logged and swallowed."""
+    try:
+        if embed is not None:
+            await user.send(embed=embed)
+        else:
+            await user.send(text)
+    except Exception:
+        log.debug("Best-effort Discord notification failed", exc_info=True)
+
+
 async def _try_edit(msg: discord.Message | None, embed: discord.Embed) -> None:
     """Edit a Discord message's embed, silently ignoring errors."""
     if msg:
@@ -65,6 +80,33 @@ async def _try_edit(msg: discord.Message | None, embed: discord.Embed) -> None:
             await msg.edit(embed=embed)
         except Exception:
             log.debug("Best-effort Discord notification failed", exc_info=True)
+
+
+async def _stream_training(
+    proc: asyncio.subprocess.Process,
+    collected: deque[str],
+    latest_steps: list[int],
+    parse_timestep_progress: Callable[[str], int | None],
+    on_progress: Callable[[int], Awaitable[None]],
+) -> None:
+    """Stream proc stdout into `collected`; track steps; call on_progress every 60 s.
+
+    `latest_steps` is a one-element holder so callers still see the last value
+    if the stream raises midway.
+    """
+    last_edit_time = asyncio.get_running_loop().time()
+    if proc.stdout is None:
+        raise RuntimeError("subprocess stdout pipe is None")
+    async for raw_line in proc.stdout:
+        line = raw_line.decode(errors="replace").rstrip()
+        collected.append(line)
+        steps = parse_timestep_progress(line)
+        if steps is not None:
+            latest_steps[0] = steps
+        now = asyncio.get_running_loop().time()
+        if now - last_edit_time >= 60:
+            await on_progress(latest_steps[0])
+            last_edit_time = now
 
 
 # ── Background training tasks ─────────────────────────────────────────────────
@@ -95,7 +137,7 @@ async def _run_training(
         preflight_check,
     )
 
-    project_root = Path(__file__).parents[3]
+    project_root = PROJECT_ROOT
     save_dir = project_root / settings.ml_policy_dir
 
     # ── 0. Whitelist validation ─────────────────────────────────────
@@ -114,12 +156,10 @@ async def _run_training(
 
     if fixable:
         fix_lines = "\n".join(f"• {e['description']}" for e in fixable)
-        try:
-            await interaction.user.send(
-                f"⚠️ **Preflight issues detected for `{fmt}` — auto-fixing…**\n{fix_lines}"
-            )
-        except Exception:
-            log.debug("Best-effort Discord notification failed", exc_info=True)
+        await _try_dm(
+            interaction.user,
+            f"⚠️ **Preflight issues detected for `{fmt}` — auto-fixing…**\n{fix_lines}",
+        )
         for err, ok, msg in apply_all_fixes(fixable, fmt, save_dir, sys.executable):
             log.info(f"[admin-train] preflight fix: {err['type']} → {ok}: {msg}")
 
@@ -132,12 +172,10 @@ async def _run_training(
         )
         blocked_embed.set_footer(text="Fix the blocking issue(s) above, then retry.")
         await _try_edit(channel_msg, blocked_embed)
-        try:
-            await interaction.user.send(
-                f"❌ **Training `{fmt}` cannot start — blocking issue(s):**\n{block_lines}"
-            )
-        except Exception:
-            log.debug("Best-effort Discord notification failed", exc_info=True)
+        await _try_dm(
+            interaction.user,
+            f"❌ **Training `{fmt}` cannot start — blocking issue(s):**\n{block_lines}",
+        )
         return  # abort
 
     # ── 2. Launch subprocess ────────────────────────────────────────
@@ -148,7 +186,7 @@ async def _run_training(
         attempt += 1
         label = f"`{fmt}`" + (f" (retry {attempt - 1})" if attempt > 1 else "")
         collected: deque[str] = deque(maxlen=500)
-        latest_steps = 0
+        latest_steps = [0]
 
         # Send initial progress DM
         progress_embed = _build_progress_embed(fmt, 0, timesteps, attempt)
@@ -182,28 +220,15 @@ async def _run_training(
                 stderr=asyncio.subprocess.STDOUT,
             )
 
-            last_edit_time = asyncio.get_running_loop().time()
-
-            # Stream stdout line-by-line
-            if proc.stdout is None:
-                raise RuntimeError("subprocess stdout pipe is None")
-            async for raw_line in proc.stdout:
-                line = raw_line.decode(errors="replace").rstrip()
-                collected.append(line)
-
-                steps = parse_timestep_progress(line)
-                if steps is not None:
-                    latest_steps = steps
-
+            async def on_progress(steps: int) -> None:
                 # Edit progress embed every 60 s (both channel and DM)
-                now = asyncio.get_running_loop().time()
-                if now - last_edit_time >= 60:
-                    prog_embed = _build_progress_embed(
-                        fmt, latest_steps, timesteps, attempt
-                    )
-                    await _try_edit(dm_msg, prog_embed)
-                    await _try_edit(channel_msg, prog_embed)
-                    last_edit_time = now
+                prog_embed = _build_progress_embed(fmt, steps, timesteps, attempt)
+                await _try_edit(dm_msg, prog_embed)
+                await _try_edit(channel_msg, prog_embed)
+
+            await _stream_training(
+                proc, collected, latest_steps, parse_timestep_progress, on_progress
+            )
 
             await proc.wait()
             ok = proc.returncode == 0
@@ -227,10 +252,7 @@ async def _run_training(
                 description=f"Format: {label}\n```\n{output[-1200:]}\n```",
                 color=discord.Color.green(),
             )
-            try:
-                await interaction.user.send(embed=result_embed)
-            except Exception:
-                log.debug("Best-effort Discord notification failed", exc_info=True)
+            await _try_dm(interaction.user, embed=result_embed)
             return
 
         # ── 4. Failure → diagnose + fix ─────────────────────────────
@@ -248,14 +270,12 @@ async def _run_training(
             fix_lines = "\n".join(
                 f"{'✅' if ok2 else '❌'} {msg}" for _, ok2, msg in fix_results
             )
-            try:
-                await interaction.user.send(
-                    f"⚠️ **Training {label} failed. Errors detected:**\n{err_lines}\n\n"
-                    f"**Auto-fix applied:**\n{fix_lines}\n\n"
-                    "🔄 Retrying…"
-                )
-            except Exception:
-                log.debug("Best-effort Discord notification failed", exc_info=True)
+            await _try_dm(
+                interaction.user,
+                f"⚠️ **Training {label} failed. Errors detected:**\n{err_lines}\n\n"
+                f"**Auto-fix applied:**\n{fix_lines}\n\n"
+                "🔄 Retrying…",
+            )
             log.info(
                 f"[admin-train] {fmt}: attempt {attempt} failed, applied fixes, retrying"
             )
@@ -264,7 +284,9 @@ async def _run_training(
         # No fix possible — final failure
         await _try_edit(
             channel_msg,
-            _build_progress_embed(fmt, latest_steps, timesteps, attempt, failed=True),
+            _build_progress_embed(
+                fmt, latest_steps[0], timesteps, attempt, failed=True
+            ),
         )
         snippet = output[-1200:]
         fail_embed = discord.Embed(
@@ -276,10 +298,7 @@ async def _run_training(
             ),
             color=discord.Color.red(),
         )
-        try:
-            await interaction.user.send(embed=fail_embed)
-        except Exception:
-            log.debug("Best-effort Discord notification failed", exc_info=True)
+        await _try_dm(interaction.user, embed=fail_embed)
         return
 
 
@@ -297,7 +316,7 @@ async def _run_training_all(
     """
     from src.ml.training_doctor import parse_timestep_progress, preflight_check
 
-    project_root = Path(__file__).parents[3]
+    project_root = PROJECT_ROOT
     save_dir = project_root / settings.ml_policy_dir
 
     results_dir = project_root / "data" / "ml" / "results"
@@ -325,22 +344,18 @@ async def _run_training_all(
         )
         blocked_embed.set_footer(text="Fix the blocking issue(s) above, then retry.")
         await _try_edit(channel_msg, blocked_embed)
-        try:
-            await interaction.user.send(
-                f"❌ **Train-All cannot start — blocking issue(s):**\n{block_lines}"
-            )
-        except Exception:
-            log.debug("Best-effort Discord notification failed", exc_info=True)
+        await _try_dm(
+            interaction.user,
+            f"❌ **Train-All cannot start — blocking issue(s):**\n{block_lines}",
+        )
         return
 
-    try:
-        await interaction.user.send(
-            f"🚀 **Train-All started** — {len(formats_to_run)} format(s) queued "
-            f"({skipped_count} already trained, skipped).\n"
-            f"Steps per format: `{timesteps:,}`. You'll receive a DM per format + final summary."
-        )
-    except Exception:
-        log.debug("Best-effort Discord notification failed", exc_info=True)
+    await _try_dm(
+        interaction.user,
+        f"🚀 **Train-All started** — {len(formats_to_run)} format(s) queued "
+        f"({skipped_count} already trained, skipped).\n"
+        f"Steps per format: `{timesteps:,}`. You'll receive a DM per format + final summary.",
+    )
 
     results: dict[str, str] = {}
     n_done = 0
@@ -363,7 +378,7 @@ async def _run_training_all(
             cmd += ["--server", server]
 
         collected: deque[str] = deque(maxlen=500)
-        latest_steps = 0
+        latest_steps = [0]
 
         # Update channel bar to show current format starting
         await _try_edit(
@@ -395,35 +410,28 @@ async def _run_training_all(
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
             )
-            last_edit_time = asyncio.get_running_loop().time()
 
-            if proc.stdout is None:
-                raise RuntimeError("subprocess stdout pipe is None")
-            async for raw_line in proc.stdout:
-                line = raw_line.decode(errors="replace").rstrip()
-                collected.append(line)
-                steps = parse_timestep_progress(line)
-                if steps is not None:
-                    latest_steps = steps
-                now = asyncio.get_running_loop().time()
-                if now - last_edit_time >= 60:
-                    await _try_edit(
-                        dm_msg,
-                        _build_progress_embed(fmt, latest_steps, timesteps, attempt=1),
-                    )
-                    await _try_edit(
-                        channel_msg,
-                        _build_queue_embed(
-                            len(formats_to_run),
-                            skipped_count,
-                            timesteps,
-                            current_fmt=fmt,
-                            current_steps=latest_steps,
-                            n_done=n_done,
-                            n_failed=n_failed,
-                        ),
-                    )
-                    last_edit_time = now
+            async def on_progress(steps: int) -> None:
+                await _try_edit(
+                    dm_msg,
+                    _build_progress_embed(fmt, steps, timesteps, attempt=1),
+                )
+                await _try_edit(
+                    channel_msg,
+                    _build_queue_embed(
+                        len(formats_to_run),
+                        skipped_count,
+                        timesteps,
+                        current_fmt=fmt,
+                        current_steps=steps,
+                        n_done=n_done,
+                        n_failed=n_failed,
+                    ),
+                )
+
+            await _stream_training(
+                proc, collected, latest_steps, parse_timestep_progress, on_progress
+            )
 
             await proc.wait()
             ok = proc.returncode == 0
@@ -438,7 +446,7 @@ async def _run_training_all(
             dm_msg,
             _build_progress_embed(
                 fmt,
-                timesteps if ok else latest_steps,
+                timesteps if ok else latest_steps[0],
                 timesteps,
                 attempt=1,
                 done=ok,
@@ -586,165 +594,3 @@ def _build_progress_embed(
         desc += "\n_Updates every 60 seconds. You'll get a DM when done._"
 
     return discord.Embed(title=title, description=desc, color=color)
-
-
-def _chunk_lines(lines: list[str], limit: int = 1024) -> list[str]:
-    """Split *lines* into joined chunks each ≤ *limit* characters.
-
-    Used to build Discord embed fields whose values must not exceed 1024 chars.
-    """
-    chunks: list[str] = []
-    current: list[str] = []
-    current_len = 0
-    for line in lines:
-        needed = len(line) + (1 if current else 0)  # +1 for the joining newline
-        if current_len + needed > limit:
-            if current:
-                chunks.append("\n".join(current))
-            current = [line]
-            current_len = len(line)
-        else:
-            current.append(line)
-            current_len += needed
-    if current:
-        chunks.append("\n".join(current))
-    return chunks
-
-
-def _digest_matches(content: bytes, digest: str | None) -> bool:
-    """True if `content` hashes to `digest` ('sha256:<hex>', as in the GitHub asset API).
-
-    A missing or unsupported digest fails closed.
-    """
-    algorithm, _, expected = (digest or "").partition(":")
-    if algorithm != "sha256" or not expected:
-        return False
-    return hmac.compare_digest(hashlib.sha256(content).hexdigest(), expected.lower())
-
-
-async def _pull_models(
-    interaction: discord.Interaction,
-    fmt: str | None,
-    release_tag: str | None,
-) -> None:
-    """Background task: download trained model zips from a GitHub Release."""
-    import httpx
-
-    repo = settings.github_repo
-    headers: dict[str, str] = {
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
-    if settings.github_token.get_secret_value():
-        headers["Authorization"] = f"Bearer {settings.github_token.get_secret_value()}"
-
-    project_root = Path(__file__).parents[3]
-    policy_dir = project_root / settings.ml_policy_dir
-    formats_to_download = [fmt] if fmt else list(TRAINING_MAP.keys())
-
-    try:
-        async with httpx.AsyncClient(
-            headers=headers, follow_redirects=True, timeout=300
-        ) as client:
-            # Resolve release
-            # Treat "latest" (typed literally) the same as omitting the tag —
-            # both fall through to find the newest ml-models-r* release.
-            specific_tag = release_tag and release_tag.lower() not in ("latest", "")
-            if specific_tag:
-                resp = await client.get(
-                    f"https://api.github.com/repos/{repo}/releases/tags/{release_tag}"
-                )
-            else:
-                resp = await client.get(f"https://api.github.com/repos/{repo}/releases")
-                resp.raise_for_status()
-                releases = resp.json()
-                ml_releases = [
-                    r for r in releases if r["tag_name"].startswith("ml-models-r")
-                ]
-                ml_releases.sort(key=lambda r: r["created_at"], reverse=True)
-                if not ml_releases:
-                    await interaction.followup.send(
-                        "No `ml-models-r*` releases found on GitHub. Run the Train ML Models workflow first.",
-                        ephemeral=True,
-                    )
-                    return
-                resp = await client.get(
-                    f"https://api.github.com/repos/{repo}/releases/{ml_releases[0]['id']}"
-                )
-
-            resp.raise_for_status()
-            release = resp.json()
-            tag = release["tag_name"]
-            assets: list[dict] = release.get("assets", [])
-            asset_map = {a["name"]: a for a in assets}
-
-            results: dict[str, str] = {}
-            for target_fmt in formats_to_download:
-                asset_name = f"{target_fmt}_final_model.zip"
-                asset = asset_map.get(asset_name)
-                if asset is None:
-                    results[target_fmt] = "not in release"
-                    continue
-
-                save_path = policy_dir / target_fmt / "final_model.zip"
-                save_path.parent.mkdir(parents=True, exist_ok=True)
-                try:
-                    # Use the asset API URL (not browser_download_url) so that
-                    # private-repo assets are fetched with the PAT.  GitHub 302s
-                    # to a signed objects.githubusercontent.com URL; httpx follows
-                    # the redirect automatically (follow_redirects=True above) and
-                    # drops the Authorization header on the cross-host hop.
-                    dl = await client.get(
-                        asset["url"],
-                        headers={"Accept": "application/octet-stream"},
-                    )
-                    dl.raise_for_status()
-                    # The zip is unpickled by PPO.load, so only install bytes that match
-                    # the digest GitHub recorded for the asset.
-                    if not _digest_matches(dl.content, asset.get("digest")):
-                        results[target_fmt] = "❌ checksum missing or mismatched"
-                        continue
-                    # Write beside the target and rename, so an interrupted download
-                    # cannot replace a working model with a truncated one.
-                    part = save_path.with_suffix(".zip.part")
-                    part.write_bytes(dl.content)
-                    os.replace(part, save_path)
-                    size_kb = len(dl.content) // 1024
-                    results[target_fmt] = f"✅ {size_kb} KB"
-                except Exception as exc:
-                    results[target_fmt] = f"❌ {exc}"
-
-    except Exception as exc:
-        # Download can take up to 300 s — DM in case webhook token expired.
-        msg = f"❌ GitHub API error: `{exc}`"
-        try:
-            await interaction.followup.send(msg, ephemeral=True)
-        except discord.NotFound:
-            await interaction.user.send(msg)
-        return
-
-    ok = sum(1 for v in results.values() if v.startswith("✅"))
-    fail = len(results) - ok
-    result_lines = [f"`{f}` — {s}" for f, s in results.items()]
-    embed = discord.Embed(
-        title=f"Model Download — {tag}",
-        color=discord.Color.green() if fail == 0 else discord.Color.orange(),
-    )
-    embed.set_footer(text=f"{ok} downloaded, {fail} skipped/failed")
-    # Split results into ≤1024-char field values to respect Discord's embed limits.
-    for chunk in _chunk_lines(result_lines):
-        embed.add_field(name="​", value=chunk, inline=False)
-    try:
-        await interaction.followup.send(embed=embed, ephemeral=True)
-    except discord.NotFound:
-        await interaction.user.send(embed=embed)
-    except discord.HTTPException as exc:
-        # Embed still too large or malformed — fall back to a safe plain summary.
-        log.warning(
-            f"[admin-pull-models] embed send failed ({exc}); sending plain summary"
-        )
-        fallback = f"**Model Download — {tag}**\n{ok} downloaded, {fail} skipped/failed"
-        try:
-            await interaction.followup.send(fallback, ephemeral=True)
-        except discord.NotFound:
-            await interaction.user.send(fallback)
