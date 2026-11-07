@@ -5,7 +5,6 @@ Cross-platform compatible (Windows, macOS, Linux).
 """
 
 import asyncio
-import csv
 import hashlib
 import json
 import logging
@@ -19,7 +18,8 @@ from pydantic import ValidationError
 # Ensure src/ is on path (cross-platform)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.config import settings
+from src.bot.cogs.misc import read_command_rows
+from src.config import PROJECT_ROOT, settings
 from src.data.db import init_db, close_db
 from src.services.draft_service import DraftService as _DraftService
 from src.services.elo_service import EloService as _EloService
@@ -46,7 +46,7 @@ def _setup_logging() -> None:
     )
 
 
-_SYNC_HASH_FILE = Path(__file__).parent.parent.parent / ".discord_sync_hash"
+_SYNC_HASH_FILE = PROJECT_ROOT / ".discord_sync_hash"
 
 
 def _command_fingerprint(cmds) -> str:
@@ -101,6 +101,7 @@ class DraftLeagueBot(commands.Bot):
             intents=intents,
             help_command=None,
         )
+        self.tree.on_error = _on_app_command_error
 
     async def setup_hook(self) -> None:
         """Called once before the bot starts. Load cogs and sync slash commands."""
@@ -117,11 +118,11 @@ class DraftLeagueBot(commands.Bot):
                 log.error(f"Failed to load cog {cog}: {e}", exc_info=True)
 
         # CSV drift check — log any commands registered but missing from discord_commands.csv
-        csv_path = Path(__file__).parent.parent.parent / "discord_commands.csv"
+        csv_path = PROJECT_ROOT / "discord_commands.csv"
         if csv_path.exists():
-            with open(csv_path, newline="", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                csv_names = {row["Command"].lstrip("/") for row in reader}
+            csv_names = {
+                row["Command"].lstrip("/") for row in read_command_rows(csv_path)
+            }
             registered = {cmd.name for cmd in self.tree.get_commands()}
             drift = drift_check_commands(csv_names, registered)
             if drift:
@@ -191,8 +192,29 @@ class DraftLeagueBot(commands.Bot):
         await close_db()
         await super().close()
 
-    async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
-        log.error(f"Command error: {error}", exc_info=True)
+
+async def _on_app_command_error(
+    interaction: discord.Interaction, error: discord.app_commands.AppCommandError
+) -> None:
+    """Global slash-command error handler: log the traceback, tell the user briefly."""
+    if isinstance(error, discord.app_commands.CheckFailure):
+        # Permission-check messages are written for users (see permissions.py).
+        msg = str(error) or "You can't use this command."
+    else:
+        log.error(
+            "Unhandled error in /%s: %s",
+            interaction.command.name if interaction.command else "?",
+            error,
+            exc_info=error,
+        )
+        msg = "Something went wrong running that command. Please try again later."
+    try:
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
+    except discord.HTTPException:
+        log.debug("Could not deliver app-command error reply", exc_info=True)
 
 
 def _validate_settings() -> None:
@@ -207,10 +229,10 @@ def _validate_settings() -> None:
     try:
         _ = settings.discord_token
     except ValidationError as exc:
+        bad = ", ".join(sorted({str(e["loc"][0]).upper() for e in exc.errors()}))
         raise SystemExit(
-            f"Invalid or incomplete .env configuration:\n{exc}\n\n"
-            "Check required fields (DISCORD_TOKEN, DISCORD_CLIENT_ID, "
-            "GOOGLE_SHEETS_SPREADSHEET_ID) in your .env file."
+            f"Invalid or incomplete .env configuration (check: {bad}). "
+            "Required: DISCORD_TOKEN, DISCORD_CLIENT_ID, GOOGLE_SHEETS_SPREADSHEET_ID."
         ) from exc
 
 
@@ -219,7 +241,7 @@ async def main() -> None:  # pragma: no cover
     _setup_logging()
     creds = settings.google_sheets_credentials_file
     if not creds.exists():
-        raise FileNotFoundError(
+        raise SystemExit(
             f"Google Sheets credentials not found at '{creds}'. "
             "Download your service account JSON and place it there, or set "
             "GOOGLE_SHEETS_CREDENTIALS_FILE in .env."
