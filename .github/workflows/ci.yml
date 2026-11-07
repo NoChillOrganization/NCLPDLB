@@ -47,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Run pyright
-        run: npx --yes pyright@latest --pythonversion 3.13
+        run: npx --yes pyright@1.1.414 --pythonversion 3.13
 
   dry-run-pr:
     name: Dry-run sync (no DB)

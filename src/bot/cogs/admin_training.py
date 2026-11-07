@@ -8,7 +8,10 @@ logic those commands kick off via _create_background_task live here.
 """
 
 import asyncio
+import hashlib
+import hmac
 import logging
+import os
 import sys
 from collections import deque
 from pathlib import Path
@@ -608,6 +611,17 @@ def _chunk_lines(lines: list[str], limit: int = 1024) -> list[str]:
     return chunks
 
 
+def _digest_matches(content: bytes, digest: str | None) -> bool:
+    """True if `content` hashes to `digest` ('sha256:<hex>', as in the GitHub asset API).
+
+    A missing or unsupported digest fails closed.
+    """
+    algorithm, _, expected = (digest or "").partition(":")
+    if algorithm != "sha256" or not expected:
+        return False
+    return hmac.compare_digest(hashlib.sha256(content).hexdigest(), expected.lower())
+
+
 async def _pull_models(
     interaction: discord.Interaction,
     fmt: str | None,
@@ -685,7 +699,16 @@ async def _pull_models(
                         headers={"Accept": "application/octet-stream"},
                     )
                     dl.raise_for_status()
-                    save_path.write_bytes(dl.content)
+                    # The zip is unpickled by PPO.load, so only install bytes that match
+                    # the digest GitHub recorded for the asset.
+                    if not _digest_matches(dl.content, asset.get("digest")):
+                        results[target_fmt] = "❌ checksum missing or mismatched"
+                        continue
+                    # Write beside the target and rename, so an interrupted download
+                    # cannot replace a working model with a truncated one.
+                    part = save_path.with_suffix(".zip.part")
+                    part.write_bytes(dl.content)
+                    os.replace(part, save_path)
                     size_kb = len(dl.content) // 1024
                     results[target_fmt] = f"✅ {size_kb} KB"
                 except Exception as exc:
