@@ -5,8 +5,12 @@ Unit tests for EloService — rating calculations, matchmaking, standings.
 import pytest
 from unittest.mock import patch
 
-from src.services.elo_service import EloService, expected_score, new_rating
+import src.services.elo_service as elo_mod
 from src.config import settings
+
+EloService = elo_mod.EloService
+expected_score = elo_mod.expected_score
+new_rating = elo_mod.new_rating
 
 
 # ── Pure ELO math ─────────────────────────────────────────────
@@ -94,7 +98,6 @@ async def test_record_match_sum_elo_conserved():
 @pytest.mark.asyncio
 async def test_standings_sorted_by_elo():
     from src.data.models import PlayerElo
-    import src.services.elo_service as elo_mod
 
     svc = EloService()
     elo_mod._elo_cache["guild3"] = {
@@ -111,7 +114,6 @@ async def test_standings_sorted_by_elo():
 
 @pytest.mark.asyncio
 async def test_default_elo_is_configured_value():
-    import src.services.elo_service as elo_mod
 
     elo_mod._elo_cache.clear()
 
@@ -128,7 +130,6 @@ async def test_default_elo_is_configured_value():
 
 @pytest.mark.asyncio
 async def test_get_player_loads_from_sheets():
-    import src.services.elo_service as elo_mod
 
     elo_mod._elo_cache.clear()
 
@@ -153,7 +154,6 @@ async def test_get_player_loads_from_sheets():
 
 @pytest.mark.asyncio
 async def test_get_standings_loads_from_sheets():
-    import src.services.elo_service as elo_mod
 
     elo_mod._elo_cache.clear()
 
@@ -225,8 +225,6 @@ async def test_record_match_sets_display_names():
             loser_name="Bob",
         )
 
-    import src.services.elo_service as elo_mod
-
     assert elo_mod._elo_cache["guild_dn"]["w1"].display_name == "Alice"
     assert elo_mod._elo_cache["guild_dn"]["l1"].display_name == "Bob"
 
@@ -255,7 +253,6 @@ async def test_record_match_writes_to_sqlite():
 @pytest.mark.asyncio
 async def test_restore_ratings_from_db_populates_cache():
     """restore_ratings_from_db should fill _elo_cache from SQLite rows (NCLP-006)."""
-    import src.services.elo_service as elo_mod
 
     elo_mod._elo_cache.clear()
 
@@ -283,7 +280,6 @@ async def test_restore_ratings_from_db_populates_cache():
 
 
 def _seed_pair(guild: str):
-    import src.services.elo_service as elo_mod
     from src.data.models import PlayerElo
 
     elo_mod._elo_cache[guild] = {
@@ -322,3 +318,23 @@ async def test_sheets_mirror_failure_does_not_undo_a_saved_match():
     assert result.winner_new_elo > 1000
     assert cache["w"].elo == result.winner_new_elo
     assert db_save.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_loser_sheets_row_saved_when_winner_sheets_save_fails():
+    _seed_pair("g_sheets_each")
+    svc = EloService()
+    saved = []
+
+    async def flaky(player):
+        saved.append(player.player_id)
+        if player.player_id == "w":
+            raise RuntimeError("quota")
+
+    with (
+        patch.object(svc, "_save_player", side_effect=flaky),
+        patch.object(svc, "_save_player_to_db"),
+    ):
+        await svc.record_match("g_sheets_each", "w", "l")
+
+    assert saved == ["w", "l"]

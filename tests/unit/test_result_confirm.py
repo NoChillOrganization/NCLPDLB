@@ -139,3 +139,43 @@ async def test_timeout_edits_the_message_and_records_nothing():
 
     view.message.edit.assert_awaited_once()
     on_confirm.assert_not_called()
+
+
+async def test_confirmed_result_records_winner_and_loser_even_if_edit_fails():
+    cog = make_cog()
+    cog.notifications = MagicMock()
+    cog.notifications.notify_elo_update = AsyncMock()
+    cog.elo.record_match.return_value = MagicMock(
+        winner_old_elo=1000,
+        winner_new_elo=1016,
+        loser_old_elo=1000,
+        loser_new_elo=984,
+    )
+    reporter, opponent = make_member(1), make_member(2)
+    interaction = make_interaction(reporter)
+    await cog.result.callback(cog, interaction, opponent, True)
+    view = interaction.response.send_message.await_args.kwargs["view"]
+
+    click = make_interaction(opponent)
+    click.message.edit = AsyncMock(side_effect=discord.HTTPException(MagicMock(), "x"))
+    click.followup.send = AsyncMock()
+    await view.confirm.callback(click)
+
+    kwargs = cog.elo.record_match.await_args.kwargs
+    assert kwargs["winner_id"] == "1"
+    assert kwargs["loser_id"] == "2"
+
+
+async def test_record_failure_is_reported_to_the_opponent():
+    cog = make_cog()
+    cog.elo.record_match = AsyncMock(side_effect=RuntimeError("db"))
+    reporter, opponent = make_member(1), make_member(2)
+    interaction = make_interaction(reporter)
+    await cog.result.callback(cog, interaction, opponent, True)
+    view = interaction.response.send_message.await_args.kwargs["view"]
+
+    click = make_interaction(opponent)
+    click.followup.send = AsyncMock()
+    await view.confirm.callback(click)
+
+    assert "Could not record" in click.followup.send.await_args.args[0]

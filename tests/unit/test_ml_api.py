@@ -102,7 +102,9 @@ class TestUpdateState:
 @pytest.fixture
 def client():
     # Loopback base URL: the control routes refuse non-loopback Host headers.
-    return TestClient(app, base_url="http://127.0.0.1:8080")
+    return TestClient(
+        app, base_url="http://127.0.0.1:8080", client=("127.0.0.1", 50000)
+    )
 
 
 class TestStatsRoute:
@@ -209,6 +211,25 @@ class TestControlRouteAuth:
         assert client.post("/start").status_code == 401
         bad = client.post("/start", headers={"X-Train-Token": "nope"})
         assert bad.status_code == 401
+        assert get_state()["status"] == "stopped"
+
+    @pytest.mark.parametrize(
+        "path, body", [("/stop", None), ("/config", {"mcts_sims": 50})]
+    )
+    def test_wrong_or_missing_token_is_rejected_on_other_routes(
+        self, client, monkeypatch, path, body
+    ):
+        monkeypatch.setattr(api_module, "_TRAIN_TOKEN", "s3cret-token")
+        assert client.post(path, json=body).status_code == 401
+        bad = client.post(path, json=body, headers={"X-Train-Token": "nope"})
+        assert bad.status_code == 401
+
+    def test_remote_peer_with_forged_loopback_host_is_refused(self, monkeypatch):
+        monkeypatch.setattr(api_module, "_TRAIN_TOKEN", None)
+        remote = TestClient(
+            app, base_url="http://127.0.0.1:8080", client=("203.0.113.9", 5000)
+        )
+        assert remote.post("/start").status_code == 403
         assert get_state()["status"] == "stopped"
 
     def test_correct_token_is_accepted(self, client, monkeypatch):

@@ -126,6 +126,9 @@ if FASTAPI_OK:
         # Host must be a loopback name (blocks DNS rebinding, where a hostile site
         # points its own name at 127.0.0.1) and any Origin a browser attaches must
         # be loopback too (blocks cross-site POSTs). curl sends no Origin.
+        # The TCP peer must be loopback too: a remote client can forge the Host header.
+        if request.client is None or request.client.host not in _LOOPBACK_HOSTS:
+            raise HTTPException(status_code=403, detail="Remote callers not allowed")
         if _hostname(request.headers.get("host", "")) not in _LOOPBACK_HOSTS:
             raise HTTPException(status_code=403, detail="Host not allowed")
         # The Origin must also be this exact host:port, so a page served from another

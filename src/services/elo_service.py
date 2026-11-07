@@ -153,11 +153,13 @@ class EloService:
 
             # Sheets is a mirror for humans (off-loop via to_thread). A failure here
             # must not undo or hide a rating change that is already stored.
-            try:
-                await self._save_player(winner)
-                await self._save_player(loser)
-            except Exception:
-                log.exception("ELO saved to SQLite but the Sheets mirror update failed")
+            for player in (winner, loser):
+                try:
+                    await self._save_player(player)
+                except Exception:
+                    log.exception(
+                        "ELO saved to SQLite but the Sheets mirror update failed"
+                    )
 
         log.info(
             f"Match recorded: {winner_id} ({old_winner_elo}→{winner.elo}) "

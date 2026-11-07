@@ -57,9 +57,16 @@ class ResultConfirmView(discord.ui.View):
             return
         self._settled = True
         self.stop()
-        if interaction.message is not None:
-            await interaction.message.edit(view=None)
-        await self._on_confirm(interaction)
+        # Record first: the buttons are cleaned up afterwards, and a failed edit
+        # must never stop the result from being recorded.
+        try:
+            await self._on_confirm(interaction)
+        finally:
+            if interaction.message is not None:
+                try:
+                    await interaction.message.edit(view=None)
+                except discord.HTTPException:
+                    log.warning("[result] Could not clear the confirmation buttons")
 
     @discord.ui.button(label="Decline", style=discord.ButtonStyle.danger)
     async def decline(
@@ -81,7 +88,7 @@ class ResultConfirmView(discord.ui.View):
                 content="Result expired. Nothing was recorded.", view=None
             )
         except discord.HTTPException:
-            pass
+            pass  # message deleted or not editable: nothing left to update
 
 
 class LeagueCog(commands.Cog, name="League"):
@@ -207,13 +214,21 @@ class LeagueCog(commands.Cog, name="League"):
     ) -> None:
         """Apply a confirmed result. `interaction` is the opponent's button click."""
         await interaction.response.defer()
-        match_result = await self.elo.record_match(
-            guild_id=str(interaction.guild_id),
-            winner_id=str(winner.id),
-            loser_id=str(loser.id),
-            winner_name=winner.display_name,
-            loser_name=loser.display_name,
-        )
+        try:
+            match_result = await self.elo.record_match(
+                guild_id=str(interaction.guild_id),
+                winner_id=str(winner.id),
+                loser_id=str(loser.id),
+                winner_name=winner.display_name,
+                loser_name=loser.display_name,
+            )
+        except Exception:
+            log.exception("[result] record_match failed after confirmation")
+            await interaction.followup.send(
+                "Could not record this result. Check the standings before "
+                "reporting it again; a mod can fix the ratings if needed."
+            )
+            return
 
         # Persist match to Sheets — best-effort: a write failure must not suppress
         # the embed or leave ELO mutated with no user feedback.

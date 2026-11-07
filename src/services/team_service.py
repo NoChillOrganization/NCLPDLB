@@ -109,29 +109,32 @@ class TeamService:
         pool: str = "A",
     ) -> TeamRoster:
         """Register or update a player's team name, logo, and pool assignment."""
-        key = self._cache_key(guild_id, player_id)
-        roster = _roster_cache.get(key) or TeamRoster(
-            player_id=player_id,
-            guild_id=guild_id,
-        )
-        roster.team_name = team_name
-        roster.team_logo_url = team_logo_url
-        roster.pool = pool
-        _roster_cache[key] = roster
+        # Same per-guild lock as trades, so a stale roster snapshot is never
+        # written over a trade that is mid-flight.
+        async with _trade_locks.setdefault(guild_id, asyncio.Lock()):
+            key = self._cache_key(guild_id, player_id)
+            roster = _roster_cache.get(key) or TeamRoster(
+                player_id=player_id,
+                guild_id=guild_id,
+            )
+            roster.team_name = team_name
+            roster.team_logo_url = team_logo_url
+            roster.pool = pool
+            _roster_cache[key] = roster
 
-        # Persist to Team Page Template tab
-        slots = [(p.name, getattr(p, "tera_type", "")) for p in roster.pokemon]
-        await asyncio.to_thread(
-            sheets.upsert_team_page,
-            {
-                "player_id": player_id,
-                "player_name": player_name,
-                "team_name": team_name,
-                "team_logo_url": team_logo_url,
-                "pool": pool,
-                "slots": slots,
-            },
-        )
+            # Persist to Team Page Template tab
+            slots = [(p.name, getattr(p, "tera_type", "")) for p in roster.pokemon]
+            await asyncio.to_thread(
+                sheets.upsert_team_page,
+                {
+                    "player_id": player_id,
+                    "player_name": player_name,
+                    "team_name": team_name,
+                    "team_logo_url": team_logo_url,
+                    "pool": pool,
+                    "slots": slots,
+                },
+            )
         log.info(f"Team registered: {team_name} (pool {pool}) for player {player_id}")
         return roster
 
@@ -216,6 +219,8 @@ class TeamService:
             return TradeResult(success=False, error="Trade not found.")
         if str(record.get("to_player_id")) != player_id:
             return TradeResult(success=False, error="This trade is not for you.")
+        if str(record.get("from_player_id")) == player_id:
+            return TradeResult(success=False, error="You can't trade with yourself.")
         if record.get("status") != "pending":
             return TradeResult(success=False, error="Trade is no longer pending.")
 
@@ -262,21 +267,29 @@ class TeamService:
             slots = [(p.name, getattr(p, "tera_type", "")) for p in mons]
             return {"player_id": pid, "guild_id": guild_id, "slots": slots}
 
-        await asyncio.to_thread(sheets.upsert_team_page, page(from_player_id, new_from))
         try:
-            await asyncio.to_thread(sheets.upsert_team_page, page(player_id, new_to))
-        except Exception:
-            # Second write failed: put the first roster back so no Pokémon is duplicated.
             await asyncio.to_thread(
-                sheets.upsert_team_page, page(from_player_id, from_team.pokemon)
+                sheets.upsert_team_page, page(from_player_id, new_from)
             )
+            await asyncio.to_thread(sheets.upsert_team_page, page(player_id, new_to))
+            # Mark accepted only after rosters are committed
+            record["status"] = "accepted"
+            await asyncio.to_thread(sheets.save_transaction, record)
+        except Exception:
+            # Any step failed (a write may have committed before raising): put both
+            # rosters back so no Pokémon is duplicated or dropped, and keep the trade
+            # pending. Each restore is attempted even if the other one fails.
+            record["status"] = "pending"
+            for pid, team in ((from_player_id, from_team), (player_id, to_team)):
+                try:
+                    await asyncio.to_thread(
+                        sheets.upsert_team_page, page(pid, team.pokemon)
+                    )
+                except Exception:
+                    log.exception("Trade rollback failed for player %s", pid)
             raise
         from_team.pokemon = new_from
         to_team.pokemon = new_to
-
-        # Mark accepted only after rosters are committed
-        record["status"] = "accepted"
-        await asyncio.to_thread(sheets.save_transaction, record)
         return TradeResult(
             success=True, summary=f"Trade complete! {given} ↔ {received}"
         )
