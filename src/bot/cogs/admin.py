@@ -22,20 +22,13 @@ from src.bot.cogs.admin_training import (
     _pull_models,
     _run_training,
     _run_training_all,
+    _try_dm,
 )
 
 log = logging.getLogger(__name__)
 
 # Retain strong references to fire-and-forget tasks so GC cannot cancel them (M8)
 _background_tasks: set[asyncio.Task] = set()
-
-
-async def _try_dm(user: discord.abc.User, text: str) -> None:
-    """Best-effort DM; failure (DMs closed, etc.) is logged and swallowed."""
-    try:
-        await user.send(text)
-    except Exception:
-        log.debug("Best-effort Discord notification failed", exc_info=True)
 
 
 def _create_background_task(coro) -> asyncio.Task:

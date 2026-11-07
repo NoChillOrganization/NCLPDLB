@@ -14,6 +14,7 @@ import logging
 import os
 import sys
 from collections import deque
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 import discord
@@ -58,6 +59,22 @@ def _model_exists(results_dir: Path, fmt: str) -> bool:
     )
 
 
+async def _try_dm(
+    user: discord.abc.User,
+    text: str = "",
+    *,
+    embed: discord.Embed | None = None,
+) -> None:
+    """Best-effort DM; failure (DMs closed, etc.) is logged and swallowed."""
+    try:
+        if embed is not None:
+            await user.send(embed=embed)
+        else:
+            await user.send(text)
+    except Exception:
+        log.debug("Best-effort Discord notification failed", exc_info=True)
+
+
 async def _try_edit(msg: discord.Message | None, embed: discord.Embed) -> None:
     """Edit a Discord message's embed, silently ignoring errors."""
     if msg:
@@ -65,6 +82,33 @@ async def _try_edit(msg: discord.Message | None, embed: discord.Embed) -> None:
             await msg.edit(embed=embed)
         except Exception:
             log.debug("Best-effort Discord notification failed", exc_info=True)
+
+
+async def _stream_training(
+    proc: asyncio.subprocess.Process,
+    collected: deque[str],
+    latest_steps: list[int],
+    parse_timestep_progress: Callable[[str], int | None],
+    on_progress: Callable[[int], Awaitable[None]],
+) -> None:
+    """Stream proc stdout into `collected`; track steps; call on_progress every 60 s.
+
+    `latest_steps` is a one-element holder so callers still see the last value
+    if the stream raises midway.
+    """
+    last_edit_time = asyncio.get_running_loop().time()
+    if proc.stdout is None:
+        raise RuntimeError("subprocess stdout pipe is None")
+    async for raw_line in proc.stdout:
+        line = raw_line.decode(errors="replace").rstrip()
+        collected.append(line)
+        steps = parse_timestep_progress(line)
+        if steps is not None:
+            latest_steps[0] = steps
+        now = asyncio.get_running_loop().time()
+        if now - last_edit_time >= 60:
+            await on_progress(latest_steps[0])
+            last_edit_time = now
 
 
 # ── Background training tasks ─────────────────────────────────────────────────
@@ -114,12 +158,10 @@ async def _run_training(
 
     if fixable:
         fix_lines = "\n".join(f"• {e['description']}" for e in fixable)
-        try:
-            await interaction.user.send(
-                f"⚠️ **Preflight issues detected for `{fmt}` — auto-fixing…**\n{fix_lines}"
-            )
-        except Exception:
-            log.debug("Best-effort Discord notification failed", exc_info=True)
+        await _try_dm(
+            interaction.user,
+            f"⚠️ **Preflight issues detected for `{fmt}` — auto-fixing…**\n{fix_lines}"
+        )
         for err, ok, msg in apply_all_fixes(fixable, fmt, save_dir, sys.executable):
             log.info(f"[admin-train] preflight fix: {err['type']} → {ok}: {msg}")
 
@@ -132,12 +174,10 @@ async def _run_training(
         )
         blocked_embed.set_footer(text="Fix the blocking issue(s) above, then retry.")
         await _try_edit(channel_msg, blocked_embed)
-        try:
-            await interaction.user.send(
-                f"❌ **Training `{fmt}` cannot start — blocking issue(s):**\n{block_lines}"
-            )
-        except Exception:
-            log.debug("Best-effort Discord notification failed", exc_info=True)
+        await _try_dm(
+            interaction.user,
+            f"❌ **Training `{fmt}` cannot start — blocking issue(s):**\n{block_lines}"
+        )
         return  # abort
 
     # ── 2. Launch subprocess ────────────────────────────────────────
@@ -148,7 +188,7 @@ async def _run_training(
         attempt += 1
         label = f"`{fmt}`" + (f" (retry {attempt - 1})" if attempt > 1 else "")
         collected: deque[str] = deque(maxlen=500)
-        latest_steps = 0
+        latest_steps = [0]
 
         # Send initial progress DM
         progress_embed = _build_progress_embed(fmt, 0, timesteps, attempt)
@@ -182,28 +222,15 @@ async def _run_training(
                 stderr=asyncio.subprocess.STDOUT,
             )
 
-            last_edit_time = asyncio.get_running_loop().time()
-
-            # Stream stdout line-by-line
-            if proc.stdout is None:
-                raise RuntimeError("subprocess stdout pipe is None")
-            async for raw_line in proc.stdout:
-                line = raw_line.decode(errors="replace").rstrip()
-                collected.append(line)
-
-                steps = parse_timestep_progress(line)
-                if steps is not None:
-                    latest_steps = steps
-
+            async def on_progress(steps: int) -> None:
                 # Edit progress embed every 60 s (both channel and DM)
-                now = asyncio.get_running_loop().time()
-                if now - last_edit_time >= 60:
-                    prog_embed = _build_progress_embed(
-                        fmt, latest_steps, timesteps, attempt
-                    )
-                    await _try_edit(dm_msg, prog_embed)
-                    await _try_edit(channel_msg, prog_embed)
-                    last_edit_time = now
+                prog_embed = _build_progress_embed(fmt, steps, timesteps, attempt)
+                await _try_edit(dm_msg, prog_embed)
+                await _try_edit(channel_msg, prog_embed)
+
+            await _stream_training(
+                proc, collected, latest_steps, parse_timestep_progress, on_progress
+            )
 
             await proc.wait()
             ok = proc.returncode == 0
@@ -227,10 +254,7 @@ async def _run_training(
                 description=f"Format: {label}\n```\n{output[-1200:]}\n```",
                 color=discord.Color.green(),
             )
-            try:
-                await interaction.user.send(embed=result_embed)
-            except Exception:
-                log.debug("Best-effort Discord notification failed", exc_info=True)
+            await _try_dm(interaction.user, embed=result_embed)
             return
 
         # ── 4. Failure → diagnose + fix ─────────────────────────────
@@ -248,14 +272,12 @@ async def _run_training(
             fix_lines = "\n".join(
                 f"{'✅' if ok2 else '❌'} {msg}" for _, ok2, msg in fix_results
             )
-            try:
-                await interaction.user.send(
-                    f"⚠️ **Training {label} failed. Errors detected:**\n{err_lines}\n\n"
-                    f"**Auto-fix applied:**\n{fix_lines}\n\n"
-                    "🔄 Retrying…"
-                )
-            except Exception:
-                log.debug("Best-effort Discord notification failed", exc_info=True)
+            await _try_dm(
+                interaction.user,
+                f"⚠️ **Training {label} failed. Errors detected:**\n{err_lines}\n\n"
+                f"**Auto-fix applied:**\n{fix_lines}\n\n"
+                "🔄 Retrying…"
+            )
             log.info(
                 f"[admin-train] {fmt}: attempt {attempt} failed, applied fixes, retrying"
             )
@@ -264,7 +286,7 @@ async def _run_training(
         # No fix possible — final failure
         await _try_edit(
             channel_msg,
-            _build_progress_embed(fmt, latest_steps, timesteps, attempt, failed=True),
+            _build_progress_embed(fmt, latest_steps[0], timesteps, attempt, failed=True),
         )
         snippet = output[-1200:]
         fail_embed = discord.Embed(
@@ -276,10 +298,7 @@ async def _run_training(
             ),
             color=discord.Color.red(),
         )
-        try:
-            await interaction.user.send(embed=fail_embed)
-        except Exception:
-            log.debug("Best-effort Discord notification failed", exc_info=True)
+        await _try_dm(interaction.user, embed=fail_embed)
         return
 
 
@@ -325,22 +344,18 @@ async def _run_training_all(
         )
         blocked_embed.set_footer(text="Fix the blocking issue(s) above, then retry.")
         await _try_edit(channel_msg, blocked_embed)
-        try:
-            await interaction.user.send(
-                f"❌ **Train-All cannot start — blocking issue(s):**\n{block_lines}"
-            )
-        except Exception:
-            log.debug("Best-effort Discord notification failed", exc_info=True)
+        await _try_dm(
+            interaction.user,
+            f"❌ **Train-All cannot start — blocking issue(s):**\n{block_lines}"
+        )
         return
 
-    try:
-        await interaction.user.send(
-            f"🚀 **Train-All started** — {len(formats_to_run)} format(s) queued "
-            f"({skipped_count} already trained, skipped).\n"
-            f"Steps per format: `{timesteps:,}`. You'll receive a DM per format + final summary."
-        )
-    except Exception:
-        log.debug("Best-effort Discord notification failed", exc_info=True)
+    await _try_dm(
+        interaction.user,
+        f"🚀 **Train-All started** — {len(formats_to_run)} format(s) queued "
+        f"({skipped_count} already trained, skipped).\n"
+        f"Steps per format: `{timesteps:,}`. You'll receive a DM per format + final summary."
+    )
 
     results: dict[str, str] = {}
     n_done = 0
@@ -363,7 +378,7 @@ async def _run_training_all(
             cmd += ["--server", server]
 
         collected: deque[str] = deque(maxlen=500)
-        latest_steps = 0
+        latest_steps = [0]
 
         # Update channel bar to show current format starting
         await _try_edit(
@@ -395,35 +410,28 @@ async def _run_training_all(
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
             )
-            last_edit_time = asyncio.get_running_loop().time()
 
-            if proc.stdout is None:
-                raise RuntimeError("subprocess stdout pipe is None")
-            async for raw_line in proc.stdout:
-                line = raw_line.decode(errors="replace").rstrip()
-                collected.append(line)
-                steps = parse_timestep_progress(line)
-                if steps is not None:
-                    latest_steps = steps
-                now = asyncio.get_running_loop().time()
-                if now - last_edit_time >= 60:
-                    await _try_edit(
-                        dm_msg,
-                        _build_progress_embed(fmt, latest_steps, timesteps, attempt=1),
-                    )
-                    await _try_edit(
-                        channel_msg,
-                        _build_queue_embed(
-                            len(formats_to_run),
-                            skipped_count,
-                            timesteps,
-                            current_fmt=fmt,
-                            current_steps=latest_steps,
-                            n_done=n_done,
-                            n_failed=n_failed,
-                        ),
-                    )
-                    last_edit_time = now
+            async def on_progress(steps: int) -> None:
+                await _try_edit(
+                    dm_msg,
+                    _build_progress_embed(fmt, steps, timesteps, attempt=1),
+                )
+                await _try_edit(
+                    channel_msg,
+                    _build_queue_embed(
+                        len(formats_to_run),
+                        skipped_count,
+                        timesteps,
+                        current_fmt=fmt,
+                        current_steps=steps,
+                        n_done=n_done,
+                        n_failed=n_failed,
+                    ),
+                )
+
+            await _stream_training(
+                proc, collected, latest_steps, parse_timestep_progress, on_progress
+            )
 
             await proc.wait()
             ok = proc.returncode == 0
@@ -438,7 +446,7 @@ async def _run_training_all(
             dm_msg,
             _build_progress_embed(
                 fmt,
-                timesteps if ok else latest_steps,
+                timesteps if ok else latest_steps[0],
                 timesteps,
                 attempt=1,
                 done=ok,
