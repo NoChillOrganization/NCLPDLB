@@ -158,6 +158,7 @@ class SheetsClient:
             )
         creds = Credentials.from_service_account_file(str(creds_path), scopes=SCOPES)
         self._client = gspread.authorize(creds)
+        self._client.set_timeout(30)  # (s) so a stalled Sheets call can't hang forever
         self._spreadsheet = self._client.open_by_key(
             settings.google_sheets_spreadsheet_id
         )
