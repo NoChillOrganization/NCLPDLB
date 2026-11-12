@@ -17,42 +17,13 @@ from __future__ import annotations
 import argparse
 import asyncio
 
-from src.platform.normalize.usage import normalize_usage_row
-from src.platform.orchestrate import (
-    dry_run_normalize,
-    land_and_normalize,
-    with_ingest_run,
-)
-from src.platform.sources.pikalytics import PikalyticsAdapter
-from src.platform.store.db import get_pool, migrate
+from src.platform.source_spec import SOURCES, run_standalone
 
 
 async def _run(*, formats: list[str], max_pages: int, dry_run: bool = False) -> None:
-    adapter = PikalyticsAdapter()
-    records = await adapter.fetch(formats=formats, max_pages=max_pages)
-    if dry_run:
-        stats = await dry_run_normalize(records)
-        print("DRY RUN:", stats)
-        if stats["errored"]:
-            raise SystemExit(1)
-        return
-    await migrate()
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        stats = await with_ingest_run(
-            conn,
-            source="pikalytics",
-            route="usage",
-            mode="periodic",
-            fn=lambda: land_and_normalize(
-                conn,
-                source="pikalytics",
-                route="usage",
-                records=records,
-                normalize=normalize_usage_row,
-            ),
-        )
-    print(stats)
+    await run_standalone(
+        SOURCES["pikalytics"], dry_run=dry_run, formats=formats, max_pages=max_pages
+    )
 
 
 def main() -> None:
