@@ -7,11 +7,11 @@ A Discord bot that runs Pokémon draft leagues, plus battle agents trained to pl
 ### League and drafting
 
 **League**:
-The persistent season container: teams, standings, trades and matches.
+The persistent season container: teams, standings, trades and matches. One League per Discord server.
 _Avoid_: Season, server
 
 **Draft**:
-The one-time event inside a League in which players pick Pokémon to fill their Teams.
+The one-time event inside a League in which Coaches pick Pokémon to fill their Teams.
 _Avoid_: Auction (that is one Draft format), event
 
 **Draft format**:
@@ -20,22 +20,58 @@ _Avoid_: Format (bare), draft type
 
 **Game format**:
 The game a League is played in, such as Showdown, VGC or Scarlet/Violet.
-_Avoid_: Format (bare), game mode
+_Avoid_: Format (bare), game mode, mode
+
+**Coach**:
+A League participant; also the name of the base Discord role (Draft League Coaches).
+_Avoid_: Player, captain, manager
+
+**Commissioner**:
+The user who created a Draft; only they can start it. Not a Discord role.
+_Avoid_: Admin, owner
+
+**Guildmaster**:
+The top Discord role; runs League, Draft and training administration.
+_Avoid_: Commissioner (that is a per-Draft user), admin
+
+**Moderator**:
+The middle Discord role; can skip, pause, resume and override picks and write to the League sheet.
+_Avoid_: Mod (in docs), admin
+
+**Pool**:
+Pool A or Pool B: a split of a League's Coaches into two conferences, with separate Tabs.
+_Avoid_: Conference, group, division
+
+**Draft pool**:
+The Pokémon still available to pick in a Draft.
+_Avoid_: Pool (bare), pokédex
 
 **Team**:
-The set of Pokémon a player has drafted.
+The set of Pokémon a Coach has drafted.
 _Avoid_: Roster
 
+**Tera Captain**:
+A Pokémon designated on a Team to carry a Tera type; Scarlet/Violet Leagues only.
+_Avoid_: Captain (bare)
+
 **Match**:
-One game between two players in a League; its result updates Standings and ELO ratings.
+One game between two Coaches in a League; its Result updates Standings and ELO ratings.
 _Avoid_: Game, fixture
 
+**Result**:
+A reported Match outcome that updates ELO ratings (`/result`).
+_Avoid_: Score
+
+**Sheet result**:
+A Match outcome written to the League sheet by hand without updating ELO ratings (`/sheet-result`).
+_Avoid_: Manual result
+
 **Standings**:
-The League's win/loss table, derived from Match results and separate from ELO ratings.
+The League's table of ELO ratings with wins and losses, sorted by ELO.
 _Avoid_: Leaderboard, rankings
 
 **ELO rating**:
-A player's skill score within one League; the same person has separate ratings in different Leagues.
+A Coach's skill score within one League.
 _Avoid_: Rank, points
 
 **Trade**:
@@ -43,12 +79,16 @@ A post-Draft swap of Pokémon between two Teams. Never a Pick.
 _Avoid_: Swap, transfer
 
 **Pick**:
-A player's selection of one Pokémon from the pool during a Draft.
+A Coach's selection of one Pokémon from the Draft pool.
 _Avoid_: Selection, claim
 
 **Ban**:
-Removal of a Pokémon from the pool for every player, made before picks start.
+Removal of a Pokémon from the Draft pool for every Coach, made before picks start.
 _Avoid_: Block, veto
+
+**Budget**:
+The auction currency each Coach holds, counted in points (default 1000).
+_Avoid_: Coins, money
 
 **Tier**:
 A Smogon usage-based ranking such as OU or UU.
@@ -73,8 +113,16 @@ A Battle agent trained per Battle format with PPO self-play. Legacy, but still s
 _Avoid_: RL agent, legacy agent
 
 **MCTS agent**:
-A Battle agent whose Transformer policy/value model is trained through MCTS ladder self-play.
+A Battle agent driven by a Transformer policy/value model. By default it runs with zero search simulations (a one-ply prior), not full tree search.
 _Avoid_: Transformer agent, AlphaZero agent
+
+**Self-play**:
+Battle agents playing each other, either against a lagging copy of themselves (PPO) or two MCTS players on a local server.
+_Avoid_: Ladder (that is playing humans)
+
+**Ladder loop**:
+Repeated ranked-ladder games played by a Battle agent against real human opponents on public Showdown, filling the replay buffer.
+_Avoid_: Self-play
 
 ### Storage
 
@@ -109,7 +157,7 @@ The code that fetches records from one Source.
 _Avoid_: Scraper, connector
 
 **Route**:
-The kind of data a record carries: tournament, usage or replay. One Source can serve several Routes.
+The kind of data a record carries: tournament, usage or replay.
 _Avoid_: Type, kind
 
 **Raw record**:
@@ -121,7 +169,7 @@ A typed, source-independent row (species, usage, tournament or replay) produced 
 _Avoid_: Clean row, normalized record
 
 **Land**:
-To store a Raw record.
+To store a Raw record. The `landed` run statistic counts every record processed, duplicates included.
 _Avoid_: Load, save
 
 **Normalize**:
@@ -129,8 +177,8 @@ To turn a Raw record into Canonical rows.
 _Avoid_: Parse (that is replay parsing), transform
 
 **Ingest**:
-The whole pipeline of Land then Normalize.
-_Avoid_: Sync (that is the command), import
+The whole pipeline of Land then Normalize. Workflow and alert names (`sync-prod`, `STALE_SYNC`) say "sync" for this.
+_Avoid_: Sync (outside those names), import
 
 **Ingest run**:
 One execution of Ingest for a single Source.
@@ -140,6 +188,22 @@ _Avoid_: Job, sync run
 A Raw record that failed to Normalize, parked for review and not retried automatically.
 _Avoid_: Failed record, error row
 
+**Run failure**:
+An Ingest run that failed as a whole, such as exhausted retries; stored in the dead-letter table with no record attached.
+_Avoid_: Dead letter (that is record-level)
+
+**Dry run**:
+An Ingest that fetches and validates records without writing to the Platform database (`--dry-run`).
+_Avoid_: Test run
+
+**Idempotency check**:
+A real Ingest into a throwaway database, run twice, that asserts the second run lands no new Raw records (`sync-dryrun`).
+_Avoid_: Dry run
+
+**Pairing**:
+A tournament round pairing of two entrants (the platform `match` table); not a League Match.
+_Avoid_: Match (that is a League game)
+
 **Canonical species**:
 The single agreed identity of a Pokémon across Sources inside the platform.
 _Avoid_: Pokémon (inside the platform), mon
@@ -147,3 +211,9 @@ _Avoid_: Pokémon (inside the platform), mon
 **Species alias**:
 A Source's spelling of a Pokémon name, mapped to a Canonical species.
 _Avoid_: Synonym, nickname
+
+### Discord
+
+**Command sync**:
+Registering the bot's slash commands with Discord, hash-gated to avoid rate limits.
+_Avoid_: Sync (bare)
