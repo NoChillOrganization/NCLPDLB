@@ -122,7 +122,7 @@ class DraftWizardStep2View(discord.ui.View):
 
     def _game_mode_select(self) -> discord.ui.Select:
         sel = discord.ui.Select(
-            placeholder="Game Mode",
+            placeholder="Game format",
             options=[
                 discord.SelectOption(
                     label="Pokemon Showdown (Online)",
@@ -252,7 +252,7 @@ class DraftWizardStep3Modal(
         )
         embed.add_field(name="Format", value=config["format"].title(), inline=True)
         embed.add_field(
-            name="Game Mode", value=config["game_format"].upper(), inline=True
+            name="Game format", value=config["game_format"].upper(), inline=True
         )
         embed.add_field(name="Rounds", value=str(config["total_rounds"]), inline=True)
         embed.add_field(name="Timer", value=f"{config['timer_seconds']}s", inline=True)
@@ -269,7 +269,7 @@ class DraftWizardStep3Modal(
             announce = discord.Embed(
                 title=f"📋 {config['league_name']} — Draft Open for Registration!",
                 description=(
-                    f"**Format:** {config['format'].title()} · **Mode:** {config['game_format'].upper()}\n"
+                    f"**Format:** {config['format'].title()} · **Game format:** {config['game_format'].upper()}\n"
                     f"**Players:** {pool_line}\n"
                     f"**Tera Captains:** {tera_line}\n\n"
                     f"Use `/draft-join` to register!\n"

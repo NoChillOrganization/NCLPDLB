@@ -24,26 +24,17 @@ from src.config import PROJECT_ROOT, Settings
 
 Result = tuple[bool, str]
 
-# The 17 tabs listed in README.md ("Google Sheets Structure").
-EXPECTED_TABS = [
-    "Setup",
-    "Rules",
-    "Cover",
-    "Draft",
-    "Draft Board",
-    "Pool A Board",
-    "Pool B Board",
-    "Schedule",
-    "Match Stats",
-    "Standings",
-    "Pokemon Stats",
-    "MVP Race",
-    "Transactions",
-    "Playoffs",
-    "Pokedex",
-    "Team Page Template",
-    "Data",
-]
+
+def expected_tabs() -> list[str]:
+    """The 17 template tabs in README.md ("Google Sheets Structure"), from Tab.
+
+    Excludes the two flat tabs the bot creates itself (Match Records, ELO Data).
+    """
+    from src.data.sheets import Tab
+
+    flat = {Tab.MATCH_RECORDS, Tab.ELO_DATA}
+    return [v for k, v in vars(Tab).items() if k.isupper() and v not in flat]
+
 
 DISCORD_ME_URL = "https://discord.com/api/v10/users/@me"
 
@@ -109,7 +100,7 @@ def check_sheets() -> Result:
     ss = SheetsClient().spreadsheet
     titles = [ws.title for ws in ss.worksheets()]
     have = {_norm(t) for t in titles}
-    missing = [t for t in EXPECTED_TABS if _norm(t) not in have]
+    missing = [t for t in expected_tabs() if _norm(t) not in have]
     msg = f"title={ss.title!r}, tabs={len(titles)}"
     if missing:
         return False, f"{msg}, missing tabs: {', '.join(missing)}"

@@ -12,7 +12,11 @@ Alert types
 STALE_SYNC       No successful run within the source's expected cadence.
 REPEATED_FAILURE Last 3 runs for the source all errored.
 VOLUME_DROP      Last run landed < 50% of 30-day avg (only fires when avg >= 10).
-PARSE_ERRORS     Dead-letter rows with a record key in the last 24 h > 5.
+                 "landed" is stats.landed = every record fetched and processed,
+                 including duplicates already in raw_ingest (not new inserts;
+                 see stats.new for that).
+PARSE_ERRORS     Normalize failures: record-level dead-letter rows (natural_key
+                 set) in the last 24 h > 5. Name kept for compatibility.
 
 Thresholds are conservative — tuned to fire on genuine outages, not noise.
 Monthly sources (smogon/pikalytics) have a 35-day window so a skipped month
@@ -169,7 +173,7 @@ async def check_alerts(conn) -> list[dict]:
                 "source": row["name"],
                 "dead_letter_24h": int(row["dl_count"]),
                 "action": (
-                    f"'{row['name']}' has {int(row['dl_count'])} parse failures in last 24h. "
+                    f"'{row['name']}' has {int(row['dl_count'])} normalize failures (dead letters) in last 24h. "
                     "Check dead_letter table. Possible upstream schema drift."
                 ),
             }

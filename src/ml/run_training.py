@@ -2,18 +2,17 @@
 AI Training System — main runner (trains on play.pokemonshowdown.com).
 
 Wires together:
-  • SelfPlayLoop    (self_play.py)   — AccountA vs AccountB on the live Showdown server
+  • LadderLoop      (self_play.py)   — Battle agent vs real humans on the public Showdown ladder
+                                       (also exported under the legacy name SelfPlayLoop)
   • PolicyTrainer   (trainer.py)    — trains BattleTransformer from replay buffer
   • FastAPI server  (api.py)        — exposes /stats, /start, /stop, /config
   • Dashboard       (dashboard.html)— served at GET /
 
 How to run
 ----------
-  1. Set two Showdown accounts in .env:
-       SHOWDOWN_USERNAME=AccountA
+  1. Set one Showdown account in .env:
+       SHOWDOWN_USERNAME=...
        SHOWDOWN_PASSWORD=...
-       SHOWDOWN_USERNAME_B=AccountB
-       SHOWDOWN_PASSWORD_B=...
 
   2. (Optional) Pre-load a checkpoint:
        Set --model path/to/model.pt, or let it train from scratch.
@@ -24,7 +23,7 @@ How to run
   4. Open the dashboard:
        http://localhost:8080
 
-  5. Click "Start" in the dashboard to begin self-play training.
+  5. Click "Start" in the dashboard to begin ladder training.
 
 CLI options
 -----------
