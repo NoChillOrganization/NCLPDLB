@@ -1,4 +1,4 @@
-"""Regression tests for sync_all's CLI-key -> DB-source-name mapping.
+"""Regression tests for sync_all (key->DB-name mapping now pinned in test_source_spec.py).
 
 Covers the bug from CI run #29008635041: sync_all.py's "replays" branch
 passed the raw CLI arg "replays" into with_ingest_run/land_and_normalize
@@ -13,21 +13,6 @@ import argparse
 import asyncpg
 
 from src.platform import sync_all
-from src.platform.sync_all import _db_source_name
-
-
-def test_replays_maps_to_showdown():
-    assert _db_source_name("replays") == "showdown"
-
-
-def test_unmapped_sources_pass_through():
-    for source in ("smogon", "pikalytics", "limitless"):
-        assert _db_source_name(source) == source
-
-
-def test_unknown_source_passes_through_unchanged():
-    """No mapping entry -> identity, not an error (validity is _run_source's job)."""
-    assert _db_source_name("not_a_real_source") == "not_a_real_source"
 
 
 async def test_db_connect_error_returns_one_line_failure(monkeypatch, capsys):

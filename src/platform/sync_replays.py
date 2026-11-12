@@ -20,30 +20,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 
-import asyncpg
-
-from src.platform.normalize.replay import normalize_replay_row
-from src.platform.orchestrate import (
-    dry_run_normalize,
-    land_and_normalize,
-    with_ingest_run,
+from src.platform.source_spec import (
+    DEFAULT_MIN_RATING,
+    DEFAULT_REPLAY_PAGES,
+    SOURCES,
+    run_standalone,
 )
-from src.platform.sources.showdown import ShowdownAdapter
-from src.platform.store.db import get_pool, migrate
-
-
-async def _replay_normalize(
-    conn: asyncpg.Connection,
-    *,
-    raw_id: int,
-    source: str,
-    natural_key: str,  # noqa: ARG001  — not used by replay normalizer
-    payload: dict,
-) -> int:
-    """Adapter: land_and_normalize passes natural_key; normalize_replay_row doesn't need it."""
-    return await normalize_replay_row(
-        conn, raw_id=raw_id, source=source, payload=payload
-    )
 
 
 async def _run(
@@ -54,34 +36,14 @@ async def _run(
     min_rating: int,
     dry_run: bool = False,
 ) -> None:
-    mode = "replay_targeted" if ids else "periodic"
-    adapter = ShowdownAdapter()
-    records = await adapter.fetch(
-        ids=ids, format=format, pages=pages, min_rating=min_rating
+    await run_standalone(
+        SOURCES["replays"],
+        dry_run=dry_run,
+        ids=ids,
+        format=format,
+        pages=pages,
+        min_rating=min_rating,
     )
-    if dry_run:
-        stats = await dry_run_normalize(records)
-        print("DRY RUN:", stats)
-        if stats["errored"]:
-            raise SystemExit(1)
-        return
-    await migrate()
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        stats = await with_ingest_run(
-            conn,
-            source="showdown",
-            route="replay",
-            mode=mode,
-            fn=lambda: land_and_normalize(
-                conn,
-                source="showdown",
-                route="replay",
-                records=records,
-                normalize=_replay_normalize,
-            ),
-        )
-    print(stats)
 
 
 def main() -> None:
@@ -101,15 +63,15 @@ def main() -> None:
     parser.add_argument(
         "--pages",
         type=int,
-        default=10,
-        help="Max search pages for ladder sweep (default 10)",
+        default=DEFAULT_REPLAY_PAGES,
+        help="Max search pages for ladder sweep (default 5)",
     )
     parser.add_argument(
         "--min-rating",
         type=int,
-        default=0,
+        default=DEFAULT_MIN_RATING,
         dest="min_rating",
-        help="Skip ladder replays below this rating (default 0)",
+        help="Skip ladder replays below this rating (default 1500)",
     )
     parser.add_argument(
         "--dry-run",
