@@ -324,7 +324,7 @@ class TestCurriculumCallback:
     # ── force-graduation escape hatch ─────────────────────────────
 
     def test_force_graduates_when_steps_exceed_limit(self, tmp_path):
-        """n_max_epoch0_steps exceeded with <70% win rate → force-graduation fires."""
+        """n_max_warmup_steps exceeded with <70% win rate → force-graduation fires."""
         opponent = MagicMock()
         cb = CurriculumCallback(
             opponent_player=opponent,
@@ -332,7 +332,7 @@ class TestCurriculumCallback:
             swap_every=10_000,
             win_threshold=0.70,
             min_episodes=10,
-            n_max_epoch0_steps=50,
+            n_max_warmup_steps=50,
         )
         cb.model = MagicMock()
         cb.num_timesteps = 0
@@ -360,7 +360,7 @@ class TestCurriculumCallback:
             swap_every=10_000,
             win_threshold=0.70,
             min_episodes=10,
-            n_max_epoch0_steps=5,
+            n_max_warmup_steps=5,
         )
         cb.model = MagicMock()
         cb.num_timesteps = 5

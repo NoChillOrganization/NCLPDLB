@@ -76,7 +76,7 @@ SHOWDOWN_PORT = 8000
 DEFAULT_SWAP_EVERY = (
     50_000  # steps between opponent model swaps — mirrors train_policy.py
 )
-N_MAX_EPOCH0_STEPS = (
+N_MAX_WARMUP_STEPS = (
     2_000_000  # force-graduate after this many warmup steps — mirrors train_policy.py
 )
 
@@ -326,7 +326,7 @@ class CurriculumCallback(BaseCallback):
         min_episodes: int = 500,
         mean_type_eff_threshold: float = 1.2,
         min_type_eff_samples: int = 200,
-        n_max_epoch0_steps: int = N_MAX_EPOCH0_STEPS,
+        n_max_warmup_steps: int = N_MAX_WARMUP_STEPS,
         verbose: int = 0,
     ) -> None:
         super().__init__(verbose=verbose)
@@ -338,7 +338,7 @@ class CurriculumCallback(BaseCallback):
         self.min_episodes = min_episodes
         self.mean_type_eff_threshold = mean_type_eff_threshold
         self.min_type_eff_samples = min_type_eff_samples
-        self.n_max_epoch0_steps = n_max_epoch0_steps
+        self.n_max_warmup_steps = n_max_warmup_steps
 
         self._phase = "warmup"
         self._win_window: deque = deque(maxlen=min_episodes)
@@ -499,7 +499,7 @@ class CurriculumCallback(BaseCallback):
         self._check_policy_collapse()
 
         if self._phase == "warmup":
-            if self.num_timesteps >= self.n_max_epoch0_steps:
+            if self.num_timesteps >= self.n_max_warmup_steps:
                 win_rate = (
                     sum(self._win_window) / len(self._win_window)
                     if self._win_window

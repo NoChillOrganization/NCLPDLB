@@ -4,12 +4,15 @@ Usage:
     TRAIN_TEAM_FORMAT=gen9zu python scripts/validate_teams.py
 """
 
-import ast
 import os
-import re
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.ml.teams import FORMAT_TEAMS
 
 
 def main() -> None:
@@ -18,32 +21,11 @@ def main() -> None:
         print("TRAIN_TEAM_FORMAT not set — skipping validation")
         return
 
-    src = open("src/ml/teams.py", encoding="utf-8").read()
-
-    map_match = re.search(
-        r"FORMAT_TEAMS\b\s*(?::[^=\n]+)?=\s*\{(.*?)\}", src, re.DOTALL
-    )
-    if not map_match:
-        print("ERROR: FORMAT_TEAMS not found in teams.py", file=sys.stderr)
-        sys.exit(1)
-
-    var_match = re.search(
-        r"""['"]""" + re.escape(team_format) + r"""['"]\s*:\s*(\w+)""",
-        map_match.group(1),
-    )
-    if not var_match:
+    teams = FORMAT_TEAMS.get(team_format)
+    if not teams:
         print(f"No team pool mapped for {team_format} — skipping validation")
         return
 
-    var_name = var_match.group(1)
-    lst_match = re.search(
-        rf"^{var_name}\s*=\s*(\[.*?\n\])", src, re.MULTILINE | re.DOTALL
-    )
-    if not lst_match:
-        print(f"Variable {var_name} not found in teams.py", file=sys.stderr)
-        sys.exit(1)
-
-    teams = ast.literal_eval(lst_match.group(1))
     ps_dir = os.path.expanduser("~/pokemon-showdown")
     errors = 0
 
@@ -74,7 +56,7 @@ def main() -> None:
 
     if errors:
         print(
-            f"\n{errors} invalid team(s) for {team_format} — fix src/ml/teams.py",
+            f"\n{errors} invalid team(s) for {team_format} — fix data/teams/{team_format}.txt",
             file=sys.stderr,
         )
         sys.exit(1)

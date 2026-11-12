@@ -76,3 +76,21 @@ async def test_with_ingest_run_raises_on_unregistered_source():
             conn, source="not_a_real_source", route="replay", mode="periodic", fn=fn
         )
     assert fn_called == [], "fn() must not run when the source row wasn't created"
+
+
+@pytest.mark.asyncio
+async def test_land_and_normalize_counts_new_separately(monkeypatch):
+    import src.platform.orchestrate as orch
+
+    ids = iter([1, None, 2])  # second record is a duplicate
+    monkeypatch.setattr(
+        orch, "land_raw", AsyncMock(side_effect=lambda *a, **k: next(ids))
+    )
+    stats = await orch.land_and_normalize(
+        AsyncMock(),
+        source="s",
+        route="usage",
+        records=[_rec("a"), _rec("b"), _rec("c")],
+        normalize=AsyncMock(),
+    )
+    assert stats == {"landed": 3, "new": 2, "normalized": 2, "errored": 0}

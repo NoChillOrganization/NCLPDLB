@@ -18,44 +18,19 @@ from __future__ import annotations
 import argparse
 import asyncio
 
-from src.platform.normalize.usage import normalize_usage_row
-from src.platform.orchestrate import (
-    dry_run_normalize,
-    land_and_normalize,
-    with_ingest_run,
-)
-from src.platform.sources.smogon import SmogonAdapter
-from src.platform.store.db import get_pool, migrate
+from src.platform.source_spec import DEFAULT_CUTOFF, SOURCES, run_standalone
 
 
 async def _run(
     *, period: str, formats: list[str], cutoff: int, dry_run: bool = False
 ) -> None:
-    adapter = SmogonAdapter()
-    records = await adapter.fetch(period=period, formats=formats, cutoff=cutoff)
-    if dry_run:
-        stats = await dry_run_normalize(records)
-        print("DRY RUN:", stats)
-        if stats["errored"]:
-            raise SystemExit(1)
-        return
-    await migrate()
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        stats = await with_ingest_run(
-            conn,
-            source="smogon",
-            route="usage",
-            mode="periodic",
-            fn=lambda: land_and_normalize(
-                conn,
-                source="smogon",
-                route="usage",
-                records=records,
-                normalize=normalize_usage_row,
-            ),
-        )
-    print(stats)
+    await run_standalone(
+        SOURCES["smogon"],
+        dry_run=dry_run,
+        period=period,
+        formats=formats,
+        cutoff=cutoff,
+    )
 
 
 def main() -> None:
@@ -71,7 +46,10 @@ def main() -> None:
         help="Showdown format slugs to sync",
     )
     parser.add_argument(
-        "--cutoff", type=int, default=1500, help="Elo cutoff tier (default 1500)"
+        "--cutoff",
+        type=int,
+        default=DEFAULT_CUTOFF,
+        help="Elo cutoff tier (default 1500)",
     )
     parser.add_argument(
         "--dry-run",

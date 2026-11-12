@@ -1,7 +1,7 @@
 """
 Sheet Cog — Discord commands that read/write directly to the Google Spreadsheet.
 
-Commissioner-only commands (manage_guild permission):
+Moderator+ commands (Moderator or Guildmaster role):
   /sheet-standings update     — Recalculate and write standings
   /sheet-schedule add         — Add a match to the Schedule tab
   /sheet-result set           — Record a match result
@@ -276,18 +276,15 @@ class SheetCog(commands.Cog, name="Sheet"):
         description="Recalculate and write standings to the spreadsheet",
     )
     @require_role(ROLE_MOD)
-    @app_commands.describe(
-        pool="Filter to a specific pool (A or B), or leave blank for all"
-    )
-    async def sheet_standings(
-        self, interaction: discord.Interaction, pool: str = ""
-    ) -> None:
+    async def sheet_standings(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
         from src.services.elo_service import EloService
 
         svc = EloService()
         standings = await svc.get_standings(guild_id=str(interaction.guild_id))
-        filtered = standings  # EloService already returns all guild standings
+        filtered = (
+            standings  # PlayerElo has no pool field, so all guild standings are written
+        )
         for rank, s in enumerate(filtered, 1):
             await asyncio.to_thread(
                 sheets.upsert_standing,

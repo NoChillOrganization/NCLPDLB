@@ -70,12 +70,14 @@ async def land_and_normalize(
         ingest_run_id: Optional run id for dead-letter traceability.
 
     Returns:
-        {'landed': int, 'normalized': int, 'errored': int}
-        ``landed`` counts every record processed (including dups);
+        {'landed': int, 'new': int, 'normalized': int, 'errored': int}
+        ``landed`` counts every record processed (including dups); monitoring's
+        VOLUME_DROP compares this fetched-volume figure, not new inserts;
+        ``new`` counts records actually inserted (land_raw returned an id);
         ``normalized`` counts records where the normalizer actually ran;
         ``errored`` counts records that failed normalization (dead-lettered).
     """
-    landed = normalized = errored = 0
+    landed = new = normalized = errored = 0
     for record in records:
         raw_id = await land_raw(
             conn,
@@ -88,6 +90,7 @@ async def land_and_normalize(
         landed += 1
         if raw_id is None:
             continue  # identical payload already in raw_ingest — idempotent skip
+        new += 1
         try:
             await normalize(
                 conn,
@@ -109,7 +112,12 @@ async def land_and_normalize(
                 error=f"{type(exc).__name__}: {exc}",
                 ingest_run_id=ingest_run_id,
             )
-    return {"landed": landed, "normalized": normalized, "errored": errored}
+    return {
+        "landed": landed,
+        "new": new,
+        "normalized": normalized,
+        "errored": errored,
+    }
 
 
 async def with_ingest_run(
@@ -127,7 +135,10 @@ async def with_ingest_run(
         source: Source name ('smogon' | 'pikalytics' | 'limitless' | 'showdown').
         route:  Must match ingest_run.route CHECK ('tournament' | 'usage' | 'replay').
         mode:   Must match ingest_run.mode CHECK
-                ('periodic' | 'event' | 'replay_targeted').
+                ('periodic' | 'event' | 'replay_targeted'). Both 'event'
+                (sync_limitless_vgc --ids) and 'replay_targeted' (sync_replays
+                --ids) mean "explicit IDs, not discovery"; kept distinct
+                because stored values are queried/constrained (0001_init.sql).
         fn:     Async callable taking no arguments; should return a dict of stats
                 (e.g. {'landed': N, 'normalized': M}) to store in ingest_run.stats.
 
@@ -214,6 +225,9 @@ async def with_ingest_run(
             file=sys.stderr,
         )
         # Route exhausted/unrecoverable failures to dead_letter for operator review.
+        # dead_letter holds two kinds of rows: record-level (natural_key + payload set,
+        # written by land_and_normalize) and run-level (natural_key=NULL, payload=NULL,
+        # written here). PARSE_ERRORS monitoring counts only record-level rows.
         # payload=None at run level — we don't have a single record to blame here.
         await to_dead_letter(
             conn,

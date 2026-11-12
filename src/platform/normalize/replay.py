@@ -19,6 +19,9 @@ from src.platform.store.repositories import (
     resolve_species,
 )
 
+# One number, two columns: written to replay_battle.parser_version (battle row
+# identity, part of the lookup below) and to raw_ingest.normalizer_version via
+# mark_raw_processed. Bump it to re-parse; old battle rows stay under the old version.
 PARSER_VERSION = 1
 
 

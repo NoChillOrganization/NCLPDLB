@@ -89,8 +89,9 @@ def resolve_transformer_checkpoint(path: str | Path | None = None) -> Path | Non
     without any heavy dependencies — mirrors the pattern of ``best_model_for_format``.
 
     This drives /spar inference-mode selection (Phase 06 criterion 4):
-    - File present  → MCTS inference via BattleTransformer + MCTS lookahead
-    - File absent   → PPO fallback (silent, no UX degradation)
+    - File present  → MCTS-agent inference via BattleTransformer (one-ply prior
+      by default, n_simulations=0)
+    - File absent   → PPO fallback (BotChallenger logs a warning)
 
     Args:
         path: Explicit checkpoint path; defaults to DEFAULT_TRANSFORMER_CHECKPOINT.
@@ -180,9 +181,7 @@ if POKE_ENV_AVAILABLE:
 
         # ── Move selection ─────────────────────────────────────────
 
-        def choose_move(
-            self, battle: AbstractBattle
-        ) -> None:  # pragma: no cover  # type: ignore[override]
+        def choose_move(self, battle: AbstractBattle) -> None:  # pragma: no cover  # type: ignore[override]
             # ── MCTS path ──────────────────────────────────────────
             if self._use_mcts and self._transformer is not None:
                 try:
@@ -281,9 +280,10 @@ class BotChallenger:
 
     - If a checkpoint is found on disk → ``ShowdownBotPlayer`` is built with
       ``use_mcts=True`` and the transformer loaded; battle decisions run through
-      MCTS lookahead backed by the BattleTransformer.
+      the MCTS agent. With the default ``n_simulations=0`` this is a one-ply
+      prior from the BattleTransformer, not a multi-step lookahead.
     - If no checkpoint is present → PPO-only player is built (existing behaviour);
-      a log line is emitted so ops can see which mode is active.
+      a WARNING is logged so ops can see the fallback happened.
 
     No code change is required to switch modes — only the presence or absence of
     ``transformer_checkpoint.pt`` on disk (Phase 06 criterion 4).
@@ -324,8 +324,10 @@ class BotChallenger:
                 transformer_path=ckpt,
             )
         else:
-            log.info(
-                "[BotChallenger] No transformer checkpoint — /spar using PPO inference (fallback)"
+            log.warning(
+                "[BotChallenger] Transformer checkpoint not found (looked at %s) — "
+                "falling back to PPO inference for /spar",
+                transformer_path or DEFAULT_TRANSFORMER_CHECKPOINT,
             )
             self._player = ShowdownBotPlayer(
                 model_path=self.model_path,

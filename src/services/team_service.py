@@ -166,7 +166,7 @@ class TeamService:
 
         trade = Trade(
             trade_id=str(uuid.uuid4())[:8],
-            league_id="",
+            league_id=guild_id,
             from_player=from_player,
             to_player=to_player,
             pokemon_given=offer_mon.name,

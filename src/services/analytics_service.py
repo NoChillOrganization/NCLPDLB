@@ -149,18 +149,6 @@ TYPE_CHART: dict[str, dict[str, float]] = {
 
 ALL_TYPES = list(TYPE_CHART.keys())
 
-# Common team archetypes based on type/role composition
-ARCHETYPES = {
-    "Hyper Offense": {"criteria": "3+ sweepers, avg_bst > 530, low bulk"},
-    "Stall": {"criteria": "3+ walls, high bulk, recovery moves"},
-    "Balance": {"criteria": "mixed offense/defense"},
-    "Rain": {"criteria": "water type + swift swim or drizzle"},
-    "Sun": {"criteria": "fire type + chlorophyll or drought"},
-    "Sand": {"criteria": "rock/ground/steel + sand rush"},
-    "Trick Room": {"criteria": "low speed + slow pokemon"},
-    "VGC Restricted": {"criteria": "legendary + restricted combo"},
-}
-
 
 @dataclass
 class TeamAnalysisReport:

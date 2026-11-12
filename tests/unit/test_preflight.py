@@ -66,3 +66,9 @@ def test_run_checks_exit_code_and_isolation(capsys):
 
 def test_tab_name_accent_insensitive():
     assert preflight._norm("Pokémon Stats") == preflight._norm("Pokemon Stats")
+
+
+def test_expected_tabs_from_tab_constants():
+    tabs = preflight.expected_tabs()
+    assert len(tabs) == 17
+    assert "Pokémon Stats" in tabs and "Match Records" not in tabs

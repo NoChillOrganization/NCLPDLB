@@ -206,7 +206,7 @@ class Draft(BaseModel):
     status: DraftStatus = DraftStatus.SETUP
     total_rounds: int = Field(default=6, ge=1)
     timer_seconds: int = Field(default=60, ge=0)
-    tier_mode: bool = False
+    tier_mode: bool = False  # Stored only; no reader (kept so persisted drafts still load). Pokemon.tier_points likewise has no consumer yet.
     max_players: int = Field(
         default=MAX_PLAYERS_PER_DRAFT, ge=2, le=MAX_PLAYERS_PER_DRAFT
     )
