@@ -319,7 +319,7 @@ The circular store of self-play experience used to train the MCTS agent; not a S
 _Avoid_: Replay (bare)
 
 **Observation**:
-The float vector a Battle agent sees each turn (78 dimensions singles, 64 doubles).
+The float vector a Battle agent sees each turn (78 dimensions singles, 140 doubles).
 _Avoid_: State, features
 
 **Action space**:
