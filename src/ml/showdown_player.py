@@ -181,7 +181,9 @@ if POKE_ENV_AVAILABLE:
 
         # ── Move selection ─────────────────────────────────────────
 
-        def choose_move(self, battle: AbstractBattle) -> None:  # pragma: no cover  # type: ignore[override]
+        def choose_move(
+            self, battle: AbstractBattle
+        ) -> None:  # pragma: no cover  # type: ignore[override]
             # ── MCTS path ──────────────────────────────────────────
             if self._use_mcts and self._transformer is not None:
                 try:

@@ -457,8 +457,12 @@ async def test_timer_fires_and_auto_skips(draft_svc):
 
     # Start timer with 0-second delay so it fires immediately
     draft_svc._start_timer("gTFire", draft, on_timeout)
-    # Allow the timer coroutine to run
-    await asyncio.sleep(0.05)
+    # Wait (bounded) for the timer coroutine; a fixed sleep is flaky on slow CI
+    # because the auto-skip persists to SQLite before calling back.
+    for _ in range(150):
+        if callback_args:
+            break
+        await asyncio.sleep(0.02)
 
     assert ("gTFire", "p1") in callback_args
     # Pick should have advanced to p2
