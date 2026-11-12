@@ -304,3 +304,17 @@ Shared test data lives in `tests/fixtures/`.
 Performance tests (`tests/performance/locustfile.py`) are excluded from normal runs.
 The `conftest.py` at root and `tests/conftest.py` provide shared fixtures.
 CI enforces a coverage gate of ≥80% on `src.ml.self_play`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (NoChillOrganization/NCLPDLB) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one root `GLOSSARY.md` + `docs/adr/`. See `docs/agents/domain.md`.
