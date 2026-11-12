@@ -59,3 +59,53 @@ _Avoid_: RL agent, legacy agent
 **MCTS agent**:
 A Battle agent whose Transformer policy/value model is trained through MCTS ladder self-play.
 _Avoid_: Transformer agent, AlphaZero agent
+
+### Competitive-data platform
+
+**Source**:
+An external provider of competitive data, such as Smogon, Pikalytics, Limitless or Showdown.
+_Avoid_: Feed, site
+
+**Adapter**:
+The code that fetches records from one Source.
+_Avoid_: Scraper, connector
+
+**Route**:
+The kind of data a record carries: tournament, usage or replay. One Source can serve several Routes.
+_Avoid_: Type, kind
+
+**Raw record**:
+A fetched payload stored exactly as received, deduplicated by identical payload.
+_Avoid_: Raw row, dump
+
+**Canonical row**:
+A typed, source-independent row (species, usage, tournament or replay) produced from a Raw record.
+_Avoid_: Clean row, normalized record
+
+**Land**:
+To store a Raw record.
+_Avoid_: Load, save
+
+**Normalize**:
+To turn a Raw record into Canonical rows.
+_Avoid_: Parse (that is replay parsing), transform
+
+**Ingest**:
+The whole pipeline of Land then Normalize.
+_Avoid_: Sync (that is the command), import
+
+**Ingest run**:
+One execution of Ingest for a single Source.
+_Avoid_: Job, sync run
+
+**Dead letter**:
+A Raw record that failed to Normalize, parked for review and not retried automatically.
+_Avoid_: Failed record, error row
+
+**Canonical species**:
+The single agreed identity of a Pokémon across Sources inside the platform.
+_Avoid_: Pokémon (inside the platform), mon
+
+**Species alias**:
+A Source's spelling of a Pokémon name, mapped to a Canonical species.
+_Avoid_: Synonym, nickname
