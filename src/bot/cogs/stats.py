@@ -12,7 +12,7 @@ from discord.ext import commands
 
 from src.bot.permissions import ROLE_COACH, require_role
 from src.data.pokeapi import pokemon_db
-from src.ml.train_all import TRAINING_MAP
+from src.ml.formats import FORMAT_DISPLAY, SPAR_FORMATS
 from src.services.analytics_service import AnalyticsService
 from src.services.battle_sim import BattleSimService
 from src.services.elo_service import EloService
@@ -26,51 +26,8 @@ log = logging.getLogger(__name__)
 
 REPLAY_DOMAIN = "replay.pokemonshowdown.com"
 
-# Derived from TRAINING_MAP — single source of truth with train-models.yml.
-SPAR_FORMATS = [
-    fmt for fmt, (train_fmt, _) in TRAINING_MAP.items() if train_fmt is not None
-]
-
-_FORMAT_DISPLAY = {
-    # Random Battle
-    "gen9randombattle": "Gen 9 Random Battle",
-    "gen9monotyperandombattle": "Gen 9 Monotype Random Battle",
-    "gen9randomdoublesbattle": "Gen 9 Random Doubles",
-    "gen7randombattle": "Gen 7 Random Battle",
-    "gen6randombattle": "Gen 6 Random Battle",
-    # Smogon Singles
-    "gen9ou": "Gen 9 OU",
-    "gen9ubers": "Gen 9 Ubers",
-    "gen9uu": "Gen 9 UU",
-    "gen9ru": "Gen 9 RU",
-    "gen9nu": "Gen 9 NU",
-    "gen9pu": "Gen 9 PU",
-    "gen9zu": "Gen 9 ZU",
-    "gen9lc": "Gen 9 LC",
-    "gen9monotype": "Gen 9 Monotype",
-    "gen9nationaldex": "Gen 9 National Dex",
-    "gen9anythinggoes": "Gen 9 Anything Goes",
-    # Smogon Doubles
-    "gen9doublesou": "Gen 9 Doubles OU",
-    "gen9doublesubers": "Gen 9 Doubles Ubers",
-    "gen9doublesuu": "Gen 9 Doubles UU",
-    "gen9doublesnu": "Gen 9 Doubles NU",
-    # VGC 2025
-    "gen9vgc2025regg": "VGC 2025 Reg G",
-    "gen9vgc2025regh": "VGC 2025 Reg H",
-    "gen9vgc2025regi": "VGC 2025 Reg I",
-    "gen9vgc2025reggbo3": "VGC 2025 Reg G (Bo3)",
-    "gen9vgc2025reghbo3": "VGC 2025 Reg H (Bo3)",
-    "gen9vgc2025regibo3": "VGC 2025 Reg I (Bo3)",
-    # VGC 2026
-    "gen9vgc2026regi": "VGC 2026 Reg I",
-    "gen9vgc2026regibo3": "VGC 2026 Reg I (Bo3)",
-    # Champions
-    "gen9championsou": "Champions OU",
-    "gen9championsbssregmb": "Champions BSS Reg M-B",
-    "gen9championsvgc2026regmb": "Champions VGC 2026 Reg M-B",
-    "gen9championsvgc2026regmbbo3": "Champions VGC 2026 Reg M-B (Bo3)",
-}
+# Spar formats / display names come from the battle format registry.
+_FORMAT_DISPLAY = FORMAT_DISPLAY
 
 
 async def spar_format_autocomplete(

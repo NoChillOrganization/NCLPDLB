@@ -7,38 +7,16 @@ RotatingTeambuilder to cycle through diverse teams during RL training.
 
 ponytail: data lives in data/teams/*.txt, not inline. Edit the .txt files to
 add/change teams — no code change needed. Add a format by dropping a new
-<format>.txt and appending its key to FORMAT_KEYS.
+<format>.txt and appending its key to TEAM_POOL_KEYS in src/ml/formats.py.
 """
 
 from pathlib import Path
 
+from src.ml.formats import TEAM_POOL_KEYS
+
 _DATA = Path(__file__).resolve().parents[2] / "data" / "teams"
 
-FORMAT_KEYS = [
-    "gen9ou",
-    "gen9nationaldex",
-    "gen9monotype",
-    "gen9anythinggoes",
-    "gen9doublesou",
-    "gen9vgc2026regi",
-    "gen9ubers",
-    "gen9uu",
-    "gen9ru",
-    "gen9nu",
-    "gen9pu",
-    "gen9zu",
-    "gen9lc",
-    "gen9doublesubers",
-    "gen9doublesuu",
-    "gen9doublesnu",
-    "gen9vgc2025regg",
-    "gen9vgc2025regh",
-    "gen9vgc2025regi",
-    "gen9vgc2025reggbo3",
-    "gen9vgc2025reghbo3",
-    "gen9vgc2025regibo3",
-    "gen9vgc2026regibo3",
-]
+FORMAT_KEYS = TEAM_POOL_KEYS  # the key list lives in src.ml.formats
 
 
 def _load(fmt: str) -> list[str]:

@@ -4,7 +4,7 @@ Tests for src/ml/train_all.py
 Covers pure helper functions:
   - _model_done()
   - _resume_checkpoint()
-  - TRAINING_MAP structure
+(TRAINING_MAP structure is covered by tests/unit/test_formats.py)
 """
 
 from __future__ import annotations
@@ -13,7 +13,6 @@ from pathlib import Path
 
 
 from src.ml.train_all import (
-    TRAINING_MAP,
     _model_done,
     _resume_checkpoint,
 )
@@ -101,49 +100,3 @@ class TestResumeCheckpoint:
 
         result = _resume_checkpoint("gen9ou", tmp_path)
         assert result is None
-
-
-# ── TRAINING_MAP ──────────────────────────────────────────────────────────────
-
-
-class TestTrainingMap:
-    def test_is_dict(self):
-        assert isinstance(TRAINING_MAP, dict)
-
-    def test_all_values_are_tuples(self):
-        for fmt, entry in TRAINING_MAP.items():
-            assert isinstance(entry, tuple), f"{fmt}: expected tuple, got {type(entry)}"
-            assert len(entry) == 2, f"{fmt}: tuple length should be 2"
-
-    def test_random_battle_has_no_teams(self):
-        assert TRAINING_MAP["gen9randombattle"] == ("gen9randombattle", None)
-
-    def test_smogon_singles_have_team_format(self):
-        train_fmt, team_fmt = TRAINING_MAP["gen9ou"]
-        assert train_fmt == "gen9ou"
-        assert team_fmt == "gen9ou"
-
-    def test_vgc_format_present(self):
-        assert "gen9championsvgc2026regmb" in TRAINING_MAP
-
-    def test_monotype_random_battle_has_no_teams(self):
-        assert TRAINING_MAP["gen9monotyperandombattle"] == (
-            "gen9monotyperandombattle",
-            None,
-        )
-
-    def test_all_train_fmts_are_str_or_none(self):
-        for fmt, (train_fmt, _) in TRAINING_MAP.items():
-            assert train_fmt is None or isinstance(train_fmt, str)
-
-    def test_all_team_fmts_are_str_or_none(self):
-        for fmt, (_, team_fmt) in TRAINING_MAP.items():
-            assert team_fmt is None or isinstance(team_fmt, str)
-
-    def test_contains_random_battle_formats(self):
-        assert "gen9randombattle" in TRAINING_MAP
-        assert "gen9randomdoublesbattle" in TRAINING_MAP
-
-    def test_doubles_formats_present(self):
-        assert "gen9doublesou" in TRAINING_MAP
-        assert "gen9randomdoublesbattle" in TRAINING_MAP

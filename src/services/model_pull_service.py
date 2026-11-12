@@ -8,7 +8,7 @@ import os
 import discord
 
 from src.config import PROJECT_ROOT, settings
-from src.ml.train_all import TRAINING_MAP
+from src.ml.formats import TRAINING_MAP
 
 log = logging.getLogger(__name__)
 

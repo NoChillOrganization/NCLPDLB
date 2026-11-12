@@ -33,7 +33,7 @@ from google.oauth2.service_account import Credentials
 
 from src.config import settings
 from src.data.sheets import REPLAY_HEADERS, TRAINING_RUN_HEADERS
-from src.ml.train_all import TRAINING_MAP
+from src.ml.formats import SPAR_FORMATS
 
 SCOPES = [
     "https://spreadsheets.google.com/feeds",
@@ -41,10 +41,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-# Per-format tabs: same list as SPAR_FORMATS in stats.py (derived from TRAINING_MAP)
-SPAR_FORMATS = [
-    fmt for fmt, (train_fmt, _) in TRAINING_MAP.items() if train_fmt is not None
-]
+# Per-format tabs: SPAR_FORMATS comes from the battle format registry (src.ml.formats)
 
 
 def _get_or_create(
