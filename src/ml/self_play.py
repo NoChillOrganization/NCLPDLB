@@ -1,5 +1,7 @@
 """
-Ladder Training Loop — queues the ladder on play.pokemonshowdown.com.
+Ladder loop — the battle agent plays real humans on the public Showdown ladder
+(play.pokemonshowdown.com). This is NOT agent-vs-agent self-play; the module name
+is historical.
 
 Architecture
 ------------
@@ -81,7 +83,7 @@ from src.ml.mcts import MCTSConfig, run_mcts, _build_legal_mask  # noqa: E402
 
 class SharedStats:
     """
-    Thread-safe counter bag shared between self-play and API state.
+    Thread-safe counter bag shared between the ladder loop and API state.
 
     The API (api.py) mirrors these values into its global STATE on each game.
     """
@@ -89,8 +91,8 @@ class SharedStats:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self.games = 0
-        self.wins = 0  # AccountA wins
-        self.losses = 0  # AccountB wins
+        self.wins = 0  # ladder games the agent won
+        self.losses = 0  # ladder games the agent lost
         self.ties = 0
 
     def record(self, outcome: str) -> None:
@@ -137,7 +139,7 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             mcts_config : MCTS hyperparameters
             replay_buffer: shared ReplayBuffer to push completed games into
             stats       : SharedStats to update after each game
-            name        : "AccountA" or "AccountB" — determines reward sign
+            name        : informational player label (does not affect reward)
             **kwargs    : forwarded to poke-env Player.__init__
         """
 

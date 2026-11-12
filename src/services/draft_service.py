@@ -1,6 +1,9 @@
 """
 Draft Service — Core draft engine.
-Handles Snake, Auction, Tiered, and Adaptive Ban draft formats.
+Handles Snake, Auction, Tiered, and Custom (snake picks after a "Ban phase") draft formats.
+`linear` exists in DraftFormat but is not offered by /draft-create or the wizard.
+Auction nominations: no command creates one; `current_nomination_id` is only cleared here
+(close_nomination), so setting it is the nomination view's job (known gap: none exists yet).
 """
 
 from __future__ import annotations
@@ -157,6 +160,7 @@ class DraftService:
         draft = Draft(
             draft_id=str(uuid.uuid4())[:8],
             guild_id=guild_id,
+            league_id=guild_id,
             commissioner_id=commissioner_id,
             format=format,
             total_rounds=rounds,
@@ -173,7 +177,7 @@ class DraftService:
             asyncio.to_thread(
                 sheets.save_league_setup,
                 {
-                    "league_id": draft.draft_id,
+                    "league_id": guild_id,  # one League per server: league id == guild id
                     "server_id": guild_id,
                     "commissioner_id": commissioner_id,
                     "format": format.value,
@@ -261,7 +265,7 @@ class DraftService:
         if len(draft.player_order) < 2:
             raise ValueError("Need at least 2 players to start.")
 
-        # Start ban phase if adaptive banning is enabled
+        # Custom format starts with the Ban phase
         if draft.format == DraftFormat.CUSTOM:
             draft.status = DraftStatus.BAN_PHASE
         else:
@@ -475,10 +479,10 @@ class DraftService:
         # Budget check
         budget = draft.budget.get(player_id, 0)
         if amount < 1:
-            return BidResult(success=False, error="Bid must be at least 1 coin.")
+            return BidResult(success=False, error="Bid must be at least 1 point.")
         if amount > budget:
             return BidResult(
-                success=False, error=f"Insufficient budget. You have {budget} coins."
+                success=False, error=f"Insufficient budget. You have {budget} points."
             )
 
         # Reject if bid does not exceed current high bid
@@ -532,7 +536,7 @@ class DraftService:
         self._advance_pick(draft)
         await _persist_draft(draft)
         log.info(
-            f"Auction: {winner_id} won {pokemon.name} for {amount} coins in guild {guild_id}"
+            f"Auction: {winner_id} won {pokemon.name} for {amount} points in guild {guild_id}"
         )
         return PickResult(success=True, pokemon=pokemon, round=draft.current_round)
 

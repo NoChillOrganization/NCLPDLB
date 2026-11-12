@@ -1,7 +1,7 @@
 """
 Draft Cog — All draft-related slash commands.
 
-Supports: Snake, Auction, Tiered, Adaptive Ban formats.
+Supports: Snake, Auction, Tiered, and Custom (Ban phase) formats.
 Includes a /draft-setup wizard that walks the commissioner through
 all configuration questions before writing to the spreadsheet.
 Tera Captain system fully integrated with rules saved to the Rules tab.
@@ -48,7 +48,7 @@ class DraftCog(commands.Cog, name="Draft"):
         format="Draft format",
         rounds="Number of rounds (default: 6)",
         timer="Pick timer in seconds (default: 60)",
-        game_mode="Showdown or console format",
+        game_mode="Game format: Showdown, Scarlet/Violet, Sword/Shield or VGC",
         tera_captains="Tera Captains per team (0 = off)",
         tera_types="Tera types per captain (default: 1)",
     )
@@ -95,7 +95,7 @@ class DraftCog(commands.Cog, name="Draft"):
             title="Draft Created!",
             description=(
                 f"**Format:** {format.title()} Draft\n"
-                f"**Mode:** {game_mode.upper()}\n"
+                f"**Game format:** {game_mode.upper()}\n"
                 f"**Rounds:** {rounds} · **Timer:** {timer}s{tera_info}"
             ),
             color=discord.Color.green(),
@@ -190,7 +190,7 @@ class DraftCog(commands.Cog, name="Draft"):
             color=discord.Color.blue(),
         )
         embed.add_field(name="Format", value=draft.format.value.title())
-        embed.add_field(name="Mode", value=draft.game_format.upper())
+        embed.add_field(name="Game format", value=draft.game_format.upper())
         if draft.tera_captains_per_team > 0:
             embed.add_field(
                 name="Tera Captains",
@@ -306,7 +306,7 @@ class DraftCog(commands.Cog, name="Draft"):
         embed = discord.Embed(title="Draft Status", color=discord.Color.blurple())
         embed.add_field(name="Format", value=draft.format.value.title())
         embed.add_field(
-            name="Mode", value=getattr(draft, "game_format", "showdown").upper()
+            name="Game format", value=getattr(draft, "game_format", "showdown").upper()
         )
         embed.add_field(
             name="Round", value=f"{draft.current_round}/{draft.total_rounds}"

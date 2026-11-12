@@ -28,11 +28,12 @@ from scripts._clock_skew import apply_google_clock_skew
 
 apply_google_clock_skew()
 
-from src.config import settings
-from src.data.sheets import REPLAY_HEADERS, TRAINING_RUN_HEADERS
-
 import gspread
 from google.oauth2.service_account import Credentials
+
+from src.config import settings
+from src.data.sheets import REPLAY_HEADERS, TRAINING_RUN_HEADERS
+from src.ml.train_all import TRAINING_MAP
 
 SCOPES = [
     "https://spreadsheets.google.com/feeds",
@@ -40,40 +41,9 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-# All formats that may have per-format tabs (mirrors SPAR_FORMATS in stats.py)
+# Per-format tabs: same list as SPAR_FORMATS in stats.py (derived from TRAINING_MAP)
 SPAR_FORMATS = [
-    "gen9randombattle",
-    "gen9monotyperandombattle",
-    "gen9randomdoublesbattle",
-    "gen7randombattle",
-    "gen6randombattle",
-    "gen9ou",
-    "gen9ubers",
-    "gen9uu",
-    "gen9ru",
-    "gen9nu",
-    "gen9pu",
-    "gen9zu",
-    "gen9lc",
-    "gen9monotype",
-    "gen9nationaldex",
-    "gen9anythinggoes",
-    "gen9doublesou",
-    "gen9doublesubers",
-    "gen9doublesuu",
-    "gen9doublesnu",
-    "gen9vgc2025regg",
-    "gen9vgc2025regh",
-    "gen9vgc2025regi",
-    "gen9vgc2025reggbo3",
-    "gen9vgc2025reghbo3",
-    "gen9vgc2025regibo3",
-    "gen9vgc2026regi",
-    "gen9vgc2026regibo3",
-    "gen9championsou",
-    "gen9championsbssregmb",
-    "gen9championsvgc2026regmb",
-    "gen9championsvgc2026regmbbo3",
+    fmt for fmt, (train_fmt, _) in TRAINING_MAP.items() if train_fmt is not None
 ]
 
 

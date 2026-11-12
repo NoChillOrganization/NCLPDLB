@@ -15,8 +15,8 @@ Architecture
 
 Self-play curriculum
 ────────────────────
-  Epoch 0          : agent plays vs RandomPlayer baseline
-  Epoch 1+         : agent plays vs latest saved checkpoint
+  Warmup phase     : agent plays vs MaxBasePowerPlayer until win-rate threshold
+  Selfplay phase   : agent plays vs latest saved checkpoint
   Every swap_every : checkpoint saved, opponent model reloaded
 
 Requirements
@@ -123,7 +123,7 @@ from src.ml.train_policy_components import (  # noqa: E402, F401
 DEFAULT_FORMAT = "gen9randombattle"
 DEFAULT_TIMESTEPS = 500_000
 DEFAULT_SWAP_EVERY = 50_000  # steps between opponent model swaps
-N_MAX_EPOCH0_STEPS = 2_000_000  # force-graduate after this many warmup steps
+N_MAX_WARMUP_STEPS = 2_000_000  # force-graduate after this many warmup steps
 DEFAULT_SAVE_DIR = "data/ml/policy"
 DEFAULT_RESULTS_DIR = "data/ml/results"
 

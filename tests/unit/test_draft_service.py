@@ -175,6 +175,7 @@ async def test_create_draft_from_config(draft_svc):
         )
     assert draft.guild_id == "guildCFG"
     assert draft.total_rounds == 4
+    assert draft.league_id == "guildCFG"  # league id == guild id
 
 
 # ── add_player error paths ─────────────────────────────────────

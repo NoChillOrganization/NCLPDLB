@@ -1,12 +1,12 @@
 Category,Command,Description,Parameters,Permission Required,Notes
 Draft,/draft-setup,Launch the interactive step-by-step draft setup wizard,(none — opens wizard UI),Guildmaster,Walks through format / rounds / timer / game mode interactively
-Draft,/draft-create,Quickly create a draft with inline options,"format (snake/auction/tiered/custom), rounds (int), timer_seconds (int), game_format (showdown/vgc/sv/swsh/bdsp/legends)",Guildmaster,Skips the wizard; all parameters have defaults
+Draft,/draft-create,Quickly create a draft with inline options,"format (snake/auction/tiered/custom), rounds (int), timer_seconds (int), game_format (showdown/sv/swsh/vgc)",Guildmaster,Skips the wizard; all parameters have defaults
 Draft,/draft-join,Join an active draft as a player,"team_name (optional text), pool (A or B optional)",Draft League Coaches,Can only join while draft is in SETUP status
 Draft,/draft-cancel,Cancel and delete the current draft (confirmation required),(none),Guildmaster,Shows a confirmation button before permanently removing the draft and all picks
 Draft,/draft-start,Start the draft and begin the first pick turn,(none),Guildmaster,Requires at least 2 players joined; starts pick timer
-Draft,/pick,Pick a Pokemon on your turn,"pokemon (name, required), tera_type (optional), is_tera_captain (optional bool)",Draft League Coaches (on their turn),Auto-skips if pick timer expires; validates against ban list
-Draft,/ban,Ban a Pokemon during the ban phase,pokemon (name required),Draft League Coaches (on their turn),Only valid during BAN_PHASE (Custom format)
-Draft,/bid,Place a bid during an auction draft,amount (integer required),Draft League Coaches (on their turn),Auction format only; checked against remaining budget
+Draft,/pick,Pick a Pokemon on your turn,"pokemon (name, required), tera_type (optional), is_tera_captain (optional bool)",Draft League Coaches,Auto-skips if pick timer expires; validates against ban list
+Draft,/ban,Ban a Pokemon during the ban phase,pokemon (name required),Draft League Coaches,Only valid during BAN_PHASE (Custom format)
+Draft,/bid,Place a bid during an auction draft,amount (integer required),Draft League Coaches,Auction format only; checked against remaining budget
 Draft,/draft-status,Show the current draft status and whose turn it is,(none),Draft League Coaches,Shows round / pick number / current player / timer
 Draft,/draft-board,Show the full draft board with all picks so far,(none),Draft League Coaches,Paginated embed of all picks by round
 League,/league-create,Create a new draft league for this server,"name (text required), format (snake/auction/tiered/custom optional), season (int optional)",Guildmaster,Saves league to Google Sheets; one league per server typical
@@ -24,14 +24,14 @@ Stats,/analysis,Full team analysis -- type coverage / weaknesses / roles / arche
 Stats,/matchup,Compare two teams head-to-head and show advantage score,"player1 (@mention optional), player2 (@mention optional)",Draft League Coaches,Leave both blank to compare the two most recent draft participants
 Stats,/standings,Show league ELO standings and win/loss records,(none),Draft League Coaches,Sorted by ELO descending; pulled from EloService + Sheets
 Stats,/replay,Submit a Pokemon Showdown replay link for a match,url (replay.pokemonshowdown.com URL required),Draft League Coaches,Auto-parses winner / Pokemon used / turns; records match result
-Stats,/match-upload,Upload a capture card video of your match,"opponent (@mention required), video (file attachment required), game_id (optional text)",Draft League Coaches,Uploads to Cloudflare R2 or Azure Blob; max 100MB
+Stats,/match-upload,Upload a capture card video of your match,"opponent (@mention required), video (file attachment required), game_id (optional text)",Draft League Coaches,Stores the Discord CDN attachment URL (no separate storage or thumbnail); max 100MB
 Stats,/pokemon,Look up a Pokemon's stats / tier / abilities / console legality,name (Pokemon name required),Draft League Coaches,Returns embed with base stats / Showdown tier / VGC legality / sprite
 Stats,/spar,Challenge the AI bot to a live practice battle on Pokemon Showdown,"showdown_name (your Showdown username required), format (autocomplete -- defaults to gen9randombattle)",Draft League Coaches,"Bot (NCL-Colress) sends you a challenge on Showdown; posts result when done. Trained models: gen9randombattle, gen9monotyperandombattle, gen9randomdoublesbattle, gen9ou/uu/ru/nu/pu/zu/lc, gen9monotype, gen9nationaldex, gen9anythinggoes, gen9doublesou/uu, gen9championsou, gen9championsbssregmb, gen9championsvgc2026regmb/bo3"
 Admin,/admin-update,Pull latest code from git + reload all cogs + re-sync commands,(none),Guildmaster,"Runs git pull --ff-only, reloads every cog, then syncs slash commands to the server"
 Admin,/admin-sync,Sync slash commands with Discord -- pushes new or updated commands,scope (guild = instant / global = up to 1 hour -- defaults to guild),Guildmaster,Use after adding or changing commands; guild sync is instant and affects this server only
 Admin,/admin-skip,Force-skip a player's pick turn,user (@mention required),Moderators,Advances the pick order; cancels the current timer
 Admin,/admin-pause,Pause the active draft -- freezes the pick timer and stops auto-skips,(none),Moderators,Draft stays in PAUSED status until /admin-resume
-Admin,/admin-resume,Resume a paused draft -- restores pick order and timer,(none),Moderators,Restarts at the current player's turn
+Admin,/admin-resume,Resume a paused draft -- restores pick order,(none),Moderators,Sets status back to ACTIVE at the current player's turn; does NOT restart the pick timer (no timeout callback available here)
 Admin,/admin-override-pick,Replace an existing pick with a different Pokemon,"user (@mention required), old_pokemon (name required), new_pokemon (name required)",Moderators,In-memory only -- run /sheet-result to persist. Does not re-save to Sheets automatically.
 Admin,/admin-reset,Reset the entire draft (CANNOT BE UNDONE),(none -- confirmation button appears),Guildmaster,Wipes draft state from memory; does not roll back Sheets rows already written
 Admin,/admin-train-all,Train AI models for ALL formats sequentially,"timesteps (int -- default 500000), skip_existing (bool -- default True), server (localhost/showdown/browser -- default localhost)",Guildmaster,Trains every format in TRAINING_MAP one at a time; DMs a summary when all done

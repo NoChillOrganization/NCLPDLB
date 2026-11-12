@@ -40,7 +40,7 @@ class LeagueCog(commands.Cog, name="League"):
     ) -> None:
         await interaction.response.defer()
         league_data = {
-            "league_id": str(uuid.uuid4())[:8],
+            "league_id": str(interaction.guild_id),  # one League per server
             "server_id": str(interaction.guild_id),
             "league_name": name,
             "season": season,
