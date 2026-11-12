@@ -20,45 +20,20 @@ from __future__ import annotations
 import argparse
 import asyncio
 
-from src.platform.normalize.tournament import normalize_tournament_row
-from src.platform.orchestrate import (
-    dry_run_normalize,
-    land_and_normalize,
-    with_ingest_run,
-)
-from src.platform.sources.limitless import LimitlessAdapter
-from src.platform.store.db import get_pool, migrate
+from src.platform.source_spec import SOURCES, run_standalone
 
 
 async def _run(
     *, ids: list[str] | None, game: str, limit: int, page: int, dry_run: bool = False
 ) -> None:
-    mode = "event" if ids else "periodic"
-    adapter = LimitlessAdapter()
-    records = await adapter.fetch(ids=ids, game=game, limit=limit, page=page)
-    if dry_run:
-        stats = await dry_run_normalize(records)
-        print("DRY RUN:", stats)
-        if stats["errored"]:
-            raise SystemExit(1)
-        return
-    await migrate()
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        stats = await with_ingest_run(
-            conn,
-            source="limitless",
-            route="tournament",
-            mode=mode,
-            fn=lambda: land_and_normalize(
-                conn,
-                source="limitless",
-                route="tournament",
-                records=records,
-                normalize=normalize_tournament_row,
-            ),
-        )
-    print(stats)
+    await run_standalone(
+        SOURCES["limitless"],
+        dry_run=dry_run,
+        ids=ids,
+        game=game,
+        limit=limit,
+        page=page,
+    )
 
 
 def main() -> None:
