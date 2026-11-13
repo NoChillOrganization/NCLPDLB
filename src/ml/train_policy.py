@@ -80,7 +80,6 @@ except ImportError:  # pragma: no cover
 
 from src.ml.formats import (  # noqa: E402, F401  (re-exported for callers/tests)
     DOUBLES_FORMATS,
-    TRAINING_FORMAT_ALIASES,
     resolve_training,
     team_pool,
 )
@@ -133,7 +132,7 @@ N_MAX_WARMUP_STEPS = 2_000_000  # force-graduate after this many warmup steps
 DEFAULT_SAVE_DIR = "data/ml/policy"
 DEFAULT_RESULTS_DIR = "data/ml/results"
 
-# DOUBLES_FORMATS / TRAINING_FORMAT_ALIASES live in src.ml.formats (re-exported above).
+# DOUBLES_FORMATS (re-exported above) and TRAINING_FORMAT_ALIASES live in src.ml.formats.
 
 PPO_HYPERPARAMS: dict[str, Any] = {
     "learning_rate": 3e-4,
