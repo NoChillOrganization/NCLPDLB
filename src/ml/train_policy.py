@@ -235,6 +235,7 @@ def train(  # pragma: no cover
     if team_format:
         try:
             from src.ml.teambuilder import RotatingTeambuilder
+
             teams = team_pool(team_format)
             if teams:
                 team_builder = RotatingTeambuilder(teams)
