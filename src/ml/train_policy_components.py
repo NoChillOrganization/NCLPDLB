@@ -65,11 +65,12 @@ except Exception:  # pragma: no cover
     _learning_sheets = None  # type: ignore
     _SHEETS_OK = False
 
-from src.ml.battle_env import (  # noqa: E402
-    POKE_ENV_AVAILABLE,
-    build_doubles_observation,
-    build_observation,
+from src.ml.action_selection import (  # noqa: E402
+    ActionSelector,
+    PPOInference,
+    check_obs_dim,
 )
+from src.ml.battle_env import POKE_ENV_AVAILABLE  # noqa: E402
 
 SHOWDOWN_HOST = "127.0.0.1"
 SHOWDOWN_PORT = 8000
@@ -523,6 +524,21 @@ class CurriculumCallback(BaseCallback):
 
 # ── Opponent wrapper ──────────────────────────────────────────────────────────
 
+
+def _ppo_opponent_move(policy: Any, battle: Any, is_doubles: bool) -> Any:
+    """Stochastic frozen-PPO move for a training opponent; errors raise (not hidden)."""
+    return (
+        ActionSelector(
+            PPOInference(policy, deterministic=False),
+            doubles=is_doubles,
+            on_error="raise",
+            label="Opponent",
+        )
+        .choose(battle)
+        .order
+    )
+
+
 if POKE_ENV_AVAILABLE and POKE_ENV_OK:
 
     class SelfPlayOpponent(RandomPlayer):
@@ -543,31 +559,19 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
             if not SB3_OK:
                 return
             try:
-                self._policy = PPO.load(str(path))
-                log.info(f"[Opponent] Loaded policy from {path}")
+                policy = PPO.load(str(path))
             except Exception as exc:
                 log.warning(f"[Opponent] Failed to load policy: {exc}")
                 self._policy = None
+                return
+            check_obs_dim(policy, doubles=self._is_doubles)
+            self._policy = policy
+            log.info(f"[Opponent] Loaded policy from {path}")
 
-        def choose_move(self, battle: Any) -> Any:  # pragma: no cover
+        def choose_move(self, battle: Any) -> Any:
             if self._policy is None:
                 return self.choose_random_move(battle)
-            try:
-                if self._is_doubles:
-                    obs = build_doubles_observation(battle).reshape(1, -1)
-                    action, _ = self._policy.predict(obs, deterministic=False)
-                    from poke_env.environment.doubles_env import DoublesEnv
-
-                    return DoublesEnv.action_to_order(int(action[0]), battle)
-                else:
-                    obs = build_observation(battle).reshape(1, -1)
-                    action, _ = self._policy.predict(obs, deterministic=False)
-                    from poke_env.environment.singles_env import SinglesEnv
-
-                    return SinglesEnv.action_to_order(int(action[0]), battle)
-            except Exception as exc:
-                log.warning(f"[Opponent] Prediction error: {exc}")
-                return self.choose_random_move(battle)
+            return _ppo_opponent_move(self._policy, battle, self._is_doubles)
 
     class CurriculumOpponent(MaxBasePowerPlayer):
         """
@@ -588,35 +592,23 @@ if POKE_ENV_AVAILABLE and POKE_ENV_OK:
             self._policy: "PPO | None" = None
             self._is_doubles = is_doubles
 
-        def load_policy(self, path: Path) -> None:  # pragma: no cover
+        def load_policy(self, path: Path) -> None:
             if not SB3_OK:
                 return
             try:
-                self._policy = PPO.load(str(path))
-                log.info(f"[CurriculumOpponent] Loaded policy from {path}")
+                policy = PPO.load(str(path))
             except Exception as exc:
                 log.warning(f"[CurriculumOpponent] Failed to load policy: {exc}")
                 self._policy = None
+                return
+            check_obs_dim(policy, doubles=self._is_doubles)
+            self._policy = policy
+            log.info(f"[CurriculumOpponent] Loaded policy from {path}")
 
-        def choose_move(self, battle: Any) -> Any:  # pragma: no cover
+        def choose_move(self, battle: Any) -> Any:
             if self._policy is None:
                 return super().choose_move(battle)  # MaxBasePower behaviour
-            try:
-                if self._is_doubles:
-                    obs = build_doubles_observation(battle).reshape(1, -1)
-                    action, _ = self._policy.predict(obs, deterministic=False)
-                    from poke_env.environment.doubles_env import DoublesEnv
-
-                    return DoublesEnv.action_to_order(int(action[0]), battle)
-                else:
-                    obs = build_observation(battle).reshape(1, -1)
-                    action, _ = self._policy.predict(obs, deterministic=False)
-                    from poke_env.environment.singles_env import SinglesEnv
-
-                    return SinglesEnv.action_to_order(int(action[0]), battle)
-            except Exception as exc:
-                log.warning(f"[CurriculumOpponent] Prediction error: {exc}")
-                return super().choose_move(battle)
+            return _ppo_opponent_move(self._policy, battle, self._is_doubles)
 
 else:  # pragma: no cover
 
