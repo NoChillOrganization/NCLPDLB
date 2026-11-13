@@ -18,7 +18,7 @@ import discord
 
 from src.config import PROJECT_ROOT, settings
 from src.ml.showdown_modes import MODE_LOCALHOST
-from src.ml.train_all import TRAINING_MAP
+from src.ml.formats import TRAINING_MAP
 from src.services.draft_service import DraftService
 from src.services.model_pull_service import _chunk_lines
 

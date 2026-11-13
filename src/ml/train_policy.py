@@ -78,6 +78,11 @@ try:
 except ImportError:  # pragma: no cover
     POKE_ENV_OK = False
 
+from src.ml.formats import (  # noqa: E402, F401  (re-exported for callers/tests)
+    DOUBLES_FORMATS,
+    resolve_training,
+    team_pool,
+)
 from src.ml.showdown_modes import VALID_MODES, MODE_LOCALHOST, MODE_BROWSER  # noqa: E402
 from src.ml.showdown_modes import server_config_for_mode, account_configs_for_mode  # noqa: E402
 
@@ -127,42 +132,7 @@ N_MAX_WARMUP_STEPS = 2_000_000  # force-graduate after this many warmup steps
 DEFAULT_SAVE_DIR = "data/ml/policy"
 DEFAULT_RESULTS_DIR = "data/ml/results"
 
-# Formats that use the doubles environment
-DOUBLES_FORMATS = {
-    # Smogon Doubles
-    "gen9doublesou",
-    "gen9randomdoublesbattle",
-    "gen9doublesubers",
-    "gen9doublesuu",
-    "gen9doublesnu",
-    # VGC 2025
-    "gen9vgc2025regg",
-    "gen9vgc2025regh",
-    "gen9vgc2025regi",
-    "gen9vgc2025reggbo3",
-    "gen9vgc2025reghbo3",
-    "gen9vgc2025regibo3",
-    # VGC 2026
-    "gen9vgc2026regi",
-    "gen9vgc2026regibo3",
-    # Champions Doubles
-    "gen9championsvgc2026regmb",
-    "gen9championsvgc2026regmbbo3",
-}
-
-# Some formats use the same Showdown battle mechanics as a base format.
-# poke-env doesn't support the BO3 series protocol, so we train these
-# using the base single-battle format while keeping artifact paths intact.
-TRAINING_FORMAT_ALIASES: dict[str, str] = {
-    # BO3 variants → train as the equivalent single-battle format
-    "gen9vgc2026regibo3": "gen9vgc2026regi",
-    # Champions formats → not on the standard Showdown server; train as
-    # the closest standard format so battles can actually start.
-    "gen9championsou": "gen9ou",
-    "gen9championsbssregmb": "gen9ou",
-    "gen9championsvgc2026regmb": "gen9vgc2026regi",
-    "gen9championsvgc2026regmbbo3": "gen9vgc2026regi",
-}
+# DOUBLES_FORMATS (re-exported above) and TRAINING_FORMAT_ALIASES live in src.ml.formats.
 
 PPO_HYPERPARAMS: dict[str, Any] = {
     "learning_rate": 3e-4,
@@ -235,11 +205,11 @@ def train(  # pragma: no cover
     # Resolve aliased formats (BO3 variants, Champions formats that don't exist
     # on the standard Showdown server).  When no explicit team_format was
     # supplied, inherit the base format's teams so non-random battles can start.
-    training_fmt = TRAINING_FORMAT_ALIASES.get(fmt, fmt)
+    training_fmt, resolved_team_format = resolve_training(fmt, team_format)
     if training_fmt != fmt:
         log.info(f"[train] Format alias: {fmt!r} -> {training_fmt!r}")
         if not team_format:
-            team_format = training_fmt
+            team_format = resolved_team_format
             log.info(
                 f"[train] Auto-inherited team_format from base format: {team_format!r}"
             )
@@ -257,16 +227,15 @@ def train(  # pragma: no cover
             "stable-baselines3 not installed. Run: pip install stable-baselines3>=2.2.0"
         )
 
-    is_doubles = training_fmt in DOUBLES_FORMATS
+    is_doubles = training_fmt in DOUBLES_FORMATS  # == formats.is_doubles(fmt)
 
     # ── Optional team builder ──────────────────────────────────────
     team_builder = None
     if team_format:
         try:
             from src.ml.teambuilder import RotatingTeambuilder
-            from src.ml.teams import FORMAT_TEAMS
 
-            teams = FORMAT_TEAMS.get(team_format)
+            teams = team_pool(team_format)
             if teams:
                 team_builder = RotatingTeambuilder(teams)
                 log.info(

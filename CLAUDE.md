@@ -187,6 +187,7 @@ src/
     battle_env.py        — Gymnasium wrapper (OBS_DIM=78, OBS_DIM_DOUBLES=140, N_ACTIONS_GEN9=26)
     train_policy.py      — PPO training loop for a single format
     train_all.py         — Trains all formats sequentially
+    formats.py           — Battle format registry (TRAINING_MAP, aliases, doubles, team pools)
     train_matchup.py     — Matchup metric training
     trainer.py           — High-level training orchestrator (wraps train_policy.py)
     self_play.py         — Async self-play loop for continuous improvement
@@ -229,17 +230,20 @@ src/
 
 ### ML Format Routing
 
-Four structures govern which ML format goes where — central to any ML format work:
+The Battle format registry, `src/ml/formats.py` (stdlib-only, so the bot and scripts can import
+it), is the one place these live — central to any ML format work:
 
-- **`FORMAT_TEAMS`** (`src/ml/teams.py`) — format → curated Showdown team strings; consumed by
-  `RotatingTeambuilder` and `--team-format`.
-- **`TRAINING_FORMAT_ALIASES`** (`src/ml/train_policy.py:195`) — maps unsupported formats (BO3
-  series, Champions) to a real trainable format (e.g. `gen9championsou→gen9ou`,
+- **`TRAINING_MAP`** — the canonical format list (Spar format → train format, team format);
+  `SPAR_FORMATS` derives from it. `tests/unit/test_formats.py` asserts the `train-models.yml`
+  CI matrix matches it. Still importable from `src/ml/train_all.py`.
+- **`TRAINING_FORMAT_ALIASES`** — maps unsupported formats (BO3 series, Champions) to a real
+  trainable format (e.g. `gen9championsou→gen9ou`,
   `gen9championsvgc2026regma→gen9vgc2026regi`, `gen9championsvgc2026regmb→gen9vgc2026regi`),
-  since poke-env/the server can't run them directly.
-- **`DOUBLES_FORMATS`** (`src/ml/train_policy.py:168`) — formats routed to `BattleDoubleEnv`.
-- **`TRAINING_MAP`** (`src/ml/train_all.py:58`) — the canonical format list; mirrors the
-  `train-models.yml` CI matrix. `SPAR_FORMATS` (bot) derives from it.
+  since poke-env/the server can't run them directly. Resolve with `resolve_training()`.
+- **`DOUBLES_FORMATS`** — formats routed to `BattleDoubleEnv`; check with `is_doubles()`. Still
+  importable from `src/ml/train_policy.py`.
+- **`FORMAT_TEAMS`** (`src/ml/teams.py`) — format → curated Showdown team strings; consumed by
+  `RotatingTeambuilder` and `--team-format`. Look up with `team_pool()`.
 
 ### Key Design Decisions
 

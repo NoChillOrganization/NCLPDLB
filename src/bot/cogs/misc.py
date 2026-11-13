@@ -114,7 +114,7 @@ class MiscCog(commands.Cog, name="Misc"):
     async def models_status(self, interaction: discord.Interaction) -> None:
         """Scan data/ml/policy/ and report present/missing models per format."""
         await interaction.response.defer(ephemeral=True)
-        from src.ml.train_all import TRAINING_MAP
+        from src.ml.formats import TRAINING_MAP
 
         policy_dir = PROJECT_ROOT / settings.ml_policy_dir
         lines: list[str] = []

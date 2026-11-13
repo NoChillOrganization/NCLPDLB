@@ -47,44 +47,12 @@ import sys
 import time
 from pathlib import Path
 
+from src.ml.formats import TRAINING_MAP
 from src.ml.showdown_modes import MODE_LOCALHOST, MODE_SHOWDOWN
 
 log = logging.getLogger(__name__)
 
-# ── Format → (training format, team_format) mapping ──────────────────────────
-# Maps each SPAR_FORMAT to:
-#   train_fmt  : actual Showdown format string passed to train_policy.py
-#   team_fmt   : key into FORMAT_TEAMS for RotatingTeambuilder (None = no teams)
-#
-# None for train_fmt means SKIP entirely.
-TRAINING_MAP: dict[str, tuple[str | None, str | None]] = {
-    # Random Battle (no teams needed)
-    "gen9randombattle": ("gen9randombattle", None),
-    "gen9monotyperandombattle": ("gen9monotyperandombattle", None),
-    "gen9randomdoublesbattle": ("gen9randomdoublesbattle", None),
-    # Smogon Singles
-    "gen9ou": ("gen9ou", "gen9ou"),
-    "gen9ubers": ("gen9ubers", "gen9ubers"),
-    "gen9uu": ("gen9uu", "gen9uu"),
-    "gen9ru": ("gen9ru", "gen9ru"),
-    "gen9nu": ("gen9nu", "gen9nu"),
-    "gen9pu": ("gen9pu", "gen9pu"),
-    "gen9zu": ("gen9zu", "gen9zu"),
-    "gen9lc": ("gen9lc", "gen9lc"),
-    "gen9monotype": ("gen9monotype", "gen9monotype"),
-    "gen9nationaldex": ("gen9nationaldex", "gen9nationaldex"),
-    "gen9anythinggoes": ("gen9anythinggoes", "gen9anythinggoes"),
-    # Smogon Doubles
-    "gen9doublesou": ("gen9doublesou", "gen9doublesou"),
-    "gen9doublesubers": ("gen9doublesubers", "gen9doublesubers"),
-    "gen9doublesuu": ("gen9doublesuu", "gen9doublesuu"),
-    # Champions
-    "gen9championsou": ("gen9championsou", None),
-    "gen9championsbssregmb": ("gen9championsbssregmb", None),
-    "gen9championsvgc2026regmb": ("gen9championsvgc2026regmb", None),
-    "gen9championsvgc2026regmbbo3": ("gen9championsvgc2026regmbbo3", None),
-}
-
+# TRAINING_MAP (Spar format -> (train format, team format)) lives in src.ml.formats.
 DEFAULT_TIMESTEPS = 500_000
 DEFAULT_SWAP_EVERY = 50_000
 DEFAULT_SAVE_DIR = "data/ml/policy"

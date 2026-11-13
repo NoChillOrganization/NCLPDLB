@@ -11,7 +11,7 @@ from discord.ext import commands
 
 from src.bot.permissions import ROLE_GUILDMASTER, ROLE_MOD, require_role
 from src.config import PROJECT_ROOT, settings
-from src.ml.train_all import TRAINING_MAP
+from src.ml.formats import TRAINING_MAP
 from src.services.draft_service import DraftService
 from src.services.model_pull_service import _pull_models, github_headers
 
