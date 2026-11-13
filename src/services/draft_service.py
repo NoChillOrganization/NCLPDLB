@@ -4,11 +4,17 @@ Handles Snake, Auction, Tiered, and Custom (snake picks after a "Ban phase") dra
 `linear` exists in DraftFormat but is not offered by /draft-create or the wizard.
 Auction nominations: no command creates one; `current_nomination_id` is only cleared here
 (close_nomination), so setting it is the nomination view's job (known gap: none exists yet).
+
+Lifecycle invariants live here, not in the cogs: every transition of a started draft runs
+under the guild's lock, ends by persisting to SQLite (a COMPLETED draft is removed), and
+leaves the pick timer matching the pick pointer. The auto-skip callback is remembered per
+guild, so callers do not have to pass it on every call.
 """
 
 from __future__ import annotations
 
 import asyncio
+import functools
 import logging
 import uuid
 from dataclasses import dataclass
@@ -35,21 +41,57 @@ AUCTION_STARTING_BUDGET = 1000  # Points each player starts with in auction draf
 # In-memory draft cache (one active draft per guild)
 _active_drafts: dict[str, Draft] = {}
 
-# Per-guild pick locks — serialise make_pick calls so TOCTOU is impossible (M9)
+# Per-guild locks — serialise every state transition so TOCTOU is impossible (M9)
 _pick_locks: dict[str, asyncio.Lock] = {}
 
 # Per-guild timer tasks (auto-skip when timer expires)
 _timer_tasks: dict[str, asyncio.Task] = {}
-# Strong references to fire-and-forget cleanup tasks so GC cannot cancel them
-_cleanup_tasks: set[asyncio.Task] = set()
+# Per-guild auto-skip callback, remembered for the whole draft so every timer
+# (after /pick, force-skip, resume) still announces the skip.
+_timeout_callbacks: dict[str, Callable[[str, str], Awaitable[None]]] = {}
+# Strong references to fire-and-forget League sheet writes so GC cannot cancel them
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _guild_lock(guild_id: str) -> asyncio.Lock:
+    return _pick_locks.setdefault(guild_id, asyncio.Lock())
+
+
+def _locked(method):
+    """Run a draft state transition, and its persist, under the guild's lock."""
+
+    @functools.wraps(method)
+    async def wrapper(self, guild_id: str, *args, **kwargs):
+        async with _guild_lock(guild_id):
+            return await method(self, guild_id, *args, **kwargs)
+
+    return wrapper
+
+
+def _sheet_write(write: Callable[[dict], object], row: dict) -> None:
+    """Fire-and-forget League sheet write: never delays the caller; failures are logged."""
+    task = asyncio.get_running_loop().create_task(asyncio.to_thread(write, row))
+    _background_tasks.add(task)
+    task.add_done_callback(_sheet_write_done)
+
+
+def _sheet_write_done(task: asyncio.Task) -> None:
+    _background_tasks.discard(task)
+    if not task.cancelled() and task.exception():
+        log.error("League sheet write failed: %s", task.exception())
 
 
 async def _persist_draft(draft: Draft) -> bool:
     """Write draft state to SQLite.  Errors are logged but not re-raised.
 
+    A COMPLETED draft is removed instead: there is nothing left to restore.
+
     Returns False on failure so callers can warn users that a restart would
     lose this draft (see PickResult.persistence_ok).
     """
+    if draft.status == DraftStatus.COMPLETED:
+        await _delete_persisted_draft(draft.guild_id)
+        return True
     try:
         await _db_save_draft(draft.guild_id, draft.model_dump_json())
         return True
@@ -136,8 +178,7 @@ class DraftService:
                 draft = Draft.model_validate_json(draft_json)
                 _active_drafts[guild_id] = draft
                 # M3: restart pick timer so auto-skip still fires after a restart
-                if draft.status == DraftStatus.ACTIVE and draft.timer_seconds > 0:
-                    self._start_timer(guild_id, draft, on_timeout)
+                self._start_timer(guild_id, draft, on_timeout)
                 restored += 1
             except Exception as exc:
                 log.error("Could not restore draft for guild %s: %s", guild_id, exc)
@@ -172,21 +213,20 @@ class DraftService:
             created_at=datetime.now(timezone.utc).isoformat(),
         )
         _active_drafts[guild_id] = draft
+        _timeout_callbacks.pop(guild_id, None)  # the previous draft's callback is stale
         # Persist league setup to Google Sheets (fire-and-forget — don't block draft creation)
-        asyncio.get_running_loop().create_task(
-            asyncio.to_thread(
-                sheets.save_league_setup,
-                {
-                    "league_id": guild_id,  # one League per server: league id == guild id
-                    "server_id": guild_id,
-                    "commissioner_id": commissioner_id,
-                    "format": format.value,
-                    "total_rounds": rounds,
-                    "timer_seconds": timer_seconds,
-                    "status": "setup",
-                    "created_at": draft.created_at,
-                },
-            )
+        _sheet_write(
+            sheets.save_league_setup,
+            {
+                "league_id": guild_id,  # one League per server: league id == guild id
+                "server_id": guild_id,
+                "commissioner_id": commissioner_id,
+                "format": format.value,
+                "total_rounds": rounds,
+                "timer_seconds": timer_seconds,
+                "status": "setup",
+                "created_at": draft.created_at,
+            },
         )
         log.info(f"Draft {draft.draft_id} created for guild {guild_id}")
         return draft
@@ -242,6 +282,7 @@ class DraftService:
         return AddPlayerResult(success=True, player_count=len(draft.player_order))
 
     # ── Start ──────────────────────────────────────────────────
+    @_locked
     async def start_draft(
         self,
         guild_id: str,
@@ -270,9 +311,9 @@ class DraftService:
             draft.status = DraftStatus.BAN_PHASE
         else:
             draft.status = DraftStatus.ACTIVE
-            # Start pick timer for the first player
-            if draft.timer_seconds > 0:
-                self._start_timer(guild_id, draft, on_timeout)
+        # Start pick timer for the first player. None runs during the Ban phase,
+        # but the callback is remembered for when resume_draft ends it.
+        self._start_timer(guild_id, draft, on_timeout)
 
         log.info(
             f"Draft {draft.draft_id} started with {len(draft.player_order)} players"
@@ -281,27 +322,8 @@ class DraftService:
         return draft
 
     # ── Pick ───────────────────────────────────────────────────
+    @_locked
     async def make_pick(
-        self,
-        guild_id: str,
-        player_id: str,
-        pokemon_name: str,
-        tera_type: str = "",
-        is_tera_captain: bool = False,
-        on_timeout: Callable[[str, str], Awaitable[None]] | None = None,
-    ) -> PickResult:
-        lock = _pick_locks.setdefault(guild_id, asyncio.Lock())
-        async with lock:
-            return await self._make_pick_locked(
-                guild_id,
-                player_id,
-                pokemon_name,
-                tera_type,
-                is_tera_captain,
-                on_timeout,
-            )
-
-    async def _make_pick_locked(
         self,
         guild_id: str,
         player_id: str,
@@ -317,9 +339,6 @@ class DraftService:
             return PickResult(success=False, error="Draft is not currently active.")
         if draft.current_player_id != player_id:
             return PickResult(success=False, error="It's not your turn.")
-
-        # Cancel existing timer — player picked in time
-        self._cancel_timer(guild_id)
 
         # Check if already picked
         already_picked = [p.pokemon_name.lower() for p in draft.picks]
@@ -348,18 +367,11 @@ class DraftService:
             is_tera_captain=is_tera_captain,
         )
         draft.picks.append(pick)
-        asyncio.get_running_loop().create_task(
-            asyncio.to_thread(sheets.save_pick, pick.model_dump(mode="json"))
-        )
+        _sheet_write(sheets.save_pick, pick.model_dump(mode="json"))
 
-        # Advance pick pointer
-        self._advance_pick(draft)
-
-        # Start timer for next player (if draft still active)
-        if draft.status == DraftStatus.ACTIVE and draft.timer_seconds > 0:
-            self._start_timer(guild_id, draft, on_timeout)
-
-        persisted = await _persist_draft(draft)
+        # Player picked in time: the timer is replaced only now, after validation,
+        # so a rejected pick above leaves the player's auto-skip running.
+        persisted = await self._next_turn(guild_id, draft, on_timeout)
         next_id = draft.current_player_id
         return PickResult(
             success=True,
@@ -378,55 +390,80 @@ class DraftService:
             if draft.current_round > draft.total_rounds:
                 draft.status = DraftStatus.COMPLETED
                 log.info(f"Draft {draft.draft_id} completed!")
-                # Schedule SQLite cleanup without blocking the sync caller
-                try:
-                    t = asyncio.get_running_loop().create_task(
-                        _delete_persisted_draft(draft.guild_id)
-                    )
-                    _cleanup_tasks.add(t)
-                    t.add_done_callback(_cleanup_tasks.discard)
-                except RuntimeError:
-                    pass  # no running loop (tests); cleanup is best-effort
+                # SQLite cleanup happens in _persist_draft, which every caller awaits next
+
+    async def _next_turn(
+        self,
+        guild_id: str,
+        draft: Draft,
+        on_timeout: Callable[[str, str], Awaitable[None]] | None = None,
+    ) -> bool:
+        """End the current turn: advance, restart the pick timer, persist.
+
+        The one place a turn ends (pick, auto-skip, force-skip), so the timer and
+        SQLite always agree with the pick pointer. Returns False if the SQLite
+        write failed.
+        """
+        self._advance_pick(draft)
+        self._start_timer(guild_id, draft, on_timeout)
+        return await _persist_draft(draft)
 
     # ── Timer ──────────────────────────────────────────────────
     def _start_timer(
         self,
         guild_id: str,
         draft: Draft,
-        on_timeout: Callable[[str, str], Awaitable[None]] | None,
+        on_timeout: Callable[[str, str], Awaitable[None]] | None = None,
     ) -> None:
-        """Start a countdown task for the current player's pick."""
+        """(Re)start the countdown for the current player's pick.
+
+        Safe to call after any transition: no timer runs unless the draft is
+        ACTIVE with timer_seconds > 0. A callback passed here replaces the one
+        remembered for the guild.
+        """
         self._cancel_timer(guild_id)
+        if on_timeout is not None:
+            _timeout_callbacks[guild_id] = on_timeout
 
         current_player = draft.current_player_id
-        if not current_player:
+        if (
+            draft.status != DraftStatus.ACTIVE
+            or draft.timer_seconds <= 0
+            or not current_player
+        ):
             return
 
         sleep_secs = draft.timer_seconds  # capture at task-creation time
 
         async def _timer_task():
             await asyncio.sleep(sleep_secs)
-            # Only auto-skip if still the same player's turn
-            active = _active_drafts.get(guild_id)
-            if (
-                active
-                and active.status == DraftStatus.ACTIVE
-                and active.current_player_id == current_player
-            ):
+            async with _guild_lock(guild_id):
+                if _timer_tasks.get(guild_id) is not asyncio.current_task():
+                    return  # superseded while waiting for the lock
+                # From here the skip runs to completion: deregister first, so the
+                # next player's pick (which cancels "the timer") cannot cancel it
+                # halfway through the persist or the announcement.
+                del _timer_tasks[guild_id]
+                # Only auto-skip if still the same player's turn
+                active = _active_drafts.get(guild_id)
+                if not (
+                    active
+                    and active.status == DraftStatus.ACTIVE
+                    and active.current_player_id == current_player
+                ):
+                    return
                 log.info(
                     f"Pick timer expired for {current_player} in guild {guild_id} — auto-skipping"
                 )
-                self._advance_pick(active)
                 # M2: persist state after auto-skip so restarts see the correct turn
-                await _persist_draft(active)
-                if on_timeout:
-                    try:
-                        await on_timeout(guild_id, current_player)
-                    except Exception as e:
-                        log.error(f"on_timeout callback error: {e}", exc_info=True)
-                # Start timer for the next player
-                if active.status == DraftStatus.ACTIVE and active.timer_seconds > 0:
-                    self._start_timer(guild_id, active, on_timeout)
+                # (also starts the timer for the next player)
+                await self._next_turn(guild_id, active)
+            announce = _timeout_callbacks.get(guild_id)
+            if announce:
+                try:
+                    await announce(guild_id, current_player)
+                except Exception as e:
+                    log.error(f"on_timeout callback error: {e}", exc_info=True)
 
         _timer_tasks[guild_id] = asyncio.get_running_loop().create_task(_timer_task())
 
@@ -437,6 +474,7 @@ class DraftService:
             task.cancel()
 
     # ── Ban ────────────────────────────────────────────────────
+    @_locked
     async def ban_pokemon(
         self, guild_id: str, player_id: str, pokemon_name: str
     ) -> BanResult:
@@ -467,6 +505,7 @@ class DraftService:
         return BanResult(success=True, pokemon=pokemon)
 
     # ── Bid ────────────────────────────────────────────────────
+    @_locked
     async def place_bid(self, guild_id: str, player_id: str, amount: int) -> BidResult:
         draft = _active_drafts.get(guild_id)
         if not draft or draft.format != DraftFormat.AUCTION:
@@ -504,6 +543,7 @@ class DraftService:
         )
         return BidResult(success=True, current_high=amount)
 
+    @_locked
     async def close_nomination(self, guild_id: str) -> PickResult:
         """Award the current nomination to the highest bidder and deduct budget."""
         draft = _active_drafts.get(guild_id)
@@ -530,9 +570,7 @@ class DraftService:
         draft.picks.append(pick)
         draft.budget[winner_id] = draft.budget.get(winner_id, 0) - amount
         draft.current_nomination_id = ""
-        asyncio.get_running_loop().create_task(
-            asyncio.to_thread(sheets.save_pick, pick.model_dump(mode="json"))
-        )
+        _sheet_write(sheets.save_pick, pick.model_dump(mode="json"))
         self._advance_pick(draft)
         await _persist_draft(draft)
         log.info(
@@ -541,34 +579,62 @@ class DraftService:
         return PickResult(success=True, pokemon=pokemon, round=draft.current_round)
 
     # ── Admin ops ──────────────────────────────────────────────
+    @_locked
     async def force_skip(self, guild_id: str, player_id: str) -> ForceSkipResult:
-        self._cancel_timer(guild_id)
         draft = _active_drafts.get(guild_id)
         if not draft:
             return ForceSkipResult(success=False, error="No active draft found.")
-        self._advance_pick(draft)
-        await _persist_draft(draft)
+        if draft.status != DraftStatus.ACTIVE:
+            return ForceSkipResult(
+                success=False, error="Draft is not currently active."
+            )
+        # Skip only the named player: if they picked in the meantime, the next
+        # player must not lose their turn.
+        if draft.current_player_id != player_id:
+            return ForceSkipResult(success=False, error="It's not that player's turn.")
+        await self._next_turn(guild_id, draft)
         next_id = draft.current_player_id
         return ForceSkipResult(
             success=True,
             next_player=f"<@{next_id}>" if next_id else "Draft complete!",
         )
 
-    async def pause_draft(self, guild_id: str) -> None:
+    @_locked
+    async def pause_draft(self, guild_id: str) -> bool:
+        """Pause the draft and stop its pick timer. False if there is no unfinished draft."""
+        draft = _active_drafts.get(guild_id)
+        if not draft or draft.status == DraftStatus.COMPLETED:
+            return False
+        draft.status = DraftStatus.PAUSED
         self._cancel_timer(guild_id)
-        if draft := _active_drafts.get(guild_id):
-            draft.status = DraftStatus.PAUSED
+        await _persist_draft(draft)
+        return True
 
-    async def resume_draft(self, guild_id: str) -> None:
-        if draft := _active_drafts.get(guild_id):
+    @_locked
+    async def resume_draft(self, guild_id: str) -> bool:
+        """Make the draft ACTIVE and restart the pick timer for the current player.
+
+        Also how a moderator ends the Ban phase of a custom draft.
+        False if there is no unfinished draft.
+        """
+        draft = _active_drafts.get(guild_id)
+        if not draft or draft.status == DraftStatus.COMPLETED:
+            return False
+        if draft.status != DraftStatus.ACTIVE:
             draft.status = DraftStatus.ACTIVE
+            self._start_timer(guild_id, draft)
+            await _persist_draft(draft)
+        return True
 
+    @_locked
     async def reset_draft(self, guild_id: str) -> None:
         self._cancel_timer(guild_id)
+        _timeout_callbacks.pop(guild_id, None)
         _active_drafts.pop(guild_id, None)
         await _delete_persisted_draft(guild_id)
         log.warning(f"Draft reset for guild {guild_id}")
 
+    @_locked
     async def override_pick(
         self, guild_id: str, player_id: str, old_pokemon: str, new_pokemon: str
     ) -> None:
@@ -580,6 +646,8 @@ class DraftService:
                     and pick.pokemon_name.lower() == old_pokemon.lower()
                 ):
                     pick.pokemon_name = new_pokemon
+                    # Saved to SQLite only: the League sheet is not updated
+                    await _persist_draft(draft)
                     break
 
     async def get_active_draft(self, guild_id: str) -> Draft | None:

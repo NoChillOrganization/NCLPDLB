@@ -125,15 +125,15 @@ The Pick timer advancing the Draft past a Coach who ran out of time.
 _Avoid_: Timeout skip
 
 **Force-skip**:
-A Moderator advancing the Draft past a Coach (`/admin-skip`).
+A Moderator advancing the Draft past the Coach whose turn it is (`/admin-skip`); refused for any other Coach.
 _Avoid_: Auto-skip
 
 **Pause / Resume**:
-A Moderator halting a Draft (cancelling the Pick timer) and continuing it; Resume does not restart the timer.
+A Moderator halting a Draft (stopping the Pick timer) and continuing it (restarting the Pick timer for the current Coach).
 _Avoid_: Stop
 
 **Override pick**:
-A Moderator replacing one drafted Pokémon with another; held in memory only and not written to the League sheet.
+A Moderator replacing one drafted Pokémon with another; never written to the League sheet.
 _Avoid_: Swap (that is a Trade), edit
 
 **Reset draft**:
