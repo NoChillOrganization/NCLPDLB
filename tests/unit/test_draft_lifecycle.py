@@ -19,7 +19,6 @@ import pytest_asyncio
 
 import src.services.draft_service as ds
 from src.data.models import DraftFormat, DraftStatus
-from src.services.draft_service import DraftService
 
 GUILD = "lifecycle-guild"
 
@@ -83,9 +82,10 @@ def expire_timer(monkeypatch):
 
     async def sleep(delay, *args, **kwargs):
         if delay < 1:  # the tests' own short waits
-            return await real_sleep(delay, *args, **kwargs)
-        await expired.wait()
-        expired.clear()
+            await real_sleep(delay, *args, **kwargs)
+        else:
+            await expired.wait()
+            expired.clear()
 
     monkeypatch.setattr(ds.asyncio, "sleep", sleep)
 
@@ -99,7 +99,7 @@ def expire_timer(monkeypatch):
 
 @pytest_asyncio.fixture
 async def svc(store, sheet, pokedex, expire_timer):
-    service = DraftService()
+    service = ds.DraftService()
     yield service
     await service.reset_draft(GUILD)  # stops the Pick timer, drops the Draft
 
@@ -270,7 +270,7 @@ async def test_completed_draft_leaves_the_real_local_store(
 
     monkeypatch.setattr(db, "_db_path", lambda: tmp_path / "drafts.db")
     await db.init_db()
-    svc = DraftService()
+    svc = ds.DraftService()
     try:
         await start(svc, rounds=1)
         assert [guild for guild, _ in await db.load_all_drafts()] == [GUILD]
