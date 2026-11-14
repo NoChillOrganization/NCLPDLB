@@ -15,93 +15,74 @@ from src.data.learning_sheets import LearningSheets
 
 
 def test_learning_sheets_enabled_true():
-    fresh = LearningSheets.__new__(LearningSheets)
+    fresh = LearningSheets()
     with patch("src.data.learning_sheets.settings") as ms:
         ms.ml_learning_spreadsheet_id = "some-id"
         assert fresh.enabled is True
 
 
 def test_learning_sheets_enabled_false():
-    fresh = LearningSheets.__new__(LearningSheets)
+    fresh = LearningSheets()
     with patch("src.data.learning_sheets.settings") as ms:
         ms.ml_learning_spreadsheet_id = ""
         assert fresh.enabled is False
 
 
-def test_learning_sheets_connect_success(tmp_path):
+def test_learning_sheet_opens_the_learning_spreadsheet_id(tmp_path):
+    """The shared plumbing is given the ML id, not the League id."""
     creds_file = tmp_path / "creds.json"
     creds_file.write_text('{"type":"service_account"}')
-    fresh = LearningSheets.__new__(LearningSheets)
-    fresh._spreadsheet = None
-    fresh._client = None
     with (
-        patch("src.data.sheets.settings") as ms,
-        patch("src.data.learning_sheets.settings", ms),
-        patch("src.data.sheets.Credentials.from_service_account_file"),
-        patch("src.data.sheets.gspread.authorize") as mock_auth,
+        patch("src.data.sheet_plumbing.settings") as plumbing_settings,
+        patch("src.data.learning_sheets.settings") as ms,
+        patch("src.data.sheet_plumbing.Credentials.from_service_account_file"),
+        patch("src.data.sheet_plumbing.gspread.authorize") as mock_auth,
     ):
-        ms.google_sheets_credentials_file = creds_file
-        ms.ml_learning_spreadsheet_id = "sheetid"
-        mock_sp = MagicMock()
-        mock_sp.title = "Learning"
-        mock_auth.return_value.open_by_key.return_value = mock_sp
-        fresh.connect()
-    assert fresh._spreadsheet is mock_sp
+        plumbing_settings.google_sheets_credentials_file = creds_file
+        ms.ml_learning_spreadsheet_id = "ml-id"
+        mock_auth.return_value.open_by_key.return_value.title = "Learning"
+        LearningSheets()._conn.connect()
+    mock_auth.return_value.open_by_key.assert_called_once_with("ml-id")
 
 
-def test_learning_sheets_connect_missing_creds(tmp_path):
-    fresh = LearningSheets.__new__(LearningSheets)
-    fresh._spreadsheet = None
-    fresh._client = None
-    with patch("src.data.sheets.settings") as ms:
-        ms.google_sheets_credentials_file = tmp_path / "missing.json"
-        with pytest.raises(FileNotFoundError):
-            fresh.connect()
-
-
-def test_learning_sheets_spreadsheet_property_calls_connect():
-    fresh = LearningSheets.__new__(LearningSheets)
-    fresh._spreadsheet = None
-    fresh._client = None
-    mock_sp = MagicMock()
-    with patch.object(
-        fresh, "connect", side_effect=lambda: setattr(fresh, "_spreadsheet", mock_sp)
-    ):
-        sp = fresh.spreadsheet
-    assert sp is mock_sp
+def test_learning_sheet_does_not_expose_league_methods():
+    """Composition, not inheritance: no save_pick / save_transaction on a Learning sheet."""
+    ls = LearningSheets()
+    for name in ("save_pick", "save_transaction", "save_standing", "find_standing"):
+        assert not hasattr(ls, name)
 
 
 def test_learning_sheets_get_replays_sheet_existing():
-    fresh = LearningSheets.__new__(LearningSheets)
+    fresh = LearningSheets()
     mock_sp = MagicMock()
     mock_ws = MagicMock()
     mock_sp.worksheet.return_value = mock_ws
-    fresh._spreadsheet = mock_sp
+    fresh._conn._spreadsheet = mock_sp
     result = fresh._get_replays_sheet()
     assert result is mock_ws
 
 
 def test_learning_sheets_get_replays_sheet_creates_new():
-    fresh = LearningSheets.__new__(LearningSheets)
+    fresh = LearningSheets()
     mock_sp = MagicMock()
     new_ws = MagicMock()
     mock_sp.worksheet.side_effect = gspread.WorksheetNotFound
     mock_sp.add_worksheet.return_value = new_ws
-    fresh._spreadsheet = mock_sp
+    fresh._conn._spreadsheet = mock_sp
     result = fresh._get_replays_sheet()
     assert result is new_ws
     new_ws.append_row.assert_called_once()
 
 
 def test_learning_sheets_save_replay_url_disabled():
-    fresh = LearningSheets.__new__(LearningSheets)
+    fresh = LearningSheets()
     with patch("src.data.learning_sheets.settings") as ms:
         ms.ml_learning_spreadsheet_id = ""
         fresh.save_replay_url({"format": "gen9ou"})  # should not raise
 
 
 def test_learning_sheets_save_replay_url_enabled():
-    fresh = LearningSheets.__new__(LearningSheets)
+    fresh = LearningSheets()
     mock_ws = MagicMock()
     with (
         patch("src.data.learning_sheets.settings") as ms,
@@ -113,7 +94,7 @@ def test_learning_sheets_save_replay_url_enabled():
 
 
 def test_learning_sheets_save_replay_url_exception_suppressed():
-    fresh = LearningSheets.__new__(LearningSheets)
+    fresh = LearningSheets()
     with (
         patch("src.data.learning_sheets.settings") as ms,
         patch.object(
@@ -128,10 +109,10 @@ def test_learning_sheets_save_replay_url_exception_suppressed():
 
 
 def _fresh_ls():
-    """Return an unconnected LearningSheets instance (bypasses __new__ singleton)."""
-    inst = LearningSheets.__new__(LearningSheets)
-    inst._spreadsheet = None
-    inst._client = None
+    """Return an unconnected LearningSheets instance (no Google connection yet)."""
+    inst = LearningSheets()
+    inst._conn._spreadsheet = None
+    inst._conn._client = None
     return inst
 
 
@@ -163,7 +144,7 @@ def test_learning_sheets_get_format_sheet_existing():
     mock_sp = MagicMock()
     mock_ws = MagicMock()
     mock_sp.worksheet.return_value = mock_ws
-    fresh._spreadsheet = mock_sp
+    fresh._conn._spreadsheet = mock_sp
     result = fresh._get_format_sheet("gen9ou")
     assert result is mock_ws
     mock_sp.add_worksheet.assert_not_called()
@@ -175,7 +156,7 @@ def test_learning_sheets_get_format_sheet_creates_new():
     new_ws = MagicMock()
     mock_sp.worksheet.side_effect = gspread.WorksheetNotFound
     mock_sp.add_worksheet.return_value = new_ws
-    fresh._spreadsheet = mock_sp
+    fresh._conn._spreadsheet = mock_sp
     result = fresh._get_format_sheet("gen9ou")
     assert result is new_ws
     new_ws.append_row.assert_called_once()
@@ -186,7 +167,7 @@ def test_learning_sheets_get_training_runs_sheet_existing():
     mock_sp = MagicMock()
     mock_ws = MagicMock()
     mock_sp.worksheet.return_value = mock_ws
-    fresh._spreadsheet = mock_sp
+    fresh._conn._spreadsheet = mock_sp
     result = fresh._get_training_runs_sheet()
     assert result is mock_ws
 
@@ -197,7 +178,7 @@ def test_learning_sheets_get_training_runs_sheet_creates_new():
     new_ws = MagicMock()
     mock_sp.worksheet.side_effect = gspread.WorksheetNotFound
     mock_sp.add_worksheet.return_value = new_ws
-    fresh._spreadsheet = mock_sp
+    fresh._conn._spreadsheet = mock_sp
     result = fresh._get_training_runs_sheet()
     assert result is new_ws
     new_ws.append_row.assert_called_once()

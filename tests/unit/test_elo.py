@@ -1,12 +1,18 @@
 """
 Unit tests for EloService — rating calculations, matchmaking, standings.
+
+Where ratings are held (cache / Local store / League sheet) is tested in
+test_elo_store.py; here the store's collaborators are stubbed.
 """
 
-import pytest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
-from src.services.elo_service import EloService, expected_score, new_rating
+import pytest
+
 from src.config import settings
+from src.data.elo_store import elo_store
+from src.data.models import PlayerElo
+from src.services.elo_service import EloService, expected_score, new_rating
 
 
 # ── Pure ELO math ─────────────────────────────────────────────
@@ -56,34 +62,32 @@ def test_k_factor_scales_change():
 # ── EloService ────────────────────────────────────────────────
 
 
-@pytest.mark.asyncio
-async def test_record_match_updates_both_players():
-    svc = EloService()
+@pytest.fixture
+def stores():
+    """Empty cache; League sheet and Local store stubbed. Yields (sheet, db_save)."""
+    elo_store.cache.clear()
     with (
-        patch.object(svc, "_save_player"),
-        patch.object(svc, "_save_player_to_db"),
-        patch("src.services.elo_service.sheets") as mock_sheets,
+        patch("src.data.elo_store.league_sheet", autospec=True) as sheet,
+        patch("src.data.elo_store._db_save_elo", new_callable=AsyncMock) as db_save,
     ):
-        mock_sheets.find_row.return_value = None
+        sheet.find_standing.return_value = None
+        sheet.get_standings.return_value = []
+        yield sheet, db_save
+    elo_store.cache.clear()
 
-        result = await svc.record_match("guild1", "winner1", "loser1")
+
+@pytest.mark.asyncio
+async def test_record_match_updates_both_players(stores):
+    result = await EloService().record_match("guild1", "winner1", "loser1")
 
     assert result.winner_new_elo > result.winner_old_elo
     assert result.loser_new_elo < result.loser_old_elo
 
 
 @pytest.mark.asyncio
-async def test_record_match_sum_elo_conserved():
+async def test_record_match_sum_elo_conserved(stores):
     """ELO gained by winner ≈ ELO lost by loser (near conservation)."""
-    svc = EloService()
-    with (
-        patch.object(svc, "_save_player"),
-        patch.object(svc, "_save_player_to_db"),
-        patch("src.services.elo_service.sheets") as mock_sheets,
-    ):
-        mock_sheets.find_row.return_value = None
-
-        result = await svc.record_match("guild2", "w", "l")
+    result = await EloService().record_match("guild2", "w", "l")
 
     winner_gain = result.winner_new_elo - result.winner_old_elo
     loser_loss = result.loser_old_elo - result.loser_new_elo
@@ -92,173 +96,68 @@ async def test_record_match_sum_elo_conserved():
 
 
 @pytest.mark.asyncio
-async def test_standings_sorted_by_elo():
-    from src.data.models import PlayerElo
-    import src.services.elo_service as elo_mod
+async def test_record_match_rejects_self_match(stores):
+    with pytest.raises(ValueError):
+        await EloService().record_match("g", "same", "same")
 
-    svc = EloService()
-    elo_mod._elo_cache["guild3"] = {
+
+@pytest.mark.asyncio
+async def test_standings_sorted_by_elo(stores):
+    elo_store.cache["guild3"] = {
         "p1": PlayerElo(player_id="p1", guild_id="guild3", elo=1100, wins=5, losses=2),
         "p2": PlayerElo(player_id="p2", guild_id="guild3", elo=900, wins=2, losses=5),
         "p3": PlayerElo(player_id="p3", guild_id="guild3", elo=1000, wins=3, losses=3),
     }
 
-    standings = await svc.get_standings("guild3")
+    standings = await EloService().get_standings("guild3")
     elos = [p.elo for p in standings]
     assert elos == sorted(elos, reverse=True)
     assert standings[0].elo == 1100
 
 
 @pytest.mark.asyncio
-async def test_default_elo_is_configured_value():
-    import src.services.elo_service as elo_mod
-
-    elo_mod._elo_cache.clear()
-
-    svc = EloService()
-    with patch("src.services.elo_service.sheets") as mock_sheets:
-        mock_sheets.find_row.return_value = None
-        player = await svc._get_player("guild4", "new_player")
-
-    assert player.elo == settings.elo_default_rating
-
-
-# ── _get_player loads from sheets when record exists ──────────
-
-
-@pytest.mark.asyncio
-async def test_get_player_loads_from_sheets():
-    import src.services.elo_service as elo_mod
-
-    elo_mod._elo_cache.clear()
-
-    svc = EloService()
-    with patch("src.services.elo_service.sheets") as mock_sheets:
-        mock_sheets.find_row.return_value = {
-            "player_id": "pS",
-            "player_name": "Sheets Guy",
-            "elo": 1200,
-            "wins": 5,
-            "losses": 2,
-        }
-        player = await svc._get_player("guild5", "pS")
-
-    assert player.elo == 1200
-    assert player.wins == 5
-    assert player.losses == 2
-
-
-# ── get_standings loads from sheets when cache empty ──────────
-
-
-@pytest.mark.asyncio
-async def test_get_standings_loads_from_sheets():
-    import src.services.elo_service as elo_mod
-
-    elo_mod._elo_cache.clear()
-
-    svc = EloService()
-    with patch("src.services.elo_service.sheets") as mock_sheets:
-        mock_sheets.get_standings.return_value = [
-            {
-                "player_id": "pA",
-                "player_name": "Alice",
-                "elo": 1100,
-                "wins": 3,
-                "losses": 1,
-                "streak": 2,
-            },
-            {
-                "player_id": "pB",
-                "player_name": "Bob",
-                "elo": 900,
-                "wins": 1,
-                "losses": 3,
-                "streak": 0,
-            },
-        ]
-        result = await svc.get_standings("guild6")
-
-    assert len(result) == 2
-    assert result[0].elo >= result[1].elo
-
-
-# ── _save_player calls sheets.upsert_standing ─────────────────
-
-
-@pytest.mark.asyncio
-async def test_save_player_calls_upsert():
-    from src.data.models import PlayerElo
-
-    svc = EloService()
-    player = PlayerElo(
-        player_id="pX", guild_id="g1", display_name="Xavier", elo=1050, wins=4, losses=1
+async def test_record_match_sets_display_names(stores):
+    """winner_name and loser_name are applied to player records."""
+    await EloService().record_match(
+        "guild_dn", "w1", "l1", winner_name="Alice", loser_name="Bob"
     )
 
-    with patch("src.services.elo_service.sheets") as mock_sheets:
-        await svc._save_player(player)
-
-    mock_sheets.upsert_standing.assert_called_once()
-    call_args = mock_sheets.upsert_standing.call_args[0][0]
-    assert call_args["player_id"] == "pX"
-    assert call_args["elo"] == 1050
-
-
-# ── record_match updates display names when provided ──────────
-
-
-@pytest.mark.asyncio
-async def test_record_match_sets_display_names():
-    """winner_name and loser_name are applied to player records (lines 75, 77)."""
-    svc = EloService()
-    with (
-        patch.object(svc, "_save_player"),
-        patch.object(svc, "_save_player_to_db"),
-        patch("src.services.elo_service.sheets") as mock_sheets,
-    ):
-        mock_sheets.find_row.return_value = None
-        _ = await svc.record_match(
-            "guild_dn",
-            "w1",
-            "l1",
-            winner_name="Alice",
-            loser_name="Bob",
-        )
-
-    import src.services.elo_service as elo_mod
-
-    assert elo_mod._elo_cache["guild_dn"]["w1"].display_name == "Alice"
-    assert elo_mod._elo_cache["guild_dn"]["l1"].display_name == "Bob"
+    assert elo_store.cache["guild_dn"]["w1"].display_name == "Alice"
+    assert elo_store.cache["guild_dn"]["l1"].display_name == "Bob"
 
 
 # ── NCLP-006: SQLite ELO write-through ───────────────────────────────────────
 
 
 @pytest.mark.asyncio
-async def test_record_match_writes_to_sqlite():
+async def test_record_match_writes_to_sqlite(stores):
     """record_match should persist both players to SQLite (NCLP-006)."""
-    svc = EloService()
-    with (
-        patch.object(svc, "_save_player"),
-        patch.object(svc, "_save_player_to_db") as mock_db,
-        patch("src.services.elo_service.sheets") as mock_sheets,
-    ):
-        mock_sheets.find_row.return_value = None
-        mock_db.return_value = None
-        await svc.record_match("guild_db", "w", "l")
+    _, db_save = stores
+    await EloService().record_match("guild_db", "w", "l")
 
-    assert mock_db.call_count == 2
-    called_ids = {mock_db.call_args_list[i][0][0].player_id for i in range(2)}
-    assert called_ids == {"w", "l"}
+    assert db_save.await_count == 2
+    assert {c.kwargs["player_id"] for c in db_save.await_args_list} == {"w", "l"}
 
 
 @pytest.mark.asyncio
-async def test_restore_ratings_from_db_populates_cache():
-    """restore_ratings_from_db should fill _elo_cache from SQLite rows (NCLP-006)."""
-    import src.services.elo_service as elo_mod
+async def test_record_match_writes_to_league_sheet(stores):
+    sheet, _ = stores
+    await EloService().record_match("guild_ls", "w", "l")
 
-    elo_mod._elo_cache.clear()
+    written = {c.args[0]["player_id"] for c in sheet.save_standing.await_args_list}
+    assert written == {"w", "l"}
 
+
+@pytest.mark.asyncio
+async def test_default_elo_is_configured_value(stores):
+    player = await elo_store.get("guild4", "new_player")
+
+    assert player.elo == settings.elo_default_rating
+
+
+@pytest.mark.asyncio
+async def test_restore_ratings_from_db_populates_cache(stores):
+    """restore_ratings_from_db should fill the cache from SQLite rows (NCLP-006)."""
     rows = [
         {
             "guild_id": "g1",
@@ -270,10 +169,8 @@ async def test_restore_ratings_from_db_populates_cache():
             "display_name": "Alice",
         },
     ]
-    svc = EloService()
-    with patch("src.services.elo_service.load_all_elo", return_value=rows):
-        await svc.restore_ratings_from_db()
+    with patch("src.data.elo_store.load_all_elo", return_value=rows):
+        await EloService().restore_ratings_from_db()
 
-    assert "g1" in elo_mod._elo_cache
-    assert elo_mod._elo_cache["g1"]["pA"].elo == 1150
-    assert elo_mod._elo_cache["g1"]["pA"].wins == 6
+    assert elo_store.cache["g1"]["pA"].elo == 1150
+    assert elo_store.cache["g1"]["pA"].wins == 6

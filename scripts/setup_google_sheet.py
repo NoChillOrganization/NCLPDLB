@@ -461,7 +461,7 @@ def main() -> None:
     )
     print("  2. Run: python scripts/seed_pokemon_data.py  (fetch all 1025 Pokemon)")
     print(
-        '  3. Run: python -c "from src.data.sheets import sheets; from scripts.seed_pokemon_data import OUTPUT_FILE; import json; sheets.bulk_write_pokedex(json.load(open(OUTPUT_FILE)))"'
+        '  3. Run: python -c "import asyncio, json; from src.data.sheets import league_sheet; from scripts.seed_pokemon_data import OUTPUT_FILE; asyncio.run(league_sheet.write_pokedex(json.load(open(OUTPUT_FILE))))"'
     )
     print("  4. Start the bot: python src/bot/main.py")
 

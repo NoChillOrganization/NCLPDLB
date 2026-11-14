@@ -20,73 +20,32 @@ Key layout discoveries (from inspect_writable_tabs.py):
   MVP Race      — formula-driven view of Data tab; read-only
   Pokémon Stats — formula-driven view of Data tab; read-only
 
-Uses gspread synchronously (run in executor for async contexts).
+This module is the League sheet's only door.  Callers ``await`` a method by intent
+(``save_pick``, ``save_standing`` …); nobody wraps a sheet call in
+``asyncio.to_thread``.  The executor policy (one place: ``LeagueSheet._run``), the
+retry policy (``sheet_plumbing._with_retry``) and the cell layout all live here.  The
+gspread plumbing is the shared synchronous ``SheetConnection``; the Learning sheet is
+a separate adapter over the same plumbing (src/data/learning_sheets.py).
+
+Invariant: ELO rows on the ELO Data tab are keyed by ``player_id`` alone.  There is
+one spreadsheet per League (guild), so no guild key is written to the sheet; the
+guild is implied by which spreadsheet is configured.  Reconciling those rows with
+the in-memory cache and the Local store (SQLite) is src/data/elo_store.py.
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
-import random as _random
-import time as _time
-from datetime import datetime, timezone
 from typing import Any
 
 import gspread
-import requests.exceptions
-from google.oauth2.service_account import Credentials
 
 from src.config import settings
+from src.data.sheet_plumbing import UTC_NOW, SheetConnection
 
 log = logging.getLogger(__name__)
-
-SCOPES = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive",
-]
-
-
-def UTC_NOW() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-
-
-def _with_retry(fn, *args, max_tries: int = 5, **kwargs):
-    """Call fn(*args, **kwargs) with exponential-backoff retry on HTTP 429/503 and transport errors.
-
-    All other errors propagate immediately.
-    """
-    for attempt in range(max_tries):
-        try:
-            return fn(*args, **kwargs)
-        except gspread.exceptions.APIError as exc:
-            status = None
-            try:
-                status = exc.response.status_code
-            except AttributeError:
-                pass
-            if status not in (429, 503) or attempt == max_tries - 1:
-                raise
-            delay = (2**attempt) + _random.uniform(0, 1)
-            log.warning(
-                "Sheets API rate-limit (HTTP %s) — retrying in %.1fs (attempt %d/%d)",
-                status,
-                delay,
-                attempt + 1,
-                max_tries,
-            )
-            _time.sleep(delay)
-        except requests.exceptions.RequestException as exc:
-            if attempt == max_tries - 1:
-                raise
-            delay = (2**attempt) + _random.uniform(0, 1)
-            log.warning(
-                "Sheets transport error (%s) — retrying in %.1fs (attempt %d/%d)",
-                exc,
-                delay,
-                attempt + 1,
-                max_tries,
-            )
-            _time.sleep(delay)
 
 
 # ── Tab names (exact Unicode match to spreadsheet) ─────────────────────────────
@@ -101,12 +60,12 @@ class Tab:
     POOL_A = "Pool A Board"
     POOL_B = "Pool B Board"
     SCHEDULE = "Schedule"
-    MATCH_STATS = "Match Stats"  # visual template — read-only via get_match_results()
+    MATCH_STATS = "Match Stats"  # visual template — not read by the bot
     MATCH_RECORDS = (
         "Match Records"  # flat tab: match/replay/video rows written by the bot
     )
-    STANDINGS = "Standings"  # visual template — read-only via get_standings_visual()
-    ELO_DATA = "ELO Data"  # flat tab: ELO records written/read by EloService
+    STANDINGS = "Standings"  # visual template — not read by the bot
+    ELO_DATA = "ELO Data"  # flat tab: ELO records written/read via the ELO store
     POKEMON_STATS = "Pokémon Stats"
     MVP_RACE = "MVP Race"
     TRANSACTIONS = "Transactions"
@@ -116,205 +75,42 @@ class Tab:
     DATA = "Data"
 
 
-# ── Helper: column letter ↔ number ─────────────────────────────────────────────
+# ── League sheet ───────────────────────────────────────────────────────────────
 
 
-def _col_letter(n: int) -> str:
-    result = ""
-    while n > 0:
-        n, rem = divmod(n - 1, 26)
-        result = chr(65 + rem) + result
-    return result
+class LeagueSheet:
+    """The League's Google spreadsheet, as async operations by intent."""
 
+    def __init__(self) -> None:
+        self._conn = SheetConnection(lambda: settings.google_sheets_spreadsheet_id)
 
-# ── Client ─────────────────────────────────────────────────────────────────────
+    def open_spreadsheet(self) -> gspread.Spreadsheet:
+        """The raw spreadsheet — for the preflight script only (blocking).
 
-
-class SheetsClient:
-    """Singleton Google Sheets client for the No Chill League spreadsheet."""
-
-    _instance: SheetsClient | None = None
-    _client: gspread.Client | None = None
-    _spreadsheet: gspread.Spreadsheet | None = None
-
-    def __new__(cls) -> SheetsClient:
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    def connect(self) -> None:
-        creds_path = settings.google_sheets_credentials_file
-        if not creds_path.exists():
-            raise FileNotFoundError(
-                f"Google credentials not found: {creds_path}\n"
-                "Download a service account JSON from Google Cloud Console."
-            )
-        creds = Credentials.from_service_account_file(str(creds_path), scopes=SCOPES)
-        self._client = gspread.authorize(creds)
-        self._client.set_timeout(30)  # (s) so a stalled Sheets call can't hang forever
-        self._spreadsheet = self._client.open_by_key(self._spreadsheet_id())
-        log.info(f"Connected to Google Sheets: '{self._spreadsheet.title}'")
-
-    @property
-    def spreadsheet(self) -> gspread.Spreadsheet:
-        if self._spreadsheet is None:
-            self.connect()
-        return self._spreadsheet
-
-    def _spreadsheet_id(self) -> str:
-        return settings.google_sheets_spreadsheet_id
-
-    def get_tab(
-        self, tab_name: str, create: bool = False, headers: list[str] | None = None
-    ) -> gspread.Worksheet:
-        """Return a worksheet by name.
-
-        Args:
-            tab_name: Exact worksheet title.
-            create:   If True, create the worksheet when it doesn't exist.
-                      Read-only callers must leave this False (default) so a
-                      missing tab raises WorksheetNotFound rather than silently
-                      creating an empty sheet (H4).
-            headers:  When creating, write this header row (sized to fit)
-                      instead of the default single-cell title row.
+        A method, not a property, so autospec'd test doubles never connect.
         """
-        try:
-            return self.spreadsheet.worksheet(tab_name)
-        except gspread.WorksheetNotFound:
-            if not create:
-                raise
-            log.warning(f"Tab '{tab_name}' not found — creating it.")
-            if headers:
-                ws = self.spreadsheet.add_worksheet(
-                    title=tab_name, rows=10000, cols=len(headers)
-                )
-                ws.append_row(headers, value_input_option="USER_ENTERED")
-            else:
-                ws = self.spreadsheet.add_worksheet(title=tab_name, rows=1000, cols=26)
-                ws.append_row([tab_name], value_input_option="USER_ENTERED")
-            return ws
+        return self._conn.spreadsheet
 
-    def _get_range(self, tab_name: str, range_: str) -> list[list[str]]:
-        """Read a range returning a 2D list (empty strings for empty cells)."""
-        result = self.spreadsheet.values_get(
-            f"'{tab_name}'!{range_}",
-            params={"valueRenderOption": "FORMATTED_VALUE"},
-        )
-        return result.get("values", [])
+    @staticmethod
+    async def _run(fn, *args):
+        """The one executor policy: blocking gspread work never runs on the loop."""
+        return await asyncio.to_thread(fn, *args)
 
-    # ── Generic helpers ───────────────────────────────────────────────────────
-
-    def append_row(self, tab_name: str, row: list[Any]) -> None:
-        """Append a row to any tab."""
-        ws = self.get_tab(tab_name, create=True)
-        _with_retry(ws.append_row, row, value_input_option="USER_ENTERED")
-
-    def upsert_row(
-        self, tab_name: str, key_col: str, key_val: str, row_data: list
-    ) -> None:
-        """Insert or update a row matched by key_col == key_val (positional write).
-
-        Uses ws.find() to locate the row (H10) instead of get_all_records().
-        All gspread calls are wrapped with _with_retry for 429/503 backoff (H9).
-        """
-        ws = self.get_tab(tab_name, create=True)
-        headers = _with_retry(ws.row_values, 1)
-        if key_col not in headers:
-            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
-            return
-        key_col_idx = headers.index(key_col) + 1  # 1-based
-        cell = _with_retry(ws.find, str(key_val), in_column=key_col_idx)
-        if cell is None:
-            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
-        else:
-            _with_retry(ws.update, f"A{cell.row}", [row_data])
-
-    def _upsert_record(
-        self,
-        tab_name: str,
-        key_col: str,
-        key_val: str,
-        record: dict,
-        create: bool = True,
-    ) -> None:
-        """Header-aware partial-update upsert (H3).
-
-        Reads the header row once, locates the existing row via ws.find (H10),
-        merges *only* the keys present in record into the existing row values
-        (partial update — other columns are preserved), then writes the merged
-        row back.  On insert appends a row built from headers → record mapping.
-        """
-        ws = self.get_tab(tab_name, create=create)
-        headers = _with_retry(ws.row_values, 1)
-        if not headers:
-            # Bootstrap header row from record keys
-            headers = list(record.keys())
-            _with_retry(ws.append_row, headers, value_input_option="USER_ENTERED")
-
-        if key_col not in headers:
-            row_data = [record.get(h, "") for h in headers]
-            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
-            return
-
-        key_col_idx = headers.index(key_col) + 1
-        last_col = _col_letter(len(headers))
-        cell = _with_retry(ws.find, str(key_val), in_column=key_col_idx)
-        if cell is None:
-            row_data = [record.get(h, "") for h in headers]
-            _with_retry(ws.append_row, row_data, value_input_option="USER_ENTERED")
-        else:
-            row_num = cell.row
-            # Read current row, merge updates, write back (preserves unset columns)
-            current = _with_retry(ws.row_values, row_num)
-            current = (current + [""] * len(headers))[: len(headers)]
-            for i, hdr in enumerate(headers):
-                if hdr in record:
-                    current[i] = record[hdr]
-            _with_retry(ws.update, f"A{row_num}:{last_col}{row_num}", [current])
-
-    def read_all(self, tab_name: str) -> list[dict]:
-        """Generic read — returns all records from a tab via gspread get_all_records() (H9)."""
-        ws = self.get_tab(tab_name)
-        vals = _with_retry(ws.get_all_values)
-        if not vals:
-            return []
-        seen: set[str] = set()
-        hdrs: list[str] = []
-        for h in vals[0]:
-            if h and h not in seen:
-                hdrs.append(h)
-                seen.add(h)
-        return _with_retry(ws.get_all_records, expected_headers=hdrs)
-
-    def find_row(self, tab_name: str, col: str, value: str) -> dict | None:
-        """Return the first row where col == value using ws.find() (H10 — avoids full read)."""
-        ws = self.get_tab(tab_name)
-        headers = _with_retry(ws.row_values, 1)
-        if col not in headers:
-            return None
-        col_idx = headers.index(col) + 1
-        cell = _with_retry(ws.find, str(value), in_column=col_idx)
-        if cell is None:
-            return None
-        row_vals = (_with_retry(ws.row_values, cell.row) + [""] * len(headers))[
-            : len(headers)
-        ]
-        return dict(zip(headers, row_vals))
-
-    def find_rows(self, tab_name: str, col: str, value: str) -> list[dict]:
-        """Return all rows where col == value."""
-        return [r for r in self.read_all(tab_name) if str(r.get(col, "")) == str(value)]
+    async def _upsert(self, tab: str, key_col: str, key_val: str, row: list) -> None:
+        await self._run(self._conn.upsert_row, tab, key_col, key_val, row)
 
     # ── Setup tab ─────────────────────────────────────────────────────────────
 
-    def get_league_setup(self, server_id: str | None = None) -> dict | None:
+    async def get_league_setup(self, server_id: str | None = None) -> dict | None:
         """Return league setup dict, optionally filtered by server_id."""
         if server_id:
-            return self.find_row(Tab.SETUP, "server_id", server_id)
-        rows = self.read_all(Tab.SETUP)
+            return await self._run(
+                self._conn.find_row, Tab.SETUP, "server_id", server_id
+            )
+        rows = await self._run(self._conn.read_all, Tab.SETUP)
         return rows[0] if rows else {}
 
-    def save_league_setup(self, data: dict) -> None:
+    async def save_league_setup(self, data: dict) -> None:
         """Write editable Setup values."""
         row_data = [
             data.get("league_id", ""),
@@ -324,18 +120,21 @@ class SheetsClient:
             data.get("commissioner_name", ""),
             UTC_NOW(),
         ]
-        self.upsert_row(Tab.SETUP, "server_id", data.get("server_id", ""), row_data)
+        await self._upsert(Tab.SETUP, "server_id", data.get("server_id", ""), row_data)
 
-    # ── Standings tab ─────────────────────────────────────────────────────────
+    # ── ELO Data tab (flat; keyed by player_id only — see module docstring) ───
 
-    def get_standings(self, pool: str | None = None) -> list[dict]:
+    async def get_standings(self) -> list[dict]:
         """Return ELO standings rows from the flat ELO Data tab."""
-        rows = self.read_all(Tab.ELO_DATA)
-        if pool:
-            rows = [r for r in rows if str(r.get("pool", "")) == str(pool)]
-        return rows
+        return await self._run(self._conn.read_all, Tab.ELO_DATA)
 
-    def upsert_standing(self, standing: dict) -> None:
+    async def find_standing(self, player_id: str) -> dict | None:
+        """Return one player's ELO row (matched on player_id alone), or None."""
+        return await self._run(
+            self._conn.find_row, Tab.ELO_DATA, "player_id", player_id
+        )
+
+    async def save_standing(self, standing: dict) -> None:
         """Insert or update an ELO standing row in the flat ELO Data tab."""
         row_data = [
             standing.get("player_id", ""),
@@ -346,7 +145,7 @@ class SheetsClient:
             standing.get("streak", ""),
             UTC_NOW(),
         ]
-        self.upsert_row(
+        await self._upsert(
             Tab.ELO_DATA, "player_id", standing.get("player_id", ""), row_data
         )
 
@@ -356,7 +155,11 @@ class SheetsClient:
     #   Row 5: "Week #1" label in col D
     #   Rows 6-13: match rows for week 1
 
-    def save_schedule_match(self, match: dict) -> None:
+    async def read_schedule(self) -> list[dict]:
+        """Return the Schedule tab as records."""
+        return await self._run(self._conn.read_all, Tab.SCHEDULE)
+
+    async def save_schedule_match(self, match: dict) -> None:
         """Write a scheduled match row."""
         row_data = [
             match.get("match_id", ""),
@@ -367,54 +170,13 @@ class SheetsClient:
             match.get("player2_name", ""),
             UTC_NOW(),
         ]
-        self.upsert_row(Tab.SCHEDULE, "match_id", match.get("match_id", ""), row_data)
+        await self._upsert(
+            Tab.SCHEDULE, "match_id", match.get("match_id", ""), row_data
+        )
 
-    # ── Match Stats tab ───────────────────────────────────────────────────────
+    # ── Match Records tab ─────────────────────────────────────────────────────
 
-    def get_match_results(self, week: int | None = None) -> list[dict]:
-        """Read match results from Match Stats visual template."""
-        d_col = self._get_range(Tab.MATCH_STATS, "D3:D152")
-        week_rows: list[tuple[int, str]] = []
-        for i, row in enumerate(d_col, 3):
-            v = row[0].strip() if row else ""
-            if v.startswith("Week"):
-                week_rows.append((i, v))
-
-        results = []
-        for _wi, (wrow, wlabel) in enumerate(week_rows):
-            if week is not None and f"#{week}" not in wlabel:
-                continue
-            match_start = wrow + 1
-            match_raw = self._get_range(
-                Tab.MATCH_STATS, f"E{match_start}:K{match_start + 80}"
-            )
-            i = 0
-            while i < len(match_raw):
-                row = match_raw[i]
-                coach1 = row[0].strip() if len(row) > 0 else ""
-                result1 = row[2].strip() if len(row) > 2 else ""
-                result2 = row[6].strip() if len(row) > 6 else ""
-                coach2 = row[7].strip() if len(row) > 7 else ""
-                if coach1 and result1 in {"W", "L", "DF", ""}:
-                    winner = (
-                        coach1 if result1 == "W" else (coach2 if result2 == "W" else "")
-                    )
-                    results.append(
-                        {
-                            "week": wlabel,
-                            "coach1": coach1,
-                            "coach2": coach2,
-                            "winner": winner,
-                            "result1": result1,
-                            "result2": result2,
-                        }
-                    )
-                    i += 9
-                else:
-                    i += 1
-        return results
-
-    def save_match_stats(self, match: dict) -> None:
+    async def save_match_stats(self, match: dict) -> None:
         """Write match stats row to the flat Match Records tab."""
         row_data = [
             match.get("match_id", ""),
@@ -423,11 +185,11 @@ class SheetsClient:
             str(match.get("p2_team", [])),
             UTC_NOW(),
         ]
-        self.upsert_row(
+        await self._upsert(
             Tab.MATCH_RECORDS, "match_id", match.get("match_id", ""), row_data
         )
 
-    def save_replay(self, replay: dict) -> None:
+    async def save_replay(self, replay: dict) -> None:
         """Append a replay row to the flat Match Records tab, keyed by replay_id."""
         row_data = [
             replay.get("replay_id", ""),
@@ -439,11 +201,11 @@ class SheetsClient:
             str(replay.get("turns", "")),
             replay.get("timestamp", UTC_NOW()),
         ]
-        self.upsert_row(
+        await self._upsert(
             Tab.MATCH_RECORDS, "replay_id", replay.get("replay_id", ""), row_data
         )
 
-    def save_video(self, video: dict) -> None:
+    async def save_video(self, video: dict) -> None:
         """Append a video entry to the flat Match Records tab, keyed by video_id."""
         row_data = [
             video.get("video_id", ""),
@@ -455,7 +217,7 @@ class SheetsClient:
             video.get("notes", ""),
             video.get("timestamp", UTC_NOW()),
         ]
-        self.upsert_row(
+        await self._upsert(
             Tab.MATCH_RECORDS, "video_id", video.get("video_id", ""), row_data
         )
 
@@ -466,7 +228,7 @@ class SheetsClient:
     #   Rows 4-5: empty template rows
     #   Row 6+: data rows
 
-    def save_transaction(self, txn: dict) -> None:
+    async def save_transaction(self, txn: dict) -> None:
         """Append a transaction row."""
         row_data = [
             txn.get("transaction_id", ""),
@@ -479,13 +241,19 @@ class SheetsClient:
             txn.get("status", ""),
             UTC_NOW(),
         ]
-        self.upsert_row(
+        await self._upsert(
             Tab.TRANSACTIONS, "transaction_id", txn.get("transaction_id", ""), row_data
+        )
+
+    async def find_transaction(self, transaction_id: str) -> dict | None:
+        """Return the Transactions row for *transaction_id*, or None."""
+        return await self._run(
+            self._conn.find_row, Tab.TRANSACTIONS, "transaction_id", transaction_id
         )
 
     # ── Draft tab ─────────────────────────────────────────────────────────────
 
-    def save_pick(self, pick: dict) -> None:
+    async def save_pick(self, pick: dict) -> None:
         """Append a draft pick row."""
         row_data = [
             pick.get("pick_id", ""),
@@ -496,7 +264,13 @@ class SheetsClient:
             pick.get("pick_number", ""),
             UTC_NOW(),
         ]
-        self.upsert_row(Tab.DRAFT, "pick_id", pick.get("pick_id", ""), row_data)
+        await self._upsert(Tab.DRAFT, "pick_id", pick.get("pick_id", ""), row_data)
+
+    # ── Rules tab ─────────────────────────────────────────────────────────────
+
+    async def append_rule(self, row: list[Any]) -> None:
+        """Append a rule row to the Rules tab."""
+        await self._run(self._conn.append_row, Tab.RULES, row)
 
     # ── Pokédex tab ───────────────────────────────────────────────────────────
     #
@@ -504,13 +278,8 @@ class SheetsClient:
     #   B=GitHub Name, C=Smogon Name, D=PMD Reference, F=Pts, I=Pokémon, J=Type1, K=Type2
     #   L=HP, M=Atk, N=Def, O=SpA, P=SpD, Q=Spe
 
-    def bulk_write_pokedex(self, pokemon_list: list[dict]) -> None:
+    async def write_pokedex(self, pokemon_list: list[dict]) -> None:
         """Write all Pokémon to the Pokédex tab."""
-        ws = self.get_tab(Tab.POKEDEX, create=True)
-        ws.clear()
-        if not pokemon_list:
-            return
-
         rows = []
         for p in pokemon_list:
             stats = p.get("base_stats", {})
@@ -535,13 +304,13 @@ class SheetsClient:
                     p.get("sprite_url", ""),
                 ]
             )
-
-        ws.append_rows(rows, value_input_option="USER_ENTERED")
-        log.info(f"Pokédex tab populated with {len(rows)} Pokémon")
+        await self._run(self._conn.replace_rows, Tab.POKEDEX, rows)
+        if rows:
+            log.info(f"Pokédex tab populated with {len(rows)} Pokémon")
 
     # ── Playoffs tab ──────────────────────────────────────────────────────────
 
-    def save_playoff_match(self, match: dict) -> None:
+    async def save_playoff_match(self, match: dict) -> None:
         """Write a playoff match row."""
         row_data = [
             match.get("bracket_id", ""),
@@ -551,37 +320,45 @@ class SheetsClient:
             match.get("player2_id", ""),
             UTC_NOW(),
         ]
-        self.upsert_row(
+        await self._upsert(
             Tab.PLAYOFFS, "bracket_id", match.get("bracket_id", ""), row_data
         )
 
     # ── Team page (individual coach tabs) ─────────────────────────────────────
 
-    def upsert_team_page(self, team: dict) -> None:
+    async def find_team_page(self, player_id: str) -> dict | None:
+        """Return the Team Page Template row for *player_id*, or None."""
+        return await self._run(
+            self._conn.find_row, Tab.TEAM_TEMPLATE, "player_id", player_id
+        )
+
+    async def save_team_page(self, team: dict) -> None:
         """Insert or update a team row in the Team Page Template tab.
 
         Writes pokemon_list as a JSON array of names (H2) and guild_id (H5)
-        so get_team() can read them back.  Uses header-aware _upsert_record
+        so the team can be read back.  Uses header-aware upsert_record
         for a partial update — fields absent from team dict are preserved.
         """
-        import json as _json
-
         slots = team.get("slots", [])
         pokemon_names = [name for name, _tera in slots] if slots else []
         record: dict[str, Any] = {
             "player_id": team.get("player_id", ""),
             "guild_id": team.get("guild_id", ""),
-            "pokemon_list": _json.dumps(pokemon_names),
+            "pokemon_list": json.dumps(pokemon_names),
             "updated_at": UTC_NOW(),
         }
         # Only include optional display fields when provided by the caller
         for field in ("player_name", "team_name", "team_logo_url", "pool"):
             if field in team:
                 record[field] = team[field]
-        self._upsert_record(
-            Tab.TEAM_TEMPLATE, "player_id", team.get("player_id", ""), record
+        await self._run(
+            self._conn.upsert_record,
+            Tab.TEAM_TEMPLATE,
+            "player_id",
+            team.get("player_id", ""),
+            record,
         )
 
 
 # Global singleton
-sheets = SheetsClient()
+league_sheet = LeagueSheet()

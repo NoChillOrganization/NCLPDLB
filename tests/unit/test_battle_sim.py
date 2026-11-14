@@ -139,7 +139,7 @@ async def test_parse_replay_command_fetches_json():
     mock_resp.json = AsyncMock(return_value=SAMPLE_REPLAY_JSON)
 
     with (
-        patch("src.services.battle_sim.sheets") as mock_sheets,
+        patch("src.services.battle_sim.league_sheet", autospec=True) as mock_sheets,
         patch("aiohttp.ClientSession") as MockSession,
     ):
         mock_ctx = AsyncMock()
@@ -150,7 +150,7 @@ async def test_parse_replay_command_fetches_json():
         mock_ctx.json = AsyncMock(return_value=SAMPLE_REPLAY_JSON)
         MockSession.return_value.__aenter__ = AsyncMock(return_value=mock_ctx)
         MockSession.return_value.__aexit__ = AsyncMock(return_value=False)
-        mock_sheets.save_replay = MagicMock()
+        mock_sheets.save_replay = AsyncMock()
 
         result = await svc.parse_replay(
             guild_id="g1",
@@ -353,7 +353,7 @@ async def test_parse_replay_non_https_url():
     mock_resp.json = AsyncMock(return_value=SAMPLE_REPLAY_JSON)
 
     with (
-        patch("src.services.battle_sim.sheets"),
+        patch("src.services.battle_sim.league_sheet", autospec=True),
         patch("aiohttp.ClientSession") as MockSession,
     ):
         mock_session = AsyncMock()

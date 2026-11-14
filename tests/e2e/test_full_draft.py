@@ -5,7 +5,7 @@ Run: pytest tests/e2e/test_full_draft.py -v
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.data.models import DraftFormat, DraftStatus
 from src.services.draft_service import DraftService
@@ -42,11 +42,11 @@ async def test_full_snake_draft():
     svc = DraftService()
 
     with (
-        patch("src.services.draft_service.sheets") as mock_sheets,
+        patch("src.services.draft_service.league_sheet", autospec=True) as mock_sheets,
         patch("src.services.draft_service.pokemon_db") as mock_db,
     ):
-        mock_sheets.save_league_setup = MagicMock()
-        mock_sheets.save_pick = MagicMock()
+        mock_sheets.save_league_setup = AsyncMock()
+        mock_sheets.save_pick = AsyncMock()
 
         def fake_find(name):
             return make_mock_pokemon(name)
@@ -105,7 +105,7 @@ async def test_full_snake_draft():
 async def test_ban_phase_blocks_picks():
     svc = DraftService()
     with (
-        patch("src.services.draft_service.sheets"),
+        patch("src.services.draft_service.league_sheet", autospec=True),
         patch("src.services.draft_service.pokemon_db") as mock_db,
     ):
         mock_db.find = lambda n: make_mock_pokemon(n)
@@ -134,7 +134,7 @@ async def test_ban_phase_blocks_picks():
 async def test_draft_not_your_turn():
     svc = DraftService()
     with (
-        patch("src.services.draft_service.sheets"),
+        patch("src.services.draft_service.league_sheet", autospec=True),
         patch("src.services.draft_service.pokemon_db") as mock_db,
     ):
         mock_db.find = lambda n: make_mock_pokemon(n)

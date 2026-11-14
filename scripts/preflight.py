@@ -95,9 +95,9 @@ def check_discord(token: str, timeout: float = 10) -> Result:
 
 
 def check_sheets() -> Result:
-    from src.data.sheets import SheetsClient
+    from src.data.sheets import league_sheet
 
-    ss = SheetsClient().spreadsheet
+    ss = league_sheet.open_spreadsheet()
     titles = [ws.title for ws in ss.worksheets()]
     have = {_norm(t) for t in titles}
     missing = [t for t in expected_tabs() if _norm(t) not in have]

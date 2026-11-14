@@ -32,7 +32,7 @@ from src.data.models import (
     Pokemon,
 )
 from src.data.pokeapi import pokemon_db
-from src.data.sheets import sheets
+from src.data.sheets import league_sheet
 
 log = logging.getLogger(__name__)
 
@@ -68,9 +68,9 @@ def _locked(method):
     return wrapper
 
 
-def _sheet_write(write: Callable[[dict], object], row: dict) -> None:
+def _sheet_write(write: Callable[[dict], Awaitable[None]], row: dict) -> None:
     """Fire-and-forget League sheet write: never delays the caller; failures are logged."""
-    task = asyncio.get_running_loop().create_task(asyncio.to_thread(write, row))
+    task = asyncio.get_running_loop().create_task(write(row))
     _background_tasks.add(task)
     task.add_done_callback(_sheet_write_done)
 
@@ -216,7 +216,7 @@ class DraftService:
         _timeout_callbacks.pop(guild_id, None)  # the previous draft's callback is stale
         # Persist league setup to Google Sheets (fire-and-forget — don't block draft creation)
         _sheet_write(
-            sheets.save_league_setup,
+            league_sheet.save_league_setup,
             {
                 "league_id": guild_id,  # one League per server: league id == guild id
                 "server_id": guild_id,
@@ -367,7 +367,7 @@ class DraftService:
             is_tera_captain=is_tera_captain,
         )
         draft.picks.append(pick)
-        _sheet_write(sheets.save_pick, pick.model_dump(mode="json"))
+        _sheet_write(league_sheet.save_pick, pick.model_dump(mode="json"))
 
         # Player picked in time: the timer is replaced only now, after validation,
         # so a rejected pick above leaves the player's auto-skip running.
@@ -570,7 +570,7 @@ class DraftService:
         draft.picks.append(pick)
         draft.budget[winner_id] = draft.budget.get(winner_id, 0) - amount
         draft.current_nomination_id = ""
-        _sheet_write(sheets.save_pick, pick.model_dump(mode="json"))
+        _sheet_write(league_sheet.save_pick, pick.model_dump(mode="json"))
         self._advance_pick(draft)
         await _persist_draft(draft)
         log.info(

@@ -18,7 +18,6 @@ All commands respond ephemerally (visible only to the commander).
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 from datetime import datetime, timezone
 
@@ -27,7 +26,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from src.bot.permissions import ROLE_GUILDMASTER, ROLE_MOD, require_role
-from src.data.sheets import Tab, sheets
+from src.data.sheets import league_sheet
 
 
 def _now() -> str:
@@ -54,8 +53,7 @@ class ScheduleAddModal(discord.ui.Modal, title="Add Schedule Match"):
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
         match_id = str(uuid.uuid4())[:8]
-        await asyncio.to_thread(
-            sheets.save_schedule_match,
+        await league_sheet.save_schedule_match(
             {
                 "match_id": match_id,
                 "week": int(self.week.value or 1),
@@ -86,8 +84,7 @@ class ResultSetModal(discord.ui.Modal, title="Record Match Result"):
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
         mid = self.match_id.value.strip() or ""
-        await asyncio.to_thread(
-            sheets.save_match_stats,
+        await league_sheet.save_match_stats(
             {
                 "match_id": mid or str(uuid.uuid4())[:8],
                 "winner_name": self.winner_name.value,
@@ -113,8 +110,7 @@ class TransactionModal(discord.ui.Modal, title="Log Transaction"):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
-        await asyncio.to_thread(
-            sheets.save_transaction,
+        await league_sheet.save_transaction(
             {
                 "transaction_id": str(uuid.uuid4())[:8],
                 "type": self.txn_type.value or "trade",
@@ -145,9 +141,7 @@ class RuleAddModal(discord.ui.Modal, title="Add Rule"):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
-        await asyncio.to_thread(
-            sheets.append_row,
-            Tab.RULES,
+        await league_sheet.append_rule(
             [
                 str(uuid.uuid4())[:8],
                 self.category.value,
@@ -171,7 +165,7 @@ class SetupEditModal(discord.ui.Modal, title="Edit Setup Value"):
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
         guild_id = str(interaction.guild_id)
-        row = await asyncio.to_thread(sheets.get_league_setup, guild_id)
+        row = await league_sheet.get_league_setup(guild_id)
         if not row:
             await interaction.followup.send(
                 "❌ No setup found for this server.", ephemeral=True
@@ -184,7 +178,7 @@ class SetupEditModal(discord.ui.Modal, title="Edit Setup Value"):
             )
             return
         row[key] = self.field_value.value
-        await asyncio.to_thread(sheets.save_league_setup, row)
+        await league_sheet.save_league_setup(row)
         await interaction.followup.send(
             f"✅ Updated **{key}** → `{self.field_value.value}`", ephemeral=True
         )
@@ -200,8 +194,7 @@ class PlayerTeamModal(discord.ui.Modal, title="Update Player Team"):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
-        await asyncio.to_thread(
-            sheets.upsert_team_page,
+        await league_sheet.save_team_page(
             {
                 "player_id": self.player_id.value,
                 "team_name": self.team_name.value,
@@ -241,8 +234,7 @@ class PlayoffAddModal(discord.ui.Modal, title="Add Playoff Match"):
 
         p1_name, p1_seed = parse_seed(self.p1.value)
         p2_name, p2_seed = parse_seed(self.p2.value)
-        await asyncio.to_thread(
-            sheets.save_playoff_match,
+        await league_sheet.save_playoff_match(
             {
                 "bracket_id": str(uuid.uuid4())[:8],
                 "round": self.round_.value,
@@ -286,8 +278,7 @@ class SheetCog(commands.Cog, name="Sheet"):
             standings  # PlayerElo has no pool field, so all guild standings are written
         )
         for rank, s in enumerate(filtered, 1):
-            await asyncio.to_thread(
-                sheets.upsert_standing,
+            await league_sheet.save_standing(
                 {
                     "player_id": s.player_id,
                     "player_name": s.display_name,
@@ -355,9 +346,7 @@ class SheetCog(commands.Cog, name="Sheet"):
             return
 
         await interaction.response.defer(ephemeral=True)
-        row = await asyncio.to_thread(
-            sheets.get_league_setup, str(interaction.guild_id)
-        )
+        row = await league_sheet.get_league_setup(str(interaction.guild_id))
         if not row:
             await interaction.followup.send(
                 "❌ No setup found. Run `/draft-setup` first.", ephemeral=True
@@ -399,7 +388,7 @@ class SheetCog(commands.Cog, name="Sheet"):
             return
         with pokemon_file.open(encoding="utf-8") as f:
             pokemon_list = json.load(f)
-        await asyncio.to_thread(sheets.bulk_write_pokedex, pokemon_list)
+        await league_sheet.write_pokedex(pokemon_list)
         await interaction.followup.send(
             f"✅ Pokedex tab updated — {len(pokemon_list)} Pokemon synced.",
             ephemeral=True,

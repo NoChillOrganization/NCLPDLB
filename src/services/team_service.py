@@ -4,7 +4,6 @@ Team Service — Roster management, trades, Showdown import/export, console lega
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 import uuid
@@ -14,7 +13,7 @@ __all__ = ["TeamService", "TradeResult", "ImportResult", "LegalityResult"]
 
 from src.data.models import Pokemon, TeamRoster, Trade
 from src.data.pokeapi import pokemon_db
-from src.data.sheets import Tab, sheets
+from src.data.sheets import league_sheet
 
 log = logging.getLogger(__name__)
 
@@ -69,9 +68,7 @@ class TeamService:
         if key in _roster_cache:
             return _roster_cache[key]
 
-        record = await asyncio.to_thread(
-            sheets.find_row, Tab.TEAM_TEMPLATE, "player_id", player_id
-        )
+        record = await league_sheet.find_team_page(player_id)
         if not record or str(record.get("guild_id")) != guild_id:
             return None
 
@@ -120,8 +117,7 @@ class TeamService:
 
         # Persist to Team Page Template tab
         slots = [(p.name, getattr(p, "tera_type", "")) for p in roster.pokemon]
-        await asyncio.to_thread(
-            sheets.upsert_team_page,
+        await league_sheet.save_team_page(
             {
                 "player_id": player_id,
                 "player_name": player_name,
@@ -173,8 +169,7 @@ class TeamService:
             pokemon_received=request_mon.name,
             status="pending",
         )
-        await asyncio.to_thread(
-            sheets.save_transaction,
+        await league_sheet.save_transaction(
             {
                 "transaction_id": trade.trade_id,
                 "league_id": guild_id,  # stored so accept/decline can locate rosters
@@ -192,9 +187,7 @@ class TeamService:
         return TradeResult(success=True, trade_id=trade.trade_id)
 
     async def accept_trade(self, player_id: str, trade_id: str) -> TradeResult:
-        record = await asyncio.to_thread(
-            sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id
-        )
+        record = await league_sheet.find_transaction(trade_id)
         if not record:
             return TradeResult(success=False, error="Trade not found.")
         if str(record.get("to_player_id")) != player_id:
@@ -233,16 +226,14 @@ class TeamService:
         # the trade was NOT committed durably (H1).
         from_slots = [(p.name, getattr(p, "tera_type", "")) for p in from_team.pokemon]
         to_slots = [(p.name, getattr(p, "tera_type", "")) for p in to_team.pokemon]
-        await asyncio.to_thread(
-            sheets.upsert_team_page,
+        await league_sheet.save_team_page(
             {
                 "player_id": from_player_id,
                 "guild_id": guild_id,
                 "slots": from_slots,
             },
         )
-        await asyncio.to_thread(
-            sheets.upsert_team_page,
+        await league_sheet.save_team_page(
             {
                 "player_id": player_id,
                 "guild_id": guild_id,
@@ -252,15 +243,13 @@ class TeamService:
 
         # Mark accepted only after rosters are committed
         record["status"] = "accepted"
-        await asyncio.to_thread(sheets.save_transaction, record)
+        await league_sheet.save_transaction(record)
         return TradeResult(
             success=True, summary=f"Trade complete! {given} ↔ {received}"
         )
 
     async def decline_trade(self, player_id: str, trade_id: str) -> TradeResult:
-        record = await asyncio.to_thread(
-            sheets.find_row, Tab.TRANSACTIONS, "transaction_id", trade_id
-        )
+        record = await league_sheet.find_transaction(trade_id)
         if not record:
             return TradeResult(success=False, error="Trade not found.")
         if str(record.get("to_player_id")) != player_id:
@@ -268,7 +257,7 @@ class TeamService:
         if record.get("status") != "pending":
             return TradeResult(success=False, error="Trade is no longer pending.")
         record["status"] = "declined"
-        await asyncio.to_thread(sheets.save_transaction, record)
+        await league_sheet.save_transaction(record)
         return TradeResult(success=True, summary="Trade declined.")
 
     async def import_showdown(

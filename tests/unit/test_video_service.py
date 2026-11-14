@@ -39,7 +39,7 @@ async def test_upload_accepts_max_size_file():
     svc = VideoService()
     att = make_attachment(size_mb=MAX_FILE_SIZE_MB)
 
-    with patch("src.services.video_service.sheets"):
+    with patch("src.services.video_service.league_sheet", autospec=True):
         result = await svc.upload_match_video("g1", "p1", "p2", att)
 
     assert result.success
@@ -53,7 +53,7 @@ async def test_upload_records_discord_cdn_url():
     cdn_url = "https://cdn.discordapp.com/attachments/999/888/game.mp4"
     att = make_attachment(url=cdn_url)
 
-    with patch("src.services.video_service.sheets"):
+    with patch("src.services.video_service.league_sheet", autospec=True):
         result = await svc.upload_match_video("g1", "p1", "p2", att)
 
     assert result.success
@@ -64,7 +64,7 @@ async def test_upload_saves_metadata_to_sheets():
     svc = VideoService()
     att = make_attachment()
 
-    with patch("src.services.video_service.sheets") as mock_sheets:
+    with patch("src.services.video_service.league_sheet", autospec=True) as mock_sheets:
         _ = await svc.upload_match_video("g1", "p1", "p2", att, notes="great match")
 
     mock_sheets.save_video.assert_called_once()
@@ -78,7 +78,7 @@ async def test_upload_returns_video_id():
     svc = VideoService()
     att = make_attachment()
 
-    with patch("src.services.video_service.sheets"):
+    with patch("src.services.video_service.league_sheet", autospec=True):
         result = await svc.upload_match_video("g1", "p1", "p2", att)
 
     assert result.success

@@ -3,7 +3,7 @@ Master learning spreadsheet — ML training data logging.
 
 Extracted from sheets.py (which had grown past the project's 800-line
 guideline). This is a separate spreadsheet from the league sheet
-(SheetsClient in sheets.py): set ML_LEARNING_SPREADSHEET_ID in .env.
+(LeagueSheet in sheets.py): set ML_LEARNING_SPREADSHEET_ID in .env.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import logging
 import gspread
 
 from src.config import settings
-from src.data.sheets import UTC_NOW, SheetsClient
+from src.data.sheet_plumbing import UTC_NOW, SheetConnection
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ _WINNER_COL = REPLAY_HEADERS.index("Winner")
 _FORMAT_COL = REPLAY_HEADERS.index("Format")
 
 
-class LearningSheets(SheetsClient):
+class LearningSheets:
     """
     Writes/reads ML training data in the master learning spreadsheet.
 
@@ -64,27 +64,31 @@ class LearningSheets(SheetsClient):
     Set ML_LEARNING_SPREADSHEET_ID in .env (or leave blank to disable).
     All writes are fire-and-forget: exceptions are caught and logged so a
     bad sheet config never crashes the bot or a training run.
+
+    Composes the shared gspread plumbing (SheetConnection) rather than inheriting
+    the League sheet's interface.  Methods are synchronous: the callers are
+    training threads and an executor (/ml-stats).
     """
 
-    _instance: "LearningSheets | None" = None
+    def __init__(self) -> None:
+        self._conn = SheetConnection(lambda: settings.ml_learning_spreadsheet_id)
 
     @property
     def enabled(self) -> bool:
         return bool(settings.ml_learning_spreadsheet_id)
 
-    def _spreadsheet_id(self) -> str:
-        return settings.ml_learning_spreadsheet_id
-
     # ── Tab helpers ────────────────────────────────────────────────────
 
     def _get_replays_sheet(self) -> gspread.Worksheet:
-        return self.get_tab("Replays", create=True, headers=REPLAY_HEADERS)
+        return self._conn.get_tab("Replays", create=True, headers=REPLAY_HEADERS)
 
     def _get_format_sheet(self, fmt: str) -> gspread.Worksheet:
-        return self.get_tab(fmt[:100], create=True, headers=REPLAY_HEADERS)
+        return self._conn.get_tab(fmt[:100], create=True, headers=REPLAY_HEADERS)
 
     def _get_training_runs_sheet(self) -> gspread.Worksheet:
-        return self.get_tab("Training Runs", create=True, headers=TRAINING_RUN_HEADERS)
+        return self._conn.get_tab(
+            "Training Runs", create=True, headers=TRAINING_RUN_HEADERS
+        )
 
     # ── Write helpers ──────────────────────────────────────────────────
 
