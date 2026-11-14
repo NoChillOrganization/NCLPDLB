@@ -41,38 +41,26 @@ def _with_retry(fn, *args, max_tries: int = 5, **kwargs):
 
     All other errors propagate immediately.
     """
-    for attempt in range(max_tries):
+    for attempt in range(max_tries - 1):
         try:
             return fn(*args, **kwargs)
         except gspread.exceptions.APIError as exc:
-            status = None
-            try:
-                status = exc.response.status_code
-            except AttributeError:
-                pass
-            if status not in (429, 503) or attempt == max_tries - 1:
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            if status not in (429, 503):
                 raise
-            delay = (2**attempt) + _random.uniform(0, 1)
-            log.warning(
-                "Sheets API rate-limit (HTTP %s) — retrying in %.1fs (attempt %d/%d)",
-                status,
-                delay,
-                attempt + 1,
-                max_tries,
-            )
-            _time.sleep(delay)
+            problem = f"Sheets API rate-limit (HTTP {status})"
         except requests.exceptions.RequestException as exc:
-            if attempt == max_tries - 1:
-                raise
-            delay = (2**attempt) + _random.uniform(0, 1)
-            log.warning(
-                "Sheets transport error (%s) — retrying in %.1fs (attempt %d/%d)",
-                exc,
-                delay,
-                attempt + 1,
-                max_tries,
-            )
-            _time.sleep(delay)
+            problem = f"Sheets transport error ({exc})"
+        delay = (2**attempt) + _random.uniform(0, 1)
+        log.warning(
+            "%s — retrying in %.1fs (attempt %d/%d)",
+            problem,
+            delay,
+            attempt + 1,
+            max_tries,
+        )
+        _time.sleep(delay)
+    return fn(*args, **kwargs)  # last attempt: any error propagates
 
 
 def _col_letter(n: int) -> str:

@@ -289,4 +289,4 @@ async def test_event_loop_stays_responsive_during_a_slow_sheet_call():
     await asyncio.sleep(0.05)  # the loop runs while the sheet call is blocked
     assert not task.done()
     release.set()
-    await task
+    assert await task is None  # the write completes once released
