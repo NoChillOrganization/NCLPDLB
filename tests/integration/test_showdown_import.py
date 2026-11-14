@@ -54,7 +54,7 @@ async def test_import_standard_format():
     svc = TeamService()
     with (
         patch("src.services.team_service.pokemon_db") as db,
-        patch("src.services.team_service.sheets"),
+        patch("src.services.team_service.league_sheet", autospec=True),
     ):
         db.find = _mock_db(["Garchomp", "Corviknight", "Toxapex"])
         result = await svc.import_showdown("g1", "p1", SAMPLE_TEAM)
@@ -68,7 +68,7 @@ async def test_import_nickname_format():
     svc = TeamService()
     with (
         patch("src.services.team_service.pokemon_db") as db,
-        patch("src.services.team_service.sheets"),
+        patch("src.services.team_service.league_sheet", autospec=True),
     ):
         db.find = _mock_db(["Garchomp", "Corviknight"])
         result = await svc.import_showdown("g2", "p2", NICKNAME_TEAM)
@@ -82,7 +82,7 @@ async def test_import_empty_fails():
     svc = TeamService()
     with (
         patch("src.services.team_service.pokemon_db") as db,
-        patch("src.services.team_service.sheets"),
+        patch("src.services.team_service.league_sheet", autospec=True),
     ):
         db.find = MagicMock(return_value=None)
         result = await svc.import_showdown("g3", "p3", "")
@@ -248,7 +248,7 @@ async def test_export_round_trip():
 
     with (
         patch("src.services.team_service.pokemon_db") as db,
-        patch("src.services.team_service.sheets"),
+        patch("src.services.team_service.league_sheet", autospec=True),
     ):
         db.find = lambda name: make_mon(name)
 
@@ -288,7 +288,7 @@ Jolly Nature
 
     with (
         patch("src.services.team_service.pokemon_db") as db,
-        patch("src.services.team_service.sheets"),
+        patch("src.services.team_service.league_sheet", autospec=True),
     ):
         mon = MagicMock()
         mon.name = "Garchomp"
@@ -309,7 +309,7 @@ async def test_import_malformed_team():
 
     with (
         patch("src.services.team_service.pokemon_db") as db,
-        patch("src.services.team_service.sheets"),
+        patch("src.services.team_service.league_sheet", autospec=True),
     ):
         db.find = MagicMock(return_value=None)
         result = await svc.import_showdown("g1", "p1", malformed)

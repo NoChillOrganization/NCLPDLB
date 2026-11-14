@@ -158,9 +158,15 @@ src/
     models.py            — All Pydantic models (Pokemon, Draft, DraftPick, etc.)
     db.py                — Async SQLite layer (aiosqlite); active_drafts + elo_ratings tables
     pokeapi.py           — PokéAPI client + in-memory pokemon_db cache
-    sheets.py            — Google Sheets data layer (Tab constants, cell-specific writes)
-                           LearningSheets singleton: writes replays + training runs, reads win
+    sheets.py            — League sheet: `league_sheet` (LeagueSheet), async methods by intent;
+                           owns the executor policy, retry, Tab constants and cell layout
+    sheet_plumbing.py    — SheetConnection: shared sync gspread plumbing (auth, retry, find /
+                           upsert / append); adapters compose it, none inherits it
+    learning_sheets.py   — Learning sheet: `learning_sheets` singleton (own adapter over
+                           SheetConnection, sync): writes replays + training runs, reads win
                            rate / checkpoint stats for /ml-stats
+    elo_store.py         — ELO cache + Local store (SQLite) + League sheet reconciliation;
+                           rows keyed by player_id only (one spreadsheet per League)
     showdown.py          — Showdown format/tier fetching
     smogon.py            — Smogon tier scraping
   services/
@@ -168,7 +174,7 @@ src/
                            In-memory _active_drafts dict (one active draft per guild)
     analytics_service.py — Team coverage, weakness, archetype, threat score
     battle_sim.py        — Heuristic head-to-head matchup scoring
-    elo_service.py       — Per-league ELO (K=32, default 1000)
+    elo_service.py       — Rating math + record_match (K=32, default 1000); storage is elo_store
     team_service.py      — Team CRUD + Showdown import/export
     notification_service.py — Discord embed helpers
     video_service.py     — Match video URL storage
@@ -254,7 +260,7 @@ path every command reads/writes. Every mutation also persists to SQLite (`_persi
 restart does *not* normally lose in-progress drafts. A failed SQLite write degrades to
 in-memory-only for that draft until the next successful save.
 
-**Google Sheets is the database.** Completed drafts, standings, match history, and trades all write to a visual template spreadsheet. `sheets.py` uses gspread synchronously and must be called via `asyncio.get_event_loop().run_in_executor(None, ...)` from async contexts.
+**Google Sheets is the database.** Completed drafts, standings, match history, and trades all write to a visual template spreadsheet. `sheets.py` exposes `league_sheet`, whose methods are `async` and run the blocking gspread call off the event loop themselves, so callers just `await league_sheet.save_pick(...)`. The Learning sheet (`learning_sheets`) is still sync; call it from threads or via an executor.
 
 **Command sync is hash-gated.** `main.py` computes a fingerprint of registered commands and only calls `tree.sync()` when they change, avoiding the guild-commands rate limit (set `DISCORD_GUILD_ID` in `.env` for guild-scoped sync, or `SYNC_COMMANDS_ON_STARTUP=true` for global).
 

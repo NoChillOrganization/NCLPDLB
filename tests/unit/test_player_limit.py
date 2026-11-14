@@ -18,7 +18,7 @@ async def test_max_player_constant_is_16():
 @pytest.mark.asyncio
 async def test_16_players_can_join():
     svc = DraftService()
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         await svc.create_draft("gfull", "host", DraftFormat.SNAKE)
         for i in range(16):
             result = await svc.add_player("gfull", f"player{i}")
@@ -30,7 +30,7 @@ async def test_16_players_can_join():
 @pytest.mark.asyncio
 async def test_17th_player_is_rejected():
     svc = DraftService()
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         await svc.create_draft("gover", "host", DraftFormat.SNAKE)
         for i in range(16):
             await svc.add_player("gover", f"player{i}")
@@ -43,7 +43,7 @@ async def test_17th_player_is_rejected():
 @pytest.mark.asyncio
 async def test_draft_count_shown_in_error():
     svc = DraftService()
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         await svc.create_draft("gcount", "host", DraftFormat.SNAKE)
         for i in range(16):
             await svc.add_player("gcount", f"p{i}")

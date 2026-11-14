@@ -32,7 +32,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 from src.config import settings
-from src.data.sheets import REPLAY_HEADERS, TRAINING_RUN_HEADERS
+from src.data.learning_sheets import REPLAY_HEADERS, TRAINING_RUN_HEADERS
 from src.ml.formats import SPAR_FORMATS
 
 SCOPES = [

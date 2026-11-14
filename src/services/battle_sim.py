@@ -4,7 +4,6 @@ Battle Simulation Service — Damage calc, team comparison, Showdown replay pars
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from dataclasses import dataclass
@@ -13,7 +12,7 @@ from datetime import datetime, timezone
 import aiohttp
 
 from src.data.models import Pokemon
-from src.data.sheets import sheets
+from src.data.sheets import league_sheet
 from src.services.analytics_service import AnalyticsService, get_type_effectiveness
 from src.services.team_service import TeamService
 
@@ -171,8 +170,7 @@ class BattleSimService:
             return ReplayParseResult(success=False, error=f"Parse error: {e}")
 
         # Save to Google Sheets
-        await asyncio.to_thread(
-            sheets.save_replay,
+        await league_sheet.save_replay(
             {
                 "replay_id": str(uuid.uuid4())[:8],
                 "match_id": "",  # Will be linked if match exists

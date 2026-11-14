@@ -4,7 +4,7 @@ Run: pytest tests/unit/test_draft_service.py -v
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.data.models import DraftFormat, DraftStatus
 from src.services.draft_service import DraftService
@@ -17,8 +17,8 @@ def draft_svc():
 
 @pytest.mark.asyncio
 async def test_create_snake_draft(draft_svc):
-    with patch("src.services.draft_service.sheets") as mock_sheets:
-        mock_sheets.save_league_setup = MagicMock()
+    with patch("src.services.draft_service.league_sheet", autospec=True) as mock_sheets:
+        mock_sheets.save_league_setup = AsyncMock()
         draft = await draft_svc.create_draft(
             guild_id="guild1",
             commissioner_id="user1",
@@ -34,7 +34,7 @@ async def test_create_snake_draft(draft_svc):
 
 @pytest.mark.asyncio
 async def test_add_players(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         await draft_svc.create_draft("guild2", "user1", DraftFormat.SNAKE)
         r1 = await draft_svc.add_player("guild2", "user1")
         r2 = await draft_svc.add_player("guild2", "user2")
@@ -45,7 +45,7 @@ async def test_add_players(draft_svc):
 
 @pytest.mark.asyncio
 async def test_cannot_join_twice(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         await draft_svc.create_draft("guild3", "user1", DraftFormat.SNAKE)
         await draft_svc.add_player("guild3", "user1")
         result = await draft_svc.add_player("guild3", "user1")
@@ -55,7 +55,7 @@ async def test_cannot_join_twice(draft_svc):
 
 @pytest.mark.asyncio
 async def test_start_requires_two_players(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         await draft_svc.create_draft("guild4", "user1", DraftFormat.SNAKE)
         await draft_svc.add_player("guild4", "user1")
     with pytest.raises(ValueError, match="at least 2"):
@@ -65,7 +65,7 @@ async def test_start_requires_two_players(draft_svc):
 @pytest.mark.asyncio
 async def test_snake_pick_order(draft_svc):
     """Round 1 picks in order, Round 2 reverses (snake format)."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft(
             "guild5", "p1", DraftFormat.SNAKE, rounds=2
         )
@@ -89,7 +89,7 @@ async def test_snake_pick_order(draft_svc):
 
 @pytest.mark.asyncio
 async def test_pick_already_taken(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guild6", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guild6", "p1")
         await draft_svc.add_player("guild6", "p2")
@@ -99,7 +99,7 @@ async def test_pick_already_taken(draft_svc):
     mock_pokemon.name = "Garchomp"
     with patch("src.services.draft_service.pokemon_db") as mock_db:
         mock_db.find.return_value = mock_pokemon
-        with patch("src.services.draft_service.sheets"):
+        with patch("src.services.draft_service.league_sheet", autospec=True):
             await draft_svc.make_pick("guild6", "p1", "Garchomp")
             result = await draft_svc.make_pick("guild6", "p2", "Garchomp")
 
@@ -109,7 +109,7 @@ async def test_pick_already_taken(draft_svc):
 
 @pytest.mark.asyncio
 async def test_auction_bid(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guild7", "p1", DraftFormat.AUCTION)
         await draft_svc.add_player("guild7", "p1")
         draft.budget["p1"] = 1000
@@ -123,7 +123,7 @@ async def test_auction_bid(draft_svc):
 
 @pytest.mark.asyncio
 async def test_auction_bid_exceeds_budget(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guild8", "p1", DraftFormat.AUCTION)
         await draft_svc.add_player("guild8", "p1")
         draft.budget["p1"] = 100
@@ -137,7 +137,7 @@ async def test_auction_bid_exceeds_budget(draft_svc):
 
 @pytest.mark.asyncio
 async def test_pause_resume(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guild9", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guild9", "p1")
         await draft_svc.add_player("guild9", "p2")
@@ -152,7 +152,7 @@ async def test_pause_resume(draft_svc):
 
 @pytest.mark.asyncio
 async def test_admin_reset(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         await draft_svc.create_draft("guild10", "p1", DraftFormat.SNAKE)
     await draft_svc.reset_draft("guild10")
     assert await draft_svc.get_active_draft("guild10") is None
@@ -163,7 +163,7 @@ async def test_admin_reset(draft_svc):
 
 @pytest.mark.asyncio
 async def test_create_draft_from_config(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft_from_config(
             {
                 "guild_id": "guildCFG",
@@ -190,7 +190,7 @@ async def test_add_player_no_draft(draft_svc):
 
 @pytest.mark.asyncio
 async def test_add_player_draft_full(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildFULL", "p1", DraftFormat.SNAKE)
         draft.max_players = 2
         await draft_svc.add_player("guildFULL", "p1")
@@ -202,7 +202,7 @@ async def test_add_player_draft_full(draft_svc):
 
 @pytest.mark.asyncio
 async def test_add_player_draft_already_started(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildAS", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildAS", "p1")
         await draft_svc.add_player("guildAS", "p2")
@@ -214,7 +214,7 @@ async def test_add_player_draft_already_started(draft_svc):
 
 @pytest.mark.asyncio
 async def test_add_player_with_team_name(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildTN", "p1", DraftFormat.SNAKE)
         result = await draft_svc.add_player("guildTN", "p1", team_name="Fire Squad")
     assert result.success
@@ -232,7 +232,7 @@ async def test_start_draft_no_draft_raises(draft_svc):
 
 @pytest.mark.asyncio
 async def test_start_draft_wrong_commissioner_raises(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         await draft_svc.create_draft("guildWC", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildWC", "p1")
         await draft_svc.add_player("guildWC", "p2")
@@ -244,7 +244,7 @@ async def test_start_draft_wrong_commissioner_raises(draft_svc):
 @pytest.mark.asyncio
 async def test_start_draft_snake_sets_active(draft_svc):
     """Non-CUSTOM formats set status to ACTIVE (draft_service.py:165)."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         _ = await draft_svc.create_draft("guildACT", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildACT", "p1")
         await draft_svc.add_player("guildACT", "p2")
@@ -253,7 +253,7 @@ async def test_start_draft_snake_sets_active(draft_svc):
 
 
 async def test_start_draft_custom_format_enters_ban_phase(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         _ = await draft_svc.create_draft("guildCUST", "p1", DraftFormat.CUSTOM)
         await draft_svc.add_player("guildCUST", "p1")
         await draft_svc.add_player("guildCUST", "p2")
@@ -273,7 +273,7 @@ async def test_make_pick_no_draft(draft_svc):
 
 @pytest.mark.asyncio
 async def test_make_pick_wrong_turn(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildWT", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildWT", "p1")
         await draft_svc.add_player("guildWT", "p2")
@@ -285,7 +285,7 @@ async def test_make_pick_wrong_turn(draft_svc):
 
 @pytest.mark.asyncio
 async def test_make_pick_pokemon_not_found(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildNF", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildNF", "p1")
         await draft_svc.add_player("guildNF", "p2")
@@ -299,7 +299,7 @@ async def test_make_pick_pokemon_not_found(draft_svc):
 
 @pytest.mark.asyncio
 async def test_make_pick_not_active(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         _ = await draft_svc.create_draft("guildNA", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildNA", "p1")
         await draft_svc.add_player("guildNA", "p2")
@@ -321,7 +321,7 @@ async def test_ban_pokemon_no_draft(draft_svc):
 
 @pytest.mark.asyncio
 async def test_ban_pokemon_wrong_phase(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildBP", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildBP", "p1")
         await draft_svc.add_player("guildBP", "p2")
@@ -333,7 +333,7 @@ async def test_ban_pokemon_wrong_phase(draft_svc):
 
 @pytest.mark.asyncio
 async def test_ban_pokemon_not_found(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildBNF", "p1", DraftFormat.CUSTOM)
         await draft_svc.add_player("guildBNF", "p1")
         await draft_svc.add_player("guildBNF", "p2")
@@ -348,7 +348,7 @@ async def test_ban_pokemon_not_found(draft_svc):
 @pytest.mark.asyncio
 async def test_ban_pokemon_success(draft_svc):
     """Successful ban appends DraftBan to draft.bans (lines 240-246)."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildBOK", "p1", DraftFormat.CUSTOM)
         await draft_svc.add_player("guildBOK", "p1")
         await draft_svc.add_player("guildBOK", "p2")
@@ -366,7 +366,7 @@ async def test_ban_pokemon_success(draft_svc):
 @pytest.mark.asyncio
 async def test_make_pick_banned_pokemon(draft_svc):
     """Picking a banned Pokemon returns error (line 188)."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildBanned", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildBanned", "p1")
         await draft_svc.add_player("guildBanned", "p2")
@@ -385,7 +385,7 @@ async def test_make_pick_banned_pokemon(draft_svc):
 @pytest.mark.asyncio
 async def test_draft_completes_after_all_rounds(draft_svc):
     """Draft status becomes COMPLETED when all rounds are exhausted (lines 225-226)."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         # 1 round, 2 players → 2 total picks to complete the draft
         draft = await draft_svc.create_draft(
             "guildCOMP", "p1", DraftFormat.SNAKE, rounds=1
@@ -400,7 +400,7 @@ async def test_draft_completes_after_all_rounds(draft_svc):
     mock_mon2.name = "Corviknight"
     with (
         patch("src.services.draft_service.pokemon_db") as mock_db,
-        patch("src.services.draft_service.sheets"),
+        patch("src.services.draft_service.league_sheet", autospec=True),
     ):
         mock_db.find.side_effect = [mock_mon, mock_mon2]
         await draft_svc.make_pick("guildCOMP", "p1", "Garchomp")
@@ -414,7 +414,7 @@ async def test_draft_completes_after_all_rounds(draft_svc):
 @pytest.mark.asyncio
 async def test_start_timer_creates_task(draft_svc):
     """_start_timer creates an asyncio task that can be cancelled."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft(
             "gT1", "p1", DraftFormat.SNAKE, timer_seconds=999
         )
@@ -446,10 +446,10 @@ async def test_make_pick_cancels_old_timer(draft_svc):
     import src.services.draft_service as ds_mod
 
     with (
-        patch("src.services.draft_service.sheets") as mock_sheets,
+        patch("src.services.draft_service.league_sheet", autospec=True) as mock_sheets,
         patch("src.services.draft_service.pokemon_db") as mock_db,
     ):
-        mock_sheets.save_pick = MagicMock()
+        mock_sheets.save_pick = AsyncMock()
         mon = MagicMock()
         mon.name = "Pikachu"
         mock_db.find = MagicMock(return_value=mon)
@@ -475,7 +475,7 @@ async def test_start_draft_with_timer_starts_first_timer(draft_svc):
     """start_draft fires _start_timer for the first player."""
     import src.services.draft_service as ds_mod
 
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         _ = await draft_svc.create_draft(
             "gTStart", "p1", DraftFormat.SNAKE, timer_seconds=999
         )
@@ -493,7 +493,7 @@ async def test_pause_draft_cancels_timer(draft_svc):
     """pause_draft cancels the active timer."""
     import src.services.draft_service as ds_mod
 
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft(
             "gTPause", "p1", DraftFormat.SNAKE, timer_seconds=999
         )
@@ -512,7 +512,7 @@ async def test_reset_draft_cancels_timer(draft_svc):
     """reset_draft cancels the active timer."""
     import src.services.draft_service as ds_mod
 
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft(
             "gTReset", "p1", DraftFormat.SNAKE, timer_seconds=999
         )
@@ -594,7 +594,7 @@ async def test_place_bid_no_auction_draft(draft_svc):
 
 @pytest.mark.asyncio
 async def test_force_skip_advances_pick(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildFS", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildFS", "p1")
         await draft_svc.add_player("guildFS", "p2")
@@ -609,7 +609,7 @@ async def test_force_skip_advances_pick(draft_svc):
 
 @pytest.mark.asyncio
 async def test_override_pick_replaces_pokemon(draft_svc):
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildOP", "p1", DraftFormat.SNAKE)
         await draft_svc.add_player("guildOP", "p1")
         await draft_svc.add_player("guildOP", "p2")
@@ -619,7 +619,7 @@ async def test_override_pick_replaces_pokemon(draft_svc):
     mock_mon.name = "Garchomp"
     with (
         patch("src.services.draft_service.pokemon_db") as mock_db,
-        patch("src.services.draft_service.sheets"),
+        patch("src.services.draft_service.league_sheet", autospec=True),
     ):
         mock_db.find.return_value = mock_mon
         await draft_svc.make_pick("guildOP", "p1", "Garchomp")
@@ -640,7 +640,7 @@ async def test_override_pick_no_draft(draft_svc):
 @pytest.mark.asyncio
 async def test_place_bid_draft_not_active(draft_svc):
     """place_bid on a SETUP (not ACTIVE) auction draft returns error."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildBidSetup", "p1", DraftFormat.AUCTION)
         await draft_svc.add_player("guildBidSetup", "p1")
         draft.budget["p1"] = 1000
@@ -655,7 +655,7 @@ async def test_place_bid_draft_not_active(draft_svc):
 @pytest.mark.asyncio
 async def test_place_bid_no_current_nomination(draft_svc):
     """place_bid when no nomination is active returns error."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildBidNoNom", "p1", DraftFormat.AUCTION)
         await draft_svc.add_player("guildBidNoNom", "p1")
         draft.budget["p1"] = 1000
@@ -670,7 +670,7 @@ async def test_place_bid_no_current_nomination(draft_svc):
 @pytest.mark.asyncio
 async def test_place_bid_zero_amount(draft_svc):
     """place_bid with amount < 1 returns error."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildBidZero", "p1", DraftFormat.AUCTION)
         await draft_svc.add_player("guildBidZero", "p1")
         draft.budget["p1"] = 1000
@@ -685,7 +685,7 @@ async def test_place_bid_zero_amount(draft_svc):
 @pytest.mark.asyncio
 async def test_place_bid_not_exceeding_current_high(draft_svc):
     """place_bid that does not exceed current high bid returns error."""
-    with patch("src.services.draft_service.sheets"):
+    with patch("src.services.draft_service.league_sheet", autospec=True):
         draft = await draft_svc.create_draft("guildBidLow", "p1", DraftFormat.AUCTION)
         await draft_svc.add_player("guildBidLow", "p1")
         await draft_svc.add_player("guildBidLow", "p2")
@@ -709,7 +709,7 @@ async def test_place_bid_not_exceeding_current_high(draft_svc):
 async def test_start_draft_persists_to_sqlite(draft_svc):
     """start_draft should write the Draft to SQLite (NCLP-002)."""
     with (
-        patch("src.services.draft_service.sheets"),
+        patch("src.services.draft_service.league_sheet", autospec=True),
         patch("src.services.draft_service._db_save_draft") as mock_save,
     ):
         mock_save.return_value = None
@@ -762,7 +762,7 @@ async def test_restore_active_drafts_reloads_from_sqlite():
 async def test_reset_draft_deletes_from_sqlite(draft_svc):
     """reset_draft should remove the row from SQLite (NCLP-002)."""
     with (
-        patch("src.services.draft_service.sheets"),
+        patch("src.services.draft_service.league_sheet", autospec=True),
         patch("src.services.draft_service._db_save_draft"),
         patch("src.services.draft_service._db_delete_draft") as mock_del,
     ):

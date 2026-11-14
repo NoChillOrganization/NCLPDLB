@@ -71,7 +71,7 @@ The League's table of ELO ratings with wins and losses, sorted by ELO.
 _Avoid_: Leaderboard, rankings
 
 **ELO rating**:
-A Coach's skill score within one League.
+A Coach's skill score within one League. Held in an in-memory cache, the Local store and the League sheet's ELO Data Tab; the sheet row is keyed by player id alone, which is safe because there is one League sheet per League.
 _Avoid_: Rank, points
 
 **Trade**:

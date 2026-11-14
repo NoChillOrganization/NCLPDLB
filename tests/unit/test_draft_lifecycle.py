@@ -12,7 +12,7 @@ import asyncio
 import json
 import logging
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
@@ -49,8 +49,8 @@ def store(monkeypatch):
 @pytest.fixture
 def sheet(monkeypatch):
     """Stand-in League sheet."""
-    sheet = MagicMock()
-    monkeypatch.setattr(ds, "sheets", sheet)
+    sheet = AsyncMock()
+    monkeypatch.setattr(ds, "league_sheet", sheet)
     return sheet
 
 

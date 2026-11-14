@@ -2,7 +2,6 @@
 League Cog — League management, schedules, multi-server support.
 """
 
-import asyncio
 import logging
 import uuid
 
@@ -11,7 +10,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from src.bot.permissions import ROLE_COACH, ROLE_GUILDMASTER, require_role
-from src.data.sheets import Tab, sheets
+from src.data.sheets import league_sheet
 from src.services.elo_service import EloService
 from src.services.notification_service import NotificationService
 
@@ -49,7 +48,7 @@ class LeagueCog(commands.Cog, name="League"):
             "commissioner_id": str(interaction.user.id),
             "commissioner_name": interaction.user.display_name,
         }
-        await asyncio.to_thread(sheets.save_league_setup, league_data)
+        await league_sheet.save_league_setup(league_data)
         embed = discord.Embed(
             title=f"League '{name}' Created!",
             description=(
@@ -75,7 +74,7 @@ class LeagueCog(commands.Cog, name="League"):
         pool: str | None = None,
     ) -> None:
         await interaction.response.defer()
-        rows = await asyncio.to_thread(sheets.read_all, Tab.SCHEDULE)
+        rows = await league_sheet.read_schedule()
         if week is not None:
             rows = [r for r in rows if str(r.get("week", "")) == str(week)]
         if pool:
@@ -123,8 +122,7 @@ class LeagueCog(commands.Cog, name="League"):
         # Persist match to Sheets — best-effort: a write failure must not suppress
         # the embed or leave ELO mutated with no user feedback.
         try:
-            await asyncio.to_thread(
-                sheets.save_match_stats,
+            await league_sheet.save_match_stats(
                 {
                     "match_id": str(uuid.uuid4())[:8],
                     "league_id": str(interaction.guild_id),

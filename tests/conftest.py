@@ -9,7 +9,7 @@ functions and async fixtures work without @pytest.mark.asyncio.
 import pytest
 import pytest_asyncio
 import tracemalloc
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock, AsyncMock, create_autospec
 
 tracemalloc.start()
 
@@ -93,19 +93,17 @@ def mock_pokemon(make_pokemon) -> Pokemon:
 @pytest.fixture
 def mock_sheets():
     """
-    A MagicMock that satisfies all SheetsClient method calls.
-    Use with: patch("src.services.<module>.sheets", mock_sheets)
+    An autospec'd LeagueSheet: every method is an AsyncMock (awaitable).
+    Use with: patch("src.services.<module>.league_sheet", mock_sheets)
     """
-    m = MagicMock()
-    m.save_league_setup = MagicMock()
-    m.save_pick = MagicMock()
-    m.save_transaction = MagicMock()
-    m.save_replay = MagicMock()
-    m.upsert_standing = MagicMock()
-    m.get_standings = MagicMock(return_value=[])
-    m.find_row = MagicMock(return_value=None)
-    m.read_all = MagicMock(return_value=[])
-    m.bulk_write_pokedex = MagicMock()
+    from src.data.sheets import league_sheet
+
+    m = create_autospec(league_sheet)
+    m.get_standings.return_value = []
+    m.find_standing.return_value = None
+    m.find_team_page.return_value = None
+    m.find_transaction.return_value = None
+    m.read_schedule.return_value = []
     return m
 
 

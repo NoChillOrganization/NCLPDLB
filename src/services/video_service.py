@@ -13,14 +13,13 @@ Exports:
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import discord
 
-from src.data.sheets import sheets
+from src.data.sheets import league_sheet
 
 log = logging.getLogger(__name__)
 
@@ -61,8 +60,7 @@ class VideoService:
         public_url = attachment.url
 
         # Save metadata to Google Sheets
-        await asyncio.to_thread(
-            sheets.save_video,
+        await league_sheet.save_video(
             {
                 "video_id": video_id,
                 "match_id": "",
