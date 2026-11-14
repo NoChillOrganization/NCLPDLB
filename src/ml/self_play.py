@@ -48,7 +48,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 
@@ -75,7 +75,8 @@ except ImportError:  # pragma: no cover
     torch = None  # type: ignore
 
 from src.ml.battle_env import N_ACTIONS_GEN9, POKE_ENV_AVAILABLE  # noqa: E402
-from src.ml.mcts import MCTSConfig, run_mcts, _build_legal_mask  # noqa: E402
+from src.ml.action_selection import ActionSelector, MCTSInference  # noqa: E402
+from src.ml.mcts import MCTSConfig  # noqa: E402
 
 
 # ── Shared stats ──────────────────────────────────────────────────────────────
@@ -140,6 +141,11 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             replay_buffer: shared ReplayBuffer to push completed games into
             stats       : SharedStats to update after each game
             name        : informational player label (does not affect reward)
+            on_error    : "raise" (default; self-play data generation and training
+                          opponents — a selection bug must not look like a weak agent)
+                          or "fallback" (games against real humans on the public
+                          ladder — log an error, play a random move, record nothing
+                          for that turn)
             **kwargs    : forwarded to poke-env Player.__init__
         """
 
@@ -150,6 +156,7 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             replay_buffer: Any = None,  # ReplayBuffer — optional (None when used as opponent)
             stats: "SharedStats | None" = None,
             name: str = "AccountA",
+            on_error: Literal["raise", "fallback"] = "raise",
             **kwargs: Any,
         ) -> None:
             super().__init__(**kwargs)
@@ -158,6 +165,7 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
             self._replay_buffer = replay_buffer
             self._stats = stats
             self._name = name
+            self._on_error = on_error
 
             # Per-battle turn buffers keyed by battle_tag (safe for concurrent battles)
             self._turn_obs: dict[str, list[np.ndarray]] = {}
@@ -175,42 +183,29 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
 
         def choose_move(self, battle: Any) -> Any:
             """Run MCTS and return the chosen order. Record experience."""
-            try:
-                from src.ml.battle_env import build_observation
-
-                obs = build_observation(battle)
-
-                # Build legal action mask (True = illegal)
-                legal_mask = _build_legal_mask(battle, N_ACTIONS_GEN9)
-
-                action, stats = run_mcts(
-                    obs,
+            choice = ActionSelector(
+                MCTSInference(
                     self._model,
-                    N_ACTIONS_GEN9,
-                    config=self._mcts_config,
-                    legal_mask=legal_mask,
+                    self._mcts_config,
                     deterministic=False,  # stochastic during self-play for diversity
-                )
+                ),
+                on_error=self._on_error,
+                label=f"MCTSPlayer:{self._name}",
+            ).choose(battle, fallback=self.choose_random_move)
+            if choice.stats is None:
+                return choice.order  # fallback ran: no experience to record this turn
 
-                # Convert MCTS visit-count distribution to probability array
-                probs = np.zeros(N_ACTIONS_GEN9, dtype=np.float32)
-                for a, p in stats["action_probs"].items():
-                    probs[a] = p
+            # Convert MCTS visit-count distribution to probability array
+            probs = np.zeros(N_ACTIONS_GEN9, dtype=np.float32)
+            for a, p in choice.stats["action_probs"].items():
+                probs[a] = p
 
-                tag = battle.battle_tag
-                self._turn_obs.setdefault(tag, []).append(obs)
-                self._turn_acts.setdefault(tag, []).append(action)
-                self._turn_probs.setdefault(tag, []).append(probs)
+            tag = battle.battle_tag
+            self._turn_obs.setdefault(tag, []).append(choice.obs)
+            self._turn_acts.setdefault(tag, []).append(choice.action_id)
+            self._turn_probs.setdefault(tag, []).append(probs)
 
-                return self._action_to_move(action, battle)
-
-            except Exception as exc:
-                log.warning(
-                    "[MCTSPlayer:%s] choose_move error: %s — random fallback",
-                    self._name,
-                    exc,
-                )
-                return self.choose_random_move(battle)
+            return choice.order
 
         def _battle_finished_callback(self, battle: Any) -> None:
             """Called by poke-env when a battle ends. Push experience to buffer."""
@@ -257,18 +252,6 @@ if POKE_ENV_OK and POKE_ENV_AVAILABLE:
                     reward,
                     len(turn_obs),
                 )
-
-        def _action_to_move(self, action_id: int, battle: Any) -> Any:
-            """Convert action index to a poke-env BattleOrder."""
-            try:
-                from poke_env.environment.singles_env import SinglesEnv
-
-                order = SinglesEnv.action_to_order(action_id, battle)
-                if order is not None:
-                    return order
-            except Exception as exc:
-                log.debug("[SelfPlay] action_to_order fallback to random: %s", exc)
-            return self.choose_random_move(battle)
 
 else:  # pragma: no cover
 
@@ -356,6 +339,7 @@ class LadderLoop:
                 mcts_config=self.mcts_config,
                 replay_buffer=self.buffer,
                 stats=self.stats,
+                on_error="fallback",  # real humans on the ladder: never crash a game
                 battle_format=self.fmt,
                 server_configuration=ShowdownServerConfiguration,
                 username=self.username,
