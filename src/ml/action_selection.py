@@ -49,7 +49,8 @@ class ModelInference(Protocol):
 
     supports_doubles: bool
 
-    def infer(self, obs: np.ndarray, battle: Any) -> tuple[int, dict | None]: ...
+    def infer(self, obs: np.ndarray, battle: Any) -> tuple[int, dict | None]:
+        """Return (action id, MCTS stats or None) for this observation."""
 
 
 class PPOInference:

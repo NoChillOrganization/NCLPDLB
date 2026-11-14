@@ -526,9 +526,9 @@ class TestCurriculumOpponent:
         """Training opponents must not hide a selection error behind a fallback."""
         pytest.importorskip("poke_env")
         import numpy as np
-        import src.ml.train_policy as tp
+        from src.ml.train_policy import CurriculumOpponent
 
-        if not hasattr(tp.CurriculumOpponent, "choose_move"):
+        if not hasattr(CurriculumOpponent, "choose_move"):
             pytest.skip("CurriculumOpponent.choose_move not available")
 
         policy = MagicMock()
@@ -547,15 +547,15 @@ class TestCurriculumOpponent:
             ),
         ):
             with pytest.raises(ValueError, match="illegal"):
-                tp.CurriculumOpponent.choose_move(instance, MagicMock())
+                CurriculumOpponent.choose_move(instance, MagicMock())
 
     def test_self_play_opponent_doubles_uses_doubles_mapper(self):
         pytest.importorskip("poke_env")
         import numpy as np
-        import src.ml.train_policy as tp
+        from src.ml.train_policy import SelfPlayOpponent
         from poke_env.battle import DoubleBattle
 
-        if not hasattr(tp.SelfPlayOpponent, "choose_move"):
+        if not hasattr(SelfPlayOpponent, "choose_move"):
             pytest.skip("SelfPlayOpponent.choose_move not available")
 
         policy = MagicMock()
@@ -574,7 +574,7 @@ class TestCurriculumOpponent:
                 return_value="doubles_order",
             ),
         ):
-            result = tp.SelfPlayOpponent.choose_move(
+            result = SelfPlayOpponent.choose_move(
                 instance, MagicMock(spec=DoubleBattle)
             )
 
