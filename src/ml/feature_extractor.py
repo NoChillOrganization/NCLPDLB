@@ -64,49 +64,8 @@ TEAM_FEATURE_DIM = TEAM_SIZE * 2  # minimum — extended below when data is avai
 # real-time RL observation space used during self-play training.
 STATE_FEATURE_DIM = 19
 
-
-# ── Battle Observation Constants ──────────────────────────────────────────────
-
-TYPE_IDS = {
-    "normal": 1,
-    "fire": 2,
-    "water": 3,
-    "electric": 4,
-    "grass": 5,
-    "ice": 6,
-    "fighting": 7,
-    "poison": 8,
-    "ground": 9,
-    "flying": 10,
-    "psychic": 11,
-    "bug": 12,
-    "rock": 13,
-    "ghost": 14,
-    "dragon": 15,
-    "dark": 16,
-    "steel": 17,
-    "fairy": 18,
-    "stellar": 19,
-}
-
-STATUS_IDS = {"brn": 1, "par": 2, "slp": 3, "frz": 4, "psn": 5, "tox": 6}
-
-WEATHER_IDS = {
-    "sunnyday": 1,
-    "desolateland": 1,
-    "raindance": 2,
-    "primordialsea": 2,
-    "sandstorm": 3,
-    "hail": 4,
-    "snow": 4,
-}
-
-TERRAIN_IDS = {
-    "electricterrain": 1,
-    "grassyterrain": 2,
-    "mistyterrain": 3,
-    "psychicterrain": 4,
-}
+# The live Observation's type / status / weather / terrain ID maps live in
+# src/ml/battle_env.py (TYPE_IDS, STATUS_IDS, WEATHER_IDS, TERRAIN_IDS).
 
 
 # ── Vocabulary ────────────────────────────────────────────────────────────────
