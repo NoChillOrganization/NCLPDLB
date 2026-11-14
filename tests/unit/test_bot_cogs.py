@@ -352,6 +352,46 @@ async def test_admin_resume_sends_resumed_message():
     assert "resumed" in sent_text.lower()
 
 
+async def test_admin_skip_reports_a_refused_skip():
+    """admin_skip shows the service's error instead of claiming a skip happened."""
+    cog = AdminCog(MagicMock())
+    cog.draft_service = MagicMock()
+    cog.draft_service.force_skip = AsyncMock(
+        return_value=MagicMock(success=False, error="It's not that player's turn.")
+    )
+    interaction = make_interaction()
+    user = MagicMock()
+    user.id = "9999"
+    user.display_name = "Player1"
+
+    await cog.admin_skip.callback(cog, interaction, user)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert "not that player's turn" in sent_text
+    assert "Skipped" not in sent_text
+
+
+@pytest.mark.parametrize(
+    "command, service_method, verb",
+    [
+        ("admin_pause", "pause_draft", "pause"),
+        ("admin_resume", "resume_draft", "resume"),
+    ],
+)
+async def test_admin_pause_resume_say_when_there_is_no_draft(
+    command, service_method, verb
+):
+    cog = AdminCog(MagicMock())
+    cog.draft_service = MagicMock()
+    setattr(cog.draft_service, service_method, AsyncMock(return_value=False))
+    interaction = make_interaction()
+
+    await getattr(cog, command).callback(cog, interaction)
+
+    sent_text = interaction.followup.send.call_args[0][0]
+    assert f"No draft in progress to {verb}" in sent_text
+
+
 async def test_admin_override_pick_sends_confirmation():
     """admin_override_pick calls override_pick and confirms both pokemon names."""
     bot = MagicMock()

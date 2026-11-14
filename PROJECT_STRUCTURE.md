@@ -138,7 +138,7 @@ Run with: `python -m pytest tests/ --ignore=tests/performance -q`
 
 ## Key Design Notes
 
-- **Draft state is in-memory.** `_active_drafts` in `draft_service.py` is lost on restart.
+- **Draft state is cached in memory and persisted to SQLite.** `_active_drafts` in `draft_service.py` is reloaded on restart (`restore_active_drafts`).
 - **Google Sheets is the database.** All completed data writes to Sheets via gspread (sync, run in executor).
 - **Command sync is hash-gated.** `main.py` fingerprints commands and only calls `tree.sync()` on change.
 - **ML model path:** `src/ml/models/transformer_checkpoint.pt` (PyTorch checkpoint).

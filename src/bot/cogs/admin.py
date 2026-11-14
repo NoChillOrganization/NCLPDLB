@@ -71,6 +71,9 @@ class AdminCog(commands.Cog, name="Admin"):
             guild_id=str(interaction.guild_id),
             player_id=str(user.id),
         )
+        if not result.success:
+            await interaction.followup.send(f"❌ {result.error}", ephemeral=True)
+            return
         await interaction.followup.send(
             f"Skipped {user.display_name}'s turn. Next: {result.next_player}"
         )
@@ -81,8 +84,12 @@ class AdminCog(commands.Cog, name="Admin"):
     @require_role(ROLE_MOD)
     async def admin_pause(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
-        await self.draft_service.pause_draft(str(interaction.guild_id))
-        await interaction.followup.send("Draft paused.")
+        if await self.draft_service.pause_draft(str(interaction.guild_id)):
+            await interaction.followup.send("Draft paused.")
+        else:
+            await interaction.followup.send(
+                "❌ No draft in progress to pause.", ephemeral=True
+            )
 
     @app_commands.command(
         name="admin-resume", description="Resume a paused draft (moderator+)"
@@ -90,12 +97,16 @@ class AdminCog(commands.Cog, name="Admin"):
     @require_role(ROLE_MOD)
     async def admin_resume(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
-        await self.draft_service.resume_draft(str(interaction.guild_id))
-        await interaction.followup.send("Draft resumed!")
+        if await self.draft_service.resume_draft(str(interaction.guild_id)):
+            await interaction.followup.send("Draft resumed!")
+        else:
+            await interaction.followup.send(
+                "❌ No draft in progress to resume.", ephemeral=True
+            )
 
     @app_commands.command(
         name="admin-override-pick",
-        description="Override a pick in-memory (moderator+) — ⚠ run /sheet-result to persist",
+        description="Override a pick (moderator+) — ⚠ Sheet is not updated; run /sheet-result to persist",
     )
     @app_commands.describe(
         user="Player whose pick to change",

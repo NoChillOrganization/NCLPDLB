@@ -4,7 +4,7 @@ Run: pytest tests/unit/test_draft_service.py -v
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from src.data.models import DraftFormat, DraftStatus
 from src.services.draft_service import DraftService
@@ -436,59 +436,8 @@ async def test_cancel_timer_noop_when_no_task(draft_svc):
     draft_svc._cancel_timer("guild_no_timer")  # Should not raise
 
 
-@pytest.mark.asyncio
-async def test_timer_fires_and_auto_skips(draft_svc):
-    """Timer task auto-skips after expiry and calls on_timeout callback."""
-    import asyncio
-
-    with patch("src.services.draft_service.sheets") as mock_sheets:
-        mock_sheets.save_pick = MagicMock()
-        draft = await draft_svc.create_draft(
-            "gTFire", "p1", DraftFormat.SNAKE, timer_seconds=0
-        )
-        await draft_svc.add_player("gTFire", "p1")
-        await draft_svc.add_player("gTFire", "p2")
-        draft.status = DraftStatus.ACTIVE
-
-    callback_args = []
-
-    async def on_timeout(guild_id, skipped_player):
-        callback_args.append((guild_id, skipped_player))
-
-    # Start timer with 0-second delay so it fires immediately
-    draft_svc._start_timer("gTFire", draft, on_timeout)
-    # Wait (bounded) for the timer coroutine; a fixed sleep is flaky on slow CI
-    # because the auto-skip persists to SQLite before calling back.
-    for _ in range(150):
-        if callback_args:
-            break
-        await asyncio.sleep(0.02)
-
-    assert ("gTFire", "p1") in callback_args
-    # Pick should have advanced to p2
-    assert draft.current_player_id == "p2"
-
-
-@pytest.mark.asyncio
-async def test_timer_callback_error_is_swallowed(draft_svc):
-    """Errors in on_timeout callback don't crash the timer task."""
-    import asyncio
-
-    with patch("src.services.draft_service.sheets"):
-        draft = await draft_svc.create_draft(
-            "gTErr", "p1", DraftFormat.SNAKE, timer_seconds=0
-        )
-        await draft_svc.add_player("gTErr", "p1")
-        await draft_svc.add_player("gTErr", "p2")
-        draft.status = DraftStatus.ACTIVE
-
-    async def bad_callback(gid, pid):
-        raise RuntimeError("boom")
-
-    draft_svc._start_timer("gTErr", draft, bad_callback)
-    await asyncio.sleep(0.05)
-    # Draft still advanced despite callback error
-    assert draft.current_player_id == "p2"
+# Timer expiry, auto-skip and the on_timeout callback are covered through the
+# interface in test_draft_lifecycle.py.
 
 
 @pytest.mark.asyncio
@@ -601,46 +550,6 @@ async def test_start_timer_returns_early_when_no_current_player(draft_svc):
     assert "gEmpty" not in ds_mod._timer_tasks
 
     ds_mod._active_drafts.pop("gEmpty", None)
-
-
-@pytest.mark.asyncio
-async def test_timer_fires_and_starts_next_player_timer(draft_svc):
-    """Line 293: after auto-skip, timer restarts for the next player."""
-    import asyncio
-    import src.services.draft_service as ds_mod
-
-    callback_players = []
-
-    async def cb(gid, pid):
-        callback_players.append(pid)
-
-    with (
-        patch("src.services.draft_service.sheets"),
-        patch("src.services.draft_service._db_save_draft", new_callable=AsyncMock),
-    ):
-        # timer_seconds=0 → asyncio.sleep(0) fires instantly (real yield, no mocking needed)
-        draft = await draft_svc.create_draft(
-            "gChain", "p1", DraftFormat.SNAKE, timer_seconds=0
-        )
-        await draft_svc.add_player("gChain", "p1")
-        await draft_svc.add_player("gChain", "p2")
-        await draft_svc.add_player("gChain", "p3")
-        draft.status = DraftStatus.ACTIVE
-
-        draft_svc._start_timer("gChain", draft, cb)
-        # Mutate timer_seconds to 1 AFTER creating the task but BEFORE it runs.
-        # The task closure uses draft.timer_seconds for sleep (0 → instant),
-        # but active.timer_seconds for the restart guard (1 → line 293 fires).
-        draft.timer_seconds = 1
-        for _ in range(10):
-            await asyncio.sleep(0)
-
-    # p1 should have been skipped and line 293 should have restarted timer for p2
-    assert "p1" in callback_players
-    assert "gChain" in ds_mod._timer_tasks
-    # Clean up
-    draft_svc._cancel_timer("gChain")
-    ds_mod._active_drafts.pop("gChain", None)
 
 
 @pytest.mark.asyncio
