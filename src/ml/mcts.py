@@ -383,63 +383,6 @@ def run_mcts(
     return action, stats
 
 
-# ── MCTSPlayer mixin ──────────────────────────────────────────────────────────
-
-
-class MCTSPlayerMixin:
-    """
-    Mixin that replaces choose_move() in ShowdownBotPlayer with an MCTS decision.
-
-    Usage:
-        class MCTSBotPlayer(MCTSPlayerMixin, ShowdownBotPlayer):
-            pass
-
-    The mixin picks up `self._policy` (BattleTransformer) and wraps it with MCTS.
-    """
-
-    _mcts_config: MCTSConfig = MCTSConfig()
-
-    def choose_move(self, battle: Any) -> Any:  # pragma: no cover
-        """Use MCTS + transformer model to select the best action."""
-        from src.ml.battle_env import (
-            build_observation,
-            N_ACTIONS_GEN9,
-            POKE_ENV_AVAILABLE,
-        )
-
-        if not POKE_ENV_AVAILABLE:
-            return self.choose_random_move(battle)  # type: ignore[attr-defined]
-
-        policy = getattr(self, "_policy", None)
-        if policy is None:
-            log.debug("[MCTSPlayerMixin] No model — using random")
-            return self.choose_random_move(battle)  # type: ignore[attr-defined]
-
-        try:
-            obs = build_observation(battle)
-            # Build legal action mask
-            legal = _build_legal_mask(battle, N_ACTIONS_GEN9)
-            action, stats = run_mcts(
-                obs,
-                policy,
-                N_ACTIONS_GEN9,
-                config=self._mcts_config,
-                legal_mask=legal,
-                deterministic=True,
-            )
-            log.debug(
-                "[MCTS] turn=%d sims=%d action=%d visits=%d",
-                getattr(battle, "turn", 0),
-                stats["n_simulations"],
-                action,
-                stats["visit_counts"].get(action, 0),
-            )
-            return self._action_to_move(action, battle)  # type: ignore[attr-defined]
-        except Exception as exc:
-            log.warning("[MCTSPlayerMixin] Error: %s — falling back to random", exc)
-            return self.choose_random_move(battle)  # type: ignore[attr-defined]
-
-
 def _build_legal_mask(battle: Any, n_actions: int) -> "torch.Tensor | None":
     """
     Build a boolean mask of illegal actions for the current battle state.
@@ -456,7 +399,9 @@ def _build_legal_mask(battle: Any, n_actions: int) -> "torch.Tensor | None":
 
         for act in range(n_actions):
             try:
-                order = SinglesEnv.action_to_order(act, battle)
+                # poke-env's mapper calls action.item() for move actions, so it needs a
+                # numpy integer: a plain int raised AttributeError and masked every move.
+                order = SinglesEnv.action_to_order(np.int64(act), battle)
                 if order is not None:
                     mask[act] = False
             except ValueError:

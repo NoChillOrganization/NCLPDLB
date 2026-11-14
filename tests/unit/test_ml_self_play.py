@@ -20,6 +20,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.ml.action_selection import Choice  # noqa: E402
 from src.ml.self_play import SharedStats, LadderLoop  # noqa: E402
 from src.ml.mcts import MCTSConfig  # noqa: E402
 
@@ -379,6 +380,8 @@ class TestMakePlayerCreatesNew:
         assert result is mock_player
         assert loop._player is mock_player
         mock_player_cls.assert_called_once()
+        # Real humans on the public ladder: a selection error must not end the game
+        assert mock_player_cls.call_args.kwargs["on_error"] == "fallback"
 
     @pytest.mark.asyncio
     async def test_second_call_returns_cached_player_without_recreating(self):
@@ -541,6 +544,7 @@ class TestMCTSPlayer:
             p._replay_buffer = defaults["replay_buffer"]
             p._stats = defaults["stats"]
             p._name = kwargs.get("name", "AccountA")
+            p._on_error = kwargs.get("on_error", "raise")
             p._turn_obs = {}
             p._turn_acts = {}
             p._turn_probs = {}
@@ -585,14 +589,13 @@ class TestMCTSPlayer:
         battle.battle_tag = "tag-1"
 
         obs = np.zeros(10, dtype=np.float32)
-        legal_mask = np.zeros(10, dtype=bool)
         mcts_stats = {"action_probs": {0: 0.8, 1: 0.2}}
 
-        with (
-            patch("src.ml.battle_env.build_observation", return_value=obs),
-            patch("src.ml.self_play._build_legal_mask", return_value=legal_mask),
-            patch("src.ml.self_play.run_mcts", return_value=(0, mcts_stats)),
-            patch.object(p, "_action_to_move", return_value="move_order"),
+        with patch(
+            "src.ml.action_selection.ActionSelector.choose",
+            return_value=Choice(
+                order="move_order", obs=obs, action_id=0, stats=mcts_stats
+            ),
         ):
             result = p.choose_move(battle)
 
@@ -601,18 +604,40 @@ class TestMCTSPlayer:
         assert len(p._turn_acts["tag-1"]) == 1
         assert p._turn_acts["tag-1"][0] == 0
 
-    def test_choose_move_exception_falls_back_to_random(self):
+    def test_choose_move_error_raises_and_records_nothing(self):
         p = self._make_player()
         battle = MagicMock()
         p.choose_random_move = MagicMock(return_value="random_order")
 
         with patch(
-            "src.ml.battle_env.build_observation", side_effect=RuntimeError("obs error")
+            "src.ml.action_selection.build_observation",
+            side_effect=RuntimeError("obs error"),
         ):
-            result = p.choose_move(battle)
+            with pytest.raises(RuntimeError, match="obs error"):
+                p.choose_move(battle)
+
+        p.choose_random_move.assert_not_called()
+        assert p._turn_obs == {}  # nothing was recorded
+
+    def test_ladder_choose_move_error_plays_random_and_records_nothing(self, caplog):
+        """Against real humans a selection bug must not crash the game."""
+        import logging
+
+        p = self._make_player(on_error="fallback")
+        battle = MagicMock()
+        battle.battle_tag = "ladder-1"
+        p.choose_random_move = MagicMock(return_value="random_order")
+
+        with caplog.at_level(logging.ERROR, logger="src.ml.action_selection"):
+            with patch(
+                "src.ml.action_selection.build_observation",
+                side_effect=RuntimeError("obs error"),
+            ):
+                result = p.choose_move(battle)
 
         assert result == "random_order"
-        assert p._turn_obs == {}  # nothing was recorded
+        assert "obs error" in caplog.text
+        assert p._turn_obs == {}  # no experience recorded for the fallback turn
 
     def test_battle_finished_callback_win(self):
         p = self._make_player()
@@ -705,43 +730,3 @@ class TestMCTSPlayer:
             "poke_env.player.player.Player._battle_finished_callback", return_value=None
         ):
             p._battle_finished_callback(battle)  # must not raise
-
-    def test_action_to_move_success(self):
-        p = self._make_player()
-        p.choose_random_move = MagicMock(return_value="random")
-        battle = MagicMock()
-        mock_order = MagicMock()
-
-        with patch(
-            "poke_env.environment.singles_env.SinglesEnv.action_to_order",
-            return_value=mock_order,
-        ):
-            result = p._action_to_move(0, battle)
-
-        assert result is mock_order
-
-    def test_action_to_move_none_falls_back_to_random(self):
-        p = self._make_player()
-        p.choose_random_move = MagicMock(return_value="random")
-        battle = MagicMock()
-
-        with patch(
-            "poke_env.environment.singles_env.SinglesEnv.action_to_order",
-            return_value=None,
-        ):
-            result = p._action_to_move(0, battle)
-
-        assert result == "random"
-
-    def test_action_to_move_exception_falls_back_to_random(self):
-        p = self._make_player()
-        p.choose_random_move = MagicMock(return_value="random")
-        battle = MagicMock()
-
-        with patch(
-            "poke_env.environment.singles_env.SinglesEnv.action_to_order",
-            side_effect=Exception("no order"),
-        ):
-            result = p._action_to_move(0, battle)
-
-        assert result == "random"

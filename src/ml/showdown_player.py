@@ -72,7 +72,14 @@ except ImportError:  # pragma: no cover
     learning_sheets = None  # type: ignore
     SHEETS_AVAILABLE = False
 
-from src.ml.battle_env import N_ACTIONS_GEN9, POKE_ENV_AVAILABLE, build_observation  # noqa: E402
+from src.ml.action_selection import (  # noqa: E402
+    ActionSelector,
+    MCTSInference,
+    PPOInference,
+    check_obs_dim,
+)
+from src.ml.battle_env import POKE_ENV_AVAILABLE  # noqa: E402
+from src.ml.mcts import MCTSConfig  # noqa: E402
 from src.ml.showdown_modes import server_config_for_mode  # noqa: E402
 
 # ── Transformer checkpoint resolver ───────────────────────────────────────────
@@ -153,16 +160,7 @@ if POKE_ENV_AVAILABLE:
             from src.ml.battle_env import OBS_DIM
 
             policy = PPO.load(str(path))
-            loaded_dim = (
-                policy.observation_space.shape[0]
-                if policy.observation_space.shape
-                else None
-            )
-            if loaded_dim != OBS_DIM:
-                raise ValueError(
-                    f"Model obs dim mismatch: model has {loaded_dim}, env expects {OBS_DIM}. "
-                    f"Retrain with the current observation space before loading."
-                )
+            check_obs_dim(policy)
             self._policy = policy
             log.info(
                 f"[ShowdownBotPlayer] Policy loaded from {path} (obs_dim={OBS_DIM})"
@@ -181,64 +179,35 @@ if POKE_ENV_AVAILABLE:
 
         # ── Move selection ─────────────────────────────────────────
 
-        def choose_move(
-            self, battle: AbstractBattle
-        ) -> None:  # pragma: no cover  # type: ignore[override]
+        def choose_move(self, battle: AbstractBattle):  # type: ignore[override]
+            # Live play: a selection failure logs ERROR and falls back, never crashes
+            # the battle. Doubles is out of scope — ActionSelector raises on it.
             # ── MCTS path ──────────────────────────────────────────
             if self._use_mcts and self._transformer is not None:
-                try:
-                    from src.ml.mcts import MCTSConfig, _build_legal_mask, run_mcts
-
-                    obs = build_observation(battle)
-                    legal_mask = _build_legal_mask(battle, N_ACTIONS_GEN9)
-                    cfg = MCTSConfig(n_simulations=self._mcts_n_simulations)
-                    # Pass full action space + legal_mask so MCTS can prune illegal nodes.
-                    # Passing n_legal as n_actions was wrong — it truncated the tree and
-                    # dropped the mask entirely, letting MCTS pick illegal actions.
-                    action_id, _ = run_mcts(
-                        obs,
+                mcts = ActionSelector(
+                    MCTSInference(
                         self._transformer,
-                        N_ACTIONS_GEN9,
-                        config=cfg,
-                        legal_mask=legal_mask,
+                        MCTSConfig(n_simulations=self._mcts_n_simulations),
                         deterministic=True,
-                    )
-                    return self._action_to_move(action_id, battle)
-                except Exception as exc:
-                    log.warning(
-                        "[ShowdownBotPlayer] MCTS error: %s — falling back to PPO", exc
-                    )
+                    ),
+                    on_error="fallback",
+                    label="ShowdownBotPlayer:MCTS",
+                )
+                # MCTS failure falls back to the PPO path (then random).
+                return mcts.choose(battle, fallback=self._choose_ppo_move).order
+            return self._choose_ppo_move(battle)
 
+        def _choose_ppo_move(self, battle: AbstractBattle):
             # ── PPO path ───────────────────────────────────────────
             if self._policy is None:
                 log.debug("[ShowdownBotPlayer] No policy loaded — using random")
                 return self.choose_random_move(battle)
-
-            try:
-                obs = build_observation(battle).reshape(1, -1)
-                action, _ = self._policy.predict(obs, deterministic=True)
-                action_id = int(action[0])
-                return self._action_to_move(action_id, battle)
-            except (ValueError, RuntimeError) as exc:
-                # Hard errors (shape mismatch, etc.) — re-raise so the caller sees them
-                log.error(f"[ShowdownBotPlayer] Policy predict failed: {exc}")
-                raise
-            except Exception as exc:
-                log.warning(
-                    f"[ShowdownBotPlayer] Policy error: {exc} — falling back to random"
-                )
-                return self.choose_random_move(battle)
-
-        def _action_to_move(
-            self, action: int, battle: AbstractBattle
-        ):  # pragma: no cover
-            """Map discrete action ID → poke-env BattleOrder using SinglesEnv mapper."""
-            try:
-                from poke_env.environment.singles_env import SinglesEnv
-
-                return SinglesEnv.action_to_order(action, battle)
-            except Exception:
-                return self.choose_random_move(battle)
+            ppo = ActionSelector(
+                PPOInference(self._policy, deterministic=True),
+                on_error="fallback",
+                label="ShowdownBotPlayer",
+            )
+            return ppo.choose(battle, fallback=self.choose_random_move).order
 
         async def save_replay(
             self, battle: AbstractBattle

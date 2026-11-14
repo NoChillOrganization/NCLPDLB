@@ -411,7 +411,10 @@ class TestCurriculumOpponent:
             patch("src.ml.train_policy_components.PPO") as mock_ppo_cls,
             patch("src.ml.train_policy_components.SB3_OK", True),
         ):
+            from src.ml.battle_env import OBS_DIM
+
             mock_model = MagicMock()
+            mock_model.observation_space.shape = (OBS_DIM,)
             mock_ppo_cls.load.return_value = mock_model
 
             # Build a real-ish object by importing the class then calling load_policy
@@ -426,6 +429,7 @@ class TestCurriculumOpponent:
             # Simulate load_policy by calling it on a fresh mock instance
             instance = MagicMock()
             instance._policy = None
+            instance._is_doubles = False
             # Call the actual unbound method
             tp.CurriculumOpponent.load_policy(instance, fake_zip)
             mock_ppo_cls.load.assert_called_once_with(str(fake_zip))
@@ -501,10 +505,9 @@ class TestCurriculumOpponent:
         battle = MagicMock()
 
         with (
-            # CurriculumOpponent lives in train_policy_components.py (extracted
-            # from train_policy.py to stay under the 800-line guideline) and
-            # reads its own build_observation import from there.
-            patch("src.ml.train_policy_components.build_observation") as mock_obs,
+            # CurriculumOpponent lives in train_policy_components.py; the shared
+            # selection module (action_selection) owns observation + mapping.
+            patch("src.ml.action_selection.build_observation") as mock_obs,
             patch(
                 "poke_env.environment.singles_env.SinglesEnv.action_to_order",
                 return_value="ppo_order",
@@ -513,9 +516,70 @@ class TestCurriculumOpponent:
             mock_obs.return_value = MagicMock(
                 reshape=MagicMock(return_value=MagicMock())
             )
-            _ = tp.CurriculumOpponent.choose_move(instance, battle)
+            result = tp.CurriculumOpponent.choose_move(instance, battle)
 
         mock_policy.predict.assert_called_once()
+        assert mock_policy.predict.call_args.kwargs["deterministic"] is False
+        assert result == "ppo_order"
+
+    def test_choose_move_raises_on_mapping_error_in_training(self):
+        """Training opponents must not hide a selection error behind a fallback."""
+        pytest.importorskip("poke_env")
+        import numpy as np
+        from src.ml.train_policy import CurriculumOpponent
+
+        if not hasattr(CurriculumOpponent, "choose_move"):
+            pytest.skip("CurriculumOpponent.choose_move not available")
+
+        policy = MagicMock()
+        policy.predict.return_value = (np.array([3]), None)
+        instance = MagicMock()
+        instance._policy = policy
+        instance._is_doubles = False
+
+        with (
+            patch(
+                "src.ml.action_selection.build_observation", return_value=np.zeros(78)
+            ),
+            patch(
+                "poke_env.environment.singles_env.SinglesEnv.action_to_order",
+                side_effect=ValueError("illegal"),
+            ),
+        ):
+            with pytest.raises(ValueError, match="illegal"):
+                CurriculumOpponent.choose_move(instance, MagicMock())
+
+    def test_self_play_opponent_doubles_uses_doubles_mapper(self):
+        pytest.importorskip("poke_env")
+        import numpy as np
+        from src.ml.train_policy import SelfPlayOpponent
+        from poke_env.battle import DoubleBattle
+
+        if not hasattr(SelfPlayOpponent, "choose_move"):
+            pytest.skip("SelfPlayOpponent.choose_move not available")
+
+        policy = MagicMock()
+        policy.predict.return_value = (np.array([9]), None)
+        instance = MagicMock()
+        instance._policy = policy
+        instance._is_doubles = True
+
+        with (
+            patch(
+                "src.ml.action_selection.build_doubles_observation",
+                return_value=np.zeros(140),
+            ),
+            patch(
+                "poke_env.environment.doubles_env.DoublesEnv.action_to_order",
+                return_value="doubles_order",
+            ),
+        ):
+            result = SelfPlayOpponent.choose_move(
+                instance, MagicMock(spec=DoubleBattle)
+            )
+
+        assert result == "doubles_order"
+        assert policy.predict.call_args.kwargs["deterministic"] is False
 
 
 # ── CurriculumCallback — secondary metrics ────────────────────────────────────

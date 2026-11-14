@@ -450,3 +450,98 @@ class TestBestModelObsDimGuard:
             results_dir=str(tmp_path / "results"),
         )
         assert result is None
+
+
+# ── ShowdownBotPlayer.choose_move (live action selection) ─────────────────────
+
+
+class TestShowdownBotPlayerChooseMove:
+    """Live play: failures log ERROR and fall back; doubles raises explicitly."""
+
+    @staticmethod
+    def _player(policy=None, transformer=None, use_mcts=False):
+        import pytest
+
+        pytest.importorskip("poke_env")
+        from src.ml.showdown_player import ShowdownBotPlayer
+
+        p = ShowdownBotPlayer.__new__(ShowdownBotPlayer)
+        p._policy = policy
+        p._use_mcts = use_mcts
+        p._transformer = transformer
+        p._mcts_n_simulations = 0
+        p.choose_random_move = MagicMock(return_value="random_legal")
+        return p
+
+    def test_no_policy_uses_random(self):
+        p = self._player()
+        assert p.choose_move(MagicMock()) == "random_legal"
+
+    def test_ppo_is_deterministic(self):
+        import numpy as np
+        from unittest.mock import patch
+
+        policy = MagicMock()
+        policy.predict.return_value = (np.array([5]), None)
+        p = self._player(policy=policy)
+        with (
+            patch(
+                "src.ml.action_selection.build_observation",
+                return_value=np.zeros(78),
+            ),
+            patch(
+                "poke_env.environment.singles_env.SinglesEnv.action_to_order",
+                return_value="ppo_order",
+            ),
+        ):
+            assert p.choose_move(MagicMock()) == "ppo_order"
+        assert policy.predict.call_args.kwargs["deterministic"] is True
+
+    def test_policy_failure_logs_error_and_falls_back_to_random(self, caplog):
+        import logging
+        from unittest.mock import patch
+
+        policy = MagicMock()
+        policy.predict.side_effect = RuntimeError("shape")
+        p = self._player(policy=policy)
+        with (
+            patch(
+                "src.ml.action_selection.build_observation", return_value=MagicMock()
+            ),
+            caplog.at_level(logging.ERROR, logger="src.ml.action_selection"),
+        ):
+            assert p.choose_move(MagicMock()) == "random_legal"
+        assert any(r.levelno == logging.ERROR for r in caplog.records)
+
+    def test_mcts_failure_falls_back_to_ppo_path(self):
+        import numpy as np
+        from unittest.mock import patch
+
+        policy = MagicMock()
+        policy.predict.return_value = (np.array([2]), None)
+        p = self._player(policy=policy, transformer=object(), use_mcts=True)
+        with (
+            patch(
+                "src.ml.action_selection.build_observation",
+                return_value=np.zeros(78),
+            ),
+            patch("src.ml.action_selection.run_mcts", side_effect=RuntimeError("mcts")),
+            patch("src.ml.action_selection._build_legal_mask"),
+            patch(
+                "poke_env.environment.singles_env.SinglesEnv.action_to_order",
+                return_value="ppo_order",
+            ),
+        ):
+            assert p.choose_move(MagicMock()) == "ppo_order"
+
+    def test_doubles_battle_raises_instead_of_wrong_action(self):
+        import pytest
+
+        pytest.importorskip("poke_env")
+        from poke_env.battle import DoubleBattle
+        from src.ml.action_selection import ActionSelectionError
+
+        p = self._player(policy=MagicMock())
+        with pytest.raises(ActionSelectionError, match="doubles"):
+            p.choose_move(MagicMock(spec=DoubleBattle))
+        p.choose_random_move.assert_not_called()
