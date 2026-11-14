@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from src.config import settings
 from src.data.db import load_all_elo, save_elo as _db_save_elo
+from src.data.db import transaction as db_transaction
 from src.data.models import PlayerElo
 from src.data.sheets import Tab, sheets
 
@@ -69,8 +70,9 @@ class EloService:
         if rows:
             log.info("Restored %d ELO record(s) from SQLite", len(rows))
 
-    async def _save_player_to_db(self, player: PlayerElo) -> None:
+    async def _save_player_to_db(self, player: PlayerElo, conn=None) -> None:
         await _db_save_elo(
+            conn=conn,
             guild_id=player.guild_id,
             player_id=player.player_id,
             elo=player.elo,
@@ -123,8 +125,9 @@ class EloService:
         # M7: serialize concurrent record_match calls per guild
         lock = _elo_locks.setdefault(guild_id, asyncio.Lock())
         async with lock:
-            winner = await self._get_player(guild_id, winner_id)
-            loser = await self._get_player(guild_id, loser_id)
+            # Work on copies: the cache only changes once the durable write succeeded.
+            winner = (await self._get_player(guild_id, winner_id)).model_copy()
+            loser = (await self._get_player(guild_id, loser_id)).model_copy()
             if winner_name:
                 winner.display_name = winner_name
             if loser_name:
@@ -143,14 +146,24 @@ class EloService:
             winner.streak = winner.streak + 1 if winner.streak >= 0 else 1
             loser.streak = loser.streak - 1 if loser.streak <= 0 else -1
 
-            # Persist to Sheets (off-loop via to_thread)
-            await self._save_player(winner)
-            await self._save_player(loser)
+            # SQLite is the durable record (restored on startup): write it first and
+            # raise on failure so nothing is half-saved. One transaction: both rows
+            # commit together or neither does.
+            async with db_transaction() as conn:
+                await self._save_player_to_db(winner, conn)
+                await self._save_player_to_db(loser, conn)
+            _elo_cache[guild_id][winner_id] = winner
+            _elo_cache[guild_id][loser_id] = loser
 
-            # Persist to SQLite write-through cache — raise on failure so the
-            # caller knows the update was not durably stored.
-            await self._save_player_to_db(winner)
-            await self._save_player_to_db(loser)
+            # Sheets is a mirror for humans (off-loop via to_thread). A failure here
+            # must not undo or hide a rating change that is already stored.
+            for player in (winner, loser):
+                try:
+                    await self._save_player(player)
+                except Exception:
+                    log.exception(
+                        "ELO saved to SQLite but the Sheets mirror update failed"
+                    )
 
         log.info(
             f"Match recorded: {winner_id} ({old_winner_elo}→{winner.elo}) "

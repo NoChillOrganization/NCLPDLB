@@ -5,8 +5,12 @@ Unit tests for EloService — rating calculations, matchmaking, standings.
 import pytest
 from unittest.mock import patch
 
-from src.services.elo_service import EloService, expected_score, new_rating
+import src.services.elo_service as elo_mod
 from src.config import settings
+
+EloService = elo_mod.EloService
+expected_score = elo_mod.expected_score
+new_rating = elo_mod.new_rating
 
 
 # ── Pure ELO math ─────────────────────────────────────────────
@@ -94,7 +98,6 @@ async def test_record_match_sum_elo_conserved():
 @pytest.mark.asyncio
 async def test_standings_sorted_by_elo():
     from src.data.models import PlayerElo
-    import src.services.elo_service as elo_mod
 
     svc = EloService()
     elo_mod._elo_cache["guild3"] = {
@@ -111,7 +114,6 @@ async def test_standings_sorted_by_elo():
 
 @pytest.mark.asyncio
 async def test_default_elo_is_configured_value():
-    import src.services.elo_service as elo_mod
 
     elo_mod._elo_cache.clear()
 
@@ -128,7 +130,6 @@ async def test_default_elo_is_configured_value():
 
 @pytest.mark.asyncio
 async def test_get_player_loads_from_sheets():
-    import src.services.elo_service as elo_mod
 
     elo_mod._elo_cache.clear()
 
@@ -153,7 +154,6 @@ async def test_get_player_loads_from_sheets():
 
 @pytest.mark.asyncio
 async def test_get_standings_loads_from_sheets():
-    import src.services.elo_service as elo_mod
 
     elo_mod._elo_cache.clear()
 
@@ -225,8 +225,6 @@ async def test_record_match_sets_display_names():
             loser_name="Bob",
         )
 
-    import src.services.elo_service as elo_mod
-
     assert elo_mod._elo_cache["guild_dn"]["w1"].display_name == "Alice"
     assert elo_mod._elo_cache["guild_dn"]["l1"].display_name == "Bob"
 
@@ -255,7 +253,6 @@ async def test_record_match_writes_to_sqlite():
 @pytest.mark.asyncio
 async def test_restore_ratings_from_db_populates_cache():
     """restore_ratings_from_db should fill _elo_cache from SQLite rows (NCLP-006)."""
-    import src.services.elo_service as elo_mod
 
     elo_mod._elo_cache.clear()
 
@@ -277,3 +274,129 @@ async def test_restore_ratings_from_db_populates_cache():
     assert "g1" in elo_mod._elo_cache
     assert elo_mod._elo_cache["g1"]["pA"].elo == 1150
     assert elo_mod._elo_cache["g1"]["pA"].wins == 6
+
+
+# ── durability order ──────────────────────────────────────────
+
+
+def _seed_pair(guild: str):
+    from src.data.models import PlayerElo
+
+    elo_mod._elo_cache[guild] = {
+        "w": PlayerElo(player_id="w", guild_id=guild, elo=1000),
+        "l": PlayerElo(player_id="l", guild_id=guild, elo=1000),
+    }
+    return elo_mod._elo_cache[guild]
+
+
+@pytest.mark.asyncio
+async def test_failed_sqlite_write_changes_nothing():
+    cache = _seed_pair("g_db_fail")
+    svc = EloService()
+    with (
+        patch.object(svc, "_save_player") as sheets_save,
+        patch.object(svc, "_save_player_to_db", side_effect=RuntimeError("disk")),
+    ):
+        with pytest.raises(RuntimeError):
+            await svc.record_match("g_db_fail", "w", "l")
+
+    assert (cache["w"].elo, cache["w"].wins) == (1000, 0)
+    assert (cache["l"].elo, cache["l"].losses) == (1000, 0)
+    sheets_save.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_sheets_mirror_failure_does_not_undo_a_saved_match():
+    cache = _seed_pair("g_sheets_fail")
+    svc = EloService()
+    with (
+        patch.object(svc, "_save_player", side_effect=RuntimeError("quota")),
+        patch.object(svc, "_save_player_to_db") as db_save,
+    ):
+        result = await svc.record_match("g_sheets_fail", "w", "l")
+
+    assert result.winner_new_elo > 1000
+    assert cache["w"].elo == result.winner_new_elo
+    assert db_save.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_loser_sheets_row_saved_when_winner_sheets_save_fails():
+    _seed_pair("g_sheets_each")
+    svc = EloService()
+    saved = []
+
+    async def flaky(player):
+        saved.append(player.player_id)
+        if player.player_id == "w":
+            raise RuntimeError("quota")
+
+    with (
+        patch.object(svc, "_save_player", side_effect=flaky),
+        patch.object(svc, "_save_player_to_db"),
+    ):
+        await svc.record_match("g_sheets_each", "w", "l")
+
+    assert saved == ["w", "l"]
+
+
+# ── atomic SQLite writes ──────────────────────────────────────
+
+
+@pytest.fixture
+def tmp_db(tmp_path):
+    from src.data import db
+
+    with patch.object(db, "_db_path", return_value=tmp_path / "t.db"):
+        yield db
+
+
+async def _rows(db):
+    await db.init_db()
+    return {r["player_id"]: r for r in await db.load_all_elo()}
+
+
+@pytest.mark.asyncio
+async def test_transaction_rolls_back_and_reraises(tmp_db):
+    await tmp_db.init_db()
+    with pytest.raises(RuntimeError, match="boom"):
+        async with tmp_db.transaction() as conn:
+            await tmp_db.save_elo("g", "p", 1100, 1, 0, 1, "P", conn)
+            raise RuntimeError("boom")
+    assert await tmp_db.load_all_elo() == []
+
+
+@pytest.mark.asyncio
+async def test_record_match_failure_after_first_write_rolls_back(tmp_db):
+    await tmp_db.init_db()
+    _seed_pair("g_atomic")
+    svc = EloService()
+    real = svc._save_player_to_db
+
+    async def fail_on_loser(player, conn=None):
+        await real(player, conn)
+        if player.player_id == "l":
+            raise RuntimeError("disk")
+
+    with (
+        patch.object(svc, "_save_player"),
+        patch.object(svc, "_save_player_to_db", side_effect=fail_on_loser),
+    ):
+        with pytest.raises(RuntimeError):
+            await svc.record_match("g_atomic", "w", "l")
+
+    assert await _rows(tmp_db) == {}
+
+
+@pytest.mark.asyncio
+async def test_record_match_commits_both_rows_once(tmp_db):
+    await tmp_db.init_db()
+    _seed_pair("g_ok")
+    svc = EloService()
+    with patch.object(svc, "_save_player"):
+        result = await svc.record_match("g_ok", "w", "l")
+
+    rows = await _rows(tmp_db)
+    assert set(rows) == {"w", "l"}
+    assert (rows["w"]["elo"], rows["w"]["wins"]) == (result.winner_new_elo, 1)
+    assert (rows["l"]["elo"], rows["l"]["losses"]) == (result.loser_new_elo, 1)

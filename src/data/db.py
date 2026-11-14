@@ -22,9 +22,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import AsyncIterator, Optional
 
 import aiosqlite
 
@@ -144,6 +145,22 @@ async def close_db() -> None:
             log.debug("aiosqlite connection closed (M19)")
 
 
+@asynccontextmanager
+async def transaction() -> AsyncIterator[aiosqlite.Connection]:
+    """Run several writes atomically: commit on success, roll back and re-raise on error.
+
+    Pass the yielded connection as ``conn=`` to helpers such as ``save_elo``.
+    """
+    conn = await _get_conn()
+    async with _write_lock:
+        try:
+            yield conn
+            await conn.commit()
+        except BaseException:
+            await conn.rollback()
+            raise
+
+
 # ── Draft persistence ─────────────────────────────────────────────────────────
 
 
@@ -192,26 +209,34 @@ async def save_elo(
     losses: int,
     streak: int,
     display_name: str,
+    conn: Optional[aiosqlite.Connection] = None,
 ) -> None:
-    """Upsert a player's ELO row."""
-    conn = await _get_conn()
-    async with _write_lock:
-        await conn.execute(
-            """
-            INSERT INTO elo_ratings
-                (guild_id, player_id, elo, wins, losses, streak, display_name, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(guild_id, player_id) DO UPDATE SET
-                elo          = excluded.elo,
-                wins         = excluded.wins,
-                losses       = excluded.losses,
-                streak       = excluded.streak,
-                display_name = excluded.display_name,
-                updated_at   = excluded.updated_at
-            """,
-            (guild_id, player_id, elo, wins, losses, streak, display_name, _now()),
-        )
-        await conn.commit()
+    """Upsert a player's ELO row.
+
+    With ``conn`` (from ``transaction()``) the write joins the caller's
+    transaction: no lock and no commit here.
+    """
+    if conn is None:
+        async with transaction() as tx:
+            await save_elo(
+                guild_id, player_id, elo, wins, losses, streak, display_name, tx
+            )
+        return
+    await conn.execute(
+        """
+        INSERT INTO elo_ratings
+            (guild_id, player_id, elo, wins, losses, streak, display_name, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(guild_id, player_id) DO UPDATE SET
+            elo          = excluded.elo,
+            wins         = excluded.wins,
+            losses       = excluded.losses,
+            streak       = excluded.streak,
+            display_name = excluded.display_name,
+            updated_at   = excluded.updated_at
+        """,
+        (guild_id, player_id, elo, wins, losses, streak, display_name, _now()),
+    )
 
 
 async def load_all_elo() -> list[dict]:

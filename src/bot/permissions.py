@@ -22,22 +22,26 @@ _TIERS: dict[str, tuple[str, ...]] = {
 }
 
 
+def member_has_role(member: discord.Member, min_role: str) -> bool:
+    """True if `member` holds min_role or higher (Manage Guild always counts)."""
+    if member.guild_permissions.manage_guild:
+        return True
+    return bool({r.name for r in member.roles} & set(_TIERS[min_role]))
+
+
 def require_role(min_role: str) -> app_commands.check:
     """Return a slash-command check decorator requiring min_role or higher.
 
     Higher-tier roles always satisfy lower-tier checks. Manage Guild is accepted
     unconditionally so a misconfigured role list can never lock out the server owner.
     """
-    accepted = frozenset(_TIERS[min_role])
 
     async def predicate(interaction: discord.Interaction) -> bool:
         if not interaction.guild or not isinstance(interaction.user, discord.Member):
             raise app_commands.CheckFailure(
                 "This command can only be used in a server."
             )
-        if interaction.user.guild_permissions.manage_guild:
-            return True
-        if {r.name for r in interaction.user.roles} & accepted:
+        if member_has_role(interaction.user, min_role):
             return True
         raise app_commands.CheckFailure(
             f"You need the **{min_role}** role (or higher) to use this command."
