@@ -45,12 +45,16 @@ class ActionSelectionError(RuntimeError):
 
 
 class ModelInference(Protocol):
-    """Seam: observation (+ battle, for masking) -> (action id, optional stats)."""
+    """Seam: observation (+ battle, for masking) -> (action, optional stats).
+
+    The action is an int action id, or for doubles a 2-element array (one id per
+    active Pokémon); ``action_to_order`` converts either to what poke-env needs.
+    """
 
     supports_doubles: bool
 
-    def infer(self, obs: np.ndarray, battle: Any) -> tuple[int, dict | None]:
-        """Return (action id, MCTS stats or None) for this observation."""
+    def infer(self, obs: np.ndarray, battle: Any) -> tuple[Any, dict | None]:
+        """Return (action, MCTS stats or None) for this observation."""
 
 
 class PPOInference:
@@ -62,11 +66,13 @@ class PPOInference:
         self.policy = policy
         self.deterministic = deterministic
 
-    def infer(self, obs: np.ndarray, battle: Any) -> tuple[int, dict | None]:
+    def infer(self, obs: np.ndarray, battle: Any) -> tuple[Any, dict | None]:
         action, _ = self.policy.predict(
             obs.reshape(1, -1), deterministic=self.deterministic
         )
-        return int(action[0]), None
+        # Singles: a numpy integer; doubles: a 2-element array. Don't squash it to an
+        # int: the doubles mapper indexes it and the singles mapper calls .item().
+        return action[0], None
 
 
 class MCTSInference:
@@ -81,7 +87,7 @@ class MCTSInference:
         self.config = config
         self.deterministic = deterministic
 
-    def infer(self, obs: np.ndarray, battle: Any) -> tuple[int, dict | None]:
+    def infer(self, obs: np.ndarray, battle: Any) -> tuple[Any, dict | None]:
         legal_mask = _build_legal_mask(battle, N_ACTIONS_GEN9)
         # Full action space + legal_mask so MCTS can prune illegal nodes.
         return run_mcts(
@@ -100,7 +106,7 @@ class Choice:
 
     order: Any
     obs: np.ndarray | None = None
-    action_id: int | None = None
+    action_id: Any = None  # int id (MCTS, PPO singles) or 2-element array (PPO doubles)
     stats: dict | None = None
 
 
@@ -116,15 +122,25 @@ def check_obs_dim(policy: Any, *, doubles: bool = False) -> None:
         )
 
 
-def action_to_order(action_id: int, battle: Any, *, doubles: bool = False) -> Any:
-    """Map a discrete action id to a poke-env BattleOrder (singles or doubles mapper)."""
+def action_to_order(action: Any, battle: Any, *, doubles: bool = False) -> Any:
+    """Map an action to a poke-env BattleOrder (singles or doubles mapper).
+
+    poke-env's mappers need numpy types: the singles one calls ``action.item()`` for
+    move actions and the doubles one indexes ``action[0]`` / ``action[1]``. A plain
+    ``int`` made every move action raise (AttributeError), which the old per-copy
+    fallbacks swallowed as a random move.
+    """
     if doubles:
         from poke_env.environment.doubles_env import DoublesEnv as env
+
+        mapped = np.asarray(action, dtype=np.int64)
     else:
         from poke_env.environment.singles_env import SinglesEnv as env
-    order = env.action_to_order(action_id, battle)
+
+        mapped = np.int64(action)
+    order = env.action_to_order(mapped, battle)
     if order is None:
-        raise ActionSelectionError(f"action {action_id} has no legal order")
+        raise ActionSelectionError(f"action {action} has no legal order")
     return order
 
 

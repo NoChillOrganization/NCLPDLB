@@ -30,15 +30,34 @@ from src.ml.battle_env import N_ACTIONS_GEN9, OBS_DIM, OBS_DIM_DOUBLES  # noqa: 
 
 
 class FakePolicy:
-    """SB3-like policy: records the deterministic flag and obs shape it was given."""
+    """SB3-like policy: records the deterministic flag and obs shape it was given.
 
-    def __init__(self, action: int = 4) -> None:
+    ``action`` is an int (singles) or a pair (doubles: one id per active Pokémon).
+    """
+
+    def __init__(self, action: int | tuple[int, int] = 4) -> None:
         self.action = action
         self.calls: list[tuple[tuple, bool]] = []
 
     def predict(self, obs, deterministic):
         self.calls.append((obs.shape, deterministic))
         return np.array([self.action]), None
+
+
+def _singles_mapper(action, _battle):
+    """Fake of poke-env's singles mapper with its real input requirement."""
+    assert isinstance(action, np.integer), (
+        f"poke-env's singles mapper calls action.item(); got {type(action).__name__}"
+    )
+    return f"singles:{int(action)}"
+
+
+def _doubles_mapper(action, _battle):
+    """Fake of poke-env's doubles mapper with its real input requirement."""
+    assert isinstance(action, np.ndarray) and action.shape == (2,), (
+        f"poke-env's doubles mapper indexes action[0]/action[1]; got {action!r}"
+    )
+    return f"doubles:{action.tolist()}"
 
 
 def _singles_obs(_battle):
@@ -58,12 +77,8 @@ def patched_env():
     with (
         patch.object(asel, "build_observation", side_effect=_singles_obs),
         patch.object(asel, "build_doubles_observation", side_effect=_doubles_obs),
-        patch.object(
-            SinglesEnv, "action_to_order", side_effect=lambda a, b: f"singles:{a}"
-        ),
-        patch.object(
-            DoublesEnv, "action_to_order", side_effect=lambda a, b: f"doubles:{a}"
-        ),
+        patch.object(SinglesEnv, "action_to_order", side_effect=_singles_mapper),
+        patch.object(DoublesEnv, "action_to_order", side_effect=_doubles_mapper),
     ):
         yield
 
@@ -94,11 +109,11 @@ class TestPPOSelection:
         assert choice.stats is None
 
     def test_doubles_uses_doubles_observation_and_mapper(self, patched_env):
-        policy = FakePolicy(action=7)
+        policy = FakePolicy(action=(7, 12))
         battle = MagicMock(spec=DoubleBattle)
         choice = _ppo(policy, doubles=True).choose(battle)
         assert policy.calls == [((1, OBS_DIM_DOUBLES), True)]
-        assert choice.order == "doubles:7"
+        assert choice.order == "doubles:[7, 12]"
 
     def test_deterministic_has_no_default(self):
         with pytest.raises(TypeError):
@@ -108,21 +123,23 @@ class TestPPOSelection:
 # ── MCTS adapter ─────────────────────────────────────────────────────────────
 
 
-class TestMCTSSelection:
-    def _model(self):
-        model = MagicMock()
-        model.policy_probs.return_value = torch.ones(N_ACTIONS_GEN9) / N_ACTIONS_GEN9
-        model.forward.return_value = (
-            torch.zeros(1, N_ACTIONS_GEN9),
-            torch.tensor([[0.5]]),
-        )
-        return model
+def _fake_transformer():
+    """BattleTransformer stand-in: uniform priors, neutral value."""
+    model = MagicMock()
+    model.policy_probs.return_value = torch.ones(N_ACTIONS_GEN9) / N_ACTIONS_GEN9
+    model.forward.return_value = (
+        torch.zeros(1, N_ACTIONS_GEN9),
+        torch.tensor([[0.5]]),
+    )
+    return model
 
+
+class TestMCTSSelection:
     def test_action_is_chosen_from_legal_masked_distribution(self, patched_env):
         mask = torch.ones(N_ACTIONS_GEN9, dtype=torch.bool)
         mask[3] = False  # only action 3 is legal
         sel = ActionSelector(
-            MCTSInference(self._model(), deterministic=False),
+            MCTSInference(_fake_transformer(), deterministic=False),
             on_error="raise",
         )
         with patch.object(asel, "_build_legal_mask", return_value=mask):
@@ -149,6 +166,59 @@ class TestMCTSSelection:
             "deterministic": True,
         }
         assert run.call_args.args[1:3] == ("model", N_ACTIONS_GEN9)
+
+
+# ── The real poke-env mappers (not fakes) ─────────────────────────────────────
+
+
+class TestRealPokeEnvMapper:
+    """poke-env's mapper calls ``action.item()`` for move actions, so a plain ``int``
+    raised AttributeError. The fakes above can't notice that; these use the real thing.
+    """
+
+    MOVES = ("earthquake", "stealthrock", "recover", "poisonjab")
+
+    @classmethod
+    def _battle(cls):
+        from poke_env.battle import Move
+        from poke_env.player import Player
+
+        moves = [Move(move_id, gen=9) for move_id in cls.MOVES]
+        battle = MagicMock()
+        battle.active_pokemon.moves = {move.id: move for move in moves}
+        battle.available_moves = moves
+        battle.team = {}  # nothing to switch to: only the four moves are legal
+        battle.valid_orders = [Player.create_order(move) for move in moves]
+        return battle
+
+    def test_plain_int_move_action_maps_to_the_move(self):
+        order = asel.action_to_order(8, self._battle())  # action 8 = move slot 3
+        assert str(order) == "/choose move recover"
+
+    def test_ppo_choice_for_a_move_action_plays_that_move(self):
+        with patch.object(asel, "build_observation", side_effect=_singles_obs):
+            choice = _ppo(FakePolicy(action=6)).choose(self._battle())
+        assert str(choice.order) == "/choose move earthquake"
+
+    def test_mcts_choice_for_a_move_action_plays_that_move(self):
+        mask = torch.ones(N_ACTIONS_GEN9, dtype=torch.bool)
+        mask[9] = False
+        sel = ActionSelector(
+            MCTSInference(_fake_transformer(), deterministic=True),
+            on_error="raise",
+        )
+        with (
+            patch.object(asel, "build_observation", side_effect=_singles_obs),
+            patch.object(asel, "_build_legal_mask", return_value=mask),
+        ):
+            choice = sel.choose(self._battle())
+        assert str(choice.order) == "/choose move poisonjab"
+
+    def test_legal_mask_unmasks_exactly_the_available_moves(self):
+        from src.ml.mcts import _build_legal_mask
+
+        mask = _build_legal_mask(self._battle(), N_ACTIONS_GEN9)
+        assert [i for i in range(N_ACTIONS_GEN9) if not mask[i]] == [6, 7, 8, 9]
 
 
 # ── Failure policy ───────────────────────────────────────────────────────────

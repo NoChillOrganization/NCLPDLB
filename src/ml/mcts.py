@@ -399,7 +399,9 @@ def _build_legal_mask(battle: Any, n_actions: int) -> "torch.Tensor | None":
 
         for act in range(n_actions):
             try:
-                order = SinglesEnv.action_to_order(act, battle)
+                # poke-env's mapper calls action.item() for move actions, so it needs a
+                # numpy integer: a plain int raised AttributeError and masked every move.
+                order = SinglesEnv.action_to_order(np.int64(act), battle)
                 if order is not None:
                     mask[act] = False
             except ValueError:
